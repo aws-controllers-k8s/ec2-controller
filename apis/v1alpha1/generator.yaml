@@ -52,9 +52,15 @@ ignore:
     - VpcEndpointConnectionNotification
     - VpcEndpointServiceConfiguration
     - VpcEndpoint
-    - Vpc
+    #- Vpc
     - VpcCidrBlock
     - VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway
+
+resources:
+  Vpc:
+    hooks:
+      sdk_read_one_pre_build_request:
+        template_path: hooks/vpc/sdk_read_one_pre_build_request.go.tpl

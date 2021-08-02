@@ -31,6 +31,8 @@ import (
 	svctypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/ec2-controller/pkg/resource"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc"
 )
 
 var (
