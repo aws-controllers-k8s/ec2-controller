@@ -50,9 +50,16 @@ func (rm *resourceManager) sdkFind(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
 	defer exit(err)
+	if isRequiredFieldsMissingFromInput(r) {
+		return nil, ackerr.NotFound
+	}
 	input, err := rm.newListRequestPayload(r)
 	if err != nil {
 		return nil, err
+	}
+	err = addIdToListRequest(r, input)
+	if err != nil {
+		return nil, ackerr.NotFound
 	}
 	var resp *svcsdk.DescribeVpcsOutput
 	resp, err = rm.sdkapi.DescribeVpcsWithContext(ctx, input)
