@@ -54,7 +54,7 @@ class TestVpc:
         return self.get_vpc(ec2_client, vpc_id) is not None
 
     def test_smoke(self, ec2_client):
-        resource_name = "vpc-ack-test"
+        resource_name = random_suffix_name("vpc-ack-test", 24)
         replacements = REPLACEMENT_VALUES.copy()
         replacements["VPC_NAME"] = resource_name
         replacements["CIDR_BLOCK"] = "10.0.0.0/16"

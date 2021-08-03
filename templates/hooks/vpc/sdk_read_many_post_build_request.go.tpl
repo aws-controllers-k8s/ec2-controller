@@ -1,4 +1,3 @@
-	err = addIdToListRequest(r, input)
-	if err != nil {
+	if err = addIdToListRequest(r, input); err != nil {
 		return nil, ackerr.NotFound
 	}

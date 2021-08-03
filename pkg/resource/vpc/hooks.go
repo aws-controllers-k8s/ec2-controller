@@ -19,19 +19,19 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// If any required fields in the input shape are missing, AWS resource is
-// not created yet. Return False to indicate to callers that the
-// resource is not yet created.
+// isRequiredFieldsMissingFromInput returns True if any required
+// fields in the input shape are missing meaning AWS resource is
+// not created yet.
 func isRequiredFieldsMissingFromInput(r *resource) bool {
 	return r.ko.Status.State == nil
 }
 
-// Add requested resource VpcId to ListRequest. Return error to indicate to callers that the
+// addIdToListRequest adds requested-resource VpcId to ListRequest. Return error to indicate to callers that the
 // resource is not yet created.
 func addIdToListRequest(r *resource, input *svcsdk.DescribeVpcsInput) error {
-	if r.ko.Status.VPCID != nil {
-		input.VpcIds = []*string{r.ko.Status.VPCID}
-		return nil
+	if r.ko.Status.VPCID == nil {
+		return errors.New("unable to extract vpcId from Kubernetes resource")
 	}
-	return errors.New("unable to extract vpcId from Kubernetes resource")
+	input.VpcIds = []*string{r.ko.Status.VPCID}
+	return nil
 }
