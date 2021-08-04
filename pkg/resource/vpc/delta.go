@@ -46,13 +46,6 @@ func newResourceDelta(
 			delta.Add("Spec.CIDRBlock", a.ko.Spec.CIDRBlock, b.ko.Spec.CIDRBlock)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.DryRun, b.ko.Spec.DryRun) {
-		delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
-	} else if a.ko.Spec.DryRun != nil && b.ko.Spec.DryRun != nil {
-		if *a.ko.Spec.DryRun != *b.ko.Spec.DryRun {
-			delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy) {
 		delta.Add("Spec.InstanceTenancy", a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy)
 	} else if a.ko.Spec.InstanceTenancy != nil && b.ko.Spec.InstanceTenancy != nil {

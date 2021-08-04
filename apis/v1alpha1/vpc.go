@@ -33,11 +33,6 @@ type VPCSpec struct {
 	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
 	// +kubebuilder:validation:Required
 	CIDRBlock *string `json:"cidrBlock"`
-	// Checks whether you have the required permissions for the action, without
-	// actually making the request, and provides an error response. If you have
-	// the required permissions, the error response is DryRunOperation. Otherwise,
-	// it is UnauthorizedOperation.
-	DryRun *bool `json:"dryRun,omitempty"`
 	// The tenancy options for instances launched into the VPC. For default, instances
 	// are launched with shared tenancy by default. You can launch instances with
 	// any tenancy into a shared tenancy VPC. For dedicated, instances are launched

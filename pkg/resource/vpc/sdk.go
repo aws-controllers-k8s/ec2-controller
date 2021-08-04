@@ -57,8 +57,7 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	err = addIdToListRequest(r, input)
-	if err != nil {
+	if err = addIDToListRequest(r, input); err != nil {
 		return nil, ackerr.NotFound
 	}
 	var resp *svcsdk.DescribeVpcsOutput
@@ -203,10 +202,6 @@ func (rm *resourceManager) newListRequestPayload(
 	r *resource,
 ) (*svcsdk.DescribeVpcsInput, error) {
 	res := &svcsdk.DescribeVpcsInput{}
-
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 
 	return res, nil
 }
@@ -365,9 +360,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.CIDRBlock != nil {
 		res.SetCidrBlock(*r.ko.Spec.CIDRBlock)
 	}
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Spec.InstanceTenancy != nil {
 		res.SetInstanceTenancy(*r.ko.Spec.InstanceTenancy)
 	}
@@ -381,29 +373,29 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetIpv6Pool(*r.ko.Spec.IPv6Pool)
 	}
 	if r.ko.Spec.TagSpecifications != nil {
-		f7 := []*svcsdk.TagSpecification{}
-		for _, f7iter := range r.ko.Spec.TagSpecifications {
-			f7elem := &svcsdk.TagSpecification{}
-			if f7iter.ResourceType != nil {
-				f7elem.SetResourceType(*f7iter.ResourceType)
+		f6 := []*svcsdk.TagSpecification{}
+		for _, f6iter := range r.ko.Spec.TagSpecifications {
+			f6elem := &svcsdk.TagSpecification{}
+			if f6iter.ResourceType != nil {
+				f6elem.SetResourceType(*f6iter.ResourceType)
 			}
-			if f7iter.Tags != nil {
-				f7elemf1 := []*svcsdk.Tag{}
-				for _, f7elemf1iter := range f7iter.Tags {
-					f7elemf1elem := &svcsdk.Tag{}
-					if f7elemf1iter.Key != nil {
-						f7elemf1elem.SetKey(*f7elemf1iter.Key)
+			if f6iter.Tags != nil {
+				f6elemf1 := []*svcsdk.Tag{}
+				for _, f6elemf1iter := range f6iter.Tags {
+					f6elemf1elem := &svcsdk.Tag{}
+					if f6elemf1iter.Key != nil {
+						f6elemf1elem.SetKey(*f6elemf1iter.Key)
 					}
-					if f7elemf1iter.Value != nil {
-						f7elemf1elem.SetValue(*f7elemf1iter.Value)
+					if f6elemf1iter.Value != nil {
+						f6elemf1elem.SetValue(*f6elemf1iter.Value)
 					}
-					f7elemf1 = append(f7elemf1, f7elemf1elem)
+					f6elemf1 = append(f6elemf1, f6elemf1elem)
 				}
-				f7elem.SetTags(f7elemf1)
+				f6elem.SetTags(f6elemf1)
 			}
-			f7 = append(f7, f7elem)
+			f6 = append(f6, f6elem)
 		}
-		res.SetTagSpecifications(f7)
+		res.SetTagSpecifications(f6)
 	}
 
 	return res, nil
@@ -447,9 +439,6 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteVpcInput, error) {
 	res := &svcsdk.DeleteVpcInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Status.VPCID != nil {
 		res.SetVpcId(*r.ko.Status.VPCID)
 	}

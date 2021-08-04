@@ -12675,11 +12675,6 @@ func (in *VPCSpec) DeepCopyInto(out *VPCSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.DryRun != nil {
-		in, out := &in.DryRun, &out.DryRun
-		*out = new(bool)
-		**out = **in
-	}
 	if in.InstanceTenancy != nil {
 		in, out := &in.InstanceTenancy, &out.InstanceTenancy
 		*out = new(string)
