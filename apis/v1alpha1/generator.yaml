@@ -1,4 +1,6 @@
 ignore:
+  field_paths:
+    - CreateVpcInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -52,9 +54,17 @@ ignore:
     - VpcEndpointConnectionNotification
     - VpcEndpointServiceConfiguration
     - VpcEndpoint
-    - Vpc
+    #- Vpc
     - VpcCidrBlock
     - VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway
+
+resources:
+  Vpc:
+    hooks:
+      sdk_read_many_pre_build_request:
+        template_path: hooks/vpc/sdk_read_many_pre_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/vpc/sdk_read_many_post_build_request.go.tpl

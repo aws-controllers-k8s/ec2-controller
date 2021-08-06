@@ -1,0 +1,8 @@
+service:
+  full_name: "Amazon Elastic Cloud Compute"
+  short_name: "EC2"
+  link: "https://aws.amazon.com/ec2"
+  documentation: "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html"
+api_versions:
+  - api_version: v1alpha1
+    status: available

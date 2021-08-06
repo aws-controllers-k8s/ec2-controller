@@ -1,0 +1,6 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPC
+metadata:
+  name: $VPC_NAME
+spec:
+  cidrBlock: $CIDR_BLOCK
