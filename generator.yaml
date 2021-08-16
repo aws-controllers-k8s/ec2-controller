@@ -1,6 +1,7 @@
 ignore:
   field_paths:
     - CreateVpcInput.DryRun
+    - CreateSubnetInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -36,7 +37,7 @@ ignore:
     - SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
-    - Subnet 
+    #- Subnet
     - TrafficMirrorFilterRule
     - TrafficMirrorFilter
     - TrafficMirrorSession

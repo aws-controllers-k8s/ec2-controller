@@ -1,14 +1,38 @@
 ack_generate_info:
+<<<<<<< HEAD
   build_date: "2021-08-16T20:38:40Z"
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+  build_date: "2021-08-16T20:38:40Z"
+=======
+  build_date: "2021-08-16T20:49:09Z"
+>>>>>>> ec049ca (regen vpc with 0.10.0)
+=======
+  build_date: "2021-08-16T20:50:58Z"
+>>>>>>> cc7c4b2 (generate subnet resource)
+>>>>>>> 5dec341 (generate subnet resource)
   build_hash: afa7fe00dae2c7404018e98c13130a01b6643d1d
   go_version: go1.16.6 darwin/amd64
   version: v0.10.0
-api_directory_checksum: d84b2e29cfafbcd249dab46daa7972a32fe9c446
+api_directory_checksum: 7f0fe6c5c959e20c5eb4ccef47e456622eeb24f3
 api_version: v1alpha1
 aws_sdk_go_version: v1.37.10
 generator_config_info:
-  file_checksum: 33f4857c10945c0b2612675fc5657588633478e7
+  file_checksum: 4b048f807c7151379f0b09f26ddc40b101b8e6fd
   original_file_name: generator.yaml
 last_modification:
   reason: API generation
+<<<<<<< HEAD
   timestamp: 2021-08-16 20:38:50.308741 +0000 UTC
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+  timestamp: 2021-08-16 20:38:50.308741 +0000 UTC
+=======
+  timestamp: 2021-08-16 20:49:17.748573 +0000 UTC
+>>>>>>> ec049ca (regen vpc with 0.10.0)
+=======
+  timestamp: 2021-08-16 20:51:07.853927 +0000 UTC
+>>>>>>> cc7c4b2 (generate subnet resource)
+>>>>>>> 5dec341 (generate subnet resource)
