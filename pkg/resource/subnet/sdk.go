@@ -50,9 +50,15 @@ func (rm *resourceManager) sdkFind(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
 	defer exit(err)
+	if isRequiredFieldsMissingFromInput(r) {
+		return nil, ackerr.NotFound
+	}
 	input, err := rm.newListRequestPayload(r)
 	if err != nil {
 		return nil, err
+	}
+	if err = addIDToListRequest(r, input); err != nil {
+		return nil, ackerr.NotFound
 	}
 	var resp *svcsdk.DescribeSubnetsOutput
 	resp, err = rm.sdkapi.DescribeSubnetsWithContext(ctx, input)
