@@ -68,6 +68,11 @@ type Address struct {
 	Tags                    []*Tag  `json:"tags,omitempty"`
 }
 
+// The attributes associated with an Elastic IP address.
+type AddressAttribute struct {
+	PtrRecord *string `json:"ptrRecord,omitempty"`
+}
+
 // Describes a principal.
 type AllowedPrincipal struct {
 	Principal *string `json:"principal,omitempty"`
@@ -1605,7 +1610,7 @@ type ManagedPrefixList struct {
 
 // The AWS Site-to-Site VPN tunnel options to modify.
 type ModifyVPNTunnelOptionsSpecification struct {
-	DPDTimeoutAction     *string `json:"dPDTimeoutAction,omitempty"`
+	DPDTimeoutAction     *string `json:"dpdTimeoutAction,omitempty"`
 	PreSharedKey         *string `json:"preSharedKey,omitempty"`
 	StartupAction        *string `json:"startupAction,omitempty"`
 	TunnelInsideCIDR     *string `json:"tunnelInsideCIDR,omitempty"`
@@ -1938,6 +1943,13 @@ type ProvisionedBandwidth struct {
 	Provisioned *string `json:"provisioned,omitempty"`
 	Requested   *string `json:"requested,omitempty"`
 	Status      *string `json:"status,omitempty"`
+}
+
+// The status of an updated pointer (PTR) record for an Elastic IP address.
+type PtrUpdateStatus struct {
+	Reason *string `json:"reason,omitempty"`
+	Status *string `json:"status,omitempty"`
+	Value  *string `json:"value,omitempty"`
 }
 
 // Describes an IPv4 address pool.
@@ -2771,7 +2783,7 @@ type TransitGatewayVPCAttachment struct {
 
 // The VPN tunnel options.
 type TunnelOption struct {
-	DpdTimeoutAction     *string `json:"dpdTimeoutAction,omitempty"`
+	DPDTimeoutAction     *string `json:"dpdTimeoutAction,omitempty"`
 	OutsideIPAddress     *string `json:"outsideIPAddress,omitempty"`
 	PreSharedKey         *string `json:"preSharedKey,omitempty"`
 	StartupAction        *string `json:"startupAction,omitempty"`
@@ -2983,7 +2995,7 @@ type VPNStaticRoute struct {
 
 // The tunnel options for a single VPN tunnel.
 type VPNTunnelOptionsSpecification struct {
-	DPDTimeoutAction     *string `json:"dPDTimeoutAction,omitempty"`
+	DPDTimeoutAction     *string `json:"dpdTimeoutAction,omitempty"`
 	PreSharedKey         *string `json:"preSharedKey,omitempty"`
 	StartupAction        *string `json:"startupAction,omitempty"`
 	TunnelInsideCIDR     *string `json:"tunnelInsideCIDR,omitempty"`
@@ -3019,7 +3031,7 @@ type VolumeStatusAction struct {
 // Information about the instances to which the volume is attached.
 type VolumeStatusAttachmentStatus struct {
 	InstanceID    *string `json:"instanceID,omitempty"`
-	IoPerformance *string `json:"ioPerformance,omitempty"`
+	IOPerformance *string `json:"ioPerformance,omitempty"`
 }
 
 // Describes a volume status.
