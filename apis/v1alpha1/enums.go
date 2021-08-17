@@ -31,6 +31,12 @@ const (
 	ActivityStatus_fulfilled           ActivityStatus = "fulfilled"
 )
 
+type AddressAttributeName string
+
+const (
+	AddressAttributeName_domain_name AddressAttributeName = "domain-name"
+)
+
 type Affinity string
 
 const (
