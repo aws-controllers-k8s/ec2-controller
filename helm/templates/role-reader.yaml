@@ -1,0 +1,16 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: ack-ec2-reader
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcs
+  verbs:
+  - get
+  - list
+  - watch
