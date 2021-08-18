@@ -19,12 +19,6 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// isRequiredFieldsMissingFromInput returns True if CR is
-// missing required fields for reconciliation.
-func isRequiredFieldsMissingFromInput(r *resource) bool {
-	return r.ko.Status.State == nil
-}
-
 // addIDToListRequest adds requested-resource VpcId to ListRequest. Return error to indicate to callers that the
 // resource is not yet created.
 func addIDToListRequest(r *resource, input *svcsdk.DescribeVpcsInput) error {
