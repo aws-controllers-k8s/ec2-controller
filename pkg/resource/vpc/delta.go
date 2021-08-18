@@ -16,7 +16,14 @@
 package vpc
 
 import (
+	"reflect"
+
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+)
+
+// Hack to avoid import errors during build...
+var (
+	_ = &reflect.Method{}
 )
 
 // newResourceDelta returns a new `ackcompare.Delta` used to compare two
@@ -73,6 +80,9 @@ func newResourceDelta(
 		if *a.ko.Spec.IPv6Pool != *b.ko.Spec.IPv6Pool {
 			delta.Add("Spec.IPv6Pool", a.ko.Spec.IPv6Pool, b.ko.Spec.IPv6Pool)
 		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
+		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
 	}
 
 	return delta

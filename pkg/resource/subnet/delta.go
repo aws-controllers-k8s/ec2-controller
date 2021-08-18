@@ -16,7 +16,14 @@
 package subnet
 
 import (
+	"reflect"
+
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+)
+
+// Hack to avoid import errors during build...
+var (
+	_ = &reflect.Method{}
 )
 
 // newResourceDelta returns a new `ackcompare.Delta` used to compare two
@@ -67,7 +74,9 @@ func newResourceDelta(
 			delta.Add("Spec.OutpostARN", a.ko.Spec.OutpostARN, b.ko.Spec.OutpostARN)
 		}
 	}
-
+	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
+		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 	} else if a.ko.Spec.VPCID != nil && b.ko.Spec.VPCID != nil {
