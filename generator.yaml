@@ -75,3 +75,7 @@ resources:
         template_path: hooks/vpc/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/vpc/sdk_read_many_post_build_request.go.tpl
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
