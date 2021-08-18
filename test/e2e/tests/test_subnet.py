@@ -29,9 +29,6 @@ RESOURCE_PLURAL = "subnets"
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
-test_resource_values = REPLACEMENT_VALUES.copy()
-
-
 @pytest.fixture(scope="module")
 def ec2_client():
     return boto3.client("ec2")
@@ -39,6 +36,7 @@ def ec2_client():
 @pytest.fixture(scope="module")
 def vpc_resource():
     resource_name = random_suffix_name("vpc-for-subnet", 24)
+    test_resource_values = REPLACEMENT_VALUES.copy()
     test_resource_values["VPC_NAME"] = resource_name
     test_resource_values["CIDR_BLOCK"] = "10.0.0.0/16"
 
@@ -83,9 +81,16 @@ class TestSubnet:
     def subnet_exists(self, ec2_client, subnet_id: str) -> bool:
         return self.get_subnet(ec2_client, subnet_id) is not None
 
-    def test_crud(self, ec2_client, vpc_resource):
+    def test_create_delete(self, ec2_client, vpc_resource):
+        test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-crud", 24)
+        _, vpc_cr = vpc_resource
+        vpc_id = vpc_cr['status']['vpcID']
+        vpc_cidr = vpc_cr['spec']['cidrBlock']
+
         test_resource_values["SUBNET_NAME"] = resource_name
+        test_resource_values["VPC_ID"] = vpc_id
+        test_resource_values["CIDR_BLOCK"] = vpc_cidr
 
         # Load Subnet CR
         resource_data = load_ec2_resource(
@@ -125,9 +130,14 @@ class TestSubnet:
         assert not exists
 
     def test_terminal_condition(self, vpc_resource):
+        test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-fail", 24)
+        _, vpc_cr = vpc_resource
+        vpc_cidr = vpc_cr['spec']['cidrBlock']
+
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["VPC_ID"] = "InvalidVpcId"
+        test_resource_values["CIDR_BLOCK"] = vpc_cidr
 
         # Load Subnet CR
         resource_data = load_ec2_resource(

@@ -53,7 +53,7 @@ class TestVpc:
     def vpc_exists(self, ec2_client, vpc_id: str) -> bool:
         return self.get_vpc(ec2_client, vpc_id) is not None
 
-    def test_smoke(self, ec2_client):
+    def test_create_delete(self, ec2_client):
         resource_name = random_suffix_name("vpc-ack-test", 24)
         replacements = REPLACEMENT_VALUES.copy()
         replacements["VPC_NAME"] = resource_name
