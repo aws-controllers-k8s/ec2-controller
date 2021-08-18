@@ -15,7 +15,6 @@ import pytest
 from typing import Dict, Any
 from pathlib import Path
 
-from acktest.k8s import resource
 from acktest.resources import load_resource_file
 
 SERVICE_NAME = "ec2"
@@ -32,23 +31,3 @@ def load_ec2_resource(resource_name: str, additional_replacements: Dict[str, Any
     directory for the current service.
     """
     return load_resource_file(resource_directory, resource_name, additional_replacements=additional_replacements)
-
-def create_vpc_resource(
-        resource_plural, resource_name, spec_file, replacements, namespace="default"
-):
-    """
-    Wrapper around k8s.load_and_create_resource to create a VPC resource
-    """
-
-    reference, spec, res = resource.load_and_create_resource(
-        resource_directory,
-        CRD_GROUP,
-        CRD_VERSION,
-        resource_plural,
-        resource_name,
-        spec_file,
-        replacements,
-        namespace,
-    )
-
-    return reference, spec, res
