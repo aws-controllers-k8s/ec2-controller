@@ -22,6 +22,7 @@ import (
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	ackrtwebhook "github.com/aws-controllers-k8s/runtime/pkg/webhook"
+	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -32,14 +33,16 @@ import (
 	svcresource "github.com/aws-controllers-k8s/ec2-controller/pkg/resource"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/subnet"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc"
 )
 
 var (
-	awsServiceAPIGroup = "ec2.services.k8s.aws"
-	awsServiceAlias    = "ec2"
-	scheme             = runtime.NewScheme()
-	setupLog           = ctrlrt.Log.WithName("setup")
+	awsServiceAPIGroup    = "ec2.services.k8s.aws"
+	awsServiceAlias       = "ec2"
+	awsServiceEndpointsID = svcsdk.EndpointsID
+	scheme                = runtime.NewScheme()
+	setupLog              = ctrlrt.Log.WithName("setup")
 )
 
 func init() {
@@ -96,7 +99,7 @@ func main() {
 		"aws.service", awsServiceAlias,
 	)
 	sc := ackrt.NewServiceController(
-		awsServiceAlias, awsServiceAPIGroup,
+		awsServiceAlias, awsServiceAPIGroup, awsServiceEndpointsID,
 		ackrt.VersionInfo{}, // TODO: populate version info
 	).WithLogger(
 		ctrlrt.Log,

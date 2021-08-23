@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package vpc
+package subnet
 
 import (
 	"errors"
@@ -19,12 +19,12 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// addIDToListRequest adds requested-resource VpcId to ListRequest.
-// Return error to indicate to callers that the resource is not yet created.
-func addIDToListRequest(r *resource, input *svcsdk.DescribeVpcsInput) error {
-	if r.ko.Status.VPCID == nil || *r.ko.Status.VPCID == "" {
-		return errors.New("unable to extract vpcId from Kubernetes resource")
+// addIDToListRequest adds requested-resource SubnetId to ListRequest.
+// Return error to indicate to callers that the  resource is not yet created.
+func addIDToListRequest(r *resource, input *svcsdk.DescribeSubnetsInput) error {
+	if r.ko.Status.SubnetID == nil || *r.ko.Status.SubnetID == "" {
+		return errors.New("unable to extract subnetId from Kubernetes resource")
 	}
-	input.VpcIds = []*string{r.ko.Status.VPCID}
+	input.SubnetIds = []*string{r.ko.Status.SubnetID}
 	return nil
 }

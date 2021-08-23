@@ -1,6 +1,7 @@
 ignore:
   field_paths:
     - CreateVpcInput.DryRun
+    - CreateSubnetInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -36,7 +37,7 @@ ignore:
     - SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
-    - Subnet 
+    #- Subnet
     - TrafficMirrorFilterRule
     - TrafficMirrorFilter
     - TrafficMirrorSession
@@ -64,7 +65,13 @@ ignore:
 resources:
   Vpc:
     hooks:
-      sdk_read_many_pre_build_request:
-        template_path: hooks/vpc/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/vpc/sdk_read_many_post_build_request.go.tpl
+  Subnet:
+    hooks:
+      sdk_read_many_post_build_request:
+        template_path: hooks/vpc/sdk_read_many_post_build_request.go.tpl
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
