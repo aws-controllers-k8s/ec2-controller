@@ -19,10 +19,10 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// addIDToListRequest adds requested-resource VpcId to ListRequest. Return error to indicate to callers that the
-// resource is not yet created.
+// addIDToListRequest adds requested-resource VpcId to ListRequest.
+// Return error to indicate to callers that the resource is not yet created.
 func addIDToListRequest(r *resource, input *svcsdk.DescribeVpcsInput) error {
-	if r.ko.Status.VPCID == nil {
+	if r.ko.Status.VPCID == nil || *r.ko.Status.VPCID == "" {
 		return errors.New("unable to extract vpcId from Kubernetes resource")
 	}
 	input.VpcIds = []*string{r.ko.Status.VPCID}

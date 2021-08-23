@@ -19,10 +19,10 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// addIDToListRequest adds requested-resource VpcId to ListRequest. Return error to indicate to callers that the
-// resource is not yet created.
+// addIDToListRequest adds requested-resource SubnetId to ListRequest.
+// Return error to indicate to callers that the  resource is not yet created.
 func addIDToListRequest(r *resource, input *svcsdk.DescribeSubnetsInput) error {
-	if r.ko.Status.SubnetID == nil {
+	if r.ko.Status.SubnetID == nil || *r.ko.Status.SubnetID == "" {
 		return errors.New("unable to extract subnetId from Kubernetes resource")
 	}
 	input.SubnetIds = []*string{r.ko.Status.SubnetID}
