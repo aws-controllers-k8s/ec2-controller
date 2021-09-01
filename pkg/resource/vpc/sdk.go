@@ -61,9 +61,6 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	if err = addIDToListRequest(r, input); err != nil {
-		return nil, ackerr.NotFound
-	}
 	var resp *svcsdk.DescribeVpcsOutput
 	resp, err = rm.sdkapi.DescribeVpcsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcs", err)
