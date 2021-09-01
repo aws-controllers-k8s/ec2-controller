@@ -1182,7 +1182,7 @@ type ImportVolumeTaskDetails struct {
 
 // Describes an instance.
 type Instance struct {
-	AmiLaunchIndex        *int64  `json:"amiLaunchIndex,omitempty"`
+	AMILaunchIndex        *int64  `json:"amiLaunchIndex,omitempty"`
 	CapacityReservationID *string `json:"capacityReservationID,omitempty"`
 	ClientToken           *string `json:"clientToken,omitempty"`
 	EBSOptimized          *bool   `json:"ebsOptimized,omitempty"`
@@ -1714,7 +1714,7 @@ type LocalGatewayVirtualInterface struct {
 	PeerAddress    *string `json:"peerAddress,omitempty"`
 	PeerBGPASN     *int64  `json:"peerBGPASN,omitempty"`
 	Tags           []*Tag  `json:"tags,omitempty"`
-	Vlan           *int64  `json:"vlan,omitempty"`
+	VLAN           *int64  `json:"vlan,omitempty"`
 }
 
 // Describes a local gateway virtual interface group.

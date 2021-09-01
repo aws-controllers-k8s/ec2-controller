@@ -217,6 +217,12 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeVpcsInput, error) {
 	res := &svcsdk.DescribeVpcsInput{}
 
+	if r.ko.Status.VPCID != nil {
+		f4 := []*string{}
+		f4 = append(f4, r.ko.Status.VPCID)
+		res.SetVpcIds(f4)
+	}
+
 	return res, nil
 }
 
@@ -513,7 +519,7 @@ func (rm *resourceManager) updateConditions(
 			errorMessage = err.Error()
 		} else {
 			awsErr, _ := ackerr.AWSError(err)
-			errorMessage = awsErr.Message()
+			errorMessage = awsErr.Error()
 		}
 		terminalCondition.Status = corev1.ConditionTrue
 		terminalCondition.Message = &errorMessage
@@ -536,7 +542,7 @@ func (rm *resourceManager) updateConditions(
 			awsErr, _ := ackerr.AWSError(err)
 			errorMessage := err.Error()
 			if awsErr != nil {
-				errorMessage = awsErr.Message()
+				errorMessage = awsErr.Error()
 			}
 			recoverableCondition.Message = &errorMessage
 		} else if recoverableCondition != nil {
