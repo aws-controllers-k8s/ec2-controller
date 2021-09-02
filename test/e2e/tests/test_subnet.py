@@ -125,7 +125,7 @@ class TestSubnet:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check VPC doesn't exist
+        # Check Subnet doesn't exist
         exists = self.subnet_exists(ec2_client, resource_id)
         assert not exists
 
@@ -157,6 +157,11 @@ class TestSubnet:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
-        assert k8s.assert_condition_state_message(
-            ref, "ACK.Terminal", "True", "The vpc ID 'InvalidVpcId' does not exist"
-        )
+        expected_msg = "InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist"
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        #   InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist
+        #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
+        # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
+        assert expected_msg in terminal_condition['message']
+
