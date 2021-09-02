@@ -61,9 +61,6 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	if err = addIDToListRequest(r, input); err != nil {
-		return nil, ackerr.NotFound
-	}
 	var resp *svcsdk.DescribeSubnetsOutput
 	resp, err = rm.sdkapi.DescribeSubnetsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeSubnets", err)
@@ -226,6 +223,12 @@ func (rm *resourceManager) newListRequestPayload(
 	r *resource,
 ) (*svcsdk.DescribeSubnetsInput, error) {
 	res := &svcsdk.DescribeSubnetsInput{}
+
+	if r.ko.Status.SubnetID != nil {
+		f4 := []*string{}
+		f4 = append(f4, r.ko.Status.SubnetID)
+		res.SetSubnetIds(f4)
+	}
 
 	return res, nil
 }
@@ -533,7 +536,7 @@ func (rm *resourceManager) updateConditions(
 			errorMessage = err.Error()
 		} else {
 			awsErr, _ := ackerr.AWSError(err)
-			errorMessage = awsErr.Message()
+			errorMessage = awsErr.Error()
 		}
 		terminalCondition.Status = corev1.ConditionTrue
 		terminalCondition.Message = &errorMessage
@@ -556,7 +559,7 @@ func (rm *resourceManager) updateConditions(
 			awsErr, _ := ackerr.AWSError(err)
 			errorMessage := err.Error()
 			if awsErr != nil {
-				errorMessage = awsErr.Message()
+				errorMessage = awsErr.Error()
 			}
 			recoverableCondition.Message = &errorMessage
 		} else if recoverableCondition != nil {

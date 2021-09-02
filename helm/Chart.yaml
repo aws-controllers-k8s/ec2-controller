@@ -1,8 +1,8 @@
 apiVersion: v1
 name: ec2-chart
-description: A Helm chart for the ACK service controller for ec2
-version: v0.0.1
-appVersion: v0.0.1
+description: A Helm chart for the ACK service controller for Amazon Elastic Cloud Compute (EC2)
+version: v0.0.0-non-release-version
+appVersion: v0.0.0-non-release-version
 home: https://github.com/aws-controllers-k8s/ec2-controller
 icon: https://raw.githubusercontent.com/aws/eks-charts/master/docs/logo/aws.png
 sources:
@@ -10,7 +10,7 @@ sources:
 maintainers:
   - name: ACK Admins
     url: https://github.com/orgs/aws-controllers-k8s/teams/ack-admin
-  - name: ec2 Admins
+  - name: EC2 Admins
     url: https://github.com/orgs/aws-controllers-k8s/teams/ec2-maintainer
 keywords:
   - aws

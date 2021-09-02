@@ -63,14 +63,7 @@ ignore:
     - VpnGateway
 
 resources:
-  Vpc:
-    hooks:
-      sdk_read_many_post_build_request:
-        template_path: hooks/vpc/sdk_read_many_post_build_request.go.tpl
   Subnet:
-    hooks:
-      sdk_read_many_post_build_request:
-        template_path: hooks/vpc/sdk_read_many_post_build_request.go.tpl
     exceptions:
       terminal_codes:
         - InvalidVpcID.Malformed

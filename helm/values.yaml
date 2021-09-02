@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/ec2-controller
-  tag: v0.0.1
+  tag: v0.0.0-non-release-version
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -44,11 +44,14 @@ log:
   enable_development_logging: false
   level: info
 
-# If specified, the service controller will watch for object creation only in the provided namespace
-watchNamespace: ""
+# Set to "namespace" to install the controller in a namespaced scope, will only
+# watch for object creation in the namespace. By default installScope is
+# cluster wide.
+installScope: cluster
 
 resourceTags:
-  # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
+  # Configures the ACK service controller to always set key/value pairs tags on
+  # resources that it manages.
   - services.k8s.aws/managed=true
   - services.k8s.aws/created=%UTCNOW%
   - services.k8s.aws/namespace=%KUBERNETES_NAMESPACE%
