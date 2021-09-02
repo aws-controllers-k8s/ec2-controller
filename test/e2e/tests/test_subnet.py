@@ -33,34 +33,6 @@ DELETE_WAIT_AFTER_SECONDS = 10
 def ec2_client():
     return boto3.client("ec2")
 
-@pytest.fixture(scope="module")
-def vpc_resource():
-    resource_name = random_suffix_name("vpc-for-subnet", 24)
-    test_resource_values = REPLACEMENT_VALUES.copy()
-    test_resource_values["VPC_NAME"] = resource_name
-    test_resource_values["CIDR_BLOCK"] = "10.0.0.0/16"
-
-    resource_data = load_ec2_resource(
-        "vpc",
-        additional_replacements=test_resource_values,
-    )
-    ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, "vpcs",
-        resource_name, namespace="default",
-    )
-    k8s.create_custom_resource(ref, resource_data)
-    cr = k8s.wait_resource_consumed_by_controller(ref)
-
-    assert cr is not None
-    assert k8s.get_resource_exists(ref)
-
-    resource = k8s.get_resource(ref)
-    test_resource_values["VPC_ID"] = resource["status"]["vpcID"]
-
-    yield ref, cr
-
-    k8s.delete_custom_resource(ref)
-
 @service_marker
 @pytest.mark.canary
 class TestSubnet:
@@ -81,12 +53,11 @@ class TestSubnet:
     def subnet_exists(self, ec2_client, subnet_id: str) -> bool:
         return self.get_subnet(ec2_client, subnet_id) is not None
 
-    def test_create_delete(self, ec2_client, vpc_resource):
+    def test_create_delete(self, ec2_client, pytestconfig):
         test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("subnet-crud", 24)
-        _, vpc_cr = vpc_resource
-        vpc_id = vpc_cr['status']['vpcID']
-        vpc_cidr = vpc_cr['spec']['cidrBlock']
+        resource_name = random_suffix_name("subnet-test", 24)
+        vpc_id = pytestconfig.cache.get('vpc_id', None)
+        vpc_cidr = pytestconfig.cache.get('vpc_cidr', None)
 
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["VPC_ID"] = vpc_id
@@ -129,11 +100,10 @@ class TestSubnet:
         exists = self.subnet_exists(ec2_client, resource_id)
         assert not exists
 
-    def test_terminal_condition(self, vpc_resource):
+    def test_terminal_condition(self, pytestconfig):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-fail", 24)
-        _, vpc_cr = vpc_resource
-        vpc_cidr = vpc_cr['spec']['cidrBlock']
+        vpc_cidr = pytestconfig.cache.get('vpc_cidr', None)
 
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["VPC_ID"] = "InvalidVpcId"
