@@ -34,26 +34,26 @@ DELETE_WAIT_AFTER_SECONDS = 10
 def ec2_client():
     return boto3.client("ec2")
 
+
+def get_route_table(ec2_client, route_table_id: str) -> dict:
+    try:
+        resp = ec2_client.describe_route_tables(
+            Filters=[{"Name": "route-table-id", "Values": [route_table_id]}]
+        )
+        route_table = resp["RouteTables"][0]
+    except Exception as e:
+        logging.debug(e)
+        return None
+
+    return route_table if route_table["RouteTableId"] == route_table_id else None
+
+
+def route_table_exists(ec2_client, route_table_id: str) -> bool:
+    return get_route_table(ec2_client, route_table_id) is not None
+
 @service_marker
 @pytest.mark.canary
 class TestRouteTable:
-    def get_route_table(self, ec2_client, route_table_id: str) -> dict:
-        try:
-            resp = ec2_client.describe_route_tables()
-        except Exception as e:
-            logging.debug(e)
-            return None
-
-        route_tables = resp["RouteTables"]
-        for route_table in route_tables:
-            if route_table["RouteTableId"] == route_table_id:
-                return route_table
-
-        return None
-
-    def route_table_exists(self, ec2_client, route_table_id: str) -> bool:
-        return self.get_route_table(ec2_client, route_table_id) is not None
-
     def test_create_delete(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("route-table-test", 24)
@@ -87,7 +87,7 @@ class TestRouteTable:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check Route Table exists
-        exists = self.route_table_exists(ec2_client, resource_id)
+        exists = route_table_exists(ec2_client, resource_id)
         assert exists
 
         # Delete k8s resource
@@ -97,7 +97,7 @@ class TestRouteTable:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check Route Table doesn't exist
-        exists = self.route_table_exists(ec2_client, resource_id)
+        exists = route_table_exists(ec2_client, resource_id)
         assert not exists
 
     def test_terminal_condition(self):
@@ -131,4 +131,3 @@ class TestRouteTable:
         #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
         # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
         assert expected_msg in terminal_condition['message']
-

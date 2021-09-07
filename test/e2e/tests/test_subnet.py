@@ -34,26 +34,27 @@ DELETE_WAIT_AFTER_SECONDS = 10
 def ec2_client():
     return boto3.client("ec2")
 
+
+def get_subnet(ec2_client, subnet_id: str) -> dict:
+    try:
+        resp = ec2_client.describe_subnets(
+            Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
+        )
+        subnet = resp["Subnets"][0]
+    except Exception as e:
+        logging.debug(e)
+        return None
+
+    return subnet if subnet["SubnetId"] == subnet_id else None
+
+
+def subnet_exists(ec2_client, subnet_id: str) -> bool:
+    return get_subnet(ec2_client, subnet_id) is not None
+
+
 @service_marker
 @pytest.mark.canary
 class TestSubnet:
-    def get_subnet(self, ec2_client, subnet_id: str) -> dict:
-        try:
-            resp = ec2_client.describe_subnets()
-        except Exception as e:
-            logging.debug(e)
-            return None
-
-        subnets = resp["Subnets"]
-        for subnet in subnets:
-            if subnet["SubnetId"] == subnet_id:
-                return subnet
-
-        return None
-
-    def subnet_exists(self, ec2_client, subnet_id: str) -> bool:
-        return self.get_subnet(ec2_client, subnet_id) is not None
-
     def test_create_delete(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-test", 24)
@@ -89,7 +90,7 @@ class TestSubnet:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check Subnet exists
-        exists = self.subnet_exists(ec2_client, resource_id)
+        exists = subnet_exists(ec2_client, resource_id)
         assert exists
 
         # Delete k8s resource
@@ -99,7 +100,7 @@ class TestSubnet:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check Subnet doesn't exist
-        exists = self.subnet_exists(ec2_client, resource_id)
+        exists = subnet_exists(ec2_client, resource_id)
         assert not exists
 
     def test_terminal_condition(self):
@@ -137,4 +138,3 @@ class TestSubnet:
         #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
         # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
         assert expected_msg in terminal_condition['message']
-
