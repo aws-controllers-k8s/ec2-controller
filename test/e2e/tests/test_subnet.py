@@ -23,6 +23,7 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
+from e2e.bootstrap_resources import get_bootstrap_resources
 
 RESOURCE_PLURAL = "subnets"
 
@@ -53,11 +54,12 @@ class TestSubnet:
     def subnet_exists(self, ec2_client, subnet_id: str) -> bool:
         return self.get_subnet(ec2_client, subnet_id) is not None
 
-    def test_create_delete(self, ec2_client, pytestconfig):
+    def test_create_delete(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-test", 24)
-        vpc_id = pytestconfig.cache.get('vpc_id', None)
-        vpc_cidr = pytestconfig.cache.get('vpc_cidr', None)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        vpc_id = test_vpc.vpc_id
+        vpc_cidr = test_vpc.vpc_cidr_block
 
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["VPC_ID"] = vpc_id
@@ -100,10 +102,11 @@ class TestSubnet:
         exists = self.subnet_exists(ec2_client, resource_id)
         assert not exists
 
-    def test_terminal_condition(self, pytestconfig):
+    def test_terminal_condition(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-fail", 24)
-        vpc_cidr = pytestconfig.cache.get('vpc_cidr', None)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        vpc_cidr = test_vpc.vpc_cidr_block
 
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["VPC_ID"] = "InvalidVpcId"

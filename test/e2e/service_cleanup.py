@@ -10,23 +10,19 @@
 # on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
-"""Cleans up the resources created by the ec2 bootstrapping process.
+"""Cleans up the resources created by the EC2 bootstrapping process.
 """
 
 import logging
-from pathlib import Path
 
-from acktest import resources
+from acktest.bootstrapping import Resources
 from e2e import bootstrap_directory
-from e2e.bootstrap_resources import TestBootstrapResources
 
-def service_cleanup(config: dict):
+def service_cleanup():
     logging.getLogger().setLevel(logging.INFO)
 
-    resources = TestBootstrapResources(
-        **config
-    )
+    resources = Resources.deserialize(bootstrap_directory)
+    resources.cleanup()
 
 if __name__ == "__main__":
-    bootstrap_config = resources.read_bootstrap_config(bootstrap_directory)
-    service_cleanup(bootstrap_config) 
+    service_cleanup()
