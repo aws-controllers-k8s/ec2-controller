@@ -40,12 +40,13 @@ def get_route_table(ec2_client, route_table_id: str) -> dict:
         resp = ec2_client.describe_route_tables(
             Filters=[{"Name": "route-table-id", "Values": [route_table_id]}]
         )
-        route_table = resp["RouteTables"][0]
     except Exception as e:
         logging.debug(e)
         return None
 
-    return route_table if route_table["RouteTableId"] == route_table_id else None
+    if len(resp["RouteTables"]) == 0:
+        return None
+    return resp["RouteTables"][0]
 
 
 def route_table_exists(ec2_client, route_table_id: str) -> bool:

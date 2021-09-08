@@ -40,12 +40,13 @@ def get_subnet(ec2_client, subnet_id: str) -> dict:
         resp = ec2_client.describe_subnets(
             Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
         )
-        subnet = resp["Subnets"][0]
     except Exception as e:
         logging.debug(e)
         return None
 
-    return subnet if subnet["SubnetId"] == subnet_id else None
+    if len(resp["Subnets"]) == 0:
+        return None
+    return resp["Subnets"][0]
 
 
 def subnet_exists(ec2_client, subnet_id: str) -> bool:

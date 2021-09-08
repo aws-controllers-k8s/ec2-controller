@@ -39,12 +39,13 @@ def get_vpc(ec2_client, vpc_id: str) -> dict:
         resp = ec2_client.describe_vpcs(
             Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
         )
-        vpc = resp["Vpcs"][0]
     except Exception as e:
         logging.debug(e)
         return None
 
-    return vpc if vpc["VpcId"] == vpc_id else None
+    if len(resp["Vpcs"]) == 0:
+        return None
+    return resp["Vpcs"][0]
 
 
 def vpc_exists(ec2_client, vpc_id: str) -> bool:
