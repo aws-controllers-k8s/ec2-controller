@@ -33,26 +33,27 @@ DELETE_WAIT_AFTER_SECONDS = 10
 def ec2_client():
     return boto3.client("ec2")
 
+
+def get_vpc(ec2_client, vpc_id: str) -> dict:
+    try:
+        resp = ec2_client.describe_vpcs(
+            Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
+        )
+    except Exception as e:
+        logging.debug(e)
+        return None
+
+    if len(resp["Vpcs"]) == 0:
+        return None
+    return resp["Vpcs"][0]
+
+
+def vpc_exists(ec2_client, vpc_id: str) -> bool:
+    return get_vpc(ec2_client, vpc_id) is not None
+
 @service_marker
 @pytest.mark.canary
 class TestVpc:
-    def get_vpc(self, ec2_client, vpc_id: str) -> dict:
-        try:
-            resp = ec2_client.describe_vpcs()
-        except Exception as e:
-            logging.debug(e)
-            return None
-
-        vpcs = resp["Vpcs"]
-        for vpc in vpcs:
-            if vpc["VpcId"] == vpc_id:
-                return vpc
-
-        return None
-
-    def vpc_exists(self, ec2_client, vpc_id: str) -> bool:
-        return self.get_vpc(ec2_client, vpc_id) is not None
-
     def test_create_delete(self, ec2_client):
         resource_name = random_suffix_name("vpc-ack-test", 24)
         replacements = REPLACEMENT_VALUES.copy()
@@ -83,7 +84,7 @@ class TestVpc:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check VPC exists
-        exists = self.vpc_exists(ec2_client, resource_id)
+        exists = vpc_exists(ec2_client, resource_id)
         assert exists
 
         # Delete k8s resource
@@ -93,5 +94,5 @@ class TestVpc:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check VPC doesn't exist
-        exists = self.vpc_exists(ec2_client, resource_id)
+        exists = vpc_exists(ec2_client, resource_id)
         assert not exists

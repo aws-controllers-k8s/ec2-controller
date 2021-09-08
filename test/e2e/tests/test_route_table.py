@@ -11,7 +11,7 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-"""Integration tests for the Subnet API.
+"""Integration tests for the RouteTable API.
 """
 
 import boto3
@@ -25,7 +25,7 @@ from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
 
-RESOURCE_PLURAL = "subnets"
+RESOURCE_PLURAL = "routetables"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
@@ -35,41 +35,38 @@ def ec2_client():
     return boto3.client("ec2")
 
 
-def get_subnet(ec2_client, subnet_id: str) -> dict:
+def get_route_table(ec2_client, route_table_id: str) -> dict:
     try:
-        resp = ec2_client.describe_subnets(
-            Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
+        resp = ec2_client.describe_route_tables(
+            Filters=[{"Name": "route-table-id", "Values": [route_table_id]}]
         )
     except Exception as e:
         logging.debug(e)
         return None
 
-    if len(resp["Subnets"]) == 0:
+    if len(resp["RouteTables"]) == 0:
         return None
-    return resp["Subnets"][0]
+    return resp["RouteTables"][0]
 
 
-def subnet_exists(ec2_client, subnet_id: str) -> bool:
-    return get_subnet(ec2_client, subnet_id) is not None
-
+def route_table_exists(ec2_client, route_table_id: str) -> bool:
+    return get_route_table(ec2_client, route_table_id) is not None
 
 @service_marker
 @pytest.mark.canary
-class TestSubnet:
+class TestRouteTable:
     def test_create_delete(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("subnet-test", 24)
+        resource_name = random_suffix_name("route-table-test", 24)
         test_vpc = get_bootstrap_resources().SharedTestVPC
         vpc_id = test_vpc.vpc_id
-        vpc_cidr = test_vpc.vpc_cidr_block
 
-        test_resource_values["SUBNET_NAME"] = resource_name
+        test_resource_values["ROUTE_TABLE_NAME"] = resource_name
         test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["CIDR_BLOCK"] = vpc_cidr
 
-        # Load Subnet CR
+        # Load Route Table CR
         resource_data = load_ec2_resource(
-            "subnet",
+            "route_table",
             additional_replacements=test_resource_values,
         )
         logging.debug(resource_data)
@@ -86,12 +83,12 @@ class TestSubnet:
         assert k8s.get_resource_exists(ref)
 
         resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["subnetID"]
+        resource_id = resource["status"]["routeTableID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check Subnet exists
-        exists = subnet_exists(ec2_client, resource_id)
+        # Check Route Table exists
+        exists = route_table_exists(ec2_client, resource_id)
         assert exists
 
         # Delete k8s resource
@@ -100,23 +97,19 @@ class TestSubnet:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check Subnet doesn't exist
-        exists = subnet_exists(ec2_client, resource_id)
+        # Check Route Table doesn't exist
+        exists = route_table_exists(ec2_client, resource_id)
         assert not exists
 
     def test_terminal_condition(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("subnet-fail", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_cidr = test_vpc.vpc_cidr_block
-
-        test_resource_values["SUBNET_NAME"] = resource_name
+        resource_name = random_suffix_name("route-table-fail", 24)
+        test_resource_values["ROUTE_TABLE_NAME"] = resource_name
         test_resource_values["VPC_ID"] = "InvalidVpcId"
-        test_resource_values["CIDR_BLOCK"] = vpc_cidr
 
-        # Load Subnet CR
+        # Load RouteTable CR
         resource_data = load_ec2_resource(
-            "subnet",
+            "route_table",
             additional_replacements=test_resource_values,
         )
         logging.debug(resource_data)

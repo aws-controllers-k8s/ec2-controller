@@ -10,23 +10,31 @@
 # on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
-"""Bootstraps the resources required to run the ec2 integration tests.
+"""Bootstraps the resources required to run EC2 integration tests.
 """
 
 import logging
-from pathlib import Path
 
-from acktest import resources
+from acktest.bootstrapping import Resources, BootstrapFailureException
+from acktest.bootstrapping.vpc import VPC
 from e2e import bootstrap_directory
-from e2e.bootstrap_resources import TestBootstrapResources
+from e2e.bootstrap_resources import BootstrapResources
 
-
-def service_bootstrap() -> dict:
+def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
 
-    return TestBootstrapResources(
-    ).__dict__
+    resources = BootstrapResources(
+        SharedTestVPC=VPC(name_prefix="e2e-test-vpc", num_public_subnet=0, num_private_subnet=0)
+    )
+
+    try:
+        resources.bootstrap()
+    except BootstrapFailureException:
+        exit(254)
+
+    return resources
 
 if __name__ == "__main__":
     config = service_bootstrap()
-    resources.write_bootstrap_config(config, bootstrap_directory)
+    # Write config to current directory by default
+    config.serialize(bootstrap_directory)

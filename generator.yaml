@@ -2,6 +2,7 @@ ignore:
   field_paths:
     - CreateVpcInput.DryRun
     - CreateSubnetInput.DryRun
+    - CreateRouteTableInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -32,7 +33,7 @@ ignore:
     - NetworkInterface
     - PlacementGroup
     - ReservedInstancesListing
-    - RouteTable
+    #- RouteTable
     - Route
     - SecurityGroup
     - Snapshot
@@ -64,6 +65,11 @@ ignore:
 
 resources:
   Subnet:
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+  RouteTable:
     exceptions:
       terminal_codes:
         - InvalidVpcID.Malformed
