@@ -659,6 +659,7 @@ type EBSBlockDevice struct {
 // Describes a parameter used to set up an EBS volume in a block device mapping.
 type EBSInstanceBlockDevice struct {
 	DeleteOnTermination *bool   `json:"deleteOnTermination,omitempty"`
+	Status              *string `json:"status,omitempty"`
 	VolumeID            *string `json:"volumeID,omitempty"`
 }
 
@@ -670,7 +671,8 @@ type EBSInstanceBlockDeviceSpecification struct {
 
 // Describes an egress-only internet gateway.
 type EgressOnlyInternetGateway struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	Attachments []*InternetGatewayAttachment `json:"attachments,omitempty"`
+	Tags        []*Tag                       `json:"tags,omitempty"`
 }
 
 // Describes the association between an instance and an Elastic Graphics accelerator.
@@ -1308,6 +1310,7 @@ type InstanceNetworkInterfaceAttachment struct {
 	DeleteOnTermination *bool   `json:"deleteOnTermination,omitempty"`
 	DeviceIndex         *int64  `json:"deviceIndex,omitempty"`
 	NetworkCardIndex    *int64  `json:"networkCardIndex,omitempty"`
+	Status              *string `json:"status,omitempty"`
 }
 
 // Describes a network interface.
@@ -1371,17 +1374,19 @@ type InstanceUsage struct {
 	UsedInstanceCount *int64  `json:"usedInstanceCount,omitempty"`
 }
 
-// Describes an internet gateway.
-type InternetGateway struct {
-	InternetGatewayID *string `json:"internetGatewayID,omitempty"`
-	OwnerID           *string `json:"ownerID,omitempty"`
-	Tags              []*Tag  `json:"tags,omitempty"`
-}
-
 // Describes the attachment of a VPC to an internet gateway or an egress-only
 // internet gateway.
 type InternetGatewayAttachment struct {
+	State *string `json:"state,omitempty"`
 	VPCID *string `json:"vpcID,omitempty"`
+}
+
+// Describes an internet gateway.
+type InternetGateway_SDK struct {
+	Attachments       []*InternetGatewayAttachment `json:"attachments,omitempty"`
+	InternetGatewayID *string                      `json:"internetGatewayID,omitempty"`
+	OwnerID           *string                      `json:"ownerID,omitempty"`
+	Tags              []*Tag                       `json:"tags,omitempty"`
 }
 
 // Describes a key pair.
@@ -1852,6 +1857,7 @@ type NetworkInterfaceAttachment struct {
 	InstanceID          *string `json:"instanceID,omitempty"`
 	InstanceOwnerID     *string `json:"instanceOwnerID,omitempty"`
 	NetworkCardIndex    *int64  `json:"networkCardIndex,omitempty"`
+	Status              *string `json:"status,omitempty"`
 }
 
 // Describes an attachment change.
@@ -3158,6 +3164,7 @@ type VGWTelemetry struct {
 
 // Describes an attachment between a virtual private gateway and a VPC.
 type VPCAttachment struct {
+	State *string `json:"state,omitempty"`
 	VPCID *string `json:"vpcID,omitempty"`
 }
 

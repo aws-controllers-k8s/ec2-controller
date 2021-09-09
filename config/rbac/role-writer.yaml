@@ -9,6 +9,7 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - internetgateways
   - routetables
   - subnets
   - vpcs
@@ -23,6 +24,7 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - internetgateways
   - routetables
   - subnets
   - vpcs
