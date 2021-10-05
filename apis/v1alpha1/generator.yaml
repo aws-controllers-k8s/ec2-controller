@@ -83,3 +83,8 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+  VpcEndpoint:
+    hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
+

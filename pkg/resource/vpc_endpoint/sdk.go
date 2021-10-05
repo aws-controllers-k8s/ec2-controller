@@ -579,6 +579,9 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
+	if err = addIDToDeleteRequest(r, input); err != nil {
+		return nil, ackerr.NotFound
+	}
 	var resp *svcsdk.DeleteVpcEndpointsOutput
 	_ = resp
 	resp, err = rm.sdkapi.DeleteVpcEndpointsWithContext(ctx, input)
