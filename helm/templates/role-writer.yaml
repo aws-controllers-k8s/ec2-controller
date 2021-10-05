@@ -17,6 +17,8 @@ rules:
 
   - vpcs
 
+  - vpcendpoints
+
   verbs:
   - create
   - delete
@@ -32,6 +34,7 @@ rules:
   - routetables
   - subnets
   - vpcs
+  - vpcendpoints
   verbs:
   - get
   - patch

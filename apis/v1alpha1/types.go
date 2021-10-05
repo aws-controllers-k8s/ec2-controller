@@ -278,17 +278,18 @@ type CancelledSpotInstanceRequest struct {
 
 // Describes a Capacity Reservation.
 type CapacityReservation struct {
-	AvailabilityZone       *string `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID     *string `json:"availabilityZoneID,omitempty"`
-	AvailableInstanceCount *int64  `json:"availableInstanceCount,omitempty"`
-	CapacityReservationARN *string `json:"capacityReservationARN,omitempty"`
-	CapacityReservationID  *string `json:"capacityReservationID,omitempty"`
-	EBSOptimized           *bool   `json:"ebsOptimized,omitempty"`
-	EphemeralStorage       *bool   `json:"ephemeralStorage,omitempty"`
-	InstanceType           *string `json:"instanceType,omitempty"`
-	OwnerID                *string `json:"ownerID,omitempty"`
-	Tags                   []*Tag  `json:"tags,omitempty"`
-	TotalInstanceCount     *int64  `json:"totalInstanceCount,omitempty"`
+	AvailabilityZone       *string      `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID     *string      `json:"availabilityZoneID,omitempty"`
+	AvailableInstanceCount *int64       `json:"availableInstanceCount,omitempty"`
+	CapacityReservationARN *string      `json:"capacityReservationARN,omitempty"`
+	CapacityReservationID  *string      `json:"capacityReservationID,omitempty"`
+	EBSOptimized           *bool        `json:"ebsOptimized,omitempty"`
+	EphemeralStorage       *bool        `json:"ephemeralStorage,omitempty"`
+	InstanceType           *string      `json:"instanceType,omitempty"`
+	OwnerID                *string      `json:"ownerID,omitempty"`
+	StartDate              *metav1.Time `json:"startDate,omitempty"`
+	Tags                   []*Tag       `json:"tags,omitempty"`
+	TotalInstanceCount     *int64       `json:"totalInstanceCount,omitempty"`
 }
 
 // Describes a resource group to which a Capacity Reservation has been added.
@@ -573,11 +574,16 @@ type DeregisterInstanceTagAttributeRequest struct {
 
 // Describes fast snapshot restores for a snapshot.
 type DescribeFastSnapshotRestoreSuccessItem struct {
-	AvailabilityZone      *string `json:"availabilityZone,omitempty"`
-	OwnerAlias            *string `json:"ownerAlias,omitempty"`
-	OwnerID               *string `json:"ownerID,omitempty"`
-	SnapshotID            *string `json:"snapshotID,omitempty"`
-	StateTransitionReason *string `json:"stateTransitionReason,omitempty"`
+	AvailabilityZone      *string      `json:"availabilityZone,omitempty"`
+	DisabledTime          *metav1.Time `json:"disabledTime,omitempty"`
+	DisablingTime         *metav1.Time `json:"disablingTime,omitempty"`
+	EnabledTime           *metav1.Time `json:"enabledTime,omitempty"`
+	EnablingTime          *metav1.Time `json:"enablingTime,omitempty"`
+	OptimizingTime        *metav1.Time `json:"optimizingTime,omitempty"`
+	OwnerAlias            *string      `json:"ownerAlias,omitempty"`
+	OwnerID               *string      `json:"ownerID,omitempty"`
+	SnapshotID            *string      `json:"snapshotID,omitempty"`
+	StateTransitionReason *string      `json:"stateTransitionReason,omitempty"`
 }
 
 // Describes the instances that could not be launched by the fleet.
@@ -616,11 +622,16 @@ type DisableFastSnapshotRestoreStateErrorItem struct {
 
 // Describes fast snapshot restores that were successfully disabled.
 type DisableFastSnapshotRestoreSuccessItem struct {
-	AvailabilityZone      *string `json:"availabilityZone,omitempty"`
-	OwnerAlias            *string `json:"ownerAlias,omitempty"`
-	OwnerID               *string `json:"ownerID,omitempty"`
-	SnapshotID            *string `json:"snapshotID,omitempty"`
-	StateTransitionReason *string `json:"stateTransitionReason,omitempty"`
+	AvailabilityZone      *string      `json:"availabilityZone,omitempty"`
+	DisabledTime          *metav1.Time `json:"disabledTime,omitempty"`
+	DisablingTime         *metav1.Time `json:"disablingTime,omitempty"`
+	EnabledTime           *metav1.Time `json:"enabledTime,omitempty"`
+	EnablingTime          *metav1.Time `json:"enablingTime,omitempty"`
+	OptimizingTime        *metav1.Time `json:"optimizingTime,omitempty"`
+	OwnerAlias            *string      `json:"ownerAlias,omitempty"`
+	OwnerID               *string      `json:"ownerID,omitempty"`
+	SnapshotID            *string      `json:"snapshotID,omitempty"`
+	StateTransitionReason *string      `json:"stateTransitionReason,omitempty"`
 }
 
 // Describes a disk image.
@@ -734,11 +745,16 @@ type EnableFastSnapshotRestoreStateErrorItem struct {
 
 // Describes fast snapshot restores that were successfully enabled.
 type EnableFastSnapshotRestoreSuccessItem struct {
-	AvailabilityZone      *string `json:"availabilityZone,omitempty"`
-	OwnerAlias            *string `json:"ownerAlias,omitempty"`
-	OwnerID               *string `json:"ownerID,omitempty"`
-	SnapshotID            *string `json:"snapshotID,omitempty"`
-	StateTransitionReason *string `json:"stateTransitionReason,omitempty"`
+	AvailabilityZone      *string      `json:"availabilityZone,omitempty"`
+	DisabledTime          *metav1.Time `json:"disabledTime,omitempty"`
+	DisablingTime         *metav1.Time `json:"disablingTime,omitempty"`
+	EnabledTime           *metav1.Time `json:"enabledTime,omitempty"`
+	EnablingTime          *metav1.Time `json:"enablingTime,omitempty"`
+	OptimizingTime        *metav1.Time `json:"optimizingTime,omitempty"`
+	OwnerAlias            *string      `json:"ownerAlias,omitempty"`
+	OwnerID               *string      `json:"ownerID,omitempty"`
+	SnapshotID            *string      `json:"snapshotID,omitempty"`
+	StateTransitionReason *string      `json:"stateTransitionReason,omitempty"`
 }
 
 // Indicates whether the instance is enabled for AWS Nitro Enclaves.
@@ -932,17 +948,18 @@ type FleetLaunchTemplateSpecificationRequest struct {
 
 // Describes a flow log.
 type FlowLog struct {
-	DeliverLogsErrorMessage  *string `json:"deliverLogsErrorMessage,omitempty"`
-	DeliverLogsPermissionARN *string `json:"deliverLogsPermissionARN,omitempty"`
-	DeliverLogsStatus        *string `json:"deliverLogsStatus,omitempty"`
-	FlowLogID                *string `json:"flowLogID,omitempty"`
-	FlowLogStatus            *string `json:"flowLogStatus,omitempty"`
-	LogDestination           *string `json:"logDestination,omitempty"`
-	LogFormat                *string `json:"logFormat,omitempty"`
-	LogGroupName             *string `json:"logGroupName,omitempty"`
-	MaxAggregationInterval   *int64  `json:"maxAggregationInterval,omitempty"`
-	ResourceID               *string `json:"resourceID,omitempty"`
-	Tags                     []*Tag  `json:"tags,omitempty"`
+	CreationTime             *metav1.Time `json:"creationTime,omitempty"`
+	DeliverLogsErrorMessage  *string      `json:"deliverLogsErrorMessage,omitempty"`
+	DeliverLogsPermissionARN *string      `json:"deliverLogsPermissionARN,omitempty"`
+	DeliverLogsStatus        *string      `json:"deliverLogsStatus,omitempty"`
+	FlowLogID                *string      `json:"flowLogID,omitempty"`
+	FlowLogStatus            *string      `json:"flowLogStatus,omitempty"`
+	LogDestination           *string      `json:"logDestination,omitempty"`
+	LogFormat                *string      `json:"logFormat,omitempty"`
+	LogGroupName             *string      `json:"logGroupName,omitempty"`
+	MaxAggregationInterval   *int64       `json:"maxAggregationInterval,omitempty"`
+	ResourceID               *string      `json:"resourceID,omitempty"`
+	Tags                     []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes a security group.
@@ -1805,17 +1822,19 @@ type NetworkACLEntry struct {
 
 // Describes a network insights analysis.
 type NetworkInsightsAnalysis struct {
-	NetworkPathFound *bool   `json:"networkPathFound,omitempty"`
-	StatusMessage    *string `json:"statusMessage,omitempty"`
-	Tags             []*Tag  `json:"tags,omitempty"`
+	NetworkPathFound *bool        `json:"networkPathFound,omitempty"`
+	StartDate        *metav1.Time `json:"startDate,omitempty"`
+	StatusMessage    *string      `json:"statusMessage,omitempty"`
+	Tags             []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes a path.
 type NetworkInsightsPath struct {
-	Destination     *string `json:"destination,omitempty"`
-	DestinationPort *int64  `json:"destinationPort,omitempty"`
-	Source          *string `json:"source,omitempty"`
-	Tags            []*Tag  `json:"tags,omitempty"`
+	CreatedDate     *metav1.Time `json:"createdDate,omitempty"`
+	Destination     *string      `json:"destination,omitempty"`
+	DestinationPort *int64       `json:"destinationPort,omitempty"`
+	Source          *string      `json:"source,omitempty"`
+	Tags            []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes a network interface.
@@ -2528,15 +2547,16 @@ type SnapshotDiskContainer struct {
 
 // Information about a snapshot.
 type SnapshotInfo struct {
-	Description *string `json:"description,omitempty"`
-	Encrypted   *bool   `json:"encrypted,omitempty"`
-	OutpostARN  *string `json:"outpostARN,omitempty"`
-	OwnerID     *string `json:"ownerID,omitempty"`
-	Progress    *string `json:"progress,omitempty"`
-	SnapshotID  *string `json:"snapshotID,omitempty"`
-	Tags        []*Tag  `json:"tags,omitempty"`
-	VolumeID    *string `json:"volumeID,omitempty"`
-	VolumeSize  *int64  `json:"volumeSize,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	Encrypted   *bool        `json:"encrypted,omitempty"`
+	OutpostARN  *string      `json:"outpostARN,omitempty"`
+	OwnerID     *string      `json:"ownerID,omitempty"`
+	Progress    *string      `json:"progress,omitempty"`
+	SnapshotID  *string      `json:"snapshotID,omitempty"`
+	StartTime   *metav1.Time `json:"startTime,omitempty"`
+	Tags        []*Tag       `json:"tags,omitempty"`
+	VolumeID    *string      `json:"volumeID,omitempty"`
+	VolumeSize  *int64       `json:"volumeSize,omitempty"`
 }
 
 // Details about the import snapshot task.
@@ -2582,8 +2602,9 @@ type SpotFleetMonitoring struct {
 
 // Describes a Spot Fleet request.
 type SpotFleetRequestConfig struct {
-	SpotFleetRequestID *string `json:"spotFleetRequestID,omitempty"`
-	Tags               []*Tag  `json:"tags,omitempty"`
+	CreateTime         *metav1.Time `json:"createTime,omitempty"`
+	SpotFleetRequestID *string      `json:"spotFleetRequestID,omitempty"`
+	Tags               []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes the configuration of a Spot Fleet request.
@@ -3116,7 +3137,10 @@ type UnsuccessfulInstanceCreditSpecificationItemError struct {
 
 // Information about items that were not successfully processed in a batch call.
 type UnsuccessfulItem struct {
-	ResourceID *string `json:"resourceID,omitempty"`
+	// Information about the error that occurred. For more information about errors,
+	// see Error Codes (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html).
+	Error      *UnsuccessfulItemError `json:"error,omitempty"`
+	ResourceID *string                `json:"resourceID,omitempty"`
 }
 
 // Information about the error that occurred. For more information about errors,
@@ -3189,28 +3213,38 @@ type VPCClassicLink struct {
 	VPCID              *string `json:"vpcID,omitempty"`
 }
 
-// Describes a VPC endpoint.
-type VPCEndpoint struct {
-	NetworkInterfaceIDs []*string `json:"networkInterfaceIDs,omitempty"`
-	OwnerID             *string   `json:"ownerID,omitempty"`
-	PolicyDocument      *string   `json:"policyDocument,omitempty"`
-	PrivateDNSEnabled   *bool     `json:"privateDNSEnabled,omitempty"`
-	RequesterManaged    *bool     `json:"requesterManaged,omitempty"`
-	RouteTableIDs       []*string `json:"routeTableIDs,omitempty"`
-	ServiceName         *string   `json:"serviceName,omitempty"`
-	SubnetIDs           []*string `json:"subnetIDs,omitempty"`
-	Tags                []*Tag    `json:"tags,omitempty"`
-	VPCEndpointID       *string   `json:"vpcEndpointID,omitempty"`
-	VPCID               *string   `json:"vpcID,omitempty"`
-}
-
 // Describes a VPC endpoint connection to a service.
 type VPCEndpointConnection struct {
-	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
-	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
-	ServiceID               *string   `json:"serviceID,omitempty"`
-	VPCEndpointID           *string   `json:"vpcEndpointID,omitempty"`
-	VPCEndpointOwner        *string   `json:"vpcEndpointOwner,omitempty"`
+	CreationTimestamp       *metav1.Time `json:"creationTimestamp,omitempty"`
+	DNSEntries              []*DNSEntry  `json:"dnsEntries,omitempty"`
+	GatewayLoadBalancerARNs []*string    `json:"gatewayLoadBalancerARNs,omitempty"`
+	NetworkLoadBalancerARNs []*string    `json:"networkLoadBalancerARNs,omitempty"`
+	ServiceID               *string      `json:"serviceID,omitempty"`
+	VPCEndpointID           *string      `json:"vpcEndpointID,omitempty"`
+	VPCEndpointOwner        *string      `json:"vpcEndpointOwner,omitempty"`
+	VPCEndpointState        *string      `json:"vpcEndpointState,omitempty"`
+}
+
+// Describes a VPC endpoint.
+type VPCEndpoint_SDK struct {
+	CreationTimestamp *metav1.Time               `json:"creationTimestamp,omitempty"`
+	DNSEntries        []*DNSEntry                `json:"dnsEntries,omitempty"`
+	Groups            []*SecurityGroupIdentifier `json:"groups,omitempty"`
+	// The last error that occurred for a VPC endpoint.
+	LastError           *LastError `json:"lastError,omitempty"`
+	NetworkInterfaceIDs []*string  `json:"networkInterfaceIDs,omitempty"`
+	OwnerID             *string    `json:"ownerID,omitempty"`
+	PolicyDocument      *string    `json:"policyDocument,omitempty"`
+	PrivateDNSEnabled   *bool      `json:"privateDNSEnabled,omitempty"`
+	RequesterManaged    *bool      `json:"requesterManaged,omitempty"`
+	RouteTableIDs       []*string  `json:"routeTableIDs,omitempty"`
+	ServiceName         *string    `json:"serviceName,omitempty"`
+	State               *string    `json:"state,omitempty"`
+	SubnetIDs           []*string  `json:"subnetIDs,omitempty"`
+	Tags                []*Tag     `json:"tags,omitempty"`
+	VPCEndpointID       *string    `json:"vpcEndpointID,omitempty"`
+	VPCEndpointType     *string    `json:"vpcEndpointType,omitempty"`
+	VPCID               *string    `json:"vpcID,omitempty"`
 }
 
 // Describes an IPv6 CIDR block associated with a VPC.
@@ -3366,10 +3400,12 @@ type VolumeStatusDetails struct {
 
 // Describes a volume status event.
 type VolumeStatusEvent struct {
-	Description *string `json:"description,omitempty"`
-	EventID     *string `json:"eventID,omitempty"`
-	EventType   *string `json:"eventType,omitempty"`
-	InstanceID  *string `json:"instanceID,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	EventID     *string      `json:"eventID,omitempty"`
+	EventType   *string      `json:"eventType,omitempty"`
+	InstanceID  *string      `json:"instanceID,omitempty"`
+	NotAfter    *metav1.Time `json:"notAfter,omitempty"`
+	NotBefore   *metav1.Time `json:"notBefore,omitempty"`
 }
 
 // Describes the volume status.

@@ -7,3 +7,4 @@ resources:
   - bases/ec2.services.k8s.aws_routetables.yaml
   - bases/ec2.services.k8s.aws_subnets.yaml
   - bases/ec2.services.k8s.aws_vpcs.yaml
+  - bases/ec2.services.k8s.aws_vpcendpoints.yaml
