@@ -1,0 +1,7 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPCEndpoint
+metadata:
+  name: $VPC_ENDPOINT_NAME
+spec:
+  serviceName: $SERVICE_NAME
+  vpcID: $VPC_ID
