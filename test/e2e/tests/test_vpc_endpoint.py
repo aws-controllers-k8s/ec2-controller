@@ -26,6 +26,7 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
 
 RESOURCE_PLURAL = "vpcendpoints"
+ENDPOINT_SERVICE_NAME = "com.amazonaws.us-west-2.s3"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
@@ -62,7 +63,7 @@ class TestVpcEndpoint:
         vpc_id = test_vpc.vpc_id
 
         test_resource_values["VPC_ENDPOINT_NAME"] = resource_name
-        test_resource_values["SERVICE_NAME"] = "com.amazonaws.us-east-2.s3"
+        test_resource_values["SERVICE_NAME"] = ENDPOINT_SERVICE_NAME
         test_resource_values["VPC_ID"] = vpc_id
 
         # Load VPC Endpoint CR
@@ -84,6 +85,7 @@ class TestVpcEndpoint:
         assert k8s.get_resource_exists(ref)
 
         resource = k8s.get_resource(ref)
+        vpc_endpoint_services = ec2_client.describe_vpc_endpoint_services()
         resource_id = resource["status"]["vpcEndpointID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -102,12 +104,12 @@ class TestVpcEndpoint:
         exists = vpc_endpoint_exists(ec2_client, resource_id)
         assert not exists
 
-    def test_terminal_condition_invalid_vpc(self):
+    def test_terminal_condition_malformed_vpc(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("vpc-endpoint-fail", 24)
         test_resource_values["VPC_ENDPOINT_NAME"] = resource_name
-        test_resource_values["SERVICE_NAME"] = "com.amazonaws.us-east-2.s3"
-        test_resource_values["VPC_ID"] = "InvalidVpcId"
+        test_resource_values["SERVICE_NAME"] = ENDPOINT_SERVICE_NAME
+        test_resource_values["VPC_ID"] = "MalformedVpcId"
 
         # Load VPC Endpoint CR
         resource_data = load_ec2_resource(
@@ -127,11 +129,12 @@ class TestVpcEndpoint:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
-        expected_msg = "InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist"
+        expected_msg = "InvalidVpcId.Malformed: Invalid Id: 'MalformedVpcId'"
         terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
         # Example condition message:
-        #   InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist
-        #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
+        # InvalidVpcId.Malformed: Invalid Id: 'MalformedVpcId'
+        # (expecting 'vpc-...; the Id may only contain lowercase alphanumeric characters and a single dash')
+        # status code: 400, request id: dc3595c5-4e6e-48db-abf7-9bdcc76ad2a8
         # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
         assert expected_msg in terminal_condition['message']
 
@@ -165,8 +168,4 @@ class TestVpcEndpoint:
 
         expected_msg = "InvalidServiceName: The Vpc Endpoint Service 'InvalidService' does not exist"
         terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        #   InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist
-        #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
-        # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
         assert expected_msg in terminal_condition['message']
