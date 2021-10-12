@@ -1,5 +1,6 @@
 ignore:
   field_paths:
+    - CreateVpcEndpointInput.DryRun
     - CreateVpcInput.DryRun
     - CreateSubnetInput.DryRun
     - CreateRouteTableInput.DryRun
@@ -55,13 +56,21 @@ ignore:
     - Volume
     - VpcEndpointConnectionNotification
     - VpcEndpointServiceConfiguration
-    - VpcEndpoint
+    #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
     - VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway
+
+operations:
+  CreateVpcEndpoint:
+    output_wrapper_field_path: VpcEndpoint
+  DeleteVpcEndpoints:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpoint
 
 resources:
   Subnet:
@@ -74,3 +83,13 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+  VpcEndpoint:
+    exceptions:
+      terminal_codes:
+        - InvalidVpcId.Malformed
+        - InvalidVpcId.NotFound
+        - InvalidServiceName
+    hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
+
