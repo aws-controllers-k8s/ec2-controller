@@ -149,9 +149,6 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeInternetGatewaysInput, error) {
 	res := &svcsdk.DescribeInternetGatewaysInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Status.InternetGatewayID != nil {
 		f2 := []*string{}
 		f2 = append(f2, r.ko.Status.InternetGatewayID)
@@ -242,33 +239,30 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateInternetGatewayInput, error) {
 	res := &svcsdk.CreateInternetGatewayInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Spec.TagSpecifications != nil {
-		f1 := []*svcsdk.TagSpecification{}
-		for _, f1iter := range r.ko.Spec.TagSpecifications {
-			f1elem := &svcsdk.TagSpecification{}
-			if f1iter.ResourceType != nil {
-				f1elem.SetResourceType(*f1iter.ResourceType)
+		f0 := []*svcsdk.TagSpecification{}
+		for _, f0iter := range r.ko.Spec.TagSpecifications {
+			f0elem := &svcsdk.TagSpecification{}
+			if f0iter.ResourceType != nil {
+				f0elem.SetResourceType(*f0iter.ResourceType)
 			}
-			if f1iter.Tags != nil {
-				f1elemf1 := []*svcsdk.Tag{}
-				for _, f1elemf1iter := range f1iter.Tags {
-					f1elemf1elem := &svcsdk.Tag{}
-					if f1elemf1iter.Key != nil {
-						f1elemf1elem.SetKey(*f1elemf1iter.Key)
+			if f0iter.Tags != nil {
+				f0elemf1 := []*svcsdk.Tag{}
+				for _, f0elemf1iter := range f0iter.Tags {
+					f0elemf1elem := &svcsdk.Tag{}
+					if f0elemf1iter.Key != nil {
+						f0elemf1elem.SetKey(*f0elemf1iter.Key)
 					}
-					if f1elemf1iter.Value != nil {
-						f1elemf1elem.SetValue(*f1elemf1iter.Value)
+					if f0elemf1iter.Value != nil {
+						f0elemf1elem.SetValue(*f0elemf1iter.Value)
 					}
-					f1elemf1 = append(f1elemf1, f1elemf1elem)
+					f0elemf1 = append(f0elemf1, f0elemf1elem)
 				}
-				f1elem.SetTags(f1elemf1)
+				f0elem.SetTags(f0elemf1)
 			}
-			f1 = append(f1, f1elem)
+			f0 = append(f0, f0elem)
 		}
-		res.SetTagSpecifications(f1)
+		res.SetTagSpecifications(f0)
 	}
 
 	return res, nil
@@ -312,9 +306,6 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteInternetGatewayInput, error) {
 	res := &svcsdk.DeleteInternetGatewayInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Status.InternetGatewayID != nil {
 		res.SetInternetGatewayId(*r.ko.Status.InternetGatewayID)
 	}

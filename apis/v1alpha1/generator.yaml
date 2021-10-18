@@ -4,6 +4,7 @@ ignore:
     - CreateVpcInput.DryRun
     - CreateSubnetInput.DryRun
     - CreateRouteTableInput.DryRun
+    - CreateInternetGatewayInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
