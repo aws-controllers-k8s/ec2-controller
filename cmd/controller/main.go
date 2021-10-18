@@ -36,6 +36,7 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/internet_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/route_table"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/subnet"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/transit_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint"
 )
