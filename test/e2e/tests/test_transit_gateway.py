@@ -26,8 +26,8 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 
 RESOURCE_PLURAL = "transitgateways"
 
-CREATE_WAIT_AFTER_SECONDS = 60
-DELETE_WAIT_AFTER_SECONDS = 30
+CREATE_WAIT_AFTER_SECONDS = 90
+DELETE_WAIT_AFTER_SECONDS = 60
 
 @pytest.fixture(scope="module")
 def ec2_client():
