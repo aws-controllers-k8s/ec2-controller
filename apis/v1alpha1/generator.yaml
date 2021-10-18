@@ -1,4 +1,6 @@
 ignore:
+  operations:
+    - ModifyVpcEndpoint
   field_paths:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcInput.DryRun
