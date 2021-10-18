@@ -14,7 +14,6 @@
 """Integration tests for the Vpc Endpoint API.
 """
 
-import boto3
 import pytest
 import time
 import logging
@@ -30,10 +29,6 @@ ENDPOINT_SERVICE_NAME = "com.amazonaws.us-west-2.s3"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-@pytest.fixture(scope="module")
-def ec2_client():
-    return boto3.client("ec2")
 
 
 def get_vpc_endpoint(ec2_client, vpc_endpoint_id: str) -> dict:

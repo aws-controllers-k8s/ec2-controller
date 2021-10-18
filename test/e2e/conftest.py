@@ -11,6 +11,7 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
+import boto3
 import pytest
 
 def pytest_addoption(parser):
@@ -35,3 +36,8 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "slow" in item.keywords:
             item.add_marker(skip_slow)
+
+
+@pytest.fixture(scope="module")
+def ec2_client():
+    return boto3.client("ec2")
