@@ -486,6 +486,14 @@ const (
 	EBSOptimizedSupport_default     EBSOptimizedSupport = "default"
 )
 
+type ENASupport string
+
+const (
+	ENASupport_unsupported ENASupport = "unsupported"
+	ENASupport_supported   ENASupport = "supported"
+	ENASupport_required    ENASupport = "required"
+)
+
 type ElasticGPUState string
 
 const (
@@ -497,14 +505,6 @@ type ElasticGPUStatus string
 const (
 	ElasticGPUStatus_OK       ElasticGPUStatus = "OK"
 	ElasticGPUStatus_IMPAIRED ElasticGPUStatus = "IMPAIRED"
-)
-
-type EnaSupport string
-
-const (
-	EnaSupport_unsupported EnaSupport = "unsupported"
-	EnaSupport_supported   EnaSupport = "supported"
-	EnaSupport_required    EnaSupport = "required"
 )
 
 type EndDateType string

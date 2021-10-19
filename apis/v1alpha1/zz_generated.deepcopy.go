@@ -4697,8 +4697,8 @@ func (in *Image) DeepCopyInto(out *Image) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.EnaSupport != nil {
-		in, out := &in.EnaSupport, &out.EnaSupport
+	if in.ENASupport != nil {
+		in, out := &in.ENASupport, &out.ENASupport
 		*out = new(bool)
 		**out = **in
 	}
@@ -5135,8 +5135,8 @@ func (in *Instance) DeepCopyInto(out *Instance) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.EnaSupport != nil {
-		in, out := &in.EnaSupport, &out.EnaSupport
+	if in.ENASupport != nil {
+		in, out := &in.ENASupport, &out.ENASupport
 		*out = new(bool)
 		**out = **in
 	}

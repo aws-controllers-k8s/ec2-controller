@@ -1153,7 +1153,7 @@ type IPv6Range struct {
 type Image struct {
 	CreationDate    *string `json:"creationDate,omitempty"`
 	Description     *string `json:"description,omitempty"`
-	EnaSupport      *bool   `json:"enaSupport,omitempty"`
+	ENASupport      *bool   `json:"enaSupport,omitempty"`
 	ImageID         *string `json:"imageID,omitempty"`
 	ImageLocation   *string `json:"imageLocation,omitempty"`
 	ImageOwnerAlias *string `json:"imageOwnerAlias,omitempty"`
@@ -1247,7 +1247,7 @@ type Instance struct {
 	CapacityReservationID *string      `json:"capacityReservationID,omitempty"`
 	ClientToken           *string      `json:"clientToken,omitempty"`
 	EBSOptimized          *bool        `json:"ebsOptimized,omitempty"`
-	EnaSupport            *bool        `json:"enaSupport,omitempty"`
+	ENASupport            *bool        `json:"enaSupport,omitempty"`
 	ImageID               *string      `json:"imageID,omitempty"`
 	InstanceID            *string      `json:"instanceID,omitempty"`
 	KernelID              *string      `json:"kernelID,omitempty"`
