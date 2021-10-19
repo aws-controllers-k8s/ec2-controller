@@ -1824,7 +1824,7 @@ type ModifyTransitGatewayOptions struct {
 	DefaultRouteTablePropagation   *string   `json:"defaultRouteTablePropagation,omitempty"`
 	DNSSupport                     *string   `json:"dnsSupport,omitempty"`
 	RemoveTransitGatewayCIDRBlocks []*string `json:"removeTransitGatewayCIDRBlocks,omitempty"`
-	VPNEcmpSupport                 *string   `json:"vpnEcmpSupport,omitempty"`
+	VPNECMPSupport                 *string   `json:"vpnECMPSupport,omitempty"`
 }
 
 // Describes the options for a VPC attachment.
@@ -3171,7 +3171,7 @@ type TransitGatewayOptions struct {
 	MulticastSupport               *string   `json:"multicastSupport,omitempty"`
 	PropagationDefaultRouteTableID *string   `json:"propagationDefaultRouteTableID,omitempty"`
 	TransitGatewayCIDRBlocks       []*string `json:"transitGatewayCIDRBlocks,omitempty"`
-	VPNEcmpSupport                 *string   `json:"vpnEcmpSupport,omitempty"`
+	VPNECMPSupport                 *string   `json:"vpnECMPSupport,omitempty"`
 }
 
 // Describes the transit gateway peering attachment.
@@ -3207,7 +3207,7 @@ type TransitGatewayRequestOptions struct {
 	DNSSupport                   *string   `json:"dnsSupport,omitempty"`
 	MulticastSupport             *string   `json:"multicastSupport,omitempty"`
 	TransitGatewayCIDRBlocks     []*string `json:"transitGatewayCIDRBlocks,omitempty"`
-	VPNEcmpSupport               *string   `json:"vpnEcmpSupport,omitempty"`
+	VPNECMPSupport               *string   `json:"vpnECMPSupport,omitempty"`
 }
 
 // Describes a route for a transit gateway route table.

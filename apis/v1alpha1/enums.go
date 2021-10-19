@@ -2148,11 +2148,11 @@ const (
 	VPCTenancy_default VPCTenancy = "default"
 )
 
-type VPNEcmpSupportValue string
+type VPNECMPSupportValue string
 
 const (
-	VPNEcmpSupportValue_enable  VPNEcmpSupportValue = "enable"
-	VPNEcmpSupportValue_disable VPNEcmpSupportValue = "disable"
+	VPNECMPSupportValue_enable  VPNECMPSupportValue = "enable"
+	VPNECMPSupportValue_disable VPNECMPSupportValue = "disable"
 )
 
 type VPNProtocol string

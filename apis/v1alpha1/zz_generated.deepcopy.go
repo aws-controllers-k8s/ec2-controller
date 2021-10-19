@@ -7804,8 +7804,8 @@ func (in *ModifyTransitGatewayOptions) DeepCopyInto(out *ModifyTransitGatewayOpt
 			}
 		}
 	}
-	if in.VPNEcmpSupport != nil {
-		in, out := &in.VPNEcmpSupport, &out.VPNEcmpSupport
+	if in.VPNECMPSupport != nil {
+		in, out := &in.VPNECMPSupport, &out.VPNECMPSupport
 		*out = new(string)
 		**out = **in
 	}
@@ -14115,8 +14115,8 @@ func (in *TransitGatewayOptions) DeepCopyInto(out *TransitGatewayOptions) {
 			}
 		}
 	}
-	if in.VPNEcmpSupport != nil {
-		in, out := &in.VPNEcmpSupport, &out.VPNEcmpSupport
+	if in.VPNECMPSupport != nil {
+		in, out := &in.VPNECMPSupport, &out.VPNECMPSupport
 		*out = new(string)
 		**out = **in
 	}
@@ -14281,8 +14281,8 @@ func (in *TransitGatewayRequestOptions) DeepCopyInto(out *TransitGatewayRequestO
 			}
 		}
 	}
-	if in.VPNEcmpSupport != nil {
-		in, out := &in.VPNEcmpSupport, &out.VPNEcmpSupport
+	if in.VPNECMPSupport != nil {
+		in, out := &in.VPNECMPSupport, &out.VPNECMPSupport
 		*out = new(string)
 		**out = **in
 	}

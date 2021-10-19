@@ -96,11 +96,11 @@ func newResourceDelta(
 		if !ackcompare.SliceStringPEqual(a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
 			delta.Add("Spec.Options.TransitGatewayCIDRBlocks", a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks)
 		}
-		if ackcompare.HasNilDifference(a.ko.Spec.Options.VPNEcmpSupport, b.ko.Spec.Options.VPNEcmpSupport) {
-			delta.Add("Spec.Options.VPNEcmpSupport", a.ko.Spec.Options.VPNEcmpSupport, b.ko.Spec.Options.VPNEcmpSupport)
-		} else if a.ko.Spec.Options.VPNEcmpSupport != nil && b.ko.Spec.Options.VPNEcmpSupport != nil {
-			if *a.ko.Spec.Options.VPNEcmpSupport != *b.ko.Spec.Options.VPNEcmpSupport {
-				delta.Add("Spec.Options.VPNEcmpSupport", a.ko.Spec.Options.VPNEcmpSupport, b.ko.Spec.Options.VPNEcmpSupport)
+		if ackcompare.HasNilDifference(a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport) {
+			delta.Add("Spec.Options.VPNECMPSupport", a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport)
+		} else if a.ko.Spec.Options.VPNECMPSupport != nil && b.ko.Spec.Options.VPNECMPSupport != nil {
+			if *a.ko.Spec.Options.VPNECMPSupport != *b.ko.Spec.Options.VPNECMPSupport {
+				delta.Add("Spec.Options.VPNECMPSupport", a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport)
 			}
 		}
 	}

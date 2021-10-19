@@ -119,7 +119,7 @@ func (rm *resourceManager) sdkFind(
 				f2.TransitGatewayCIDRBlocks = f2f8
 			}
 			if elem.Options.VpnEcmpSupport != nil {
-				f2.VPNEcmpSupport = elem.Options.VpnEcmpSupport
+				f2.VPNECMPSupport = elem.Options.VpnEcmpSupport
 			}
 			ko.Spec.Options = f2
 		} else {
@@ -266,7 +266,7 @@ func (rm *resourceManager) sdkCreate(
 			f2.TransitGatewayCIDRBlocks = f2f8
 		}
 		if resp.TransitGateway.Options.VpnEcmpSupport != nil {
-			f2.VPNEcmpSupport = resp.TransitGateway.Options.VpnEcmpSupport
+			f2.VPNECMPSupport = resp.TransitGateway.Options.VpnEcmpSupport
 		}
 		ko.Spec.Options = f2
 	} else {
@@ -355,8 +355,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 			}
 			f1.SetTransitGatewayCidrBlocks(f1f6)
 		}
-		if r.ko.Spec.Options.VPNEcmpSupport != nil {
-			f1.SetVpnEcmpSupport(*r.ko.Spec.Options.VPNEcmpSupport)
+		if r.ko.Spec.Options.VPNECMPSupport != nil {
+			f1.SetVpnEcmpSupport(*r.ko.Spec.Options.VPNECMPSupport)
 		}
 		res.SetOptions(f1)
 	}
