@@ -26,8 +26,10 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 
 RESOURCE_PLURAL = "transitgateways"
 
+## The long delete wait is required to make sure the TGW can transition out of its "pending" status.
+## TGWs are unable to be deleted while in "pending"
 CREATE_WAIT_AFTER_SECONDS = 90
-DELETE_WAIT_AFTER_SECONDS = 60
+DELETE_WAIT_AFTER_SECONDS = 10
 
 @pytest.fixture(scope="module")
 def ec2_client():

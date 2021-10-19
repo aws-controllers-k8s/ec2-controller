@@ -14,6 +14,7 @@
 """Integration tests for the Vpc Endpoint API.
 """
 
+from os import environ
 import pytest
 import time
 import logging
@@ -24,8 +25,10 @@ from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
 
+# Default to us-west-2 since that's where prow is deployed
+REGION = "us-west-2" if environ.get('AWS_DEFAULT_REGION') is None else environ.get('AWS_DEFAULT_REGION')
 RESOURCE_PLURAL = "vpcendpoints"
-ENDPOINT_SERVICE_NAME = "com.amazonaws.us-west-2.s3"
+ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
