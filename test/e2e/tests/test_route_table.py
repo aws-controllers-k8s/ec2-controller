@@ -14,7 +14,6 @@
 """Integration tests for the RouteTable API.
 """
 
-import boto3
 import pytest
 import time
 import logging
@@ -29,11 +28,6 @@ RESOURCE_PLURAL = "routetables"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-@pytest.fixture(scope="module")
-def ec2_client():
-    return boto3.client("ec2")
-
 
 def get_route_table(ec2_client, route_table_id: str) -> dict:
     try:

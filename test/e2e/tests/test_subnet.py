@@ -14,7 +14,6 @@
 """Integration tests for the Subnet API.
 """
 
-import boto3
 import pytest
 import time
 import logging
@@ -29,10 +28,6 @@ RESOURCE_PLURAL = "subnets"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-@pytest.fixture(scope="module")
-def ec2_client():
-    return boto3.client("ec2")
 
 
 def get_subnet(ec2_client, subnet_id: str) -> dict:

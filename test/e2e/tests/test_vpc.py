@@ -14,7 +14,6 @@
 """Integration tests for the Vpc API.
 """
 
-import boto3
 import pytest
 import time
 import logging
@@ -28,10 +27,6 @@ RESOURCE_PLURAL = "vpcs"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-@pytest.fixture(scope="module")
-def ec2_client():
-    return boto3.client("ec2")
 
 
 def get_vpc(ec2_client, vpc_id: str) -> dict:

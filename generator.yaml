@@ -1,9 +1,12 @@
 ignore:
+  operations:
+    - ModifyVpcEndpoint
   field_paths:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcInput.DryRun
     - CreateSubnetInput.DryRun
     - CreateRouteTableInput.DryRun
+    - CreateInternetGatewayInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
