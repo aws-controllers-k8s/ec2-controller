@@ -1,5 +1,6 @@
 ignore:
   operations:
+    - ModifyTransitGateway
     - ModifyVpcEndpoint
   field_paths:
     - CreateVpcEndpointInput.DryRun
@@ -66,9 +67,7 @@ ignore:
     - VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
-    - VpnGateway
-  operations:
-    - ModifyTransitGateway
+    - VpnGateway    
 
 operations:
   CreateVpcEndpoint:
