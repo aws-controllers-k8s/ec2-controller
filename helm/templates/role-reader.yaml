@@ -12,6 +12,7 @@ rules:
   - internetgateways
   - routetables
   - subnets
+  - transitgateways
   - vpcs
   - vpcendpoints
   verbs:

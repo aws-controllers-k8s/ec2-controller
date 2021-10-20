@@ -486,6 +486,14 @@ const (
 	EBSOptimizedSupport_default     EBSOptimizedSupport = "default"
 )
 
+type ENASupport string
+
+const (
+	ENASupport_unsupported ENASupport = "unsupported"
+	ENASupport_supported   ENASupport = "supported"
+	ENASupport_required    ENASupport = "required"
+)
+
 type ElasticGPUState string
 
 const (
@@ -497,14 +505,6 @@ type ElasticGPUStatus string
 const (
 	ElasticGPUStatus_OK       ElasticGPUStatus = "OK"
 	ElasticGPUStatus_IMPAIRED ElasticGPUStatus = "IMPAIRED"
-)
-
-type EnaSupport string
-
-const (
-	EnaSupport_unsupported EnaSupport = "unsupported"
-	EnaSupport_supported   EnaSupport = "supported"
-	EnaSupport_required    EnaSupport = "required"
 )
 
 type EndDateType string
@@ -2148,11 +2148,11 @@ const (
 	VPCTenancy_default VPCTenancy = "default"
 )
 
-type VPNEcmpSupportValue string
+type VPNECMPSupportValue string
 
 const (
-	VPNEcmpSupportValue_enable  VPNEcmpSupportValue = "enable"
-	VPNEcmpSupportValue_disable VPNEcmpSupportValue = "disable"
+	VPNECMPSupportValue_enable  VPNECMPSupportValue = "enable"
+	VPNECMPSupportValue_disable VPNECMPSupportValue = "disable"
 )
 
 type VPNProtocol string
