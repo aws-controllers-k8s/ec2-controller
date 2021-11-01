@@ -17,6 +17,7 @@ package vpc_endpoint
 
 import (
 	"context"
+	"reflect"
 	"strings"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
@@ -42,6 +43,7 @@ var (
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
 	_ = &ackcondition.NotManagedMessage
+	_ = &reflect.Value{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -522,49 +524,9 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (updated *resource, err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.sdkUpdate")
-	defer exit(err)
-	input, err := rm.newUpdateRequestPayload(ctx, desired)
-	if err != nil {
-		return nil, err
-	}
-
-	var resp *svcsdk.ModifyVpcEndpointOutput
-	_ = resp
-	resp, err = rm.sdkapi.ModifyVpcEndpointWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpoint", err)
-	if err != nil {
-		return nil, err
-	}
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
-
-	rm.setStatusDefaults(ko)
-	return &resource{ko}, nil
-}
-
-// newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
-// payload of the Update API call for the resource
-func (rm *resourceManager) newUpdateRequestPayload(
-	ctx context.Context,
-	r *resource,
-) (*svcsdk.ModifyVpcEndpointInput, error) {
-	res := &svcsdk.ModifyVpcEndpointInput{}
-
-	if r.ko.Spec.PolicyDocument != nil {
-		res.SetPolicyDocument(*r.ko.Spec.PolicyDocument)
-	}
-	if r.ko.Spec.PrivateDNSEnabled != nil {
-		res.SetPrivateDnsEnabled(*r.ko.Spec.PrivateDNSEnabled)
-	}
-	if r.ko.Status.VPCEndpointID != nil {
-		res.SetVpcEndpointId(*r.ko.Status.VPCEndpointID)
-	}
-
-	return res, nil
+) (*resource, error) {
+	// TODO(jaypipes): Figure this out...
+	return nil, ackerr.NotImplemented
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
