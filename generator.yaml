@@ -3,12 +3,15 @@ ignore:
     - ModifyTransitGateway
     - ModifyVpcEndpoint
   field_paths:
-    - CreateVpcEndpointInput.DryRun
-    - CreateVpcInput.DryRun
-    - CreateSubnetInput.DryRun
-    - CreateRouteTableInput.DryRun
     - CreateInternetGatewayInput.DryRun
+    - CreateRouteTableInput.DryRun
+    - CreateSecurityGroupInput.DryRun
+    - CreateSubnetInput.DryRun
     - CreateTransitGatewayInput.DryRun
+    - CreateVpcInput.DryRun
+    - CreateVpcEndpointInput.DryRun
+    # support EC2-VPC only
+    - DeleteSecurityGroupInput.GroupName
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -41,7 +44,7 @@ ignore:
     - ReservedInstancesListing
     #- RouteTable
     - Route
-    - SecurityGroup
+    #- SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
     #- Subnet
@@ -78,12 +81,39 @@ operations:
     resource_name: VpcEndpoint
 
 resources:
-  Subnet:
+  RouteTable:
     exceptions:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
-  RouteTable:
+  SecurityGroup:
+    fields:
+      # support EC2-VPC only
+      Id:
+        is_primary_key: true
+      VpcId:
+        is_required: true
+    renames:
+      operations:
+        CreateSecurityGroup:
+          input_fields:
+            GroupName: Name
+          output_fields:
+            GroupId: Id
+        DeleteSecurityGroup:
+          input_fields:
+            GroupId: Id
+            GroupName: Name
+        DescribeSecurityGroups:
+          input_fields:
+            GroupIds: Ids
+            GroupNames: Names
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+        - VPCIdNotSpecified
+  Subnet:
     exceptions:
       terminal_codes:
         - InvalidVpcID.Malformed

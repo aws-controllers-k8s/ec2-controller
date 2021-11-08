@@ -1114,9 +1114,13 @@ type IKEVersionsRequestListValue struct {
 
 // Describes a set of permissions for a security group rule.
 type IPPermission struct {
-	FromPort   *int64  `json:"fromPort,omitempty"`
-	IPProtocol *string `json:"ipProtocol,omitempty"`
-	ToPort     *int64  `json:"toPort,omitempty"`
+	FromPort         *int64             `json:"fromPort,omitempty"`
+	IPProtocol       *string            `json:"ipProtocol,omitempty"`
+	IPRanges         []*IPRange         `json:"ipRanges,omitempty"`
+	IPv6Ranges       []*IPv6Range       `json:"ipv6Ranges,omitempty"`
+	PrefixListIDs    []*PrefixListID    `json:"prefixListIDs,omitempty"`
+	ToPort           *int64             `json:"toPort,omitempty"`
+	UserIDGroupPairs []*UserIDGroupPair `json:"userIDGroupPairs,omitempty"`
 }
 
 // Describes an IPv4 range.
@@ -1605,17 +1609,18 @@ type LaunchTemplateInstanceMetadataOptionsRequest struct {
 
 // Describes a network interface.
 type LaunchTemplateInstanceNetworkInterfaceSpecification struct {
-	AssociateCarrierIPAddress      *bool   `json:"associateCarrierIPAddress,omitempty"`
-	AssociatePublicIPAddress       *bool   `json:"associatePublicIPAddress,omitempty"`
-	DeleteOnTermination            *bool   `json:"deleteOnTermination,omitempty"`
-	Description                    *string `json:"description,omitempty"`
-	DeviceIndex                    *int64  `json:"deviceIndex,omitempty"`
-	InterfaceType                  *string `json:"interfaceType,omitempty"`
-	IPv6AddressCount               *int64  `json:"ipv6AddressCount,omitempty"`
-	NetworkCardIndex               *int64  `json:"networkCardIndex,omitempty"`
-	PrivateIPAddress               *string `json:"privateIPAddress,omitempty"`
-	SecondaryPrivateIPAddressCount *int64  `json:"secondaryPrivateIPAddressCount,omitempty"`
-	SubnetID                       *string `json:"subnetID,omitempty"`
+	AssociateCarrierIPAddress      *bool     `json:"associateCarrierIPAddress,omitempty"`
+	AssociatePublicIPAddress       *bool     `json:"associatePublicIPAddress,omitempty"`
+	DeleteOnTermination            *bool     `json:"deleteOnTermination,omitempty"`
+	Description                    *string   `json:"description,omitempty"`
+	DeviceIndex                    *int64    `json:"deviceIndex,omitempty"`
+	Groups                         []*string `json:"groups,omitempty"`
+	InterfaceType                  *string   `json:"interfaceType,omitempty"`
+	IPv6AddressCount               *int64    `json:"ipv6AddressCount,omitempty"`
+	NetworkCardIndex               *int64    `json:"networkCardIndex,omitempty"`
+	PrivateIPAddress               *string   `json:"privateIPAddress,omitempty"`
+	SecondaryPrivateIPAddressCount *int64    `json:"secondaryPrivateIPAddressCount,omitempty"`
+	SubnetID                       *string   `json:"subnetID,omitempty"`
 }
 
 // The parameters for a network interface.
@@ -2576,16 +2581,6 @@ type ScheduledInstancesPrivateIPAddressConfig struct {
 	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
 }
 
-// Describes a security group
-type SecurityGroup struct {
-	Description *string `json:"description,omitempty"`
-	GroupID     *string `json:"groupID,omitempty"`
-	GroupName   *string `json:"groupName,omitempty"`
-	OwnerID     *string `json:"ownerID,omitempty"`
-	Tags        []*Tag  `json:"tags,omitempty"`
-	VPCID       *string `json:"vpcID,omitempty"`
-}
-
 // Describes a security group.
 type SecurityGroupIdentifier struct {
 	GroupID   *string `json:"groupID,omitempty"`
@@ -2597,6 +2592,18 @@ type SecurityGroupReference struct {
 	GroupID                *string `json:"groupID,omitempty"`
 	ReferencingVPCID       *string `json:"referencingVPCID,omitempty"`
 	VPCPeeringConnectionID *string `json:"vpcPeeringConnectionID,omitempty"`
+}
+
+// Describes a security group
+type SecurityGroup_SDK struct {
+	Description         *string         `json:"description,omitempty"`
+	GroupID             *string         `json:"groupID,omitempty"`
+	GroupName           *string         `json:"groupName,omitempty"`
+	IPPermissions       []*IPPermission `json:"ipPermissions,omitempty"`
+	IPPermissionsEgress []*IPPermission `json:"ipPermissionsEgress,omitempty"`
+	OwnerID             *string         `json:"ownerID,omitempty"`
+	Tags                []*Tag          `json:"tags,omitempty"`
+	VPCID               *string         `json:"vpcID,omitempty"`
 }
 
 // Describes a service configuration for a VPC endpoint service.

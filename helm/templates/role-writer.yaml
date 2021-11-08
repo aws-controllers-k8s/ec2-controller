@@ -13,6 +13,8 @@ rules:
 
   - routetables
 
+  - securitygroups
+
   - subnets
 
   - transitgateways
@@ -34,6 +36,7 @@ rules:
   resources:
   - internetgateways
   - routetables
+  - securitygroups
   - subnets
   - transitgateways
   - vpcs
