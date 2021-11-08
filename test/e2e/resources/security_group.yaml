@@ -1,0 +1,8 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  description: $SECURITY_GROUP_DESCRIPTION
+  name: $SECURITY_GROUP_NAME
+  vpcID: $VPC_ID
