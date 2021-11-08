@@ -190,9 +190,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				f4 = append(f4, f4elem)
 			}
-			ko.Status.Routes = f4
+			ko.Spec.Routes = f4
 		} else {
-			ko.Status.Routes = nil
+			ko.Spec.Routes = nil
 		}
 		if elem.Tags != nil {
 			f5 := []*svcapitypes.Tag{}
@@ -387,9 +387,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			f4 = append(f4, f4elem)
 		}
-		ko.Status.Routes = f4
+		ko.Spec.Routes = f4
 	} else {
-		ko.Status.Routes = nil
+		ko.Spec.Routes = nil
 	}
 	if resp.RouteTable.Tags != nil {
 		f5 := []*svcapitypes.Tag{}

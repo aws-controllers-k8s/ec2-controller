@@ -86,6 +86,16 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+        - InvalidParameterValue
+    fields:
+      Routes:
+        custom_field:
+          list_of: Route
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
+    update_operation:
+      custom_method_name: customUpdateRouteTable
   SecurityGroup:
     fields:
       # support EC2-VPC only
@@ -118,6 +128,7 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+        - InvalidParameterValue
   VpcEndpoint:
     exceptions:
       terminal_codes:
@@ -127,4 +138,3 @@ resources:
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
-

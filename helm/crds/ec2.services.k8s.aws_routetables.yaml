@@ -37,6 +37,42 @@ spec:
             description: "RouteTableSpec defines the desired state of RouteTable.
               \n Describes a route table."
             properties:
+              routes:
+                items:
+                  description: Describes a route in a route table.
+                  properties:
+                    carrierGatewayID:
+                      type: string
+                    destinationCIDRBlock:
+                      type: string
+                    destinationIPv6CIDRBlock:
+                      type: string
+                    destinationPrefixListID:
+                      type: string
+                    egressOnlyInternetGatewayID:
+                      type: string
+                    gatewayID:
+                      type: string
+                    instanceID:
+                      type: string
+                    instanceOwnerID:
+                      type: string
+                    localGatewayID:
+                      type: string
+                    natGatewayID:
+                      type: string
+                    networkInterfaceID:
+                      type: string
+                    origin:
+                      type: string
+                    state:
+                      type: string
+                    transitGatewayID:
+                      type: string
+                    vpcPeeringConnectionID:
+                      type: string
+                  type: object
+                type: array
               tagSpecifications:
                 description: The tags to assign to the route table.
                 items:
@@ -165,43 +201,6 @@ spec:
               routeTableID:
                 description: The ID of the route table.
                 type: string
-              routes:
-                description: The routes in the route table.
-                items:
-                  description: Describes a route in a route table.
-                  properties:
-                    carrierGatewayID:
-                      type: string
-                    destinationCIDRBlock:
-                      type: string
-                    destinationIPv6CIDRBlock:
-                      type: string
-                    destinationPrefixListID:
-                      type: string
-                    egressOnlyInternetGatewayID:
-                      type: string
-                    gatewayID:
-                      type: string
-                    instanceID:
-                      type: string
-                    instanceOwnerID:
-                      type: string
-                    localGatewayID:
-                      type: string
-                    natGatewayID:
-                      type: string
-                    networkInterfaceID:
-                      type: string
-                    origin:
-                      type: string
-                    state:
-                      type: string
-                    transitGatewayID:
-                      type: string
-                    vpcPeeringConnectionID:
-                      type: string
-                  type: object
-                type: array
               tags:
                 description: Any tags assigned to the route table.
                 items:
