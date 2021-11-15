@@ -138,4 +138,3 @@ resources:
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
-

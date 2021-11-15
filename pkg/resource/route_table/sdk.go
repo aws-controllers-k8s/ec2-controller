@@ -414,6 +414,12 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	if rm.requiredFieldsMissingForCreateRoute(&resource{ko}) {
+		return nil, ackerr.NotFound
+	}
+	if err := rm.createRoutes(ctx, &resource{ko}); err != nil {
+		return nil, err
+	}
 	return &resource{ko}, nil
 }
 
@@ -465,8 +471,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateRouteTable(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
