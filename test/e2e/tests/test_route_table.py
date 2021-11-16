@@ -77,7 +77,7 @@ class TestRouteTable:
         test_vpc = get_bootstrap_resources().SharedTestVPC
         vpc_id = test_vpc.vpc_id
         igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
-        test_cidr_block = "100.68.0.0/18"
+        test_cidr_block = "192.168.0.0/24"
 
         test_resource_values["ROUTE_TABLE_NAME"] = resource_name
         test_resource_values["VPC_ID"] = vpc_id
@@ -159,7 +159,7 @@ class TestRouteTable:
         test_vpc = get_bootstrap_resources().SharedTestVPC
         vpc_id = test_vpc.vpc_id
         igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
-        test_cidr_block = "100.68.0.0/18"
+        test_cidr_block = "192.168.0.0/24"
 
         test_resource_values["ROUTE_TABLE_NAME"] = resource_name
         test_resource_values["VPC_ID"] = vpc_id
@@ -204,7 +204,7 @@ class TestRouteTable:
                 assert False
         
         # Update Route
-        updated_cidr = "100.68.0.0/18"
+        updated_cidr = "192.168.1.0/24"
         patch = {"spec": {"routes": [
                     {
                         #Default route cannot be changed
