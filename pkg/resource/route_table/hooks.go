@@ -15,7 +15,6 @@ package route_table
 
 import (
 	"context"
-	"fmt"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -29,21 +28,15 @@ type RouteAction int
 
 const (
 	RouteActionNone RouteAction = iota
-	RouteActionDefault
 	RouteActionCreate
-	RouteActionDelete
-	RouteActionServer
-	RouteActionUpdate
 )
 
 func (rm *resourceManager) createRoutes(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if len(r.ko.Spec.Routes) > 0 {
-		if err := rm.syncRoutes(ctx, r, nil); err != nil {
-			return err
-		}
+	if err := rm.syncRoutes(ctx, r, nil); err != nil {
+		return err
 	}
 	return nil
 }
@@ -57,9 +50,6 @@ func (rm *resourceManager) syncRoutes(
 	exit := rlog.Trace("rm.syncRoutes")
 	defer exit(err)
 
-	// if there are desired routes then we need to see if we got to create any
-	// no-op if same
-	// if desired doesn't match anything in latest we need to create it
 	for _, rc := range desired.ko.Spec.Routes {
 		action := getRouteAction(rc, latest)
 		switch action {
@@ -67,27 +57,12 @@ func (rm *resourceManager) syncRoutes(
 			if err = rm.createRoute(ctx, desired, *rc); err != nil {
 				return err
 			}
-		// case RouteActionServer:
-		//directly set current resource's field directly from server
-		// case RouteActionDefault:
-		// 	// if err = rm.addDefaultRoute(ctx, desired, *rc); err != nil {
-		// 	// 	return err
-		// 	// }
-		// 	defaultCIDRBlock := "172.31.0.0/16"
-		// 	defaultGatewayID := "local" //not valid in api req
-		// 	defaultRoute := svcapitypes.Route{
-		// 		DestinationCIDRBlock: &defaultCIDRBlock,
-		// 		GatewayID: &defaultGatewayID,
-		// 	}
 
 		default:
 		}
 	}
 
 	if latest != nil {
-		// it's possible we either have fewer desired routes than latest/current routes OR
-		// latest/current routes do not match desired route spec
-		// we need to find which latest routes are not desired routes and delete them!
 		for _, l := range latest.ko.Spec.Routes {
 			desiredRoute := false
 			for _, d := range desired.ko.Spec.Routes {
@@ -97,33 +72,8 @@ func (rm *resourceManager) syncRoutes(
 					desiredRoute = true
 					break
 				}
-				//if only diffs are Origin/State (set server-side take the desired)
-				onlyDifference := false
-				for _, dd := range delta.Differences {
-					if !(dd.Path.Contains("Route.Origin") || dd.Path.Contains("Route.State")) {
-						onlyDifference = false
-						break
-					}
-					onlyDifference = true
-				}
-				if onlyDifference {
-					desiredRoute = true
-					//Latest was actually CreateRoute Active not desired
-					// fmt.Println("Route Origin and/or State are the only diffs! hard-coding from desired")
-					// if d.Origin != nil {
-					// 	fmt.Printf("Desired Origin: %s\n", *d.Origin)
-					// }
-					// if d.State != nil {
-					// 	fmt.Printf("Desired STate: %s\n", *d.State)
-					// }
-					// fmt.Printf("Current Origin + State: %s %s\n", *l.Origin, *l.State)
-					// l.Origin = d.Origin
-					// l.State = d.State
-				}
-
 			}
 			if !desiredRoute {
-				//TODO: 2nd param is set to 'desired' in s3 controller...?
 				if err = rm.deleteRoute(ctx, latest, *l); err != nil {
 					return err
 				}
@@ -141,14 +91,9 @@ func getRouteAction(
 	desired *svcapitypes.Route,
 	latest *resource,
 ) RouteAction {
-	fmt.Println("getRouteAction")
-	//Origin and State are decided by server..
-
-	//Needed even with LateInitializtion?? The api call to CreateRoute w/'local' still happens
-	//if desired Route is default Route, then do NOT make API call
+	//the default route created by RouteTable; no action needed
 	if *desired.GatewayID == "local" {
-		fmt.Println("getRouteAction: desired GatewayID is local..this is a defaulted field req")
-		return RouteActionDefault
+		return RouteActionNone
 	}
 
 	action := RouteActionCreate
@@ -307,18 +252,14 @@ func (rm *resourceManager) deleteRoute(
 	return err
 }
 
-// newCreateRouteRequestPayload
 func (rm *resourceManager) newCreateRoutePayload(
 	r *resource,
 	c svcapitypes.Route,
 ) *svcsdk.CreateRouteInput {
 	input := &svcsdk.CreateRouteInput{}
-
-	//TODO: right place to check here? this is required!
 	if r.ko.Status.RouteTableID != nil {
 		input.SetRouteTableId(*r.ko.Status.RouteTableID)
 	}
-
 	if c.CarrierGatewayID != nil {
 		input.SetCarrierGatewayId(*c.CarrierGatewayID)
 	}
@@ -355,23 +296,18 @@ func (rm *resourceManager) newCreateRoutePayload(
 	if c.VPCPeeringConnectionID != nil {
 		input.SetVpcPeeringConnectionId(*c.VPCPeeringConnectionID)
 	}
-	//TODO: VpcEndpointId got ignored for some reason?
 
 	return input
 }
 
-// newDeleteRoutePayload
 func (rm *resourceManager) newDeleteRoutePayload(
 	r *resource,
 	c svcapitypes.Route,
 ) *svcsdk.DeleteRouteInput {
 	input := &svcsdk.DeleteRouteInput{}
-
-	//TODO: right place to check here? this is required!
 	if r.ko.Status.RouteTableID != nil {
 		input.SetRouteTableId(*r.ko.Status.RouteTableID)
 	}
-
 	if c.DestinationCIDRBlock != nil {
 		input.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
 	}
@@ -385,8 +321,6 @@ func (rm *resourceManager) newDeleteRoutePayload(
 	return input
 }
 
-// customUpdateRouteTable patches each of the resource properties in the backend AWS
-// service API and returns a new resource with updated fields.
 func (rm *resourceManager) customUpdateRouteTable(
 	ctx context.Context,
 	desired *resource,
@@ -397,10 +331,7 @@ func (rm *resourceManager) customUpdateRouteTable(
 	exit := rlog.Trace("rm.customUpdateRouteTable")
 	defer exit(err)
 
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
-
 	rm.setStatusDefaults(ko)
 
 	if delta.DifferentAt("Spec.Routes") {
@@ -421,13 +352,3 @@ func (rm *resourceManager) requiredFieldsMissingForCreateRoute(
 ) bool {
 	return r.ko.Status.RouteTableID == nil
 }
-
-// customPreCompare ensures that default values of nil-able types are
-// appropriately replaced with empty maps or structs depending on the default
-// output of the SDK.
-// func customPreCompare(
-// 	a *resource,
-// 	b *resource,
-// ) {
-
-// }

@@ -128,7 +128,6 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
-        - InvalidParameterValue
   VpcEndpoint:
     exceptions:
       terminal_codes:
