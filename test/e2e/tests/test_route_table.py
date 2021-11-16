@@ -173,7 +173,7 @@ class TestRouteTable:
         )
         logging.debug(resource_data)
 
-        # Create k8s resource
+        # Create Route Table
         ref = k8s.CustomResourceReference(
             CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
             resource_name, namespace="default",
@@ -202,7 +202,7 @@ class TestRouteTable:
                 assert route["Origin"] == "CreateRoute"
             else:
                 assert False
-
+        
         # Update Route
         updated_cidr = "100.68.0.0/18"
         patch = {"spec": {"routes": [
@@ -260,7 +260,20 @@ class TestRouteTable:
             else:
                 assert False
 
-        # Delete k8s resource
+
+        # Should not be able to delete default route
+        patch = {"spec": {"routes": [
+                ]
+            }
+        }
+        _ = k8s.patch_custom_resource(ref, patch)
+        time.sleep(DEFAULT_WAIT_AFTER_SECONDS)
+
+        expected_msg = "InvalidParameterValue: cannot remove local route"
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        assert expected_msg in terminal_condition['message']
+
+        # Delete Route Table
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 
