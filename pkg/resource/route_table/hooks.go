@@ -27,8 +27,7 @@ import (
 type RouteAction int
 
 const (
-	RouteActionNone RouteAction = iota
-	RouteActionCreate
+	LocalRouteGateway = "local"
 )
 
 func (rm *resourceManager) createRoutes(
@@ -49,63 +48,83 @@ func (rm *resourceManager) syncRoutes(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
 	defer exit(err)
+	toAdd := []*svcapitypes.Route{}
+	toDelete := []*svcapitypes.Route{}
 
-	for _, rc := range desired.ko.Spec.Routes {
-		action := getRouteAction(rc, latest)
-		switch action {
-		case RouteActionCreate:
-			if err = rm.createRoute(ctx, desired, *rc); err != nil {
-				return err
+	for _, desiredRoute := range desired.ko.Spec.Routes {
+		if *desiredRoute.GatewayID == LocalRouteGateway {
+			// no-op for default route
+			continue
+		}
+		if latestRoute := getMatchingRoute(desiredRoute, latest); latestRoute != nil {
+			delta := compareRoute(desiredRoute, latestRoute)
+			if len(delta.Differences) > 0 {
+				// "update" route by deleting old route and adding the new route
+				toDelete = append(toDelete, latestRoute)
+				toAdd = append(toAdd, desiredRoute)
 			}
-
-		default:
+		} else {
+			// a desired route is not in latest; therefore, create
+			toAdd = append(toAdd, desiredRoute)
+		}
+	}
+	for _, latestRoute := range latest.ko.Spec.Routes {
+		if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
+			// latest has a route that is not desired; therefore, delete
+			toDelete = append(toDelete, latestRoute)
 		}
 	}
 
-	if latest != nil {
-		for _, l := range latest.ko.Spec.Routes {
-			desiredRoute := false
-			for _, d := range desired.ko.Spec.Routes {
-				delta := compareRoute(l, d)
-				//if a Route matches identically, then it is desired
-				if len(delta.Differences) == 0 {
-					desiredRoute = true
-					break
-				}
-			}
-			if !desiredRoute {
-				if err = rm.deleteRoute(ctx, latest, *l); err != nil {
-					return err
-				}
-			}
-
+	for _, route := range toAdd {
+		rlog.Debug("adding route to route table")
+		if err = rm.createRoute(ctx, desired, *route); err != nil {
+			return err
+		}
+	}
+	for _, route := range toDelete {
+		rlog.Debug("deleting route from route table")
+		if err = rm.deleteRoute(ctx, latest, *route); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// getRouteAction returns the determined action for a given
-// route object, depending on the latest and desired values
-func getRouteAction(
-	desired *svcapitypes.Route,
-	latest *resource,
-) RouteAction {
-	//the default route created by RouteTable; no action needed
-	if *desired.GatewayID == "local" {
-		return RouteActionNone
-	}
-
-	action := RouteActionCreate
-	if latest != nil {
-		for _, l := range latest.ko.Spec.Routes {
-			delta := compareRoute(l, desired)
-			if len(delta.Differences) == 0 {
-				return RouteActionNone
+func getMatchingRoute(
+	routeToMatch *svcapitypes.Route,
+	resource *resource,
+) *svcapitypes.Route {
+	for _, route := range resource.ko.Spec.Routes {
+		delta := compareRoute(routeToMatch, route)
+		if len(delta.Differences) == 0 {
+			return route
+		} else {
+			if !delta.DifferentAt("Route.CarrierGatewayID") {
+				return route
+			}
+			if !delta.DifferentAt("Route.EgressOnlyInternetGatewayID") {
+				return route
+			}
+			if !delta.DifferentAt("Route.GatewayID") {
+				return route
+			}
+			if !delta.DifferentAt("Route.LocalGatewayID") {
+				return route
+			}
+			if !delta.DifferentAt("Route.NatGatewayID") {
+				return route
+			}
+			if !delta.DifferentAt("Route.TransitGatewayID") {
+				return route
+			}
+			if !delta.DifferentAt("Route.VPCPeeringConnectionID") {
+				return route
 			}
 		}
 	}
-	return action
+
+	return nil
 }
 
 func (rm *resourceManager) createRoute(
