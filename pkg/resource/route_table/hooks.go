@@ -22,10 +22,6 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// RouteAction stores the possible actions that can be performed on
-// any of a Route Table's Routes
-type RouteAction int
-
 const (
 	LocalRouteGateway = "local"
 )
@@ -68,10 +64,12 @@ func (rm *resourceManager) syncRoutes(
 			toAdd = append(toAdd, desiredRoute)
 		}
 	}
-	for _, latestRoute := range latest.ko.Spec.Routes {
-		if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
-			// latest has a route that is not desired; therefore, delete
-			toDelete = append(toDelete, latestRoute)
+	if latest != nil {
+		for _, latestRoute := range latest.ko.Spec.Routes {
+			if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
+				// latest has a route that is not desired; therefore, delete
+				toDelete = append(toDelete, latestRoute)
+			}
 		}
 	}
 
@@ -95,31 +93,48 @@ func getMatchingRoute(
 	routeToMatch *svcapitypes.Route,
 	resource *resource,
 ) *svcapitypes.Route {
+	if resource == nil {
+		return nil
+	}
 	for _, route := range resource.ko.Spec.Routes {
 		delta := compareRoute(routeToMatch, route)
 		if len(delta.Differences) == 0 {
 			return route
 		} else {
-			if !delta.DifferentAt("Route.CarrierGatewayID") {
-				return route
+			if routeToMatch.CarrierGatewayID != nil {
+				if !delta.DifferentAt("Route.CarrierGatewayID") {
+					return route
+				}
 			}
-			if !delta.DifferentAt("Route.EgressOnlyInternetGatewayID") {
-				return route
+			if routeToMatch.EgressOnlyInternetGatewayID != nil {
+				if !delta.DifferentAt("Route.EgressOnlyInternetGatewayID") {
+					return route
+				}
 			}
-			if !delta.DifferentAt("Route.GatewayID") {
-				return route
+			if routeToMatch.GatewayID != nil {
+				if !delta.DifferentAt("Route.GatewayID") {
+					return route
+				}
 			}
-			if !delta.DifferentAt("Route.LocalGatewayID") {
-				return route
+			if routeToMatch.LocalGatewayID != nil {
+				if !delta.DifferentAt("Route.LocalGatewayID") {
+					return route
+				}
 			}
-			if !delta.DifferentAt("Route.NatGatewayID") {
-				return route
+			if routeToMatch.NatGatewayID != nil {
+				if !delta.DifferentAt("Route.NatGatewayID") {
+					return route
+				}
 			}
-			if !delta.DifferentAt("Route.TransitGatewayID") {
-				return route
+			if routeToMatch.TransitGatewayID != nil {
+				if !delta.DifferentAt("Route.TransitGatewayID") {
+					return route
+				}
 			}
-			if !delta.DifferentAt("Route.VPCPeeringConnectionID") {
-				return route
+			if routeToMatch.VPCPeeringConnectionID != nil {
+				if !delta.DifferentAt("Route.VPCPeeringConnectionID") {
+					return route
+				}
 			}
 		}
 	}
