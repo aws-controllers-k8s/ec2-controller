@@ -209,15 +209,11 @@ class TestRouteTable:
                     {
                         #Default route cannot be changed
                         "destinationCIDRBlock": default_cidr,
-                        "gatewayID": "local",
-                        "origin": "CreateRouteTable",
-                        "state": "active"
+                        "gatewayID": "local"
                     },
                     {
                         "destinationCIDRBlock": updated_cidr,
-                        "gatewayID": igw_id,
-                        "origin": "no",
-                        "state": "texas"
+                        "gatewayID": igw_id
                     }
                 ]
             }
@@ -227,8 +223,8 @@ class TestRouteTable:
 
         # assert patched state
         resource = k8s.get_resource(ref)
-        assert len(resource['spec']['routes']) == 2
-        for route in resource['spec']['routes']:
+        assert len(resource['status']['routeStatuses']) == 2
+        for route in resource['status']['routeStatuses']:
             if route["gatewayID"] == "local":
                 assert route_exists(ec2_client, resource_id, "local", "CreateRouteTable")
             elif route["gatewayID"] == igw_id:
@@ -242,9 +238,7 @@ class TestRouteTable:
         patch = {"spec": {"routes": [
                     {
                         "destinationCIDRBlock": default_cidr,
-                        "gatewayID": "local",
-                        "origin": "CreateRouteTable",
-                        "state": "active"
+                        "gatewayID": "local"
                     }
                 ]
             }

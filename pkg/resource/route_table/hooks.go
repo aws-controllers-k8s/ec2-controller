@@ -22,9 +22,7 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-const (
-	LocalRouteGateway = "local"
-)
+const LocalRouteGateway = "local"
 
 func (rm *resourceManager) createRoutes(
 	ctx context.Context,
@@ -44,8 +42,8 @@ func (rm *resourceManager) syncRoutes(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
 	defer exit(err)
-	toAdd := []*svcapitypes.Route{}
-	toDelete := []*svcapitypes.Route{}
+	toAdd := []*svcapitypes.CreateRouteInput{}
+	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
 		if *desiredRoute.GatewayID == LocalRouteGateway {
@@ -53,7 +51,7 @@ func (rm *resourceManager) syncRoutes(
 			continue
 		}
 		if latestRoute := getMatchingRoute(desiredRoute, latest); latestRoute != nil {
-			delta := compareRoute(desiredRoute, latestRoute)
+			delta := compareCreateRouteInput(desiredRoute, latestRoute)
 			if len(delta.Differences) > 0 {
 				// "update" route by deleting old route and adding the new route
 				toDelete = append(toDelete, latestRoute)
@@ -90,49 +88,50 @@ func (rm *resourceManager) syncRoutes(
 }
 
 func getMatchingRoute(
-	routeToMatch *svcapitypes.Route,
+	routeToMatch *svcapitypes.CreateRouteInput,
 	resource *resource,
-) *svcapitypes.Route {
+) *svcapitypes.CreateRouteInput {
 	if resource == nil {
 		return nil
 	}
+
 	for _, route := range resource.ko.Spec.Routes {
-		delta := compareRoute(routeToMatch, route)
+		delta := compareCreateRouteInput(routeToMatch, route)
 		if len(delta.Differences) == 0 {
 			return route
 		} else {
 			if routeToMatch.CarrierGatewayID != nil {
-				if !delta.DifferentAt("Route.CarrierGatewayID") {
+				if !delta.DifferentAt("CreateRouteInput.CarrierGatewayID") {
 					return route
 				}
 			}
 			if routeToMatch.EgressOnlyInternetGatewayID != nil {
-				if !delta.DifferentAt("Route.EgressOnlyInternetGatewayID") {
+				if !delta.DifferentAt("CreateRouteInput.EgressOnlyInternetGatewayID") {
 					return route
 				}
 			}
 			if routeToMatch.GatewayID != nil {
-				if !delta.DifferentAt("Route.GatewayID") {
+				if !delta.DifferentAt("CreateRouteInput.GatewayID") {
 					return route
 				}
 			}
 			if routeToMatch.LocalGatewayID != nil {
-				if !delta.DifferentAt("Route.LocalGatewayID") {
+				if !delta.DifferentAt("CreateRouteInput.LocalGatewayID") {
 					return route
 				}
 			}
-			if routeToMatch.NatGatewayID != nil {
-				if !delta.DifferentAt("Route.NatGatewayID") {
+			if routeToMatch.NATGatewayID != nil {
+				if !delta.DifferentAt("CreateRouteInput.NATGatewayID") {
 					return route
 				}
 			}
 			if routeToMatch.TransitGatewayID != nil {
-				if !delta.DifferentAt("Route.TransitGatewayID") {
+				if !delta.DifferentAt("CreateRouteInput.TransitGatewayID") {
 					return route
 				}
 			}
 			if routeToMatch.VPCPeeringConnectionID != nil {
-				if !delta.DifferentAt("Route.VPCPeeringConnectionID") {
+				if !delta.DifferentAt("CreateRouteInput.VPCPeeringConnectionID") {
 					return route
 				}
 			}
@@ -145,7 +144,7 @@ func getMatchingRoute(
 func (rm *resourceManager) createRoute(
 	ctx context.Context,
 	r *resource,
-	c svcapitypes.Route,
+	c svcapitypes.CreateRouteInput,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.createRoute")
@@ -160,7 +159,7 @@ func (rm *resourceManager) createRoute(
 func (rm *resourceManager) deleteRoute(
 	ctx context.Context,
 	r *resource,
-	c svcapitypes.Route,
+	c svcapitypes.CreateRouteInput,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.deleteRoute")
@@ -174,7 +173,7 @@ func (rm *resourceManager) deleteRoute(
 
 func (rm *resourceManager) newCreateRoutePayload(
 	r *resource,
-	c svcapitypes.Route,
+	c svcapitypes.CreateRouteInput,
 ) *svcsdk.CreateRouteInput {
 	input := &svcsdk.CreateRouteInput{}
 	if r.ko.Status.RouteTableID != nil {
@@ -204,8 +203,8 @@ func (rm *resourceManager) newCreateRoutePayload(
 	if c.LocalGatewayID != nil {
 		input.SetLocalGatewayId(*c.LocalGatewayID)
 	}
-	if c.NatGatewayID != nil {
-		input.SetNatGatewayId(*c.NatGatewayID)
+	if c.NATGatewayID != nil {
+		input.SetNatGatewayId(*c.NATGatewayID)
 	}
 	if c.NetworkInterfaceID != nil {
 		input.SetNetworkInterfaceId(*c.NetworkInterfaceID)
@@ -216,14 +215,13 @@ func (rm *resourceManager) newCreateRoutePayload(
 	if c.VPCPeeringConnectionID != nil {
 		input.SetVpcPeeringConnectionId(*c.VPCPeeringConnectionID)
 	}
-	input.SetDryRun(false)
 
 	return input
 }
 
 func (rm *resourceManager) newDeleteRoutePayload(
 	r *resource,
-	c svcapitypes.Route,
+	c svcapitypes.CreateRouteInput,
 ) *svcsdk.DeleteRouteInput {
 	input := &svcsdk.DeleteRouteInput{}
 	if r.ko.Status.RouteTableID != nil {
@@ -272,4 +270,65 @@ func (rm *resourceManager) requiredFieldsMissingForCreateRoute(
 	r *resource,
 ) bool {
 	return r.ko.Status.RouteTableID == nil
+}
+
+// addRoutesToStatus takes a RouteTable from an aws-sdk output
+// and adds its Routes to RouteTable.Status.RouteStatuses.
+// This cannot be auto-generated because the code-generator already associates
+// RouteTable's Routes from aws-sdk output with RouteTable.Spec.Routes.
+func (rm *resourceManager) addRoutesToStatus(
+	ko *svcapitypes.RouteTable,
+	routeTable *svcsdk.RouteTable,
+) {
+	ko.Status.RouteStatuses = nil
+	if routeTable.Routes != nil {
+		routesInStatus := []*svcapitypes.Route{}
+		for _, r := range routeTable.Routes {
+			routeInStatus := &svcapitypes.Route{}
+			if r.CarrierGatewayId != nil {
+				routeInStatus.CarrierGatewayID = r.CarrierGatewayId
+			}
+			if r.DestinationCidrBlock != nil {
+				routeInStatus.DestinationCIDRBlock = r.DestinationCidrBlock
+			}
+			if r.DestinationIpv6CidrBlock != nil {
+				routeInStatus.DestinationIPv6CIDRBlock = r.DestinationIpv6CidrBlock
+			}
+			if r.DestinationPrefixListId != nil {
+				routeInStatus.DestinationPrefixListID = r.DestinationPrefixListId
+			}
+			if r.EgressOnlyInternetGatewayId != nil {
+				routeInStatus.EgressOnlyInternetGatewayID = r.EgressOnlyInternetGatewayId
+			}
+			if r.GatewayId != nil {
+				routeInStatus.GatewayID = r.GatewayId
+			}
+			if r.InstanceId != nil {
+				routeInStatus.InstanceID = r.InstanceId
+			}
+			if r.LocalGatewayId != nil {
+				routeInStatus.LocalGatewayID = r.LocalGatewayId
+			}
+			if r.NatGatewayId != nil {
+				routeInStatus.NATGatewayID = r.NatGatewayId
+			}
+			if r.NetworkInterfaceId != nil {
+				routeInStatus.NetworkInterfaceID = r.NetworkInterfaceId
+			}
+			if r.TransitGatewayId != nil {
+				routeInStatus.TransitGatewayID = r.TransitGatewayId
+			}
+			if r.VpcPeeringConnectionId != nil {
+				routeInStatus.VPCPeeringConnectionID = r.VpcPeeringConnectionId
+			}
+			if r.Origin != nil {
+				routeInStatus.Origin = r.Origin
+			}
+			if r.State != nil {
+				routeInStatus.State = r.State
+			}
+			routesInStatus = append(routesInStatus, routeInStatus)
+		}
+		ko.Status.RouteStatuses = routesInStatus
+	}
 }

@@ -80,9 +80,7 @@ class TestSubnet:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
-        print(f"ref is {ref}")
         resource = k8s.get_resource(ref)
-        print(f"res is {resource}")
         resource_id = resource["status"]["subnetID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)

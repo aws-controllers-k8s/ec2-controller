@@ -1,3 +1,5 @@
+	rm.addRoutesToStatus(ko, resp.RouteTable)
+	
 	if rm.requiredFieldsMissingForCreateRoute(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
