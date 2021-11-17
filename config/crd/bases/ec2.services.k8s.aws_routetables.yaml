@@ -39,7 +39,6 @@ spec:
             properties:
               routes:
                 items:
-                  description: Describes a route in a route table.
                   properties:
                     carrierGatewayID:
                       type: string
@@ -55,19 +54,17 @@ spec:
                       type: string
                     instanceID:
                       type: string
-                    instanceOwnerID:
-                      type: string
                     localGatewayID:
                       type: string
                     natGatewayID:
                       type: string
                     networkInterfaceID:
                       type: string
-                    origin:
-                      type: string
-                    state:
+                    routeTableID:
                       type: string
                     transitGatewayID:
+                      type: string
+                    vpcEndpointID:
                       type: string
                     vpcPeeringConnectionID:
                       type: string
@@ -195,6 +192,43 @@ spec:
                   description: Describes a virtual private gateway propagating route.
                   properties:
                     gatewayID:
+                      type: string
+                  type: object
+                type: array
+              routeStatuses:
+                description: The routes in the route table.
+                items:
+                  description: Describes a route in a route table.
+                  properties:
+                    carrierGatewayID:
+                      type: string
+                    destinationCIDRBlock:
+                      type: string
+                    destinationIPv6CIDRBlock:
+                      type: string
+                    destinationPrefixListID:
+                      type: string
+                    egressOnlyInternetGatewayID:
+                      type: string
+                    gatewayID:
+                      type: string
+                    instanceID:
+                      type: string
+                    instanceOwnerID:
+                      type: string
+                    localGatewayID:
+                      type: string
+                    natGatewayID:
+                      type: string
+                    networkInterfaceID:
+                      type: string
+                    origin:
+                      type: string
+                    state:
+                      type: string
+                    transitGatewayID:
+                      type: string
+                    vpcPeeringConnectionID:
                       type: string
                   type: object
                 type: array

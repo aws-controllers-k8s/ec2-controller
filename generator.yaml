@@ -4,6 +4,7 @@ ignore:
     - ModifyVpcEndpoint
   field_paths:
     - CreateInternetGatewayInput.DryRun
+    - CreateRouteInput.DryRun
     - CreateRouteTableInput.DryRun
     - CreateSecurityGroupInput.DryRun
     - CreateSubnetInput.DryRun
@@ -88,12 +89,19 @@ resources:
         - InvalidVpcID.NotFound
         - InvalidParameterValue
     fields:
+      RouteStatuses:
+        from:
+          operation: DescribeRouteTables
+          path: RouteTables.Routes
+        is_read_only: true
       Routes:
         custom_field:
-          list_of: Route
+          list_of: CreateRouteInput
     hooks:
       sdk_create_post_set_output:
         template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/route_table/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/route_table/sdk_file_end.go.tpl
     update_operation:

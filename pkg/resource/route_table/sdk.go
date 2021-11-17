@@ -140,9 +140,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.RouteTableID = nil
 		}
 		if elem.Routes != nil {
-			f4 := []*svcapitypes.Route{}
+			f4 := []*svcapitypes.CreateRouteInput{}
 			for _, f4iter := range elem.Routes {
-				f4elem := &svcapitypes.Route{}
+				f4elem := &svcapitypes.CreateRouteInput{}
 				if f4iter.CarrierGatewayId != nil {
 					f4elem.CarrierGatewayID = f4iter.CarrierGatewayId
 				}
@@ -164,23 +164,14 @@ func (rm *resourceManager) sdkFind(
 				if f4iter.InstanceId != nil {
 					f4elem.InstanceID = f4iter.InstanceId
 				}
-				if f4iter.InstanceOwnerId != nil {
-					f4elem.InstanceOwnerID = f4iter.InstanceOwnerId
-				}
 				if f4iter.LocalGatewayId != nil {
 					f4elem.LocalGatewayID = f4iter.LocalGatewayId
 				}
 				if f4iter.NatGatewayId != nil {
-					f4elem.NatGatewayID = f4iter.NatGatewayId
+					f4elem.NATGatewayID = f4iter.NatGatewayId
 				}
 				if f4iter.NetworkInterfaceId != nil {
 					f4elem.NetworkInterfaceID = f4iter.NetworkInterfaceId
-				}
-				if f4iter.Origin != nil {
-					f4elem.Origin = f4iter.Origin
-				}
-				if f4iter.State != nil {
-					f4elem.State = f4iter.State
 				}
 				if f4iter.TransitGatewayId != nil {
 					f4elem.TransitGatewayID = f4iter.TransitGatewayId
@@ -223,6 +214,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	if found {
+		rm.addRoutesToStatus(ko, resp.RouteTables[0])
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -337,9 +333,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.RouteTableID = nil
 	}
 	if resp.RouteTable.Routes != nil {
-		f4 := []*svcapitypes.Route{}
+		f4 := []*svcapitypes.CreateRouteInput{}
 		for _, f4iter := range resp.RouteTable.Routes {
-			f4elem := &svcapitypes.Route{}
+			f4elem := &svcapitypes.CreateRouteInput{}
 			if f4iter.CarrierGatewayId != nil {
 				f4elem.CarrierGatewayID = f4iter.CarrierGatewayId
 			}
@@ -361,23 +357,14 @@ func (rm *resourceManager) sdkCreate(
 			if f4iter.InstanceId != nil {
 				f4elem.InstanceID = f4iter.InstanceId
 			}
-			if f4iter.InstanceOwnerId != nil {
-				f4elem.InstanceOwnerID = f4iter.InstanceOwnerId
-			}
 			if f4iter.LocalGatewayId != nil {
 				f4elem.LocalGatewayID = f4iter.LocalGatewayId
 			}
 			if f4iter.NatGatewayId != nil {
-				f4elem.NatGatewayID = f4iter.NatGatewayId
+				f4elem.NATGatewayID = f4iter.NatGatewayId
 			}
 			if f4iter.NetworkInterfaceId != nil {
 				f4elem.NetworkInterfaceID = f4iter.NetworkInterfaceId
-			}
-			if f4iter.Origin != nil {
-				f4elem.Origin = f4iter.Origin
-			}
-			if f4iter.State != nil {
-				f4elem.State = f4iter.State
 			}
 			if f4iter.TransitGatewayId != nil {
 				f4elem.TransitGatewayID = f4iter.TransitGatewayId
@@ -414,6 +401,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	rm.addRoutesToStatus(ko, resp.RouteTable)
+
 	if rm.requiredFieldsMissingForCreateRoute(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
@@ -625,114 +614,107 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	}
 }
 
-func compareRoute(
-	a *svcapitypes.Route,
-	b *svcapitypes.Route,
+func compareCreateRouteInput(
+	a *svcapitypes.CreateRouteInput,
+	b *svcapitypes.CreateRouteInput,
 ) *ackcompare.Delta {
 	delta := ackcompare.NewDelta()
 	if ackcompare.HasNilDifference(a.CarrierGatewayID, b.CarrierGatewayID) {
-		delta.Add("Route.CarrierGatewayID", a.CarrierGatewayID, b.CarrierGatewayID)
+		delta.Add("CreateRouteInput.CarrierGatewayID", a.CarrierGatewayID, b.CarrierGatewayID)
 	} else if a.CarrierGatewayID != nil && b.CarrierGatewayID != nil {
 		if *a.CarrierGatewayID != *b.CarrierGatewayID {
-			delta.Add("Route.CarrierGatewayID", a.CarrierGatewayID, b.CarrierGatewayID)
+			delta.Add("CreateRouteInput.CarrierGatewayID", a.CarrierGatewayID, b.CarrierGatewayID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.DestinationCIDRBlock, b.DestinationCIDRBlock) {
-		delta.Add("Route.DestinationCIDRBlock", a.DestinationCIDRBlock, b.DestinationCIDRBlock)
+		delta.Add("CreateRouteInput.DestinationCIDRBlock", a.DestinationCIDRBlock, b.DestinationCIDRBlock)
 	} else if a.DestinationCIDRBlock != nil && b.DestinationCIDRBlock != nil {
 		if *a.DestinationCIDRBlock != *b.DestinationCIDRBlock {
-			delta.Add("Route.DestinationCIDRBlock", a.DestinationCIDRBlock, b.DestinationCIDRBlock)
+			delta.Add("CreateRouteInput.DestinationCIDRBlock", a.DestinationCIDRBlock, b.DestinationCIDRBlock)
 		}
 	}
 	if ackcompare.HasNilDifference(a.DestinationIPv6CIDRBlock, b.DestinationIPv6CIDRBlock) {
-		delta.Add("Route.DestinationIPv6CIDRBlock", a.DestinationIPv6CIDRBlock, b.DestinationIPv6CIDRBlock)
+		delta.Add("CreateRouteInput.DestinationIPv6CIDRBlock", a.DestinationIPv6CIDRBlock, b.DestinationIPv6CIDRBlock)
 	} else if a.DestinationIPv6CIDRBlock != nil && b.DestinationIPv6CIDRBlock != nil {
 		if *a.DestinationIPv6CIDRBlock != *b.DestinationIPv6CIDRBlock {
-			delta.Add("Route.DestinationIPv6CIDRBlock", a.DestinationIPv6CIDRBlock, b.DestinationIPv6CIDRBlock)
+			delta.Add("CreateRouteInput.DestinationIPv6CIDRBlock", a.DestinationIPv6CIDRBlock, b.DestinationIPv6CIDRBlock)
 		}
 	}
 	if ackcompare.HasNilDifference(a.DestinationPrefixListID, b.DestinationPrefixListID) {
-		delta.Add("Route.DestinationPrefixListID", a.DestinationPrefixListID, b.DestinationPrefixListID)
+		delta.Add("CreateRouteInput.DestinationPrefixListID", a.DestinationPrefixListID, b.DestinationPrefixListID)
 	} else if a.DestinationPrefixListID != nil && b.DestinationPrefixListID != nil {
 		if *a.DestinationPrefixListID != *b.DestinationPrefixListID {
-			delta.Add("Route.DestinationPrefixListID", a.DestinationPrefixListID, b.DestinationPrefixListID)
+			delta.Add("CreateRouteInput.DestinationPrefixListID", a.DestinationPrefixListID, b.DestinationPrefixListID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.EgressOnlyInternetGatewayID, b.EgressOnlyInternetGatewayID) {
-		delta.Add("Route.EgressOnlyInternetGatewayID", a.EgressOnlyInternetGatewayID, b.EgressOnlyInternetGatewayID)
+		delta.Add("CreateRouteInput.EgressOnlyInternetGatewayID", a.EgressOnlyInternetGatewayID, b.EgressOnlyInternetGatewayID)
 	} else if a.EgressOnlyInternetGatewayID != nil && b.EgressOnlyInternetGatewayID != nil {
 		if *a.EgressOnlyInternetGatewayID != *b.EgressOnlyInternetGatewayID {
-			delta.Add("Route.EgressOnlyInternetGatewayID", a.EgressOnlyInternetGatewayID, b.EgressOnlyInternetGatewayID)
+			delta.Add("CreateRouteInput.EgressOnlyInternetGatewayID", a.EgressOnlyInternetGatewayID, b.EgressOnlyInternetGatewayID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.GatewayID, b.GatewayID) {
-		delta.Add("Route.GatewayID", a.GatewayID, b.GatewayID)
+		delta.Add("CreateRouteInput.GatewayID", a.GatewayID, b.GatewayID)
 	} else if a.GatewayID != nil && b.GatewayID != nil {
 		if *a.GatewayID != *b.GatewayID {
-			delta.Add("Route.GatewayID", a.GatewayID, b.GatewayID)
+			delta.Add("CreateRouteInput.GatewayID", a.GatewayID, b.GatewayID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.InstanceID, b.InstanceID) {
-		delta.Add("Route.InstanceID", a.InstanceID, b.InstanceID)
+		delta.Add("CreateRouteInput.InstanceID", a.InstanceID, b.InstanceID)
 	} else if a.InstanceID != nil && b.InstanceID != nil {
 		if *a.InstanceID != *b.InstanceID {
-			delta.Add("Route.InstanceID", a.InstanceID, b.InstanceID)
-		}
-	}
-	if ackcompare.HasNilDifference(a.InstanceOwnerID, b.InstanceOwnerID) {
-		delta.Add("Route.InstanceOwnerID", a.InstanceOwnerID, b.InstanceOwnerID)
-	} else if a.InstanceOwnerID != nil && b.InstanceOwnerID != nil {
-		if *a.InstanceOwnerID != *b.InstanceOwnerID {
-			delta.Add("Route.InstanceOwnerID", a.InstanceOwnerID, b.InstanceOwnerID)
+			delta.Add("CreateRouteInput.InstanceID", a.InstanceID, b.InstanceID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.LocalGatewayID, b.LocalGatewayID) {
-		delta.Add("Route.LocalGatewayID", a.LocalGatewayID, b.LocalGatewayID)
+		delta.Add("CreateRouteInput.LocalGatewayID", a.LocalGatewayID, b.LocalGatewayID)
 	} else if a.LocalGatewayID != nil && b.LocalGatewayID != nil {
 		if *a.LocalGatewayID != *b.LocalGatewayID {
-			delta.Add("Route.LocalGatewayID", a.LocalGatewayID, b.LocalGatewayID)
+			delta.Add("CreateRouteInput.LocalGatewayID", a.LocalGatewayID, b.LocalGatewayID)
 		}
 	}
-	if ackcompare.HasNilDifference(a.NatGatewayID, b.NatGatewayID) {
-		delta.Add("Route.NatGatewayID", a.NatGatewayID, b.NatGatewayID)
-	} else if a.NatGatewayID != nil && b.NatGatewayID != nil {
-		if *a.NatGatewayID != *b.NatGatewayID {
-			delta.Add("Route.NatGatewayID", a.NatGatewayID, b.NatGatewayID)
+	if ackcompare.HasNilDifference(a.NATGatewayID, b.NATGatewayID) {
+		delta.Add("CreateRouteInput.NATGatewayID", a.NATGatewayID, b.NATGatewayID)
+	} else if a.NATGatewayID != nil && b.NATGatewayID != nil {
+		if *a.NATGatewayID != *b.NATGatewayID {
+			delta.Add("CreateRouteInput.NATGatewayID", a.NATGatewayID, b.NATGatewayID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.NetworkInterfaceID, b.NetworkInterfaceID) {
-		delta.Add("Route.NetworkInterfaceID", a.NetworkInterfaceID, b.NetworkInterfaceID)
+		delta.Add("CreateRouteInput.NetworkInterfaceID", a.NetworkInterfaceID, b.NetworkInterfaceID)
 	} else if a.NetworkInterfaceID != nil && b.NetworkInterfaceID != nil {
 		if *a.NetworkInterfaceID != *b.NetworkInterfaceID {
-			delta.Add("Route.NetworkInterfaceID", a.NetworkInterfaceID, b.NetworkInterfaceID)
+			delta.Add("CreateRouteInput.NetworkInterfaceID", a.NetworkInterfaceID, b.NetworkInterfaceID)
 		}
 	}
-	if ackcompare.HasNilDifference(a.Origin, b.Origin) {
-		delta.Add("Route.Origin", a.Origin, b.Origin)
-	} else if a.Origin != nil && b.Origin != nil {
-		if *a.Origin != *b.Origin {
-			delta.Add("Route.Origin", a.Origin, b.Origin)
-		}
-	}
-	if ackcompare.HasNilDifference(a.State, b.State) {
-		delta.Add("Route.State", a.State, b.State)
-	} else if a.State != nil && b.State != nil {
-		if *a.State != *b.State {
-			delta.Add("Route.State", a.State, b.State)
+	if ackcompare.HasNilDifference(a.RouteTableID, b.RouteTableID) {
+		delta.Add("CreateRouteInput.RouteTableID", a.RouteTableID, b.RouteTableID)
+	} else if a.RouteTableID != nil && b.RouteTableID != nil {
+		if *a.RouteTableID != *b.RouteTableID {
+			delta.Add("CreateRouteInput.RouteTableID", a.RouteTableID, b.RouteTableID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.TransitGatewayID, b.TransitGatewayID) {
-		delta.Add("Route.TransitGatewayID", a.TransitGatewayID, b.TransitGatewayID)
+		delta.Add("CreateRouteInput.TransitGatewayID", a.TransitGatewayID, b.TransitGatewayID)
 	} else if a.TransitGatewayID != nil && b.TransitGatewayID != nil {
 		if *a.TransitGatewayID != *b.TransitGatewayID {
-			delta.Add("Route.TransitGatewayID", a.TransitGatewayID, b.TransitGatewayID)
+			delta.Add("CreateRouteInput.TransitGatewayID", a.TransitGatewayID, b.TransitGatewayID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.VPCEndpointID, b.VPCEndpointID) {
+		delta.Add("CreateRouteInput.VPCEndpointID", a.VPCEndpointID, b.VPCEndpointID)
+	} else if a.VPCEndpointID != nil && b.VPCEndpointID != nil {
+		if *a.VPCEndpointID != *b.VPCEndpointID {
+			delta.Add("CreateRouteInput.VPCEndpointID", a.VPCEndpointID, b.VPCEndpointID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.VPCPeeringConnectionID, b.VPCPeeringConnectionID) {
-		delta.Add("Route.VPCPeeringConnectionID", a.VPCPeeringConnectionID, b.VPCPeeringConnectionID)
+		delta.Add("CreateRouteInput.VPCPeeringConnectionID", a.VPCPeeringConnectionID, b.VPCPeeringConnectionID)
 	} else if a.VPCPeeringConnectionID != nil && b.VPCPeeringConnectionID != nil {
 		if *a.VPCPeeringConnectionID != *b.VPCPeeringConnectionID {
-			delta.Add("Route.VPCPeeringConnectionID", a.VPCPeeringConnectionID, b.VPCPeeringConnectionID)
+			delta.Add("CreateRouteInput.VPCPeeringConnectionID", a.VPCPeeringConnectionID, b.VPCPeeringConnectionID)
 		}
 	}
 

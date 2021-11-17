@@ -24,7 +24,7 @@ import (
 //
 // Describes a route table.
 type RouteTableSpec struct {
-	Routes []*Route `json:"routes,omitempty"`
+	Routes []*CreateRouteInput `json:"routes,omitempty"`
 	// The tags to assign to the route table.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// The ID of the VPC.
@@ -54,6 +54,9 @@ type RouteTableStatus struct {
 	// Any virtual private gateway (VGW) propagating routes.
 	// +kubebuilder:validation:Optional
 	PropagatingVGWs []*PropagatingVGW `json:"propagatingVGWs,omitempty"`
+	// The routes in the route table.
+	// +kubebuilder:validation:Optional
+	RouteStatuses []*Route `json:"routeStatuses,omitempty"`
 	// The ID of the route table.
 	// +kubebuilder:validation:Optional
 	RouteTableID *string `json:"routeTableID,omitempty"`
