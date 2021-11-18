@@ -3,4 +3,7 @@ kind: RouteTable
 metadata:
   name: $ROUTE_TABLE_NAME
 spec:
+  routes:
+    - destinationCIDRBlock: $DEST_CIDR_BLOCK
+      gatewayID: $IGW_ID
   vpcID: $VPC_ID

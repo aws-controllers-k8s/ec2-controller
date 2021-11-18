@@ -4,12 +4,16 @@ ignore:
     - ModifyVpcEndpoint
   field_paths:
     - CreateInternetGatewayInput.DryRun
+    - CreateRouteInput.DryRun
+    - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
     - CreateSecurityGroupInput.DryRun
     - CreateSubnetInput.DryRun
     - CreateTransitGatewayInput.DryRun
     - CreateVpcInput.DryRun
     - CreateVpcEndpointInput.DryRun
+    - DeleteRouteInput.DryRun
+    - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
     - DeleteSecurityGroupInput.GroupName
   resource_names:
@@ -86,6 +90,30 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+        - InvalidParameterValue
+    fields:
+      # RouteStatuses as Route to ensure
+      # fields set server-side (active, origin)
+      # are exposed in Status
+      RouteStatuses:
+        from:
+          operation: DescribeRouteTables
+          path: RouteTables.Routes
+        is_read_only: true
+      # Routes as CreateRouteInput to ensure only
+      # user-editable fields are exposed in Spec
+      Routes:
+        custom_field:
+          list_of: CreateRouteInput
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/route_table/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/route_table/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateRouteTable
   SecurityGroup:
     fields:
       # support EC2-VPC only

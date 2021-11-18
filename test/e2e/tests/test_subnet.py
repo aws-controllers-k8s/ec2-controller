@@ -56,11 +56,11 @@ class TestSubnet:
         resource_name = random_suffix_name("subnet-test", 24)
         test_vpc = get_bootstrap_resources().SharedTestVPC
         vpc_id = test_vpc.vpc_id
-        vpc_cidr = test_vpc.vpc_cidr_block
 
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["CIDR_BLOCK"] = vpc_cidr
+        # CIDR needs to be within SharedTestVPC range and not overlap other subnets
+        test_resource_values["CIDR_BLOCK"] = "10.0.255.0/24"
 
         # Load Subnet CR
         resource_data = load_ec2_resource(

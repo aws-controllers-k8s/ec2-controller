@@ -37,6 +37,37 @@ spec:
             description: "RouteTableSpec defines the desired state of RouteTable.
               \n Describes a route table."
             properties:
+              routes:
+                items:
+                  properties:
+                    carrierGatewayID:
+                      type: string
+                    destinationCIDRBlock:
+                      type: string
+                    destinationIPv6CIDRBlock:
+                      type: string
+                    destinationPrefixListID:
+                      type: string
+                    egressOnlyInternetGatewayID:
+                      type: string
+                    gatewayID:
+                      type: string
+                    instanceID:
+                      type: string
+                    localGatewayID:
+                      type: string
+                    natGatewayID:
+                      type: string
+                    networkInterfaceID:
+                      type: string
+                    transitGatewayID:
+                      type: string
+                    vpcEndpointID:
+                      type: string
+                    vpcPeeringConnectionID:
+                      type: string
+                  type: object
+                type: array
               tagSpecifications:
                 description: The tags to assign to the route table.
                 items:
@@ -162,10 +193,7 @@ spec:
                       type: string
                   type: object
                 type: array
-              routeTableID:
-                description: The ID of the route table.
-                type: string
-              routes:
+              routeStatuses:
                 description: The routes in the route table.
                 items:
                   description: Describes a route in a route table.
@@ -202,6 +230,9 @@ spec:
                       type: string
                   type: object
                 type: array
+              routeTableID:
+                description: The ID of the route table.
+                type: string
               tags:
                 description: Any tags assigned to the route table.
                 items:

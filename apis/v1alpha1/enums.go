@@ -1367,14 +1367,14 @@ const (
 	MulticastSupportValue_disable MulticastSupportValue = "disable"
 )
 
-type NatGatewayState string
+type NATGatewayState string
 
 const (
-	NatGatewayState_pending   NatGatewayState = "pending"
-	NatGatewayState_failed    NatGatewayState = "failed"
-	NatGatewayState_available NatGatewayState = "available"
-	NatGatewayState_deleting  NatGatewayState = "deleting"
-	NatGatewayState_deleted   NatGatewayState = "deleted"
+	NATGatewayState_pending   NATGatewayState = "pending"
+	NATGatewayState_failed    NATGatewayState = "failed"
+	NATGatewayState_available NATGatewayState = "available"
+	NATGatewayState_deleting  NATGatewayState = "deleting"
+	NATGatewayState_deleted   NATGatewayState = "deleted"
 )
 
 type NetworkInterfaceAttribute string

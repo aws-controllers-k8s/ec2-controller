@@ -41,6 +41,9 @@ func newResourceDelta(
 		return delta
 	}
 
+	if !reflect.DeepEqual(a.ko.Spec.Routes, b.ko.Spec.Routes) {
+		delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
+	}
 	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
 		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
 	}

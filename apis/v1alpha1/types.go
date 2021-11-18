@@ -118,7 +118,7 @@ type AnalysisRouteTableRoute struct {
 	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
 	GatewayID                   *string `json:"gatewayID,omitempty"`
 	InstanceID                  *string `json:"instanceID,omitempty"`
-	NatGatewayID                *string `json:"natGatewayID,omitempty"`
+	NATGatewayID                *string `json:"natGatewayID,omitempty"`
 	NetworkInterfaceID          *string `json:"networkInterfaceID,omitempty"`
 	Origin                      *string `json:"origin,omitempty"`
 	TransitGatewayID            *string `json:"transitGatewayID,omitempty"`
@@ -495,6 +495,22 @@ type CreateFleetError struct {
 	ErrorMessage *string `json:"errorMessage,omitempty"`
 }
 
+type CreateRouteInput struct {
+	CarrierGatewayID            *string `json:"carrierGatewayID,omitempty"`
+	DestinationCIDRBlock        *string `json:"destinationCIDRBlock,omitempty"`
+	DestinationIPv6CIDRBlock    *string `json:"destinationIPv6CIDRBlock,omitempty"`
+	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
+	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
+	GatewayID                   *string `json:"gatewayID,omitempty"`
+	InstanceID                  *string `json:"instanceID,omitempty"`
+	LocalGatewayID              *string `json:"localGatewayID,omitempty"`
+	NATGatewayID                *string `json:"natGatewayID,omitempty"`
+	NetworkInterfaceID          *string `json:"networkInterfaceID,omitempty"`
+	TransitGatewayID            *string `json:"transitGatewayID,omitempty"`
+	VPCEndpointID               *string `json:"vpcEndpointID,omitempty"`
+	VPCPeeringConnectionID      *string `json:"vpcPeeringConnectionID,omitempty"`
+}
+
 // Describes the options for a VPC attachment.
 type CreateTransitGatewayVPCAttachmentRequestOptions struct {
 	DNSSupport *string `json:"dnsSupport,omitempty"`
@@ -699,8 +715,9 @@ type EBSInstanceBlockDeviceSpecification struct {
 
 // Describes an egress-only internet gateway.
 type EgressOnlyInternetGateway struct {
-	Attachments []*InternetGatewayAttachment `json:"attachments,omitempty"`
-	Tags        []*Tag                       `json:"tags,omitempty"`
+	Attachments                 []*InternetGatewayAttachment `json:"attachments,omitempty"`
+	EgressOnlyInternetGatewayID *string                      `json:"egressOnlyInternetGatewayID,omitempty"`
+	Tags                        []*Tag                       `json:"tags,omitempty"`
 }
 
 // Describes the association between an instance and an Elastic Graphics accelerator.
@@ -1307,6 +1324,7 @@ type InstanceCreditSpecification struct {
 // Describes the credit option for CPU usage of a burstable performance instance.
 type InstanceCreditSpecificationRequest struct {
 	CPUCredits *string `json:"cpuCredits,omitempty"`
+	InstanceID *string `json:"instanceID,omitempty"`
 }
 
 // Describes an instance to export.
@@ -1402,7 +1420,8 @@ type InstancePrivateIPAddress struct {
 
 // The instance details to specify which volumes should be snapshotted.
 type InstanceSpecification struct {
-	ExcludeBootVolume *bool `json:"excludeBootVolume,omitempty"`
+	ExcludeBootVolume *bool   `json:"excludeBootVolume,omitempty"`
+	InstanceID        *string `json:"instanceID,omitempty"`
 }
 
 // Describes the current state of an instance.
@@ -1618,6 +1637,7 @@ type LaunchTemplateInstanceNetworkInterfaceSpecification struct {
 	InterfaceType                  *string   `json:"interfaceType,omitempty"`
 	IPv6AddressCount               *int64    `json:"ipv6AddressCount,omitempty"`
 	NetworkCardIndex               *int64    `json:"networkCardIndex,omitempty"`
+	NetworkInterfaceID             *string   `json:"networkInterfaceID,omitempty"`
 	PrivateIPAddress               *string   `json:"privateIPAddress,omitempty"`
 	SecondaryPrivateIPAddressCount *int64    `json:"secondaryPrivateIPAddressCount,omitempty"`
 	SubnetID                       *string   `json:"subnetID,omitempty"`
@@ -1633,6 +1653,7 @@ type LaunchTemplateInstanceNetworkInterfaceSpecificationRequest struct {
 	InterfaceType                  *string `json:"interfaceType,omitempty"`
 	IPv6AddressCount               *int64  `json:"ipv6AddressCount,omitempty"`
 	NetworkCardIndex               *int64  `json:"networkCardIndex,omitempty"`
+	NetworkInterfaceID             *string `json:"networkInterfaceID,omitempty"`
 	PrivateIPAddress               *string `json:"privateIPAddress,omitempty"`
 	SecondaryPrivateIPAddressCount *int64  `json:"secondaryPrivateIPAddressCount,omitempty"`
 	SubnetID                       *string `json:"subnetID,omitempty"`
@@ -1751,10 +1772,11 @@ type LoadPermissionRequest struct {
 
 // Describes a local gateway.
 type LocalGateway struct {
-	OutpostARN *string `json:"outpostARN,omitempty"`
-	OwnerID    *string `json:"ownerID,omitempty"`
-	State      *string `json:"state,omitempty"`
-	Tags       []*Tag  `json:"tags,omitempty"`
+	LocalGatewayID *string `json:"localGatewayID,omitempty"`
+	OutpostARN     *string `json:"outpostARN,omitempty"`
+	OwnerID        *string `json:"ownerID,omitempty"`
+	State          *string `json:"state,omitempty"`
+	Tags           []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes a route for a local gateway route table.
@@ -1765,6 +1787,7 @@ type LocalGatewayRoute struct {
 
 // Describes a local gateway route table.
 type LocalGatewayRouteTable struct {
+	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
 	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
 	OutpostARN               *string `json:"outpostARN,omitempty"`
 	OwnerID                  *string `json:"ownerID,omitempty"`
@@ -1785,10 +1808,11 @@ type LocalGatewayRouteTableVPCAssociation struct {
 // Describes an association between a local gateway route table and a virtual
 // interface group.
 type LocalGatewayRouteTableVirtualInterfaceGroupAssociation struct {
-	LocalGatewayID *string `json:"localGatewayID,omitempty"`
-	OwnerID        *string `json:"ownerID,omitempty"`
-	State          *string `json:"state,omitempty"`
-	Tags           []*Tag  `json:"tags,omitempty"`
+	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
+	OwnerID                  *string `json:"ownerID,omitempty"`
+	State                    *string `json:"state,omitempty"`
+	Tags                     []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes a local gateway virtual interface.
@@ -1815,6 +1839,7 @@ type ManagedPrefixList struct {
 	AddressFamily  *string `json:"addressFamily,omitempty"`
 	MaxEntries     *int64  `json:"maxEntries,omitempty"`
 	OwnerID        *string `json:"ownerID,omitempty"`
+	PrefixListID   *string `json:"prefixListID,omitempty"`
 	PrefixListName *string `json:"prefixListName,omitempty"`
 	StateMessage   *string `json:"stateMessage,omitempty"`
 	Tags           []*Tag  `json:"tags,omitempty"`
@@ -1858,19 +1883,19 @@ type MovingAddressStatus struct {
 }
 
 // Describes a NAT gateway.
-type NatGateway struct {
+type NATGateway struct {
 	CreateTime     *metav1.Time `json:"createTime,omitempty"`
 	DeleteTime     *metav1.Time `json:"deleteTime,omitempty"`
 	FailureCode    *string      `json:"failureCode,omitempty"`
 	FailureMessage *string      `json:"failureMessage,omitempty"`
-	NatGatewayID   *string      `json:"natGatewayID,omitempty"`
+	NATGatewayID   *string      `json:"natGatewayID,omitempty"`
 	SubnetID       *string      `json:"subnetID,omitempty"`
 	Tags           []*Tag       `json:"tags,omitempty"`
 	VPCID          *string      `json:"vpcID,omitempty"`
 }
 
 // Describes the IP addresses and network interface associated with a NAT gateway.
-type NatGatewayAddress struct {
+type NATGatewayAddress struct {
 	AllocationID       *string `json:"allocationID,omitempty"`
 	NetworkInterfaceID *string `json:"networkInterfaceID,omitempty"`
 	PrivateIP          *string `json:"privateIP,omitempty"`
@@ -2417,7 +2442,7 @@ type Route struct {
 	InstanceID                  *string `json:"instanceID,omitempty"`
 	InstanceOwnerID             *string `json:"instanceOwnerID,omitempty"`
 	LocalGatewayID              *string `json:"localGatewayID,omitempty"`
-	NatGatewayID                *string `json:"natGatewayID,omitempty"`
+	NATGatewayID                *string `json:"natGatewayID,omitempty"`
 	NetworkInterfaceID          *string `json:"networkInterfaceID,omitempty"`
 	Origin                      *string `json:"origin,omitempty"`
 	State                       *string `json:"state,omitempty"`
@@ -2565,6 +2590,7 @@ type ScheduledInstancesNetworkInterface struct {
 	Description                    *string `json:"description,omitempty"`
 	DeviceIndex                    *int64  `json:"deviceIndex,omitempty"`
 	IPv6AddressCount               *int64  `json:"ipv6AddressCount,omitempty"`
+	NetworkInterfaceID             *string `json:"networkInterfaceID,omitempty"`
 	PrivateIPAddress               *string `json:"privateIPAddress,omitempty"`
 	SecondaryPrivateIPAddressCount *int64  `json:"secondaryPrivateIPAddressCount,omitempty"`
 	SubnetID                       *string `json:"subnetID,omitempty"`
@@ -2757,6 +2783,7 @@ type SpotInstanceRequest struct {
 	AvailabilityZoneGroup    *string      `json:"availabilityZoneGroup,omitempty"`
 	BlockDurationMinutes     *int64       `json:"blockDurationMinutes,omitempty"`
 	CreateTime               *metav1.Time `json:"createTime,omitempty"`
+	InstanceID               *string      `json:"instanceID,omitempty"`
 	LaunchGroup              *string      `json:"launchGroup,omitempty"`
 	LaunchedAvailabilityZone *string      `json:"launchedAvailabilityZone,omitempty"`
 	SpotInstanceRequestID    *string      `json:"spotInstanceRequestID,omitempty"`
@@ -3196,6 +3223,7 @@ type TransitGatewayPrefixListAttachment struct {
 // Describes a prefix list reference.
 type TransitGatewayPrefixListReference struct {
 	Blackhole         *bool   `json:"blackhole,omitempty"`
+	PrefixListID      *string `json:"prefixListID,omitempty"`
 	PrefixListOwnerID *string `json:"prefixListOwnerID,omitempty"`
 }
 
@@ -3220,6 +3248,7 @@ type TransitGatewayRequestOptions struct {
 // Describes a route for a transit gateway route table.
 type TransitGatewayRoute struct {
 	DestinationCIDRBlock *string `json:"destinationCIDRBlock,omitempty"`
+	PrefixListID         *string `json:"prefixListID,omitempty"`
 }
 
 // Describes a route attachment.
