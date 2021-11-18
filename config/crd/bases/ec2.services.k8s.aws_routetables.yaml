@@ -60,8 +60,6 @@ spec:
                       type: string
                     networkInterfaceID:
                       type: string
-                    routeTableID:
-                      type: string
                     transitGatewayID:
                       type: string
                     vpcEndpointID:

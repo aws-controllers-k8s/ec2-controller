@@ -5,6 +5,7 @@ ignore:
   field_paths:
     - CreateInternetGatewayInput.DryRun
     - CreateRouteInput.DryRun
+    - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
     - CreateSecurityGroupInput.DryRun
     - CreateSubnetInput.DryRun
@@ -12,6 +13,7 @@ ignore:
     - CreateVpcInput.DryRun
     - CreateVpcEndpointInput.DryRun
     - DeleteRouteInput.DryRun
+    - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
     - DeleteSecurityGroupInput.GroupName
   resource_names:

@@ -689,13 +689,6 @@ func compareCreateRouteInput(
 			delta.Add("CreateRouteInput.NetworkInterfaceID", a.NetworkInterfaceID, b.NetworkInterfaceID)
 		}
 	}
-	if ackcompare.HasNilDifference(a.RouteTableID, b.RouteTableID) {
-		delta.Add("CreateRouteInput.RouteTableID", a.RouteTableID, b.RouteTableID)
-	} else if a.RouteTableID != nil && b.RouteTableID != nil {
-		if *a.RouteTableID != *b.RouteTableID {
-			delta.Add("CreateRouteInput.RouteTableID", a.RouteTableID, b.RouteTableID)
-		}
-	}
 	if ackcompare.HasNilDifference(a.TransitGatewayID, b.TransitGatewayID) {
 		delta.Add("CreateRouteInput.TransitGatewayID", a.TransitGatewayID, b.TransitGatewayID)
 	} else if a.TransitGatewayID != nil && b.TransitGatewayID != nil {
@@ -756,9 +749,6 @@ func (rm *resourceManager) newCreateRouteInput(
 	if c.NetworkInterfaceID != nil {
 		res.SetNetworkInterfaceId(*c.NetworkInterfaceID)
 	}
-	if c.RouteTableID != nil {
-		res.SetRouteTableId(*c.RouteTableID)
-	}
 	if c.TransitGatewayID != nil {
 		res.SetTransitGatewayId(*c.TransitGatewayID)
 	}
@@ -785,9 +775,6 @@ func (rm *resourceManager) newDeleteRouteInput(
 	}
 	if c.DestinationPrefixListID != nil {
 		res.SetDestinationPrefixListId(*c.DestinationPrefixListID)
-	}
-	if c.RouteTableID != nil {
-		res.SetRouteTableId(*c.RouteTableID)
 	}
 
 	return res

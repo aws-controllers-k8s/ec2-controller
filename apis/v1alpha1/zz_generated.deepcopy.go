@@ -2087,11 +2087,6 @@ func (in *CreateRouteInput) DeepCopyInto(out *CreateRouteInput) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.RouteTableID != nil {
-		in, out := &in.RouteTableID, &out.RouteTableID
-		*out = new(string)
-		**out = **in
-	}
 	if in.TransitGatewayID != nil {
 		in, out := &in.TransitGatewayID, &out.TransitGatewayID
 		*out = new(string)

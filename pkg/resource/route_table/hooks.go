@@ -151,6 +151,9 @@ func (rm *resourceManager) createRoute(
 	defer exit(err)
 
 	input := rm.newCreateRouteInput(c)
+	// Routes should only be configurable for the
+	// RouteTable in which they are defined
+	input.RouteTableId = r.ko.Status.RouteTableID
 	_, err = rm.sdkapi.CreateRouteWithContext(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateRoute", err)
 	return err
@@ -166,6 +169,9 @@ func (rm *resourceManager) deleteRoute(
 	defer exit(err)
 
 	input := rm.newDeleteRouteInput(c)
+	// Routes should only be configurable for the
+	// RouteTable in which they are defined
+	input.RouteTableId = r.ko.Status.RouteTableID
 	_, err = rm.sdkapi.DeleteRouteWithContext(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRoute", err)
 	return err

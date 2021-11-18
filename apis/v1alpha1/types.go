@@ -506,7 +506,6 @@ type CreateRouteInput struct {
 	LocalGatewayID              *string `json:"localGatewayID,omitempty"`
 	NATGatewayID                *string `json:"natGatewayID,omitempty"`
 	NetworkInterfaceID          *string `json:"networkInterfaceID,omitempty"`
-	RouteTableID                *string `json:"routeTableID,omitempty"`
 	TransitGatewayID            *string `json:"transitGatewayID,omitempty"`
 	VPCEndpointID               *string `json:"vpcEndpointID,omitempty"`
 	VPCPeeringConnectionID      *string `json:"vpcPeeringConnectionID,omitempty"`
