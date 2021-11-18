@@ -720,3 +720,131 @@ func compareCreateRouteInput(
 
 	return delta
 }
+
+func (rm *resourceManager) newCreateRouteInput(
+	c svcapitypes.CreateRouteInput,
+) *svcsdk.CreateRouteInput {
+	res := &svcsdk.CreateRouteInput{}
+
+	if c.CarrierGatewayID != nil {
+		res.SetCarrierGatewayId(*c.CarrierGatewayID)
+	}
+	if c.DestinationCIDRBlock != nil {
+		res.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
+	}
+	if c.DestinationIPv6CIDRBlock != nil {
+		res.SetDestinationIpv6CidrBlock(*c.DestinationIPv6CIDRBlock)
+	}
+	if c.DestinationPrefixListID != nil {
+		res.SetDestinationPrefixListId(*c.DestinationPrefixListID)
+	}
+	if c.EgressOnlyInternetGatewayID != nil {
+		res.SetEgressOnlyInternetGatewayId(*c.EgressOnlyInternetGatewayID)
+	}
+	if c.GatewayID != nil {
+		res.SetGatewayId(*c.GatewayID)
+	}
+	if c.InstanceID != nil {
+		res.SetInstanceId(*c.InstanceID)
+	}
+	if c.LocalGatewayID != nil {
+		res.SetLocalGatewayId(*c.LocalGatewayID)
+	}
+	if c.NATGatewayID != nil {
+		res.SetNatGatewayId(*c.NATGatewayID)
+	}
+	if c.NetworkInterfaceID != nil {
+		res.SetNetworkInterfaceId(*c.NetworkInterfaceID)
+	}
+	if c.RouteTableID != nil {
+		res.SetRouteTableId(*c.RouteTableID)
+	}
+	if c.TransitGatewayID != nil {
+		res.SetTransitGatewayId(*c.TransitGatewayID)
+	}
+	if c.VPCEndpointID != nil {
+		res.SetVpcEndpointId(*c.VPCEndpointID)
+	}
+	if c.VPCPeeringConnectionID != nil {
+		res.SetVpcPeeringConnectionId(*c.VPCPeeringConnectionID)
+	}
+
+	return res
+}
+
+func (rm *resourceManager) newDeleteRouteInput(
+	c svcapitypes.CreateRouteInput,
+) *svcsdk.DeleteRouteInput {
+	res := &svcsdk.DeleteRouteInput{}
+
+	if c.DestinationCIDRBlock != nil {
+		res.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
+	}
+	if c.DestinationIPv6CIDRBlock != nil {
+		res.SetDestinationIpv6CidrBlock(*c.DestinationIPv6CIDRBlock)
+	}
+	if c.DestinationPrefixListID != nil {
+		res.SetDestinationPrefixListId(*c.DestinationPrefixListID)
+	}
+	if c.RouteTableID != nil {
+		res.SetRouteTableId(*c.RouteTableID)
+	}
+
+	return res
+}
+
+// setRoute sets a resource Route type
+// given the SDK type.
+func (rm *resourceManager) setResourceRoute(
+	resp *svcsdk.Route,
+) *svcapitypes.Route {
+	res := &svcapitypes.Route{}
+
+	if resp.CarrierGatewayId != nil {
+		res.CarrierGatewayID = resp.CarrierGatewayId
+	}
+	if resp.DestinationCidrBlock != nil {
+		res.DestinationCIDRBlock = resp.DestinationCidrBlock
+	}
+	if resp.DestinationIpv6CidrBlock != nil {
+		res.DestinationIPv6CIDRBlock = resp.DestinationIpv6CidrBlock
+	}
+	if resp.DestinationPrefixListId != nil {
+		res.DestinationPrefixListID = resp.DestinationPrefixListId
+	}
+	if resp.EgressOnlyInternetGatewayId != nil {
+		res.EgressOnlyInternetGatewayID = resp.EgressOnlyInternetGatewayId
+	}
+	if resp.GatewayId != nil {
+		res.GatewayID = resp.GatewayId
+	}
+	if resp.InstanceId != nil {
+		res.InstanceID = resp.InstanceId
+	}
+	if resp.InstanceOwnerId != nil {
+		res.InstanceOwnerID = resp.InstanceOwnerId
+	}
+	if resp.LocalGatewayId != nil {
+		res.LocalGatewayID = resp.LocalGatewayId
+	}
+	if resp.NatGatewayId != nil {
+		res.NATGatewayID = resp.NatGatewayId
+	}
+	if resp.NetworkInterfaceId != nil {
+		res.NetworkInterfaceID = resp.NetworkInterfaceId
+	}
+	if resp.Origin != nil {
+		res.Origin = resp.Origin
+	}
+	if resp.State != nil {
+		res.State = resp.State
+	}
+	if resp.TransitGatewayId != nil {
+		res.TransitGatewayID = resp.TransitGatewayId
+	}
+	if resp.VpcPeeringConnectionId != nil {
+		res.VPCPeeringConnectionID = resp.VpcPeeringConnectionId
+	}
+
+	return res
+}
