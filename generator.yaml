@@ -90,11 +90,16 @@ resources:
         - InvalidVpcID.NotFound
         - InvalidParameterValue
     fields:
+      # RouteStatuses as Route to ensure
+      # fields set server-side (active, origin)
+      # are exposed in Status
       RouteStatuses:
         from:
           operation: DescribeRouteTables
           path: RouteTables.Routes
         is_read_only: true
+      # Routes as CreateRouteInput to ensure only
+      # user-editable fields are exposed in Spec
       Routes:
         custom_field:
           list_of: CreateRouteInput
