@@ -150,7 +150,7 @@ func (rm *resourceManager) createRoute(
 	exit := rlog.Trace("rm.createRoute")
 	defer exit(err)
 
-	input := rm.newCreateRoutePayload(r, c)
+	input := rm.newCreateRouteInput(c)
 	_, err = rm.sdkapi.CreateRouteWithContext(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateRoute", err)
 	return err
@@ -165,79 +165,10 @@ func (rm *resourceManager) deleteRoute(
 	exit := rlog.Trace("rm.deleteRoute")
 	defer exit(err)
 
-	input := rm.newDeleteRoutePayload(r, c)
+	input := rm.newDeleteRouteInput(c)
 	_, err = rm.sdkapi.DeleteRouteWithContext(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRoute", err)
 	return err
-}
-
-func (rm *resourceManager) newCreateRoutePayload(
-	r *resource,
-	c svcapitypes.CreateRouteInput,
-) *svcsdk.CreateRouteInput {
-	input := &svcsdk.CreateRouteInput{}
-	if r.ko.Status.RouteTableID != nil {
-		input.SetRouteTableId(*r.ko.Status.RouteTableID)
-	}
-	if c.CarrierGatewayID != nil {
-		input.SetCarrierGatewayId(*c.CarrierGatewayID)
-	}
-	if c.DestinationCIDRBlock != nil {
-		input.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
-	}
-	if c.DestinationIPv6CIDRBlock != nil {
-		input.SetDestinationIpv6CidrBlock(*c.DestinationIPv6CIDRBlock)
-	}
-	if c.DestinationPrefixListID != nil {
-		input.SetDestinationPrefixListId(*c.DestinationPrefixListID)
-	}
-	if c.EgressOnlyInternetGatewayID != nil {
-		input.SetEgressOnlyInternetGatewayId(*c.EgressOnlyInternetGatewayID)
-	}
-	if c.GatewayID != nil {
-		input.SetGatewayId(*c.GatewayID)
-	}
-	if c.InstanceID != nil {
-		input.SetInstanceId(*c.InstanceID)
-	}
-	if c.LocalGatewayID != nil {
-		input.SetLocalGatewayId(*c.LocalGatewayID)
-	}
-	if c.NATGatewayID != nil {
-		input.SetNatGatewayId(*c.NATGatewayID)
-	}
-	if c.NetworkInterfaceID != nil {
-		input.SetNetworkInterfaceId(*c.NetworkInterfaceID)
-	}
-	if c.TransitGatewayID != nil {
-		input.SetTransitGatewayId(*c.TransitGatewayID)
-	}
-	if c.VPCPeeringConnectionID != nil {
-		input.SetVpcPeeringConnectionId(*c.VPCPeeringConnectionID)
-	}
-
-	return input
-}
-
-func (rm *resourceManager) newDeleteRoutePayload(
-	r *resource,
-	c svcapitypes.CreateRouteInput,
-) *svcsdk.DeleteRouteInput {
-	input := &svcsdk.DeleteRouteInput{}
-	if r.ko.Status.RouteTableID != nil {
-		input.SetRouteTableId(*r.ko.Status.RouteTableID)
-	}
-	if c.DestinationCIDRBlock != nil {
-		input.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
-	}
-	if c.DestinationIPv6CIDRBlock != nil {
-		input.SetDestinationIpv6CidrBlock(*c.DestinationIPv6CIDRBlock)
-	}
-	if c.DestinationPrefixListID != nil {
-		input.SetDestinationPrefixListId(*c.DestinationPrefixListID)
-	}
-
-	return input
 }
 
 func (rm *resourceManager) customUpdateRouteTable(
@@ -284,50 +215,7 @@ func (rm *resourceManager) addRoutesToStatus(
 	if routeTable.Routes != nil {
 		routesInStatus := []*svcapitypes.Route{}
 		for _, r := range routeTable.Routes {
-			routeInStatus := &svcapitypes.Route{}
-			if r.CarrierGatewayId != nil {
-				routeInStatus.CarrierGatewayID = r.CarrierGatewayId
-			}
-			if r.DestinationCidrBlock != nil {
-				routeInStatus.DestinationCIDRBlock = r.DestinationCidrBlock
-			}
-			if r.DestinationIpv6CidrBlock != nil {
-				routeInStatus.DestinationIPv6CIDRBlock = r.DestinationIpv6CidrBlock
-			}
-			if r.DestinationPrefixListId != nil {
-				routeInStatus.DestinationPrefixListID = r.DestinationPrefixListId
-			}
-			if r.EgressOnlyInternetGatewayId != nil {
-				routeInStatus.EgressOnlyInternetGatewayID = r.EgressOnlyInternetGatewayId
-			}
-			if r.GatewayId != nil {
-				routeInStatus.GatewayID = r.GatewayId
-			}
-			if r.InstanceId != nil {
-				routeInStatus.InstanceID = r.InstanceId
-			}
-			if r.LocalGatewayId != nil {
-				routeInStatus.LocalGatewayID = r.LocalGatewayId
-			}
-			if r.NatGatewayId != nil {
-				routeInStatus.NATGatewayID = r.NatGatewayId
-			}
-			if r.NetworkInterfaceId != nil {
-				routeInStatus.NetworkInterfaceID = r.NetworkInterfaceId
-			}
-			if r.TransitGatewayId != nil {
-				routeInStatus.TransitGatewayID = r.TransitGatewayId
-			}
-			if r.VpcPeeringConnectionId != nil {
-				routeInStatus.VPCPeeringConnectionID = r.VpcPeeringConnectionId
-			}
-			if r.Origin != nil {
-				routeInStatus.Origin = r.Origin
-			}
-			if r.State != nil {
-				routeInStatus.State = r.State
-			}
-			routesInStatus = append(routesInStatus, routeInStatus)
+			routesInStatus = append(routesInStatus, rm.setResourceRoute(r))
 		}
 		ko.Status.RouteStatuses = routesInStatus
 	}

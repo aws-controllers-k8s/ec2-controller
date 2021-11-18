@@ -11,6 +11,7 @@ ignore:
     - CreateTransitGatewayInput.DryRun
     - CreateVpcInput.DryRun
     - CreateVpcEndpointInput.DryRun
+    - DeleteRouteInput.DryRun
     # support EC2-VPC only
     - DeleteSecurityGroupInput.GroupName
   resource_names:
