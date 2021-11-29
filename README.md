@@ -16,6 +16,13 @@ Start with the [Install an ACK Controller](https://aws-controllers-k8s.github.io
 
 *Note: it is recommended and assumed your local terminal has kubectl and AWS credentials configured to use the hosting cluster and AWS account, respectively.*
 
+### Release Artifacts
+
+The latest images and Helm Charts can be found in their respective ECR Public repository:
+* [Images](https://gallery.ecr.aws/aws-controllers-k8s/ec2-controller)
+* [Helm charts](https://gallery.ecr.aws/aws-controllers-k8s/ec2-chart)
+
+
 ## Create/Delete an ACK Resource
 
 * Navigate to [test resources]() for a list of resource `yaml` templates
