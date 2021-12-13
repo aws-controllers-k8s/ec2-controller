@@ -1,0 +1,48 @@
+---
+annotations:
+  capabilityLevel: Basic Install
+  shortDescription: AWS EC2 controller is a service controller for managing EC2 resources
+    in Kubernetes
+displayName: AWS Controllers for Kubernetes - Amazon EC2
+description: |-
+  Manage Elastic Compute Cloud (EC2) resources in AWS from within your Kubernetes cluster.
+
+
+  **About Amazon EC2**
+
+
+  Amazon Elastic Compute Cloud (Amazon EC2) provides scalable computing capacity in the Amazon Web Services (AWS) Cloud. Using Amazon EC2 eliminates your need to invest in hardware up front, so you can develop and deploy applications faster. You can use Amazon EC2 to launch as many or as few virtual servers as you need, configure security and networking, and manage storage. Amazon EC2 enables you to scale up or down to handle changes in requirements or spikes in popularity, reducing your need to forecast traffic.
+
+
+  **About the AWS Controllers for Kubernetes**
+
+
+  This controller is a component of the [AWS Controller for Kubernetes](https://github.com/aws/aws-controllers-k8s)
+  project. This project is currently in **developer preview**.
+
+
+  **Pre-Installation Steps**
+
+
+  Please follow the following link: [Red Hat OpenShift](https://aws-controllers-k8s.github.io/community/docs/user-docs/openshift/)
+samples:
+- kind: VPCEndpoint
+  spec: '{}'
+- kind: VPC
+  spec: '{}'
+- kind: InternetGateway
+  spec: '{}'
+- kind: RouteTable
+  spec: '{}'
+- kind: SecurityGroup
+  spec: '{}'
+- kind: Subnet
+  spec: '{}'
+- kind: TransitGateway
+  spec: '{}'
+maintainers:
+- name: "ec2 maintainer team"
+  email: "ack-maintainers@amazon.com"
+links:
+- name: Amazon EC2 Developer Resources
+  url: https://aws.amazon.com/ec2/resources/
