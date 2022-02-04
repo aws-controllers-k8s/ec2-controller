@@ -26,8 +26,9 @@ import (
 type SubnetSpec struct {
 	// The Availability Zone or Local Zone for the subnet.
 	//
-	// Default: AWS selects one for you. If you create more than one subnet in your
-	// VPC, we do not necessarily select a different zone for each subnet.
+	// Default: Amazon Web Services selects one for you. If you create more than
+	// one subnet in your VPC, we do not necessarily select a different zone for
+	// each subnet.
 	//
 	// To create a subnet in a Local Zone, set this value to the Local Zone ID,
 	// for example us-west-2-lax-1a. For information about the Regions that support
@@ -96,7 +97,7 @@ type SubnetStatus struct {
 	// address.
 	// +kubebuilder:validation:Optional
 	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
-	// The ID of the AWS account that owns the subnet.
+	// The ID of the Amazon Web Services account that owns the subnet.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// The current state of the subnet.

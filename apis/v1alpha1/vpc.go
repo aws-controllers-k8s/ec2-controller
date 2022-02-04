@@ -85,7 +85,7 @@ type VPCStatus struct {
 	// Indicates whether the VPC is the default VPC.
 	// +kubebuilder:validation:Optional
 	IsDefault *bool `json:"isDefault,omitempty"`
-	// The ID of the AWS account that owns the VPC.
+	// The ID of the Amazon Web Services account that owns the VPC.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// The current state of the VPC.

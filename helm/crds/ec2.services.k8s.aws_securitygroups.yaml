@@ -35,7 +35,7 @@ spec:
             type: object
           spec:
             description: "SecurityGroupSpec defines the desired state of SecurityGroup.
-              \n Describes a security group"
+              \n Describes a security group."
             properties:
               description:
                 description: "A description for the security group. This is informational

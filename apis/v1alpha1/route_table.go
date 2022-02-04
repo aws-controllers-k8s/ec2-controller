@@ -48,7 +48,7 @@ type RouteTableStatus struct {
 	// The associations between the route table and one or more subnets or a gateway.
 	// +kubebuilder:validation:Optional
 	Associations []*RouteTableAssociation `json:"associations,omitempty"`
-	// The ID of the AWS account that owns the route table.
+	// The ID of the Amazon Web Services account that owns the route table.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// Any virtual private gateway (VGW) propagating routes.

@@ -22,7 +22,7 @@ import (
 
 // SecurityGroupSpec defines the desired state of SecurityGroup.
 //
-// Describes a security group
+// Describes a security group.
 type SecurityGroupSpec struct {
 	// A description for the security group. This is informational only.
 	//

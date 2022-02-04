@@ -47,7 +47,7 @@ type InternetGatewayStatus struct {
 	// The ID of the internet gateway.
 	// +kubebuilder:validation:Optional
 	InternetGatewayID *string `json:"internetGatewayID,omitempty"`
-	// The ID of the AWS account that owns the internet gateway.
+	// The ID of the Amazon Web Services account that owns the internet gateway.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// Any tags assigned to the internet gateway.
