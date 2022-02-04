@@ -207,7 +207,8 @@ spec:
                 description: Indicates whether the VPC is the default VPC.
                 type: boolean
               ownerID:
-                description: The ID of the AWS account that owns the VPC.
+                description: The ID of the Amazon Web Services account that owns the
+                  VPC.
                 type: string
               state:
                 description: The current state of the VPC.

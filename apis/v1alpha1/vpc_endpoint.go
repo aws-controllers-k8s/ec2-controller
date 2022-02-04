@@ -25,7 +25,7 @@ import (
 // Describes a VPC endpoint.
 type VPCEndpointSpec struct {
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency
-	// of the request. For more information, see How to Ensure Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
+	// of the request. For more information, see How to ensure idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
 	ClientToken *string `json:"clientToken,omitempty"`
 	// (Interface and gateway endpoints) A policy to attach to the endpoint that
 	// controls access to the service. The policy must be in valid JSON format.
@@ -44,9 +44,7 @@ type VPCEndpointSpec struct {
 	// true: enableDnsHostnames and enableDnsSupport. Use ModifyVpcAttribute to
 	// set the VPC attributes.
 	//
-	// Private DNS is not supported for Amazon S3 interface endpoints.
-	//
-	// Default: true for supported endpoints
+	// Default: true
 	PrivateDNSEnabled *bool `json:"privateDNSEnabled,omitempty"`
 	// (Gateway endpoint) One or more route table IDs.
 	RouteTableIDs []*string `json:"routeTableIDs,omitempty"`
@@ -101,7 +99,7 @@ type VPCEndpointStatus struct {
 	// (Interface endpoint) One or more network interfaces for the endpoint.
 	// +kubebuilder:validation:Optional
 	NetworkInterfaceIDs []*string `json:"networkInterfaceIDs,omitempty"`
-	// The ID of the AWS account that owns the VPC endpoint.
+	// The ID of the Amazon Web Services account that owns the VPC endpoint.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// Indicates whether the VPC endpoint is being managed by its service.

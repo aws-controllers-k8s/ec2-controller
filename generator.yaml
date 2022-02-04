@@ -19,6 +19,7 @@ ignore:
   resource_names:
     - AccountAttribute
     - CapacityReservation
+    - CapacityReservationFleet
     - CarrierGateway
     - ClientVpnEndpoint
     - ClientVpnRoute
@@ -30,6 +31,7 @@ ignore:
     - FpgaImage
     - Image
     - Instance
+    - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
     - KeyPair
@@ -45,13 +47,17 @@ ignore:
     - NetworkInterfacePermission
     - NetworkInterface
     - PlacementGroup
+    - ReplaceRootVolumeTask
     - ReservedInstancesListing
+    - RestoreImageTask
     #- RouteTable
     - Route
     #- SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
+    - StoreImageTask
     #- Subnet
+    - SubnetCidrReservation
     - TrafficMirrorFilterRule
     - TrafficMirrorFilter
     - TrafficMirrorSession
