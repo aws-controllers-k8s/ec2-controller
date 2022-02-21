@@ -607,14 +607,16 @@ type CustomerGateway struct {
 
 // Describes a DHCP configuration option.
 type DHCPConfiguration struct {
-	Key *string `json:"key,omitempty"`
+	Key    *string           `json:"key,omitempty"`
+	Values []*AttributeValue `json:"values,omitempty"`
 }
 
 // Describes a set of DHCP options.
-type DHCPOptions struct {
-	DHCPOptionsID *string `json:"dhcpOptionsID,omitempty"`
-	OwnerID       *string `json:"ownerID,omitempty"`
-	Tags          []*Tag  `json:"tags,omitempty"`
+type DHCPOptions_SDK struct {
+	DHCPConfigurations []*DHCPConfiguration `json:"dhcpConfigurations,omitempty"`
+	DHCPOptionsID      *string              `json:"dhcpOptionsID,omitempty"`
+	OwnerID            *string              `json:"ownerID,omitempty"`
+	Tags               []*Tag               `json:"tags,omitempty"`
 }
 
 // Describes a DNS entry.

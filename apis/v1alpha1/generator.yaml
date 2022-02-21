@@ -3,6 +3,7 @@ ignore:
     - ModifyTransitGateway
     - ModifyVpcEndpoint
   field_paths:
+    - CreateDhcpOptionsInput.DryRun
     - CreateInternetGatewayInput.DryRun
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
@@ -26,6 +27,7 @@ ignore:
     - CustomerGateway
     - DefaultSubnet
     - DefaultVpc
+    #- DhcpOptions
     - EgressOnlyInternetGateway
     - Fleet
     - FpgaImage
@@ -91,6 +93,11 @@ operations:
     resource_name: VpcEndpoint
 
 resources:
+  DhcpOptions:
+    fields:
+      DHCPConfigurations.Values:
+        set:
+          - from: AttributeValue.Value
   RouteTable:
     exceptions:
       terminal_codes:

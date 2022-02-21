@@ -9,6 +9,8 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - dhcpoptions
+
   - internetgateways
 
   - routetables
@@ -34,6 +36,7 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - dhcpoptions
   - internetgateways
   - routetables
   - securitygroups
