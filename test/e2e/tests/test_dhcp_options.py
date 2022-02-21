@@ -55,11 +55,11 @@ class TestDhcpOptions:
         resource_name = random_suffix_name("dhcp-opts-test", 24)
 
         test_resource_values["DHCP_OPTIONS_NAME"] = resource_name
-        test_resource_values["DHCP-KEY-1"] = "domain-name"
-        test_resource_values["DHCP-VAL-1"] = "ack-example.com"
-        test_resource_values["DHCP-KEY-2"] = "domain-name-servers"
-        test_resource_values["DHCP-VAL-2-1"] = "10.2.5.1"
-        test_resource_values["DHCP-VAL-2-2"] = "10.2.5.2"
+        test_resource_values["DHCP_KEY_1"] = "domain-name"
+        test_resource_values["DHCP_VAL_1"] = "ack-example.com"
+        test_resource_values["DHCP_KEY_2"] = "domain-name-servers"
+        test_resource_values["DHCP_VAL_2_1"] = "10.2.5.1"
+        test_resource_values["DHCP_VAL_2_2"] = "10.2.5.2"
 
         # Load DHCP Options CR
         resource_data = load_ec2_resource(

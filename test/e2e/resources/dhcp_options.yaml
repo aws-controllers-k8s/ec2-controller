@@ -4,10 +4,10 @@ metadata:
   name: $DHCP_OPTIONS_NAME
 spec:
   dhcpConfigurations:
-    - key: $DHCP-KEY-1
+    - key: $DHCP_KEY_1
       values:
-        - $DHCP-VAL-1
-    - key: $DHCP-KEY-2
+        - $DHCP_VAL_1
+    - key: $DHCP_KEY_2
       values:
-        - $DHCP-VAL-2-1
-        - $DHCP-VAL-2-2
+        - $DHCP_VAL_2_1
+        - $DHCP_VAL_2_2
