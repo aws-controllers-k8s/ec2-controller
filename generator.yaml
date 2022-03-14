@@ -173,6 +173,11 @@ resources:
     fields:
       AllocationId:
         is_primary_key: true
+        print:
+          name: ALLOCATION-ID
+      PublicIp:
+        print:
+          name: PUBLIC-IP
     list_operation:
       match_fields:
       # PublicIP and AllocationID are two ways of identifying the same resource

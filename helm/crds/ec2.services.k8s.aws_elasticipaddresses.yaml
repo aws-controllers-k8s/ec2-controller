@@ -16,7 +16,14 @@ spec:
     singular: elasticipaddress
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.allocationID
+      name: ALLOCATION-ID
+      type: string
+    - jsonPath: .status.publicIP
+      name: PUBLIC-IP
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ElasticIPAddress is the Schema for the ElasticIPAddresses API

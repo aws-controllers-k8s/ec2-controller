@@ -86,6 +86,8 @@ type ElasticIPAddressStatus struct {
 // ElasticIPAddress is the Schema for the ElasticIPAddresses API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ALLOCATION-ID",type=string,priority=0,JSONPath=`.status.allocationID`
+// +kubebuilder:printcolumn:name="PUBLIC-IP",type=string,priority=0,JSONPath=`.status.publicIP`
 type ElasticIPAddress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
