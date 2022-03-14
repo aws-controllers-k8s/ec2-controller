@@ -27,6 +27,7 @@ RESOURCE_PLURAL = "vpcs"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 5
 
 
 def get_vpc(ec2_client, vpc_id: str) -> dict:
@@ -45,6 +46,17 @@ def get_vpc(ec2_client, vpc_id: str) -> dict:
 
 def vpc_exists(ec2_client, vpc_id: str) -> bool:
     return get_vpc(ec2_client, vpc_id) is not None
+
+def get_vpc_attribute(ec2_client, vpc_id: str, attribute_name: str) -> dict:
+    return ec2_client.describe_vpc_attribute(Attribute=attribute_name, VpcId=vpc_id)
+    
+def get_dns_support(ec2_client, vpc_id: str) -> bool:
+    attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsSupport')
+    return attribute['EnableDnsSupport']['Value']
+
+def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
+    attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsHostnames')
+    return attribute['EnableDnsHostnames']['Value']
 
 @service_marker
 @pytest.mark.canary
@@ -128,12 +140,30 @@ class TestVpc:
         assert exists
 
         # Assert the attributes are set correctly
-        dns_support = ec2_client.describe_vpc_attribute(Attribute='enableDnsSupport', VpcId=resource_id)
-        assert dns_support['EnableDnsSupport']['Value']
+        assert get_dns_support(ec2_client, resource_id)
+        assert get_dns_hostnames(ec2_client, resource_id)
 
-        dns_hostnames = ec2_client.describe_vpc_attribute(Attribute='enableDnsHostnames', VpcId=resource_id)
-        assert dns_hostnames['EnableDnsHostnames']['Value']
+        # Disable the DNS support
+        updates = {
+            "spec": {"enableDNSSupport": False}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
+        # Assert DNS support has been updated
+        assert not get_dns_support(ec2_client, resource_id)
+        assert get_dns_hostnames(ec2_client, resource_id)
+
+        # Disable the DNS hostname
+        updates = {
+            "spec": {"enableDNSHostnames": False}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Assert DNS hostname has been updated
+        assert not get_dns_support(ec2_client, resource_id)
+        assert not get_dns_hostnames(ec2_client, resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)

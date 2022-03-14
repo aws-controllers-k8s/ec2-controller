@@ -17,6 +17,7 @@ import (
 	"context"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -134,4 +135,34 @@ func (rm *resourceManager) addAttributesToSpec(
 	ko.Spec.EnableDNSHostnames = dnsHostnames.EnableDnsHostnames.Value
 
 	return nil
+}
+
+func (rm *resourceManager) customUpdate(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+	delta *ackcompare.Delta,
+) (updated *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.customUpdateVPC")
+	defer exit(err)
+
+	// Merge in the information we read from the API call above to the copy of
+	// the original Kubernetes object we passed to the function
+	ko := desired.ko.DeepCopy()
+
+	if delta.DifferentAt("Spec.EnableDNSSupport") {
+		if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+
+	if delta.DifferentAt("Spec.EnableDNSHostnames") {
+		if err := rm.syncDNSHostnamesAttribute(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+
+	rm.setStatusDefaults(ko)
+	return &resource{ko}, nil
 }
