@@ -1,0 +1,1 @@
+	input.SetPublicIps([]*string{r.ko.Status.PublicIP})

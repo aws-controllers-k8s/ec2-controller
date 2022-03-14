@@ -85,6 +85,7 @@ type Address struct {
 	CarrierIP               *string `json:"carrierIP,omitempty"`
 	CustomerOwnedIP         *string `json:"customerOwnedIP,omitempty"`
 	CustomerOwnedIPv4Pool   *string `json:"customerOwnedIPv4Pool,omitempty"`
+	Domain                  *string `json:"domain,omitempty"`
 	InstanceID              *string `json:"instanceID,omitempty"`
 	NetworkBorderGroup      *string `json:"networkBorderGroup,omitempty"`
 	NetworkInterfaceID      *string `json:"networkInterfaceID,omitempty"`
@@ -97,7 +98,11 @@ type Address struct {
 
 // The attributes associated with an Elastic IP address.
 type AddressAttribute struct {
-	PtrRecord *string `json:"ptrRecord,omitempty"`
+	AllocationID *string `json:"allocationID,omitempty"`
+	PtrRecord    *string `json:"ptrRecord,omitempty"`
+	// The status of an updated pointer (PTR) record for an Elastic IP address.
+	PtrRecordUpdate *PtrUpdateStatus `json:"ptrRecordUpdate,omitempty"`
+	PublicIP        *string          `json:"publicIP,omitempty"`
 }
 
 // Describes a principal.

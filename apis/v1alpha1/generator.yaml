@@ -3,6 +3,7 @@ ignore:
     - ModifyTransitGateway
     - ModifyVpcEndpoint
   field_paths:
+    - AllocateAddressInput.DryRun
     - CreateDhcpOptionsInput.DryRun
     - CreateInternetGatewayInput.DryRun
     - CreateRouteInput.DryRun
@@ -85,6 +86,23 @@ ignore:
     - VpnGateway    
 
 operations:
+  AllocateAddress:
+    operation_type: 
+    - Create
+    resource_name: ElasticIP
+  DescribeAddresses:
+    operation_type:
+    - List
+    resource_name: ElasticIP
+    custom_check_required_fields_missing_method: customCheckRequiredFieldsMissing
+  ModifyAddressAttribute:
+    operation_type:
+    - Update
+    resource_name: ElasticIP
+  ReleaseAddress:
+    operation_type:
+    - Delete
+    resource_name: ElasticIP
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -131,6 +149,21 @@ resources:
         template_path: hooks/route_table/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateRouteTable
+  ElasticIP:
+    fields:
+      PublicIp:
+        is_primary_key: true
+    list_operation:
+      match_fields:
+      - PublicIp
+    hooks:
+      sdk_read_many_post_build_request:
+        template_path: hooks/elastic_ip/sdk_read_many_post_build_request.go.tpl
+    renames:
+      operations:
+        ModifyAddressAttribute:
+          input_fields:
+            DomainName: Domain
   SecurityGroup:
     fields:
       # support EC2-VPC only
@@ -197,4 +230,3 @@ resources:
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
-
