@@ -172,6 +172,9 @@ resources:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
   Vpc:
+    exceptions:
+      terminal_codes:
+        - InvalidParameterCombination
     fields:
       EnableDNSSupport:
         from:
@@ -181,6 +184,11 @@ resources:
         from:
           operation: ModifyVpcAttribute
           path: EnableDnsHostnames.Value
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/vpc/sdk_create_post_set_output.go.tpl
+      sdk_read_one_post_set_output:
+        template_path: hooks/vpc/sdk_read_one_post_set_output.go.tpl
   VpcEndpoint:
     fields:
       VpcId:
