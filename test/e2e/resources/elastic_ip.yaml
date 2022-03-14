@@ -1,0 +1,6 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: ElasticIP
+metadata:
+  name: $ADDRESS_NAME
+spec:
+  domain: vpc
