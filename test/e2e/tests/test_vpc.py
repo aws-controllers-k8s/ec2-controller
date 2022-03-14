@@ -91,3 +91,56 @@ class TestVpc:
         # Check VPC doesn't exist
         exists = vpc_exists(ec2_client, resource_id)
         assert not exists
+
+    def test_enable_attributes(self, ec2_client):
+        resource_name = random_suffix_name("vpc-ack-test", 24)
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["VPC_NAME"] = resource_name
+        replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+        replacements["ENABLE_DNS_SUPPORT"] = "True"
+        replacements["ENABLE_DNS_HOSTNAMES"] = "True"
+
+        # Load VPC CR
+        resource_data = load_ec2_resource(
+            "vpc",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        resource = k8s.get_resource(ref)
+        resource_id = resource["status"]["vpcID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check VPC exists
+        exists = vpc_exists(ec2_client, resource_id)
+        assert exists
+
+        # Assert the attributes are set correctly
+        dns_support = ec2_client.describe_vpc_attribute(Attribute='enableDnsSupport', VpcId=resource_id)
+        assert dns_support['EnableDnsSupport']['Value']
+
+        dns_hostnames = ec2_client.describe_vpc_attribute(Attribute='enableDnsHostnames', VpcId=resource_id)
+        assert dns_hostnames['EnableDnsHostnames']['Value']
+
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC doesn't exist
+        exists = vpc_exists(ec2_client, resource_id)
+        assert not exists

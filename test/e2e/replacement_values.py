@@ -15,5 +15,6 @@ ec2-specific test variables.
 """
 
 REPLACEMENT_VALUES = {
-
+    "ENABLE_DNS_SUPPORT": "False",
+    "ENABLE_DNS_HOSTNAMES": "False",
 }
