@@ -19,5 +19,8 @@ package elastic_ip
 func (rm *resourceManager) customCheckRequiredFieldsMissing(
 	r *resource,
 ) bool {
-	return r.ko.Status.PublicIP == nil
+	if r.ko.Status.AllocationID == nil {
+		return r.ko.Status.PublicIP == nil
+	}
+	return false
 }

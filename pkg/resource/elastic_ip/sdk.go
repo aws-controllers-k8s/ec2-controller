@@ -65,7 +65,11 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	input.SetPublicIps([]*string{r.ko.Status.PublicIP})
+	if r.ko.Status.AllocationID != nil {
+		input.SetAllocationIds([]*string{r.ko.Status.AllocationID})
+	} else if r.ko.Status.PublicIP != nil {
+		input.SetPublicIps([]*string{r.ko.Status.PublicIP})
+	}
 	var resp *svcsdk.DescribeAddressesOutput
 	resp, err = rm.sdkapi.DescribeAddressesWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeAddresses", err)
@@ -83,6 +87,11 @@ func (rm *resourceManager) sdkFind(
 	found := false
 	for _, elem := range resp.Addresses {
 		if elem.AllocationId != nil {
+			if ko.Status.AllocationID != nil {
+				if *elem.AllocationId != *ko.Status.AllocationID {
+					continue
+				}
+			}
 			ko.Status.AllocationID = elem.AllocationId
 		} else {
 			ko.Status.AllocationID = nil
@@ -113,11 +122,6 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.NetworkBorderGroup = nil
 		}
 		if elem.PublicIp != nil {
-			if ko.Status.PublicIP != nil {
-				if *elem.PublicIp != *ko.Status.PublicIP {
-					continue
-				}
-			}
 			ko.Status.PublicIP = elem.PublicIp
 		} else {
 			ko.Status.PublicIP = nil
@@ -352,6 +356,13 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
+	// PublicIP and AllocationID are two ways of identifying the same resource
+	// depending on whether they are included as part of EC2-Classic or EC2-VPC,
+	// respectively. As EC2-VPC is the preferred method, we should attempt to
+	// use the AllocationID field whenever possible.
+	if input.PublicIp != nil && input.AllocationId != nil {
+		input.PublicIp = nil
+	}
 	var resp *svcsdk.ReleaseAddressOutput
 	_ = resp
 	resp, err = rm.sdkapi.ReleaseAddressWithContext(ctx, input)
@@ -475,6 +486,34 @@ func (rm *resourceManager) updateConditions(
 // and if the exception indicates that it is a Terminal exception
 // 'Terminal' exception are specified in generator configuration
 func (rm *resourceManager) terminalAWSError(err error) bool {
-	// No terminal_errors specified for this resource in generator config
-	return false
+	if err == nil {
+		return false
+	}
+	awsErr, ok := ackerr.AWSError(err)
+	if !ok {
+		return false
+	}
+	switch awsErr.Code() {
+	case "IdempotentParameterMismatch",
+		"InvalidAction",
+		"InvalidCharacter",
+		"InvalidClientTokenId",
+		"InvalidPaginationToken",
+		"InvalidParameter",
+		"InvalidParameterCombination",
+		"InvalidParameterValue",
+		"InvalidQueryParameter",
+		"MalformedQueryString",
+		"MissingAction",
+		"MissingAuthenticationToken",
+		"MissingParameter",
+		"UnknownParameter",
+		"UnsupportedInstanceAttribute",
+		"UnsupportedOperation",
+		"UnsupportedProtocol",
+		"ValidationError":
+		return true
+	default:
+		return false
+	}
 }

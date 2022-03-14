@@ -150,13 +150,39 @@ resources:
     update_operation:
       custom_method_name: customUpdateRouteTable
   ElasticIP:
+    exceptions:
+      terminal_codes:
+      - IdempotentParameterMismatch
+      - InvalidAction
+      - InvalidCharacter
+      - InvalidClientTokenId
+      - InvalidPaginationToken
+      - InvalidParameter
+      - InvalidParameterCombination
+      - InvalidParameterValue
+      - InvalidQueryParameter
+      - MalformedQueryString
+      - MissingAction
+      - MissingAuthenticationToken
+      - MissingParameter
+      - UnknownParameter
+      - UnsupportedInstanceAttribute
+      - UnsupportedOperation
+      - UnsupportedProtocol
+      - ValidationError
     fields:
-      PublicIp:
+      AllocationId:
         is_primary_key: true
     list_operation:
       match_fields:
-      - PublicIp
+      # PublicIP and AllocationID are two ways of identifying the same resource
+      # depending on whether they are included as part of EC2-Classic or EC2-VPC,
+      # respectively. As EC2-VPC is the preferred method, we should attempt to
+      # use the AllocationID field whenever possible.
+      - AllocationId
     hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/elastic_ip/sdk_delete_post_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip/sdk_read_many_post_build_request.go.tpl
     renames:

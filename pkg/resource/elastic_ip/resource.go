@@ -88,7 +88,7 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.PublicIP = &identifier.NameOrID
+	r.ko.Status.AllocationID = &identifier.NameOrID
 
 	return nil
 }
