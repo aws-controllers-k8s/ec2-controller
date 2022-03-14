@@ -47,10 +47,12 @@ type VPCEndpointSpec struct {
 	// Default: true
 	PrivateDNSEnabled *bool `json:"privateDNSEnabled,omitempty"`
 	// (Gateway endpoint) One or more route table IDs.
-	RouteTableIDs []*string `json:"routeTableIDs,omitempty"`
+	RouteTableIDs  []*string                                  `json:"routeTableIDs,omitempty"`
+	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
 	// (Interface endpoint) The ID of one or more security groups to associate with
 	// the endpoint network interface.
-	SecurityGroupIDs []*string `json:"securityGroupIDs,omitempty"`
+	SecurityGroupIDs  []*string                                  `json:"securityGroupIDs,omitempty"`
+	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
 	// The service name. To get a list of available services, use the DescribeVpcEndpointServices
 	// request, or get the name from the service provider.
 	// +kubebuilder:validation:Required
@@ -58,7 +60,8 @@ type VPCEndpointSpec struct {
 	// (Interface and Gateway Load Balancer endpoints) The ID of one or more subnets
 	// in which to create an endpoint network interface. For a Gateway Load Balancer
 	// endpoint, you can specify one subnet only.
-	SubnetIDs []*string `json:"subnetIDs,omitempty"`
+	SubnetIDs  []*string                                  `json:"subnetIDs,omitempty"`
+	SubnetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRefs,omitempty"`
 	// The tags to associate with the endpoint.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// The type of endpoint.
@@ -66,8 +69,8 @@ type VPCEndpointSpec struct {
 	// Default: Gateway
 	VPCEndpointType *string `json:"vpcEndpointType,omitempty"`
 	// The ID of the VPC in which the endpoint will be used.
-	// +kubebuilder:validation:Required
-	VPCID *string `json:"vpcID"`
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // VPCEndpointStatus defines the observed state of VPCEndpoint

@@ -66,11 +66,43 @@ spec:
                 items:
                   type: string
                 type: array
+              routeTableRefs:
+                items:
+                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference type to provide more user friendly syntax
+                    for references using ''from'' field Ex: APIIDRef:   from:     name:
+                    my-api'
+                  properties:
+                    from:
+                      description: AWSResourceReference provides all the values necessary
+                        to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                  type: object
+                type: array
               securityGroupIDs:
                 description: (Interface endpoint) The ID of one or more security groups
                   to associate with the endpoint network interface.
                 items:
                   type: string
+                type: array
+              securityGroupRefs:
+                items:
+                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference type to provide more user friendly syntax
+                    for references using ''from'' field Ex: APIIDRef:   from:     name:
+                    my-api'
+                  properties:
+                    from:
+                      description: AWSResourceReference provides all the values necessary
+                        to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                  type: object
                 type: array
               serviceName:
                 description: The service name. To get a list of available services,
@@ -84,6 +116,22 @@ spec:
                   only.
                 items:
                   type: string
+                type: array
+              subnetRefs:
+                items:
+                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference type to provide more user friendly syntax
+                    for references using ''from'' field Ex: APIIDRef:   from:     name:
+                    my-api'
+                  properties:
+                    from:
+                      description: AWSResourceReference provides all the values necessary
+                        to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                  type: object
                 type: array
               tagSpecifications:
                 description: The tags to associate with the endpoint.
@@ -111,9 +159,22 @@ spec:
               vpcID:
                 description: The ID of the VPC in which the endpoint will be used.
                 type: string
+              vpcRef:
+                description: 'AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference type to provide more user friendly syntax
+                  for references using ''from'' field Ex: APIIDRef:   from:     name:
+                  my-api'
+                properties:
+                  from:
+                    description: AWSResourceReference provides all the values necessary
+                      to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                type: object
             required:
             - serviceName
-            - vpcID
             type: object
           status:
             description: VPCEndpointStatus defines the observed state of VPCEndpoint
