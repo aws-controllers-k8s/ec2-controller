@@ -34,7 +34,7 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/dhcp_options"
-	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/elastic_ip"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/elastic_ip_address"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/internet_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/route_table"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/security_group"

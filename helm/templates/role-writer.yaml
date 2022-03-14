@@ -11,7 +11,7 @@ rules:
   resources:
   - dhcpoptions
 
-  - elasticips
+  - elasticipaddresses
 
   - internetgateways
 
@@ -39,7 +39,7 @@ rules:
   - ec2.services.k8s.aws
   resources:
   - dhcpoptions
-  - elasticips
+  - elasticipaddresses
   - internetgateways
   - routetables
   - securitygroups

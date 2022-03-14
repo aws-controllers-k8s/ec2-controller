@@ -10,7 +10,7 @@ rules:
   - ec2.services.k8s.aws
   resources:
   - dhcpoptions
-  - elasticips
+  - elasticipaddresses
   - internetgateways
   - routetables
   - securitygroups
@@ -30,7 +30,7 @@ rules:
   - ec2.services.k8s.aws
   resources:
   - dhcpoptions
-  - elasticips
+  - elasticipaddresses
   - internetgateways
   - routetables
   - securitygroups

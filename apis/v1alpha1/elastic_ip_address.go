@@ -20,8 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ElasticIPSpec defines the desired state of ElasticIP.
-type ElasticIPSpec struct {
+// ElasticIPAddressSpec defines the desired state of ElasticIPAddress.
+type ElasticIPAddressSpec struct {
 	// [EC2-VPC] The Elastic IP address to recover or an IPv4 address from an address
 	// pool.
 	Address *string `json:"address,omitempty"`
@@ -54,8 +54,8 @@ type ElasticIPSpec struct {
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 }
 
-// ElasticIPStatus defines the observed state of ElasticIP
-type ElasticIPStatus struct {
+// ElasticIPAddressStatus defines the observed state of ElasticIPAddress
+type ElasticIPAddressStatus struct {
 	// All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
 	// that is used to contain resource sync state, account ownership,
 	// constructed ARN for the resource
@@ -83,24 +83,24 @@ type ElasticIPStatus struct {
 	PublicIP *string `json:"publicIP,omitempty"`
 }
 
-// ElasticIP is the Schema for the ElasticIPS API
+// ElasticIPAddress is the Schema for the ElasticIPAddresses API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-type ElasticIP struct {
+type ElasticIPAddress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ElasticIPSpec   `json:"spec,omitempty"`
-	Status            ElasticIPStatus `json:"status,omitempty"`
+	Spec              ElasticIPAddressSpec   `json:"spec,omitempty"`
+	Status            ElasticIPAddressStatus `json:"status,omitempty"`
 }
 
-// ElasticIPList contains a list of ElasticIP
+// ElasticIPAddressList contains a list of ElasticIPAddress
 // +kubebuilder:object:root=true
-type ElasticIPList struct {
+type ElasticIPAddressList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ElasticIP `json:"items"`
+	Items           []ElasticIPAddress `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ElasticIP{}, &ElasticIPList{})
+	SchemeBuilder.Register(&ElasticIPAddress{}, &ElasticIPAddressList{})
 }

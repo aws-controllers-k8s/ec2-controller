@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package elastic_ip
+package elastic_ip_address
 
 // customCheckRequiredFieldsMissing returns true if there are any fields
 // for the ReadOne Input shape that are required but not present in the

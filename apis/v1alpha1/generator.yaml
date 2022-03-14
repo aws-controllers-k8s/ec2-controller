@@ -89,20 +89,20 @@ operations:
   AllocateAddress:
     operation_type: 
     - Create
-    resource_name: ElasticIP
+    resource_name: ElasticIPAddress
   DescribeAddresses:
     operation_type:
     - List
-    resource_name: ElasticIP
+    resource_name: ElasticIPAddress
     custom_check_required_fields_missing_method: customCheckRequiredFieldsMissing
   ModifyAddressAttribute:
     operation_type:
     - Update
-    resource_name: ElasticIP
+    resource_name: ElasticIPAddress
   ReleaseAddress:
     operation_type:
     - Delete
-    resource_name: ElasticIP
+    resource_name: ElasticIPAddress
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -149,7 +149,7 @@ resources:
         template_path: hooks/route_table/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateRouteTable
-  ElasticIP:
+  ElasticIPAddress:
     exceptions:
       terminal_codes:
       - IdempotentParameterMismatch
@@ -182,9 +182,9 @@ resources:
       - AllocationId
     hooks:
       sdk_delete_post_build_request:
-        template_path: hooks/elastic_ip/sdk_delete_post_build_request.go.tpl
+        template_path: hooks/elastic_ip_address/sdk_delete_post_build_request.go.tpl
       sdk_read_many_post_build_request:
-        template_path: hooks/elastic_ip/sdk_read_many_post_build_request.go.tpl
+        template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
     renames:
       operations:
         ModifyAddressAttribute:

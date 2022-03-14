@@ -4,7 +4,7 @@ bases:
   - common
 resources:
   - bases/ec2.services.k8s.aws_dhcpoptions.yaml
-  - bases/ec2.services.k8s.aws_elasticips.yaml
+  - bases/ec2.services.k8s.aws_elasticipaddresses.yaml
   - bases/ec2.services.k8s.aws_internetgateways.yaml
   - bases/ec2.services.k8s.aws_routetables.yaml
   - bases/ec2.services.k8s.aws_securitygroups.yaml

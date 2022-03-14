@@ -11,7 +11,7 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-"""Integration tests for the ElasticIP API.
+"""Integration tests for the Elastic IP Addresses API.
 """
 
 import pytest
@@ -23,7 +23,7 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 
-RESOURCE_PLURAL = "elasticips"
+RESOURCE_PLURAL = "elasticipaddresses"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
@@ -48,15 +48,15 @@ def address_exists(ec2_client, allocation_id: str) -> bool:
 
 @service_marker
 @pytest.mark.canary
-class TestElasticIP:
+class TestElasticIPAddress:
     def test_create_delete(self, ec2_client):
         resource_name = random_suffix_name("elastic-ip-ack-test", 24)
         replacements = REPLACEMENT_VALUES.copy()
         replacements["ADDRESS_NAME"] = resource_name
 
-        # Load ElasticIP CR
+        # Load ElasticIPAddress CR
         resource_data = load_ec2_resource(
-            "elastic_ip",
+            "elastic_ip_address",
             additional_replacements=replacements,
         )
         logging.debug(resource_data)
@@ -87,6 +87,6 @@ class TestElasticIP:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check VPC doesn't exist
+        # Check Address doesn't exist
         exists = address_exists(ec2_client, resource_id)
         assert not exists
