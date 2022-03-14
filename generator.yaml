@@ -171,6 +171,16 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+  Vpc:
+    fields:
+      EnableDNSSupport:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableDnsSupport.Value
+      EnableDNSHostnames:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableDnsHostnames.Value
   VpcEndpoint:
     fields:
       VpcId:

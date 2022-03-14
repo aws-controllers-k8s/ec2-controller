@@ -17798,6 +17798,16 @@ func (in *VPCSpec) DeepCopyInto(out *VPCSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.EnableDNSHostnames != nil {
+		in, out := &in.EnableDNSHostnames, &out.EnableDNSHostnames
+		*out = new(bool)
+		**out = **in
+	}
+	if in.EnableDNSSupport != nil {
+		in, out := &in.EnableDNSSupport, &out.EnableDNSSupport
+		*out = new(bool)
+		**out = **in
+	}
 	if in.InstanceTenancy != nil {
 		in, out := &in.InstanceTenancy, &out.InstanceTenancy
 		*out = new(string)

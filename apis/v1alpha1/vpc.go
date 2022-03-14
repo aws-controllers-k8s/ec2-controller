@@ -33,6 +33,10 @@ type VPCSpec struct {
 	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
 	// +kubebuilder:validation:Required
 	CIDRBlock *string `json:"cidrBlock"`
+	// The attribute value. The valid values are true or false.
+	EnableDNSHostnames *bool `json:"enableDNSHostnames,omitempty"`
+	// The attribute value. The valid values are true or false.
+	EnableDNSSupport *bool `json:"enableDNSSupport,omitempty"`
 	// The tenancy options for instances launched into the VPC. For default, instances
 	// are launched with shared tenancy by default. You can launch instances with
 	// any tenancy into a shared tenancy VPC. For dedicated, instances are launched

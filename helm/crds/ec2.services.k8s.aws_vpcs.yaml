@@ -48,6 +48,12 @@ spec:
                   its canonical form; for example, if you specify 100.68.0.18/18,
                   we modify it to 100.68.0.0/18.
                 type: string
+              enableDNSHostnames:
+                description: The attribute value. The valid values are true or false.
+                type: boolean
+              enableDNSSupport:
+                description: The attribute value. The valid values are true or false.
+                type: boolean
               instanceTenancy:
                 description: "The tenancy options for instances launched into the
                   VPC. For default, instances are launched with shared tenancy by
