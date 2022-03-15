@@ -198,8 +198,11 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	if err := rm.addAttributesToSpec(ctx, r, ko); err != nil {
+	if dnsAttrs, err := rm.getDNSAttributes(ctx, *ko.Status.VPCID); err != nil {
 		return nil, err
+	} else {
+		ko.Spec.EnableDNSSupport = dnsAttrs.EnableSupport
+		ko.Spec.EnableDNSHostnames = dnsAttrs.EnableHostnames
 	}
 	return &resource{ko}, nil
 }

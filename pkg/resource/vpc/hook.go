@@ -16,20 +16,50 @@ package vpc
 import (
 	"context"
 
-	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
+type DNSAttrs struct {
+	EnableSupport   *bool
+	EnableHostnames *bool
+}
+
 func newDescribeVpcAttributePayload(
-	r *resource,
+	vpcID string,
 	attribute string,
 ) *svcsdk.DescribeVpcAttributeInput {
 	res := &svcsdk.DescribeVpcAttributeInput{}
-	res.SetVpcId(*r.ko.Status.VPCID)
+	res.SetVpcId(vpcID)
 	res.SetAttribute(attribute)
 	return res
+}
+
+func (rm *resourceManager) getDNSAttributes(
+	ctx context.Context,
+	vpcID string,
+) (res *DNSAttrs, err error) {
+	res = &DNSAttrs{}
+	dnsSupport, err := rm.sdkapi.DescribeVpcAttributeWithContext(
+		ctx,
+		newDescribeVpcAttributePayload(vpcID, svcsdk.VpcAttributeNameEnableDnsSupport),
+	)
+	if err != nil {
+		return nil, err
+	}
+	res.EnableSupport = dnsSupport.EnableDnsSupport.Value
+
+	dnsHostnames, err := rm.sdkapi.DescribeVpcAttributeWithContext(
+		ctx,
+		newDescribeVpcAttributePayload(vpcID, svcsdk.VpcAttributeNameEnableDnsHostnames),
+	)
+	if err != nil {
+		return nil, err
+	}
+	res.EnableHostnames = dnsHostnames.EnableDnsHostnames.Value
+
+	return res, nil
 }
 
 func newModifyDNSSupportAttributeInputPayload(
@@ -113,26 +143,6 @@ func (rm *resourceManager) createAttributes(
 			return err
 		}
 	}
-
-	return nil
-}
-
-func (rm *resourceManager) addAttributesToSpec(
-	ctx context.Context,
-	r *resource,
-	ko *svcapitypes.VPC,
-) (err error) {
-	dnsSupport, err := rm.sdkapi.DescribeVpcAttributeWithContext(ctx, newDescribeVpcAttributePayload(r, svcsdk.VpcAttributeNameEnableDnsSupport))
-	if err != nil {
-		return err
-	}
-	ko.Spec.EnableDNSSupport = dnsSupport.EnableDnsSupport.Value
-
-	dnsHostnames, err := rm.sdkapi.DescribeVpcAttributeWithContext(ctx, newDescribeVpcAttributePayload(r, svcsdk.VpcAttributeNameEnableDnsHostnames))
-	if err != nil {
-		return err
-	}
-	ko.Spec.EnableDNSHostnames = dnsHostnames.EnableDnsHostnames.Value
 
 	return nil
 }
