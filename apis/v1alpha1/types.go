@@ -100,9 +100,7 @@ type Address struct {
 type AddressAttribute struct {
 	AllocationID *string `json:"allocationID,omitempty"`
 	PtrRecord    *string `json:"ptrRecord,omitempty"`
-	// The status of an updated pointer (PTR) record for an Elastic IP address.
-	PtrRecordUpdate *PtrUpdateStatus `json:"ptrRecordUpdate,omitempty"`
-	PublicIP        *string          `json:"publicIP,omitempty"`
+	PublicIP     *string `json:"publicIP,omitempty"`
 }
 
 // Describes a principal.

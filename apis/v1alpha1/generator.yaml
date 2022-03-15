@@ -18,6 +18,9 @@ ignore:
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
     - DeleteSecurityGroupInput.GroupName
+    # support EC2-VPC only
+    - AllocateAddressInput.Domain
+    - AllocateAddressOutput.Domain
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -94,11 +97,6 @@ operations:
     operation_type:
     - List
     resource_name: ElasticIPAddress
-    custom_check_required_fields_missing_method: customCheckRequiredFieldsMissing
-  ModifyAddressAttribute:
-    operation_type:
-    - Update
-    resource_name: ElasticIPAddress
   ReleaseAddress:
     operation_type:
     - Delete
@@ -109,7 +107,6 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
-
 resources:
   DhcpOptions:
     fields:
@@ -180,21 +177,16 @@ resources:
           name: PUBLIC-IP
     list_operation:
       match_fields:
-      # PublicIP and AllocationID are two ways of identifying the same resource
-      # depending on whether they are included as part of EC2-Classic or EC2-VPC,
-      # respectively. As EC2-VPC is the preferred method, we should attempt to
-      # use the AllocationID field whenever possible.
       - AllocationId
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_create_post_build_request.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_delete_post_build_request.go.tpl
+      sdk_read_many_pre_build_request:
+        template_path: hooks/elastic_ip_address/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
-    renames:
-      operations:
-        ModifyAddressAttribute:
-          input_fields:
-            DomainName: Domain
   SecurityGroup:
     fields:
       # support EC2-VPC only

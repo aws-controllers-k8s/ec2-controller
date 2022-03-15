@@ -55,13 +55,6 @@ func newResourceDelta(
 			delta.Add("Spec.CustomerOwnedIPv4Pool", a.ko.Spec.CustomerOwnedIPv4Pool, b.ko.Spec.CustomerOwnedIPv4Pool)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.Domain, b.ko.Spec.Domain) {
-		delta.Add("Spec.Domain", a.ko.Spec.Domain, b.ko.Spec.Domain)
-	} else if a.ko.Spec.Domain != nil && b.ko.Spec.Domain != nil {
-		if *a.ko.Spec.Domain != *b.ko.Spec.Domain {
-			delta.Add("Spec.Domain", a.ko.Spec.Domain, b.ko.Spec.Domain)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.NetworkBorderGroup, b.ko.Spec.NetworkBorderGroup) {
 		delta.Add("Spec.NetworkBorderGroup", a.ko.Spec.NetworkBorderGroup, b.ko.Spec.NetworkBorderGroup)
 	} else if a.ko.Spec.NetworkBorderGroup != nil && b.ko.Spec.NetworkBorderGroup != nil {

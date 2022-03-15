@@ -324,11 +324,6 @@ func (in *AddressAttribute) DeepCopyInto(out *AddressAttribute) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.PtrRecordUpdate != nil {
-		in, out := &in.PtrRecordUpdate, &out.PtrRecordUpdate
-		*out = new(PtrUpdateStatus)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.PublicIP != nil {
 		in, out := &in.PublicIP, &out.PublicIP
 		*out = new(string)
@@ -3645,11 +3640,6 @@ func (in *ElasticIPAddressSpec) DeepCopyInto(out *ElasticIPAddressSpec) {
 	}
 	if in.CustomerOwnedIPv4Pool != nil {
 		in, out := &in.CustomerOwnedIPv4Pool, &out.CustomerOwnedIPv4Pool
-		*out = new(string)
-		**out = **in
-	}
-	if in.Domain != nil {
-		in, out := &in.Domain, &out.Domain
 		*out = new(string)
 		**out = **in
 	}

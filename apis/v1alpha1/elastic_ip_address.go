@@ -29,12 +29,6 @@ type ElasticIPAddressSpec struct {
 	// EC2 select an address from the address pool. Alternatively, specify a specific
 	// address from the address pool.
 	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
-	// Indicates whether the Elastic IP address is for use with instances in a VPC
-	// or instances in EC2-Classic.
-	//
-	// Default: If the Region supports EC2-Classic, the default is standard. Otherwise,
-	// the default is vpc.
-	Domain *string `json:"domain,omitempty"`
 	// A unique set of Availability Zones, Local Zones, or Wavelength Zones from
 	// which Amazon Web Services advertises IP addresses. Use this parameter to
 	// limit the IP address to this location. IP addresses cannot move between network

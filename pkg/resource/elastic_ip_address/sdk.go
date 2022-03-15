@@ -54,6 +54,9 @@ func (rm *resourceManager) sdkFind(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
 	defer exit(err)
+	if r.ko.Status.AllocationID == nil {
+		return nil, ackerr.NotFound
+	}
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. Return NotFound here to indicate to callers that the
 	// resource isn't yet created.
@@ -111,11 +114,6 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.CustomerOwnedIPv4Pool = nil
 		}
-		if elem.Domain != nil {
-			ko.Spec.Domain = elem.Domain
-		} else {
-			ko.Spec.Domain = nil
-		}
 		if elem.NetworkBorderGroup != nil {
 			ko.Spec.NetworkBorderGroup = elem.NetworkBorderGroup
 		} else {
@@ -148,7 +146,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return rm.customCheckRequiredFieldsMissing(r)
+	return false
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
@@ -175,6 +173,8 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+	// EC2-VPC only supports setting Domain to "vpc"
+	input.SetDomain(svcsdk.DomainTypeVpc)
 
 	var resp *svcsdk.AllocateAddressOutput
 	_ = resp
@@ -206,11 +206,6 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.CustomerOwnedIPv4Pool = resp.CustomerOwnedIpv4Pool
 	} else {
 		ko.Spec.CustomerOwnedIPv4Pool = nil
-	}
-	if resp.Domain != nil {
-		ko.Spec.Domain = resp.Domain
-	} else {
-		ko.Spec.Domain = nil
 	}
 	if resp.NetworkBorderGroup != nil {
 		ko.Spec.NetworkBorderGroup = resp.NetworkBorderGroup
@@ -246,9 +241,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.CustomerOwnedIPv4Pool != nil {
 		res.SetCustomerOwnedIpv4Pool(*r.ko.Spec.CustomerOwnedIPv4Pool)
 	}
-	if r.ko.Spec.Domain != nil {
-		res.SetDomain(*r.ko.Spec.Domain)
-	}
 	if r.ko.Spec.NetworkBorderGroup != nil {
 		res.SetNetworkBorderGroup(*r.ko.Spec.NetworkBorderGroup)
 	}
@@ -256,29 +248,29 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetPublicIpv4Pool(*r.ko.Spec.PublicIPv4Pool)
 	}
 	if r.ko.Spec.TagSpecifications != nil {
-		f5 := []*svcsdk.TagSpecification{}
-		for _, f5iter := range r.ko.Spec.TagSpecifications {
-			f5elem := &svcsdk.TagSpecification{}
-			if f5iter.ResourceType != nil {
-				f5elem.SetResourceType(*f5iter.ResourceType)
+		f4 := []*svcsdk.TagSpecification{}
+		for _, f4iter := range r.ko.Spec.TagSpecifications {
+			f4elem := &svcsdk.TagSpecification{}
+			if f4iter.ResourceType != nil {
+				f4elem.SetResourceType(*f4iter.ResourceType)
 			}
-			if f5iter.Tags != nil {
-				f5elemf1 := []*svcsdk.Tag{}
-				for _, f5elemf1iter := range f5iter.Tags {
-					f5elemf1elem := &svcsdk.Tag{}
-					if f5elemf1iter.Key != nil {
-						f5elemf1elem.SetKey(*f5elemf1iter.Key)
+			if f4iter.Tags != nil {
+				f4elemf1 := []*svcsdk.Tag{}
+				for _, f4elemf1iter := range f4iter.Tags {
+					f4elemf1elem := &svcsdk.Tag{}
+					if f4elemf1iter.Key != nil {
+						f4elemf1elem.SetKey(*f4elemf1iter.Key)
 					}
-					if f5elemf1iter.Value != nil {
-						f5elemf1elem.SetValue(*f5elemf1iter.Value)
+					if f4elemf1iter.Value != nil {
+						f4elemf1elem.SetValue(*f4elemf1iter.Value)
 					}
-					f5elemf1 = append(f5elemf1, f5elemf1elem)
+					f4elemf1 = append(f4elemf1, f4elemf1elem)
 				}
-				f5elem.SetTags(f5elemf1)
+				f4elem.SetTags(f4elemf1)
 			}
-			f5 = append(f5, f5elem)
+			f4 = append(f4, f4elem)
 		}
-		res.SetTagSpecifications(f5)
+		res.SetTagSpecifications(f4)
 	}
 
 	return res, nil
@@ -291,57 +283,9 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (updated *resource, err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.sdkUpdate")
-	defer exit(err)
-	input, err := rm.newUpdateRequestPayload(ctx, desired)
-	if err != nil {
-		return nil, err
-	}
-
-	var resp *svcsdk.ModifyAddressAttributeOutput
-	_ = resp
-	resp, err = rm.sdkapi.ModifyAddressAttributeWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "ModifyAddressAttribute", err)
-	if err != nil {
-		return nil, err
-	}
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
-
-	if resp.Address.AllocationId != nil {
-		ko.Status.AllocationID = resp.Address.AllocationId
-	} else {
-		ko.Status.AllocationID = nil
-	}
-	if resp.Address.PublicIp != nil {
-		ko.Status.PublicIP = resp.Address.PublicIp
-	} else {
-		ko.Status.PublicIP = nil
-	}
-
-	rm.setStatusDefaults(ko)
-	return &resource{ko}, nil
-}
-
-// newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
-// payload of the Update API call for the resource
-func (rm *resourceManager) newUpdateRequestPayload(
-	ctx context.Context,
-	r *resource,
-) (*svcsdk.ModifyAddressAttributeInput, error) {
-	res := &svcsdk.ModifyAddressAttributeInput{}
-
-	if r.ko.Status.AllocationID != nil {
-		res.SetAllocationId(*r.ko.Status.AllocationID)
-	}
-	if r.ko.Spec.Domain != nil {
-		res.SetDomainName(*r.ko.Spec.Domain)
-	}
-
-	return res, nil
+) (*resource, error) {
+	// TODO(jaypipes): Figure this out...
+	return nil, ackerr.NotImplemented
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -358,8 +302,8 @@ func (rm *resourceManager) sdkDelete(
 	}
 	// PublicIP and AllocationID are two ways of identifying the same resource
 	// depending on whether they are included as part of EC2-Classic or EC2-VPC,
-	// respectively. As EC2-VPC is the preferred method, we should attempt to
-	// use the AllocationID field whenever possible.
+	// respectively. As EC2-Classic is retired, we should attempt to use the
+	// AllocationID field whenever possible.
 	if input.PublicIp != nil && input.AllocationId != nil {
 		input.PublicIp = nil
 	}
