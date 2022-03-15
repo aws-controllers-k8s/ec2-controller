@@ -54,8 +54,8 @@ type SubnetSpec struct {
 	// The tags to assign to the subnet.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// The ID of the VPC.
-	// +kubebuilder:validation:Required
-	VPCID *string `json:"vpcID"`
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // SubnetStatus defines the observed state of Subnet

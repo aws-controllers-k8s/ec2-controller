@@ -28,8 +28,8 @@ type RouteTableSpec struct {
 	// The tags to assign to the route table.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// The ID of the VPC.
-	// +kubebuilder:validation:Required
-	VPCID *string `json:"vpcID"`
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // RouteTableStatus defines the observed state of RouteTable

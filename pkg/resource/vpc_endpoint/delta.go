@@ -65,8 +65,14 @@ func newResourceDelta(
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs) {
 		delta.Add("Spec.RouteTableIDs", a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs)
 	}
+	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
+		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
+	}
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
 		delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
+	}
+	if !reflect.DeepEqual(a.ko.Spec.SecurityGroupRefs, b.ko.Spec.SecurityGroupRefs) {
+		delta.Add("Spec.SecurityGroupRefs", a.ko.Spec.SecurityGroupRefs, b.ko.Spec.SecurityGroupRefs)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ServiceName, b.ko.Spec.ServiceName) {
 		delta.Add("Spec.ServiceName", a.ko.Spec.ServiceName, b.ko.Spec.ServiceName)
@@ -77,6 +83,9 @@ func newResourceDelta(
 	}
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs) {
 		delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
+	}
+	if !reflect.DeepEqual(a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs) {
+		delta.Add("Spec.SubnetRefs", a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs)
 	}
 	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
 		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
@@ -94,6 +103,9 @@ func newResourceDelta(
 		if *a.ko.Spec.VPCID != *b.ko.Spec.VPCID {
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 
 	return delta

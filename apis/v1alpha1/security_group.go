@@ -45,8 +45,8 @@ type SecurityGroupSpec struct {
 	// The tags to assign to the security group.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// [EC2-VPC] The ID of the VPC. Required for EC2-VPC.
-	// +kubebuilder:validation:Required
-	VPCID *string `json:"vpcID"`
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // SecurityGroupStatus defines the observed state of SecurityGroup
