@@ -24,6 +24,7 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
+from e2e.tests.helper import Ec2Validator
 
 # Default to us-west-2 since that's where prow is deployed
 REGION = "us-west-2" if environ.get('AWS_DEFAULT_REGION') is None else environ.get('AWS_DEFAULT_REGION')
@@ -32,24 +33,6 @@ ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_vpc_endpoint(ec2_client, vpc_endpoint_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_vpc_endpoints(
-            Filters=[{"Name": "vpc-endpoint-id", "Values": [vpc_endpoint_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["VpcEndpoints"]) == 0:
-        return None
-    return resp["VpcEndpoints"][0]
-
-
-def vpc_endpoint_exists(ec2_client, vpc_endpoint_id: str) -> bool:
-    return get_vpc_endpoint(ec2_client, vpc_endpoint_id) is not None
 
 @service_marker
 @pytest.mark.canary
@@ -83,14 +66,13 @@ class TestVpcEndpoint:
         assert k8s.get_resource_exists(ref)
 
         resource = k8s.get_resource(ref)
-        vpc_endpoint_services = ec2_client.describe_vpc_endpoint_services()
         resource_id = resource["status"]["vpcEndpointID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check VPC Endpoint exists
-        exists = vpc_endpoint_exists(ec2_client, resource_id)
-        assert exists
+        # Check VPC Endpoint exists in AWS
+        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator.assert_vpc_endpoint(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -98,9 +80,8 @@ class TestVpcEndpoint:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check VPC Endpoint doesn't exist
-        exists = vpc_endpoint_exists(ec2_client, resource_id)
-        assert not exists
+        # Check VPC Endpoint no longer exists in AWS
+        ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
 
     def test_terminal_condition_malformed_vpc(self):
         test_resource_values = REPLACEMENT_VALUES.copy()

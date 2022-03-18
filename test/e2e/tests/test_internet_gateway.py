@@ -22,29 +22,12 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
+from e2e.tests.helper import Ec2Validator
 
 RESOURCE_PLURAL = "internetgateways"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_internet_gateway(ec2_client, ig_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_internet_gateways(
-            Filters=[{"Name": "internet-gateway-id", "Values": [ig_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["InternetGateways"]) == 0:
-        return None
-    return resp["InternetGateways"][0]
-
-
-def internet_gateway_exists(ec2_client, ig_id: str) -> bool:
-    return get_internet_gateway(ec2_client, ig_id) is not None
 
 @service_marker
 @pytest.mark.canary
@@ -77,9 +60,9 @@ class TestInternetGateway:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check Internet Gateway exists
-        exists = internet_gateway_exists(ec2_client, resource_id)
-        assert exists
+        # Check Internet Gateway exists in AWS
+        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator.assert_internet_gateway(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -87,6 +70,5 @@ class TestInternetGateway:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check Internet Gateway doesn't exist
-        exists = internet_gateway_exists(ec2_client, resource_id)
-        assert not exists
+        # Check Internet Gateway no longer exists in AWS
+        ec2_validator.assert_internet_gateway(resource_id, exists=False)

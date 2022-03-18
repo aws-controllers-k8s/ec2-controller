@@ -22,29 +22,12 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
+from e2e.tests.helper import Ec2Validator
 
 RESOURCE_PLURAL = "vpcs"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_vpc(ec2_client, vpc_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_vpcs(
-            Filters=[{"Name": "vpc-id", "Values": [vpc_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["Vpcs"]) == 0:
-        return None
-    return resp["Vpcs"][0]
-
-
-def vpc_exists(ec2_client, vpc_id: str) -> bool:
-    return get_vpc(ec2_client, vpc_id) is not None
 
 @service_marker
 @pytest.mark.canary
@@ -78,9 +61,9 @@ class TestVpc:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check VPC exists
-        exists = vpc_exists(ec2_client, resource_id)
-        assert exists
+        # Check VPC exists in AWS
+        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator.assert_vpc(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -88,6 +71,5 @@ class TestVpc:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check VPC doesn't exist
-        exists = vpc_exists(ec2_client, resource_id)
-        assert not exists
+        # Check VPC no longer exists in AWS
+        ec2_validator.assert_vpc(resource_id, exists=False)

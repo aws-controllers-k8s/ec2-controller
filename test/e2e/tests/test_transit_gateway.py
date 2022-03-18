@@ -23,6 +23,7 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
+from e2e.tests.helper import Ec2Validator
 
 RESOURCE_PLURAL = "transitgateways"
 
@@ -30,29 +31,6 @@ RESOURCE_PLURAL = "transitgateways"
 ## TGWs are unable to be deleted while in "pending"
 CREATE_WAIT_AFTER_SECONDS = 90
 DELETE_WAIT_AFTER_SECONDS = 10
-
-@pytest.fixture(scope="module")
-def ec2_client():
-    return boto3.client("ec2")
-
-
-def get_tgw(ec2_client, tgw_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_transit_gateways(
-            TransitGatewayIds=[tgw_id]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["TransitGateways"]) == 0:
-        return None
-    return resp["TransitGateways"][0]
-
-
-def tgw_exists(ec2_client, tgw_id: str) -> bool:
-    tgw = get_tgw(ec2_client, tgw_id)
-    return tgw is not None and tgw['State'] != "deleting" and tgw['State'] != "deleted"
 
 @service_marker
 @pytest.mark.canary
@@ -85,9 +63,9 @@ class TestTGW:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check TGW exists
-        exists = tgw_exists(ec2_client, resource_id)
-        assert exists
+        # Check TGW exists in AWS
+        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator.assert_transit_gateway(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -95,6 +73,5 @@ class TestTGW:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check TGW doesn't exist
-        exists = tgw_exists(ec2_client, resource_id)
-        assert not exists
+        # Check TGW no longer exists in AWS
+        ec2_validator.assert_transit_gateway(resource_id, exists=False)

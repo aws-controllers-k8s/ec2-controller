@@ -22,30 +22,13 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
+from e2e.tests.helper import Ec2Validator
 
 RESOURCE_PLURAL = "dhcpoptions"
 
 DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_dhcp_options(ec2_client, dhcp_options_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_dhcp_options(
-            Filters=[{"Name": "dhcp-options-id", "Values": [dhcp_options_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["DhcpOptions"]) == 0:
-        return None
-    return resp["DhcpOptions"][0]
-
-
-def dhcp_options_exist(ec2_client, dhcp_options_id: str) -> bool:
-    return get_dhcp_options(ec2_client, dhcp_options_id) is not None
 
 @service_marker
 @pytest.mark.canary
@@ -84,8 +67,9 @@ class TestDhcpOptions:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check DHCP Options exists
-        assert dhcp_options_exist(ec2_client, resource_id)
+        # Check DHCP Options exists in AWS
+        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator.assert_dhcp_options(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -93,5 +77,5 @@ class TestDhcpOptions:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check DHCP Options doesn't exist
-        assert not dhcp_options_exist(ec2_client, resource_id)
+        # Check DHCP Options no longer exists in AWS
+        ec2_validator.assert_dhcp_options(resource_id, exists=False)
