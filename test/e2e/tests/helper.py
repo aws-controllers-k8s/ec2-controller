@@ -79,7 +79,10 @@ class EC2Validator:
         res_found = False
         try:
             aws_res = self.ec2_client.describe_transit_gateways(TransitGatewayIds=[tgw_id])
-            res_found = len(aws_res["TransitGateways"]) > 0
+            tgw = aws_res["TransitGateways"][0]
+            # TransitGateway may take awhile to be removed server-side, so 
+            # treat 'deleting' and 'deleted' states as resource no longer existing
+            res_found = tgw is not None and tgw['State'] != "deleting" and tgw['State'] != "deleted"
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
