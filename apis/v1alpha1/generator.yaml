@@ -171,6 +171,26 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+  Vpc:
+    update_operation:
+      custom_method_name: customUpdate
+    exceptions:
+      terminal_codes:
+        - InvalidParameterCombination
+    fields:
+      EnableDNSSupport:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableDnsSupport.Value
+      EnableDNSHostnames:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableDnsHostnames.Value
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/vpc/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/vpc/sdk_read_many_post_set_output.go.tpl
   VpcEndpoint:
     fields:
       VpcId:

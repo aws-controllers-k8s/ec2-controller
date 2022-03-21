@@ -55,6 +55,20 @@ func newResourceDelta(
 			delta.Add("Spec.CIDRBlock", a.ko.Spec.CIDRBlock, b.ko.Spec.CIDRBlock)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames) {
+		delta.Add("Spec.EnableDNSHostnames", a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames)
+	} else if a.ko.Spec.EnableDNSHostnames != nil && b.ko.Spec.EnableDNSHostnames != nil {
+		if *a.ko.Spec.EnableDNSHostnames != *b.ko.Spec.EnableDNSHostnames {
+			delta.Add("Spec.EnableDNSHostnames", a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EnableDNSSupport, b.ko.Spec.EnableDNSSupport) {
+		delta.Add("Spec.EnableDNSSupport", a.ko.Spec.EnableDNSSupport, b.ko.Spec.EnableDNSSupport)
+	} else if a.ko.Spec.EnableDNSSupport != nil && b.ko.Spec.EnableDNSSupport != nil {
+		if *a.ko.Spec.EnableDNSSupport != *b.ko.Spec.EnableDNSSupport {
+			delta.Add("Spec.EnableDNSSupport", a.ko.Spec.EnableDNSSupport, b.ko.Spec.EnableDNSSupport)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy) {
 		delta.Add("Spec.InstanceTenancy", a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy)
 	} else if a.ko.Spec.InstanceTenancy != nil && b.ko.Spec.InstanceTenancy != nil {
