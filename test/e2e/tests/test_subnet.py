@@ -23,30 +23,12 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
+from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "subnets"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_subnet(ec2_client, subnet_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_subnets(
-            Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["Subnets"]) == 0:
-        return None
-    return resp["Subnets"][0]
-
-
-def subnet_exists(ec2_client, subnet_id: str) -> bool:
-    return get_subnet(ec2_client, subnet_id) is not None
-
 
 @service_marker
 @pytest.mark.canary
@@ -85,9 +67,9 @@ class TestSubnet:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check Subnet exists
-        exists = subnet_exists(ec2_client, resource_id)
-        assert exists
+        # Check Subnet exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_subnet(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -95,9 +77,8 @@ class TestSubnet:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check Subnet doesn't exist
-        exists = subnet_exists(ec2_client, resource_id)
-        assert not exists
+        # Check Subnet no longer exists in AWS
+        ec2_validator.assert_subnet(resource_id, exists=False)
 
     def test_terminal_condition(self):
         test_resource_values = REPLACEMENT_VALUES.copy()

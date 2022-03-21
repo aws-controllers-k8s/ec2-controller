@@ -23,50 +23,13 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
+from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "routetables"
 
 DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_route_table(ec2_client, route_table_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_route_tables(
-            Filters=[{"Name": "route-table-id", "Values": [route_table_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["RouteTables"]) == 0:
-        return None
-    return resp["RouteTables"][0]
-
-
-def route_table_exists(ec2_client, route_table_id: str) -> bool:
-    return get_route_table(ec2_client, route_table_id) is not None
-
-def get_routes(ec2_client, route_table_id: str) -> list:
-    try:
-        resp = ec2_client.describe_route_tables(
-            Filters=[{"Name": "route-table-id", "Values": [route_table_id]}]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["RouteTables"]) == 0:
-        return None
-    return resp["RouteTables"][0]["Routes"]
-
-def route_exists(ec2_client, route_table_id: str, gateway_id: str, origin: str) -> bool:
-    routes = get_routes(ec2_client, route_table_id)
-    for route in routes:
-        if route["Origin"] == origin and route["GatewayId"] == gateway_id:
-            return True
-    return False
 
 @service_marker
 @pytest.mark.canary
@@ -107,8 +70,9 @@ class TestRouteTable:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check Route Table exists
-        assert route_table_exists(ec2_client, resource_id)
+        # Check Route Table exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_route_table(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -116,9 +80,8 @@ class TestRouteTable:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check Route Table doesn't exist
-        exists = route_table_exists(ec2_client, resource_id)
-        assert not exists
+        # Check Route Table no longer exists in AWS
+        ec2_validator.assert_route_table(resource_id, exists=False)
 
 
     def test_terminal_condition(self):
@@ -189,21 +152,16 @@ class TestRouteTable:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check Route Table exists
-        assert route_table_exists(ec2_client, resource_id)
+        # Check Route Table exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_route_table(resource_id)
 
-        # Check Routes exist (default and desired)
-        routes = get_routes(ec2_client, resource_id)
-        for route in routes:
-            if route["GatewayId"] == "local":
-                default_cidr = route["DestinationCidrBlock"]
-                assert route["Origin"] == "CreateRouteTable"
-            elif route["GatewayId"] == igw_id:
-                assert route["Origin"] == "CreateRoute"
-            else:
-                assert False
+        # Check Routes exist (default and desired) in AWS
+        ec2_validator.assert_route(resource_id, "local", "CreateRouteTable")
+        ec2_validator.assert_route(resource_id, igw_id, "CreateRoute")
         
         # Update Route
+        default_cidr = "10.0.0.0/16"
         updated_cidr = "192.168.1.0/24"
         patch = {"spec": {"routes": [
                     {
@@ -224,15 +182,6 @@ class TestRouteTable:
         # assert patched state
         resource = k8s.get_resource(ref)
         assert len(resource['status']['routeStatuses']) == 2
-        for route in resource['status']['routeStatuses']:
-            if route["gatewayID"] == "local":
-                assert route_exists(ec2_client, resource_id, "local", "CreateRouteTable")
-            elif route["gatewayID"] == igw_id:
-                # origin and state are set server-side
-                assert route_exists(ec2_client, resource_id, igw_id, "CreateRoute")
-                assert route["state"] == "active"
-            else:
-                assert False
         
         # Delete Route
         patch = {"spec": {"routes": [
@@ -248,12 +197,10 @@ class TestRouteTable:
 
         resource = k8s.get_resource(ref)
         assert len(resource['spec']['routes']) == 1
-        for route in resource['spec']['routes']:
-            if route["gatewayID"] == "local":
-                assert route_exists(ec2_client, resource_id, "local", "CreateRouteTable")
-            else:
-                assert False
 
+        # Route should no longer exist in AWS (default will remain)
+        ec2_validator.assert_route(resource_id, "local", "CreateRouteTable")
+        ec2_validator.assert_route(resource_id, igw_id, "CreateRoute", exists=False)
 
         # Should not be able to delete default route
         patch = {"spec": {"routes": [
@@ -273,6 +220,5 @@ class TestRouteTable:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check Route Table doesn't exist
-        exists = route_table_exists(ec2_client, resource_id)
-        assert not exists
+        # Check Route Table no longer exists in AWS
+        ec2_validator.assert_route_table(resource_id, exists=False)

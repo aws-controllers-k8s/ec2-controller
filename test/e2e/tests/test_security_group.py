@@ -23,30 +23,12 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
+from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "securitygroups"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-
-
-def get_security_group(ec2_client, sg_id: str) -> dict:
-    try:
-        resp = ec2_client.describe_security_groups(
-            GroupIds=[sg_id]
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    if len(resp["SecurityGroups"]) == 0:
-        return None
-    return resp["SecurityGroups"][0]
-
-
-def security_group_exists(ec2_client, sg_id: str) -> bool:
-    return get_security_group(ec2_client, sg_id) is not None
-
 
 @service_marker
 @pytest.mark.canary
@@ -84,8 +66,9 @@ class TestSecurityGroup:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check Security Group exists
-        assert security_group_exists(ec2_client, resource_id)
+        # Check Security Group exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_security_group(resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -93,8 +76,8 @@ class TestSecurityGroup:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check Security Group doesn't exist
-        assert not security_group_exists(ec2_client, resource_id)
+        # Check Security Group no longer exists in AWS
+        ec2_validator.assert_security_group(resource_id, exists=False)
 
     def test_terminal_condition(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
