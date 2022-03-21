@@ -3,6 +3,7 @@ ignore:
     - ModifyTransitGateway
     - ModifyVpcEndpoint
   field_paths:
+    - AllocateAddressInput.DryRun
     - CreateDhcpOptionsInput.DryRun
     - CreateInternetGatewayInput.DryRun
     - CreateRouteInput.DryRun
@@ -17,6 +18,9 @@ ignore:
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
     - DeleteSecurityGroupInput.GroupName
+    # support EC2-VPC only
+    - AllocateAddressInput.Domain
+    - AllocateAddressOutput.Domain
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -85,13 +89,24 @@ ignore:
     - VpnGateway    
 
 operations:
+  AllocateAddress:
+    operation_type: 
+    - Create
+    resource_name: ElasticIPAddress
+  DescribeAddresses:
+    operation_type:
+    - List
+    resource_name: ElasticIPAddress
+  ReleaseAddress:
+    operation_type:
+    - Delete
+    resource_name: ElasticIPAddress
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
-
 resources:
   DhcpOptions:
     fields:
@@ -131,6 +146,47 @@ resources:
         template_path: hooks/route_table/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateRouteTable
+  ElasticIPAddress:
+    exceptions:
+      terminal_codes:
+      - IdempotentParameterMismatch
+      - InvalidAction
+      - InvalidCharacter
+      - InvalidClientTokenId
+      - InvalidPaginationToken
+      - InvalidParameter
+      - InvalidParameterCombination
+      - InvalidParameterValue
+      - InvalidQueryParameter
+      - MalformedQueryString
+      - MissingAction
+      - MissingAuthenticationToken
+      - MissingParameter
+      - UnknownParameter
+      - UnsupportedInstanceAttribute
+      - UnsupportedOperation
+      - UnsupportedProtocol
+      - ValidationError
+    fields:
+      AllocationId:
+        is_primary_key: true
+        print:
+          name: ALLOCATION-ID
+      PublicIp:
+        print:
+          name: PUBLIC-IP
+    list_operation:
+      match_fields:
+      - AllocationId
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_create_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_delete_post_build_request.go.tpl
+      sdk_read_many_pre_build_request:
+        template_path: hooks/elastic_ip_address/sdk_read_many_pre_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
   SecurityGroup:
     fields:
       # support EC2-VPC only
@@ -217,4 +273,3 @@ resources:
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
-
