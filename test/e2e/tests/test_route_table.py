@@ -166,7 +166,7 @@ class TestRouteTable:
         patch = {"spec": {"routes": [
                     {
                         #Default route cannot be changed
-                        "destinationCIDRBlock": "10.0.0.0/16",
+                        "destinationCIDRBlock": default_cidr,
                         "gatewayID": "local"
                     },
                     {
