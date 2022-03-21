@@ -23,7 +23,7 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
-from e2e.tests.helper import Ec2Validator
+from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "routetables"
 
@@ -71,7 +71,7 @@ class TestRouteTable:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check Route Table exists in AWS
-        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_route_table(resource_id)
 
         # Delete k8s resource
@@ -153,7 +153,7 @@ class TestRouteTable:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check Route Table exists in AWS
-        ec2_validator = Ec2Validator(ec2_client)
+        ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_route_table(resource_id)
 
         # Check Routes exist (default and desired) in AWS

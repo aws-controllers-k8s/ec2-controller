@@ -14,7 +14,7 @@
 """Helper functions for ec2 tests
 """
 
-class Ec2Validator:
+class EC2Validator:
     def __init__(self, ec2_client):
         self.ec2_client = ec2_client
 
