@@ -30,6 +30,17 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 
+def get_vpc_attribute(ec2_client, vpc_id: str, attribute_name: str) -> dict:
+    return ec2_client.describe_vpc_attribute(Attribute=attribute_name, VpcId=vpc_id)
+    
+def get_dns_support(ec2_client, vpc_id: str) -> bool:
+    attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsSupport')
+    return attribute['EnableDnsSupport']['Value']
+
+def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
+    attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsHostnames')
+    return attribute['EnableDnsHostnames']['Value']
+
 @service_marker
 @pytest.mark.canary
 class TestVpc:
