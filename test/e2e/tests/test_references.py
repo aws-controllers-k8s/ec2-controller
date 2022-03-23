@@ -140,19 +140,19 @@ class TestEC2References:
         ec2_validator.assert_vpc(vpc_id)
 
         # Delete resources
-        _, deleted = k8s.delete_custom_resource(vpc_endpoint_ref, 2, 5)
+        _, deleted = k8s.delete_custom_resource(vpc_endpoint_ref, 6, 5)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        _, deleted = k8s.delete_custom_resource(subnet_ref, 2, 5)
+        _, deleted = k8s.delete_custom_resource(subnet_ref, 6, 5)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        _, deleted = k8s.delete_custom_resource(sg_ref, 2, 5)
+        _, deleted = k8s.delete_custom_resource(sg_ref, 6, 5)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        _, deleted = k8s.delete_custom_resource(vpc_ref, 2, 5)
+        _, deleted = k8s.delete_custom_resource(vpc_ref, 6, 5)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
