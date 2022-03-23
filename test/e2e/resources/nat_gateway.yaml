@@ -1,0 +1,12 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: NATGateway
+metadata:
+  name: $NAT_GATEWAY_NAME
+spec:
+  allocationID: $ALLOCATION_ID
+  subnetID: $SUBNET_ID
+  tagSpecifications:
+  - resourceType: "natgateway"
+    tags:
+    - key: Name
+      value: $NAT_GATEWAY_NAME

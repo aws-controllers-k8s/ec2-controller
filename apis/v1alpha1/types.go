@@ -2097,24 +2097,31 @@ type MovingAddressStatus struct {
 	PublicIP *string `json:"publicIP,omitempty"`
 }
 
-// Describes a NAT gateway.
-type NATGateway struct {
-	CreateTime     *metav1.Time `json:"createTime,omitempty"`
-	DeleteTime     *metav1.Time `json:"deleteTime,omitempty"`
-	FailureCode    *string      `json:"failureCode,omitempty"`
-	FailureMessage *string      `json:"failureMessage,omitempty"`
-	NATGatewayID   *string      `json:"natGatewayID,omitempty"`
-	SubnetID       *string      `json:"subnetID,omitempty"`
-	Tags           []*Tag       `json:"tags,omitempty"`
-	VPCID          *string      `json:"vpcID,omitempty"`
-}
-
 // Describes the IP addresses and network interface associated with a NAT gateway.
 type NATGatewayAddress struct {
 	AllocationID       *string `json:"allocationID,omitempty"`
 	NetworkInterfaceID *string `json:"networkInterfaceID,omitempty"`
 	PrivateIP          *string `json:"privateIP,omitempty"`
 	PublicIP           *string `json:"publicIP,omitempty"`
+}
+
+// Describes a NAT gateway.
+type NATGateway_SDK struct {
+	ConnectivityType    *string              `json:"connectivityType,omitempty"`
+	CreateTime          *metav1.Time         `json:"createTime,omitempty"`
+	DeleteTime          *metav1.Time         `json:"deleteTime,omitempty"`
+	FailureCode         *string              `json:"failureCode,omitempty"`
+	FailureMessage      *string              `json:"failureMessage,omitempty"`
+	NATGatewayAddresses []*NATGatewayAddress `json:"natGatewayAddresses,omitempty"`
+	NATGatewayID        *string              `json:"natGatewayID,omitempty"`
+	// Reserved. If you need to sustain traffic greater than the documented limits
+	// (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html),
+	// contact us through the Support Center (https://console.aws.amazon.com/support/home?).
+	ProvisionedBandwidth *ProvisionedBandwidth `json:"provisionedBandwidth,omitempty"`
+	State                *string               `json:"state,omitempty"`
+	SubnetID             *string               `json:"subnetID,omitempty"`
+	Tags                 []*Tag                `json:"tags,omitempty"`
+	VPCID                *string               `json:"vpcID,omitempty"`
 }
 
 // Describes a network ACL.

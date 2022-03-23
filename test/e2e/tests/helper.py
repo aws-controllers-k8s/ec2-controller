@@ -36,6 +36,19 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def assert_nat_gateway(self, ngw_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_nat_gateways(NatGatewayIds=[ngw_id])
+            assert len(aws_res["NatGateways"]) > 0
+            ngw = aws_res["NatGateways"][0]
+            # NATGateway may take awhile to be removed server-side, so 
+            # treat 'deleting' and 'deleted' states as resource no longer existing
+            res_found = ngw is not None and ngw['State'] != "deleting" and ngw['State'] != "deleted"
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
     def assert_route(self, route_table_id: str, gateway_id: str, origin: str, exists=True):
         res_found = False
         try:
