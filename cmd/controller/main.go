@@ -36,6 +36,7 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/dhcp_options"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/elastic_ip_address"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/internet_gateway"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/nat_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/route_table"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/security_group"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/subnet"

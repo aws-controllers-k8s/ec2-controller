@@ -6,6 +6,8 @@ ignore:
     - AllocateAddressInput.DryRun
     - CreateDhcpOptionsInput.DryRun
     - CreateInternetGatewayInput.DryRun
+    - CreateNatGatewayInput.ClientToken
+    - CreateNatGatewayInput.DryRun
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
@@ -46,7 +48,7 @@ ignore:
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRoute
     - ManagedPrefixList
-    - NatGateway
+    #- NatGateway
     - NetworkAclEntry
     - NetworkAcl
     - NetworkInsightsPath
@@ -101,6 +103,8 @@ operations:
     operation_type:
     - Delete
     resource_name: ElasticIPAddress
+  CreateNatGateway:
+    output_wrapper_field_path: NatGateway
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -187,6 +191,21 @@ resources:
         template_path: hooks/elastic_ip_address/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
+  NatGateway:
+    fields:
+      AllocationId:
+        references:
+          resource: ElasticIPAddress
+          path: Status.AllocationID
+      SubnetId:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+    synced:
+      when:
+      - path: Status.State
+        in:
+        - available
   SecurityGroup:
     fields:
       # support EC2-VPC only

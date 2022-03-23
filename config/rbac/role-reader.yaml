@@ -12,6 +12,7 @@ rules:
   - dhcpoptions
   - elasticipaddresses
   - internetgateways
+  - natgateways
   - routetables
   - securitygroups
   - subnets
