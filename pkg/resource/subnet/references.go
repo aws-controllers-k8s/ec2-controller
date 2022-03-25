@@ -47,6 +47,9 @@ func (rm *resourceManager) ResolveReferences(
 	ko := rm.concreteResource(res).ko.DeepCopy()
 	err := validateReferenceFields(ko)
 	if err == nil {
+		err = resolveReferenceForRouteTables(ctx, apiReader, namespace, ko)
+	}
+	if err == nil {
 		err = resolveReferenceForVPCID(ctx, apiReader, namespace, ko)
 	}
 
@@ -59,6 +62,9 @@ func (rm *resourceManager) ResolveReferences(
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Subnet) error {
+	if ko.Spec.RouteTableRefs != nil && ko.Spec.RouteTables != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("RouteTables", "RouteTableRefs")
+	}
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPCID", "VPCRef")
 	}
@@ -71,7 +77,68 @@ func validateReferenceFields(ko *svcapitypes.Subnet) error {
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.Subnet) bool {
-	return false || ko.Spec.VPCRef != nil
+	return false || ko.Spec.RouteTableRefs != nil || ko.Spec.VPCRef != nil
+}
+
+// resolveReferenceForRouteTables reads the resource referenced
+// from RouteTableRefs field and sets the RouteTables
+// from referenced resource
+func resolveReferenceForRouteTables(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.Subnet,
+) error {
+	if ko.Spec.RouteTableRefs != nil &&
+		len(ko.Spec.RouteTableRefs) > 0 {
+		resolvedReferences := []*string{}
+		for _, arrw := range ko.Spec.RouteTableRefs {
+			arr := arrw.From
+			if arr == nil || arr.Name == nil || *arr.Name == "" {
+				return fmt.Errorf("provided resource reference is nil or empty")
+			}
+			namespacedName := types.NamespacedName{
+				Namespace: namespace,
+				Name:      *arr.Name,
+			}
+			obj := svcapitypes.RouteTable{}
+			err := apiReader.Get(ctx, namespacedName, &obj)
+			if err != nil {
+				return err
+			}
+			var refResourceSynced, refResourceTerminal bool
+			for _, cond := range obj.Status.Conditions {
+				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceSynced = true
+				}
+				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceTerminal = true
+				}
+			}
+			if refResourceTerminal {
+				return ackerr.ResourceReferenceTerminalFor(
+					"RouteTable",
+					namespace, *arr.Name)
+			}
+			if !refResourceSynced {
+				return ackerr.ResourceReferenceNotSyncedFor(
+					"RouteTable",
+					namespace, *arr.Name)
+			}
+			if obj.Status.RouteTableID == nil {
+				return ackerr.ResourceReferenceMissingTargetFieldFor(
+					"RouteTable",
+					namespace, *arr.Name,
+					"Status.RouteTableID")
+			}
+			resolvedReferences = append(resolvedReferences,
+				obj.Status.RouteTableID)
+		}
+		ko.Spec.RouteTables = resolvedReferences
+	}
+	return nil
 }
 
 // resolveReferenceForVPCID reads the resource referenced

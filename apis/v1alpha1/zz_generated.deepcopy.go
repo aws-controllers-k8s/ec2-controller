@@ -4021,6 +4021,17 @@ func (in *Explanation) DeepCopyInto(out *Explanation) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Protocols != nil {
+		in, out := &in.Protocols, &out.Protocols
+		*out = make([]*string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(string)
+				**out = **in
+			}
+		}
+	}
 	if in.State != nil {
 		in, out := &in.State, &out.State
 		*out = new(string)
@@ -14844,6 +14855,28 @@ func (in *SubnetSpec) DeepCopyInto(out *SubnetSpec) {
 		in, out := &in.OutpostARN, &out.OutpostARN
 		*out = new(string)
 		**out = **in
+	}
+	if in.RouteTableRefs != nil {
+		in, out := &in.RouteTableRefs, &out.RouteTableRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
+	if in.RouteTables != nil {
+		in, out := &in.RouteTables, &out.RouteTables
+		*out = make([]*string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(string)
+				**out = **in
+			}
+		}
 	}
 	if in.TagSpecifications != nil {
 		in, out := &in.TagSpecifications, &out.TagSpecifications

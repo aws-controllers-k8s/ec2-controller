@@ -50,7 +50,10 @@ type SubnetSpec struct {
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
 	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
 	// ARN, you must also specify the Availability Zone of the Outpost subnet.
-	OutpostARN *string `json:"outpostARN,omitempty"`
+	OutpostARN     *string                                    `json:"outpostARN,omitempty"`
+	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
+
+	RouteTables []*string `json:"routeTables,omitempty"`
 	// The tags to assign to the subnet.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// The ID of the VPC.
