@@ -37,8 +37,10 @@ func (rm *resourceManager) customUpdateSubnet(
 	ko := desired.ko.DeepCopy()
 	rm.setStatusDefaults(ko)
 
-	if err = rm.updateRouteTableAssociations(ctx, desired, latest, delta); err != nil {
-		return nil, err
+	if delta.DifferentAt("Spec.RouteTables") {
+		if err = rm.updateRouteTableAssociations(ctx, desired, latest, delta); err != nil {
+			return nil, err
+		}
 	}
 
 	return &resource{ko}, nil
@@ -78,10 +80,6 @@ func (rm *resourceManager) updateRouteTableAssociations(
 	defer func(err error) {
 		exit(err)
 	}(err)
-
-	if !delta.DifferentAt("Spec.RouteTables") {
-		return nil
-	}
 
 	existingRTs, err := rm.getRouteTableAssocations(ctx, latest)
 	if err != nil {
@@ -196,11 +194,11 @@ func (rm *resourceManager) getRouteTableAssocations(
 	}
 
 	for {
-		rm.metrics.RecordAPICall("GET", "DescribeRouteTables", err)
 		resp, err := rm.sdkapi.DescribeRouteTablesWithContext(ctx, input)
 		if err != nil || resp == nil {
 			break
 		}
+		rm.metrics.RecordAPICall("GET", "DescribeRouteTables", err)
 		for _, rt := range resp.RouteTables {
 			var assoc *svcsdk.RouteTableAssociation
 			// Find the association for the current subnet
