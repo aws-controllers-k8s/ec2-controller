@@ -30,7 +30,7 @@ REGION = get_region()
 RESOURCE_PLURAL = "vpcendpoints"
 ENDPOINT_SERVICE_NAME = f'com.amazonaws.{REGION}.s3'
 
-CREATE_WAIT_AFTER_SECONDS = 10
+CREATE_WAIT_AFTER_SECONDS = 20
 DELETE_WAIT_AFTER_SECONDS = 10
 
 @service_marker
@@ -82,8 +82,6 @@ class TestEC2References:
             vpc_endpoint_name, namespace="default",
         )
         k8s.create_custom_resource(vpc_endpoint_ref, vpc_endpoint_resource_data)
-        vpc_endpoint_cr = k8s.wait_resource_consumed_by_controller(vpc_endpoint_ref)
-        assert vpc_endpoint_cr is not None
 
         # Create Subnet. Requires: VPC
         subnet_ref = k8s.CustomResourceReference(
@@ -91,8 +89,6 @@ class TestEC2References:
             subnet_name, namespace="default",
         )
         k8s.create_custom_resource(subnet_ref, subnet_resource_data)
-        subnet_cr = k8s.wait_resource_consumed_by_controller(subnet_ref)
-        assert subnet_cr is not None
 
         # Create SecurityGroups. Requires: VPC
         sg_ref = k8s.CustomResourceReference(
@@ -100,8 +96,6 @@ class TestEC2References:
             security_group_name, namespace="default",
         )
         k8s.create_custom_resource(sg_ref, sg_resource_data)
-        sg_cr = k8s.wait_resource_consumed_by_controller(sg_ref)
-        assert sg_cr is not None
 
         # Create VPC. Requires: None
         vpc_ref = k8s.CustomResourceReference(
@@ -109,8 +103,9 @@ class TestEC2References:
             vpc_name, namespace="default",
         )
         k8s.create_custom_resource(vpc_ref, vpc_resource_data)
-        vpc_cr = k8s.wait_resource_consumed_by_controller(vpc_ref)
-        assert vpc_cr is not None
+
+        # Wait a few seconds so resources get persisted in etcd
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resources sync & resolve
         assert k8s.wait_on_condition(vpc_ref, "ACK.ResourceSynced", "True", wait_periods=5)
@@ -120,8 +115,6 @@ class TestEC2References:
         assert k8s.wait_on_condition(sg_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
         assert k8s.wait_on_condition(subnet_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
         assert k8s.wait_on_condition(vpc_endpoint_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Acquire resource IDs
         vpc_endpoint_cr = k8s.get_resource(vpc_endpoint_ref)
