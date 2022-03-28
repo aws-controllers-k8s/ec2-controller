@@ -13,6 +13,7 @@
 
 import boto3
 import pytest
+from acktest.aws.identity import get_region
 
 def pytest_addoption(parser):
     parser.addoption("--runslow", action="store_true", default=False, help="run slow tests")
@@ -40,4 +41,5 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="module")
 def ec2_client():
-    return boto3.client("ec2")
+    region = get_region()
+    return boto3.client("ec2", region)

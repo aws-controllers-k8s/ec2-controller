@@ -20,14 +20,15 @@ import time
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
+from acktest.aws.identity import get_region
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
 # Default to us-west-2 since that's where prow is deployed
-REGION = "us-west-2" if environ.get('AWS_DEFAULT_REGION') is None else environ.get('AWS_DEFAULT_REGION')
+REGION = get_region()
 RESOURCE_PLURAL = "vpcendpoints"
-ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
+ENDPOINT_SERVICE_NAME = f'com.amazonaws.{REGION}.s3'
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
