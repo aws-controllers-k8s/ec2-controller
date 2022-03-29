@@ -131,7 +131,11 @@ class TestEC2References:
         # Delete resources
         _, deleted = k8s.delete_custom_resource(vpc_endpoint_ref, 6, 5)
         assert deleted is True
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        # Deleting an interface endpoint also deletes the endpoint network interfaces
+        # and therefore requires more time to resolve server-side. Increasing the sleep
+        # to a longer duration allows VPC Endpoint to be removed completely. Then, 
+        # Subnet and other dependent resources can be deleted successfully.
+        time.sleep(70)
 
         _, deleted = k8s.delete_custom_resource(subnet_ref, 6, 5)
         assert deleted is True
