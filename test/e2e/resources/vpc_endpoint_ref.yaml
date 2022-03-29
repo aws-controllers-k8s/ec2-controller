@@ -1,0 +1,16 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPCEndpoint
+metadata:
+  name: $VPC_ENDPOINT_REF_NAME
+spec:
+  serviceName: $SERVICE_NAME
+  vpcEndpointType: $VPC_ENDPOINT_TYPE
+  vpcRef:
+    from:
+      name: $VPC_NAME
+  subnetRefs:
+    - from:
+        name: $SUBNET_REF_NAME
+  securityGroupRefs:
+    - from:
+        name: $SECURITY_GROUP_REF_NAME

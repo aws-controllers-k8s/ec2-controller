@@ -1,0 +1,9 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: Subnet
+metadata:
+  name: $SUBNET_REF_NAME
+spec:
+  cidrBlock: $SUBNET_CIDR_BLOCK
+  vpcRef:
+    from:
+      name: $VPC_NAME
