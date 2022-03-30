@@ -131,6 +131,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	vpcID, err := rm.getAttachedVPC(ctx, &resource{ko})
+	if err != nil {
+		return nil, err
+	} else {
+		ko.Spec.VPC = vpcID
+	}
 	return &resource{ko}, nil
 }
 
@@ -230,6 +236,11 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	if ko.Spec.VPC != nil {
+		if err = rm.attachToVPC(ctx, &resource{ko}); err != nil {
+			return nil, err
+		}
+	}
 	return &resource{ko}, nil
 }
 
@@ -278,8 +289,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateInternetGateway(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -290,6 +300,11 @@ func (rm *resourceManager) sdkDelete(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
 	defer exit(err)
+	if r.ko.Spec.VPC != nil && r.ko.Status.InternetGatewayID != nil {
+		if err = rm.detachFromVPC(ctx, *r.ko.Spec.VPC, *r.ko.Status.InternetGatewayID); err != nil {
+			return nil, err
+		}
+	}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err
