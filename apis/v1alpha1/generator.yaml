@@ -191,6 +191,15 @@ resources:
         template_path: hooks/elastic_ip_address/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
+  InternetGateway:
+    fields:
+      VPC:
+        from:
+          operation: AttachInternetGateway
+          path: VpcId
+        references:
+          resource: VPC
+          path: Status.VPCID
   NatGateway:
     fields:
       AllocationId:

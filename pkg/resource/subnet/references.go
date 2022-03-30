@@ -77,7 +77,7 @@ func validateReferenceFields(ko *svcapitypes.Subnet) error {
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.Subnet) bool {
-	return false || ko.Spec.RouteTableRefs != nil || ko.Spec.VPCRef != nil
+	return false || (ko.Spec.RouteTableRefs != nil) || (ko.Spec.VPCRef != nil)
 }
 
 // resolveReferenceForRouteTables reads the resource referenced
@@ -133,8 +133,8 @@ func resolveReferenceForRouteTables(
 					namespace, *arr.Name,
 					"Status.RouteTableID")
 			}
-			resolvedReferences = append(resolvedReferences,
-				obj.Status.RouteTableID)
+			referencedValue := string(*obj.Status.RouteTableID)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
 		}
 		ko.Spec.RouteTables = resolvedReferences
 	}
@@ -192,7 +192,8 @@ func resolveReferenceForVPCID(
 				namespace, *arr.Name,
 				"Status.VPCID")
 		}
-		ko.Spec.VPCID = obj.Status.VPCID
+		referencedValue := string(*obj.Status.VPCID)
+		ko.Spec.VPCID = &referencedValue
 	}
 	return nil
 }
