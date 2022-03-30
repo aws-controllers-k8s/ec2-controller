@@ -281,6 +281,8 @@ resources:
         template_path: hooks/vpc/sdk_read_many_post_set_output.go.tpl
   VpcEndpoint:
     fields:
+      PolicyDocument:
+        late_initialize: {}
       VpcId:
         references:
           resource: VPC
