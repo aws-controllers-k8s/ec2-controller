@@ -118,6 +118,7 @@ class TestEC2References:
         assert k8s.wait_on_condition(vpc_ref, "ACK.ResourceSynced", "True", wait_periods=5)
         assert k8s.wait_on_condition(sg_ref, "ACK.ResourceSynced", "True", wait_periods=5)
         assert k8s.wait_on_condition(subnet_ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(vpc_endpoint_ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         assert k8s.wait_on_condition(sg_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
         assert k8s.wait_on_condition(subnet_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
