@@ -208,7 +208,7 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	assocs, err := rm.getRouteTableAssocations(ctx, &resource{ko})
+	assocs, err := rm.getRouteTableAssociations(ctx, &resource{ko})
 	if err != nil {
 		return nil, err
 	} else {

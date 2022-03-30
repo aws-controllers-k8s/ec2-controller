@@ -81,7 +81,7 @@ func (rm *resourceManager) updateRouteTableAssociations(
 		exit(err)
 	}(err)
 
-	existingRTs, err := rm.getRouteTableAssocations(ctx, latest)
+	existingRTs, err := rm.getRouteTableAssociations(ctx, latest)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (rm *resourceManager) updateRouteTableAssociations(
 	}
 
 	for _, rt := range desired.ko.Spec.RouteTables {
-		if !inAssocations(*rt, existingRTs) {
+		if !inAssociations(*rt, existingRTs) {
 			toAdd = append(toAdd, rt)
 		}
 	}
@@ -171,10 +171,10 @@ func (rm *resourceManager) disassociateRouteTable(
 	return nil
 }
 
-// getRouteTableAssocations finds all of the route tables that are associated
+// getRouteTableAssociations finds all of the route tables that are associated
 // with the current subnet and returns a list of each of the association
 // resources.
-func (rm *resourceManager) getRouteTableAssocations(
+func (rm *resourceManager) getRouteTableAssociations(
 	ctx context.Context,
 	res *resource,
 ) (assocs []*svcsdk.RouteTableAssociation, err error) {
@@ -225,9 +225,9 @@ func (rm *resourceManager) getRouteTableAssocations(
 	return assocs, nil
 }
 
-// inAssocations returns true if a route table ID is present in the list of
+// inAssociations returns true if a route table ID is present in the list of
 // route table assocations.
-func inAssocations(
+func inAssociations(
 	rtID string,
 	assocs []*svcsdk.RouteTableAssociation,
 ) bool {
