@@ -76,6 +76,12 @@ func newResourceDelta(
 			delta.Add("Spec.OutpostARN", a.ko.Spec.OutpostARN, b.ko.Spec.OutpostARN)
 		}
 	}
+	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
+		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTables, b.ko.Spec.RouteTables) {
+		delta.Add("Spec.RouteTables", a.ko.Spec.RouteTables, b.ko.Spec.RouteTables)
+	}
 	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
 		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
 	}

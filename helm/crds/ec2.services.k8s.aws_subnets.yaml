@@ -67,6 +67,26 @@ spec:
                   specify an Outpost ARN, you must also specify the Availability Zone
                   of the Outpost subnet.
                 type: string
+              routeTableRefs:
+                items:
+                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference type to provide more user friendly syntax
+                    for references using ''from'' field Ex: APIIDRef:   from:     name:
+                    my-api'
+                  properties:
+                    from:
+                      description: AWSResourceReference provides all the values necessary
+                        to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              routeTables:
+                items:
+                  type: string
+                type: array
               tagSpecifications:
                 description: The tags to assign to the subnet.
                 items:

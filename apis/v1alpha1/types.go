@@ -897,6 +897,7 @@ type Explanation struct {
 	ExplanationCode   *string   `json:"explanationCode,omitempty"`
 	MissingComponent  *string   `json:"missingComponent,omitempty"`
 	PacketField       *string   `json:"packetField,omitempty"`
+	Protocols         []*string `json:"protocols,omitempty"`
 	State             *string   `json:"state,omitempty"`
 }
 

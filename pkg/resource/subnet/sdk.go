@@ -208,6 +208,15 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	assocs, err := rm.getRouteTableAssociations(ctx, &resource{ko})
+	if err != nil {
+		return nil, err
+	} else {
+		ko.Spec.RouteTables = make([]*string, len(assocs))
+		for i, assoc := range assocs {
+			ko.Spec.RouteTables[i] = assoc.RouteTableId
+		}
+	}
 	return &resource{ko}, nil
 }
 
@@ -384,6 +393,9 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	if err = rm.createRouteTableAssociations(ctx, &resource{ko}); err != nil {
+		return nil, err
+	}
 	return &resource{ko}, nil
 }
 
@@ -450,8 +462,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateSubnet(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API

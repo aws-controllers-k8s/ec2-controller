@@ -238,6 +238,12 @@ resources:
         - VPCIdNotSpecified
   Subnet:
     fields:
+      RouteTables:
+        custom_field:
+          list_of: String
+        references:
+          resource: RouteTable
+          path: Status.RouteTableID
       VpcId:
         references:
           resource: VPC
@@ -246,6 +252,13 @@ resources:
       terminal_codes:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/subnet/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/subnet/sdk_read_many_post_set_output.go.tpl
+    update_operation:
+      custom_method_name: customUpdateSubnet
   Vpc:
     update_operation:
       custom_method_name: customUpdate

@@ -25,10 +25,64 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.tests.helper import EC2Validator
 
+from .test_route_table import RESOURCE_PLURAL as ROUTE_TABLE_PLURAL, CREATE_WAIT_AFTER_SECONDS as ROUTE_TABLE_CREATE_WAIT
+
 RESOURCE_PLURAL = "subnets"
 
 CREATE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+
+def create_default_route_table(cidr_block: str):
+    replacements = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("subnet-route-table", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    vpc_id = test_vpc.vpc_id
+    igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
+
+    replacements["ROUTE_TABLE_NAME"] = resource_name
+    replacements["VPC_ID"] = vpc_id
+    replacements["IGW_ID"] = igw_id
+    replacements["DEST_CIDR_BLOCK"] = cidr_block
+
+    resource_data = load_ec2_resource(
+        "route_table",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create the k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, ROUTE_TABLE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    time.sleep(ROUTE_TABLE_CREATE_WAIT)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    return (ref, cr)
+
+@pytest.fixture
+def default_route_tables():
+    rts = [
+        create_default_route_table("192.168.0.0/24"),
+        create_default_route_table("192.168.0.1/24")
+    ]
+
+    yield rts
+
+    for rt in rts:
+        (ref, _) = rt
+        # Try to delete, if doesn't already exist
+        try:
+            _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+            assert deleted
+        except:
+            pass
 
 @service_marker
 @pytest.mark.canary
@@ -115,3 +169,66 @@ class TestSubnet:
         #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
         # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
         assert expected_msg in terminal_condition['message']
+
+    def test_route_table_assocations(self, ec2_client, default_route_tables):
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("subnet-test", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        vpc_id = test_vpc.vpc_id
+
+        (_, initial_rt_cr) = default_route_tables[0]
+        test_resource_values["SUBNET_NAME"] = resource_name
+        test_resource_values["VPC_ID"] = vpc_id
+        # CIDR needs to be within SharedTestVPC range and not overlap other subnets
+        test_resource_values["CIDR_BLOCK"] = "10.0.255.0/24"
+        test_resource_values["ROUTE_TABLE_ID"] = initial_rt_cr["status"]["routeTableID"]
+
+        # Load Subnet CR
+        resource_data = load_ec2_resource(
+            "subnet_route_table_assocations",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        resource = k8s.get_resource(ref)
+        resource_id = resource["status"]["subnetID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check Subnet exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_subnet(resource_id)
+
+        assert ec2_validator.get_route_table_association(initial_rt_cr["status"]["routeTableID"], resource_id) is not None
+
+        # Patch the subnet, replacing the route tables
+        updates = {
+            "spec": {"routeTables": [
+                default_route_tables[1][1]["status"]["routeTableID"]
+            ]},
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        assert ec2_validator.get_route_table_association(initial_rt_cr["status"]["routeTableID"], resource_id) is None
+        assert ec2_validator.get_route_table_association(default_route_tables[1][1]["status"]["routeTableID"], resource_id) is not None
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Subnet no longer exists in AWS
+        ec2_validator.assert_subnet(resource_id, exists=False)

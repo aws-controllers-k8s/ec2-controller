@@ -14,6 +14,9 @@
 """Helper functions for ec2 tests
 """
 
+from typing import Union, Dict
+
+
 class EC2Validator:
     def __init__(self, ec2_client):
         self.ec2_client = ec2_client
@@ -61,14 +64,24 @@ class EC2Validator:
             pass
         assert res_found is exists
 
-    def assert_route_table(self, route_table_id: str, exists=True):
-        res_found = False
+    def get_route_table(self, route_table_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_route_tables(RouteTableIds=[route_table_id])
-            res_found = len(aws_res["RouteTables"]) > 0
+            if len(aws_res["RouteTables"]) > 0:
+                return aws_res["RouteTables"][0]
+            return None
         except self.ec2_client.exceptions.ClientError:
-            pass
-        assert res_found is exists
+            return None
+
+    def assert_route_table(self, route_table_id: str, exists=True):
+        assert (self.get_route_table(route_table_id) is not None) == exists
+
+    def get_route_table_association(self, route_table_id: str, subnet_id: str) -> Union[None, Dict]:
+        rt = self.get_route_table(route_table_id)
+        for assoc in rt["Associations"]:
+            if assoc["SubnetId"] == subnet_id:
+                return assoc
+        return None
 
     def assert_security_group(self, sg_id: str, exists=True):
         res_found = False
@@ -79,14 +92,17 @@ class EC2Validator:
             pass
         assert res_found is exists
 
-    def assert_subnet(self, subnet_id: str, exists=True):
-        res_found = False
+    def get_subnet(self, subnet_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_subnets(SubnetIds=[subnet_id])
-            res_found = len(aws_res["Subnets"]) > 0
+            if len(aws_res["Subnets"]) > 0:
+                return aws_res["Subnets"][0]
+            return None
         except self.ec2_client.exceptions.ClientError:
-            pass
-        assert res_found is exists
+            return None
+
+    def assert_subnet(self, subnet_id: str, exists=True):
+        assert (self.get_subnet(subnet_id) is not None) == exists
 
     def assert_transit_gateway(self, tgw_id: str, exists=True):
         res_found = False
