@@ -24,7 +24,8 @@ def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
 
     resources = BootstrapResources(
-        SharedTestVPC=VPC(name_prefix="e2e-test-vpc", num_public_subnet=1, num_private_subnet=0)
+        SharedTestVPC=VPC(name_prefix="e2e-test-vpc", num_public_subnet=1, num_private_subnet=0),
+        EmptyVPC=VPC(name_prefix="e2e-empty-vpc", num_public_subnet=0, num_private_subnet=0)
     )
 
     try:

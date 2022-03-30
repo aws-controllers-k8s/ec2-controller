@@ -21,6 +21,7 @@ from e2e import bootstrap_directory
 @dataclass
 class BootstrapResources(Resources):
     SharedTestVPC: VPC
+    EmptyVPC: VPC
 
 _bootstrap_resources = None
 

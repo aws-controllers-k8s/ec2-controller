@@ -1,0 +1,6 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: InternetGateway
+metadata:
+  name: $INTERNET_GATEWAY_NAME
+spec:
+  vpc: $VPC_ID
