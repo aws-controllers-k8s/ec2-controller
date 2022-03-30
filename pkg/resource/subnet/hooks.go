@@ -210,7 +210,7 @@ func (rm *resourceManager) getRouteTableAssociations(
 			}
 
 			// If we can't find the assocation, something has gone wrong because
-			// our filter on the input has meant to have caught this.
+			// our filter on the input was meant to have caught this.
 			if assoc == nil {
 				continue
 			}
