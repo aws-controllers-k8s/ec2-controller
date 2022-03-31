@@ -71,7 +71,7 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.SecurityGroup) bool {
-	return false || ko.Spec.VPCRef != nil
+	return false || (ko.Spec.VPCRef != nil)
 }
 
 // resolveReferenceForVPCID reads the resource referenced
@@ -125,7 +125,8 @@ func resolveReferenceForVPCID(
 				namespace, *arr.Name,
 				"Status.VPCID")
 		}
-		ko.Spec.VPCID = obj.Status.VPCID
+		referencedValue := string(*obj.Status.VPCID)
+		ko.Spec.VPCID = &referencedValue
 	}
 	return nil
 }
