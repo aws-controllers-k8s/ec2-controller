@@ -25,11 +25,49 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 from e2e.bootstrap_resources import get_bootstrap_resources
 
+from .test_vpc import RESOURCE_PLURAL as VPC_RESOURCE_PLURAL, CREATE_WAIT_AFTER_SECONDS as VPC_CREATE_WAIT
+
 RESOURCE_PLURAL = "internetgateways"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+
+@pytest.fixture
+def empty_vpc():
+    resource_name = random_suffix_name("igw-empty-vpc", 32)
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_NAME"] = resource_name
+    replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+
+    resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create the k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    time.sleep(VPC_CREATE_WAIT)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
 
 @service_marker
 @pytest.mark.canary
@@ -75,11 +113,11 @@ class TestInternetGateway:
         # Check Internet Gateway no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)
 
-    def test_vpc_association(self, ec2_client):
+    def test_vpc_association(self, ec2_client, empty_vpc):
         resource_name = random_suffix_name("ig-ack-test", 24)
 
-        test_vpc = get_bootstrap_resources().EmptyVPC
-        vpc_id = test_vpc.vpc_id
+        (_, vpc_cr) = empty_vpc
+        vpc_id = vpc_cr["status"]["vpcID"]
 
         replacements = REPLACEMENT_VALUES.copy()
         replacements["INTERNET_GATEWAY_NAME"] = resource_name
