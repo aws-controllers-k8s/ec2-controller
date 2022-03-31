@@ -89,7 +89,7 @@ func validateReferenceFields(ko *svcapitypes.VPCEndpoint) error {
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.VPCEndpoint) bool {
-	return false || ko.Spec.RouteTableRefs != nil || ko.Spec.SecurityGroupRefs != nil || ko.Spec.SubnetRefs != nil || ko.Spec.VPCRef != nil
+	return false || (ko.Spec.RouteTableRefs != nil) || (ko.Spec.SecurityGroupRefs != nil) || (ko.Spec.SubnetRefs != nil) || (ko.Spec.VPCRef != nil)
 }
 
 // resolveReferenceForRouteTableIDs reads the resource referenced
@@ -145,8 +145,8 @@ func resolveReferenceForRouteTableIDs(
 					namespace, *arr.Name,
 					"Status.RouteTableID")
 			}
-			resolvedReferences = append(resolvedReferences,
-				obj.Status.RouteTableID)
+			referencedValue := string(*obj.Status.RouteTableID)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
 		}
 		ko.Spec.RouteTableIDs = resolvedReferences
 	}
@@ -206,8 +206,8 @@ func resolveReferenceForSecurityGroupIDs(
 					namespace, *arr.Name,
 					"Status.ID")
 			}
-			resolvedReferences = append(resolvedReferences,
-				obj.Status.ID)
+			referencedValue := string(*obj.Status.ID)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
 		}
 		ko.Spec.SecurityGroupIDs = resolvedReferences
 	}
@@ -267,8 +267,8 @@ func resolveReferenceForSubnetIDs(
 					namespace, *arr.Name,
 					"Status.SubnetID")
 			}
-			resolvedReferences = append(resolvedReferences,
-				obj.Status.SubnetID)
+			referencedValue := string(*obj.Status.SubnetID)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
 		}
 		ko.Spec.SubnetIDs = resolvedReferences
 	}
@@ -326,7 +326,8 @@ func resolveReferenceForVPCID(
 				namespace, *arr.Name,
 				"Status.VPCID")
 		}
-		ko.Spec.VPCID = obj.Status.VPCID
+		referencedValue := string(*obj.Status.VPCID)
+		ko.Spec.VPCID = &referencedValue
 	}
 	return nil
 }

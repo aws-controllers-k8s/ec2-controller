@@ -77,7 +77,7 @@ func validateReferenceFields(ko *svcapitypes.NATGateway) error {
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.NATGateway) bool {
-	return false || ko.Spec.AllocationRef != nil || ko.Spec.SubnetRef != nil
+	return false || (ko.Spec.AllocationRef != nil) || (ko.Spec.SubnetRef != nil)
 }
 
 // resolveReferenceForAllocationID reads the resource referenced
@@ -131,7 +131,8 @@ func resolveReferenceForAllocationID(
 				namespace, *arr.Name,
 				"Status.AllocationID")
 		}
-		ko.Spec.AllocationID = obj.Status.AllocationID
+		referencedValue := string(*obj.Status.AllocationID)
+		ko.Spec.AllocationID = &referencedValue
 	}
 	return nil
 }
@@ -187,7 +188,8 @@ func resolveReferenceForSubnetID(
 				namespace, *arr.Name,
 				"Status.SubnetID")
 		}
-		ko.Spec.SubnetID = obj.Status.SubnetID
+		referencedValue := string(*obj.Status.SubnetID)
+		ko.Spec.SubnetID = &referencedValue
 	}
 	return nil
 }

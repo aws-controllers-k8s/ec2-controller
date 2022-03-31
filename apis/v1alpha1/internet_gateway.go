@@ -26,6 +26,9 @@ import (
 type InternetGatewaySpec struct {
 	// The tags to assign to the internet gateway.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The ID of the VPC.
+	VPC    *string                                  `json:"vpc,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // InternetGatewayStatus defines the observed state of InternetGateway
