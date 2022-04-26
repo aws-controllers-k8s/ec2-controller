@@ -13,6 +13,7 @@ rules:
   - elasticipaddresses
   - internetgateways
   - natgateways
+  - reservations
   - routetables
   - securitygroups
   - subnets

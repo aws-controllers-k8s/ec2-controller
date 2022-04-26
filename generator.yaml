@@ -23,6 +23,7 @@ ignore:
     # support EC2-VPC only
     - AllocateAddressInput.Domain
     - AllocateAddressOutput.Domain
+    - RunInstancesInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -38,7 +39,7 @@ ignore:
     - Fleet
     - FpgaImage
     - Image
-    - Instance
+    #- Instance
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
@@ -56,6 +57,7 @@ ignore:
     - NetworkInterface
     - PlacementGroup
     - ReplaceRootVolumeTask
+    #- Reservation
     - ReservedInstancesListing
     - RestoreImageTask
     #- RouteTable
@@ -111,6 +113,18 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  RunInstances:
+    operation_type:
+    - Create
+    resource_name: Reservation
+  DescribeInstances:
+    operation_type:
+    - List
+    resource_name: Reservation
+  TerminateInstances:
+    operation_type:
+    - Delete
+    resource_name: Reservation
 resources:
   DhcpOptions:
     fields:
@@ -224,6 +238,10 @@ resources:
       - path: Status.State
         in:
         - available
+  Reservation:
+    fields:
+      ReservationId:
+        is_primary_key: true
   SecurityGroup:
     fields:
       # support EC2-VPC only

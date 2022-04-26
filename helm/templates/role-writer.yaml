@@ -17,6 +17,8 @@ rules:
 
   - natgateways
 
+  - reservations
+
   - routetables
 
   - securitygroups
@@ -44,6 +46,7 @@ rules:
   - elasticipaddresses
   - internetgateways
   - natgateways
+  - reservations
   - routetables
   - securitygroups
   - subnets
