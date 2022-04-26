@@ -242,6 +242,11 @@ resources:
     fields:
       ReservationId:
         is_primary_key: true
+    hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/reservation/sdk_delete_post_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/reservation/sdk_read_many_post_build_request.go.tpl
   SecurityGroup:
     fields:
       # support EC2-VPC only

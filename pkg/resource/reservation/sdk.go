@@ -66,6 +66,9 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
+	if err = addReservationIDToListRequest(r, input); err != nil {
+		return nil, ackerr.NotFound
+	}
 	var resp *svcsdk.DescribeInstancesOutput
 	resp, err = rm.sdkapi.DescribeInstancesWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeInstances", err)
@@ -1724,6 +1727,9 @@ func (rm *resourceManager) sdkDelete(
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err
+	}
+	if err = addInstanceIDsToTerminateRequest(r, input); err != nil {
+		return nil, ackerr.NotFound
 	}
 	var resp *svcsdk.TerminateInstancesOutput
 	_ = resp
