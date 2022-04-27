@@ -1,0 +1,10 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: Reservation
+metadata:
+  name: $RESERVATION_NAME
+spec:
+  minCount: $RESERVATION_MIN
+  maxCount: $RESERVATION_MAX
+  imageID: $RESERVATION_AMI_ID
+  instanceType: $RESERVATION_INSTANCE_TYPE
+  subnetID: $RESERVATION_SUBNET_ID
