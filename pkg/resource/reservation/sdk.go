@@ -534,7 +534,7 @@ func (rm *resourceManager) sdkFind(
 					f1elem.PublicIPAddress = f1iter.PublicIpAddress
 				}
 				if f1iter.RamdiskId != nil {
-					f1elem.RAMdiskID = f1iter.RamdiskId
+					f1elem.RAMDiskID = f1iter.RamdiskId
 				}
 				if f1iter.RootDeviceName != nil {
 					f1elem.RootDeviceName = f1iter.RootDeviceName
@@ -1143,7 +1143,7 @@ func (rm *resourceManager) sdkCreate(
 				f1elem.PublicIPAddress = f1iter.PublicIpAddress
 			}
 			if f1iter.RamdiskId != nil {
-				f1elem.RAMdiskID = f1iter.RamdiskId
+				f1elem.RAMDiskID = f1iter.RamdiskId
 			}
 			if f1iter.RootDeviceName != nil {
 				f1elem.RootDeviceName = f1iter.RootDeviceName
@@ -1645,8 +1645,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.PrivateIPAddress != nil {
 		res.SetPrivateIpAddress(*r.ko.Spec.PrivateIPAddress)
 	}
-	if r.ko.Spec.RAMdiskID != nil {
-		res.SetRamdiskId(*r.ko.Spec.RAMdiskID)
+	if r.ko.Spec.RAMDiskID != nil {
+		res.SetRamdiskId(*r.ko.Spec.RAMDiskID)
 	}
 	if r.ko.Spec.SecurityGroupIDs != nil {
 		f30 := []*string{}

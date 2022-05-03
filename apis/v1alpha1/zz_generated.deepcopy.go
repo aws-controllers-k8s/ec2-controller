@@ -5934,8 +5934,8 @@ func (in *Image) DeepCopyInto(out *Image) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -6599,8 +6599,8 @@ func (in *Instance) DeepCopyInto(out *Instance) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -8316,8 +8316,8 @@ func (in *LaunchSpecification) DeepCopyInto(out *LaunchSpecification) {
 			}
 		}
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -12706,8 +12706,8 @@ func (in *RequestSpotLaunchSpecification) DeepCopyInto(out *RequestSpotLaunchSpe
 			}
 		}
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -13011,8 +13011,8 @@ func (in *ReservationSpec) DeepCopyInto(out *ReservationSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -14485,8 +14485,8 @@ func (in *ScheduledInstancesLaunchSpecification) DeepCopyInto(out *ScheduledInst
 		*out = new(string)
 		**out = **in
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -15616,8 +15616,8 @@ func (in *SpotFleetLaunchSpecification) DeepCopyInto(out *SpotFleetLaunchSpecifi
 			}
 		}
 	}
-	if in.RAMdiskID != nil {
-		in, out := &in.RAMdiskID, &out.RAMdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}

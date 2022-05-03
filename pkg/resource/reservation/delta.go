@@ -419,11 +419,11 @@ func newResourceDelta(
 			delta.Add("Spec.PrivateIPAddress", a.ko.Spec.PrivateIPAddress, b.ko.Spec.PrivateIPAddress)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.RAMdiskID, b.ko.Spec.RAMdiskID) {
-		delta.Add("Spec.RAMdiskID", a.ko.Spec.RAMdiskID, b.ko.Spec.RAMdiskID)
-	} else if a.ko.Spec.RAMdiskID != nil && b.ko.Spec.RAMdiskID != nil {
-		if *a.ko.Spec.RAMdiskID != *b.ko.Spec.RAMdiskID {
-			delta.Add("Spec.RAMdiskID", a.ko.Spec.RAMdiskID, b.ko.Spec.RAMdiskID)
+	if ackcompare.HasNilDifference(a.ko.Spec.RAMDiskID, b.ko.Spec.RAMDiskID) {
+		delta.Add("Spec.RAMDiskID", a.ko.Spec.RAMDiskID, b.ko.Spec.RAMDiskID)
+	} else if a.ko.Spec.RAMDiskID != nil && b.ko.Spec.RAMDiskID != nil {
+		if *a.ko.Spec.RAMDiskID != *b.ko.Spec.RAMDiskID {
+			delta.Add("Spec.RAMDiskID", a.ko.Spec.RAMDiskID, b.ko.Spec.RAMDiskID)
 		}
 	}
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {

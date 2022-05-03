@@ -198,7 +198,7 @@ type ReservationSpec struct {
 	// We recommend that you use PV-GRUB instead of kernels and RAM disks. For more
 	// information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
 	// in the Amazon EC2 User Guide.
-	RAMdiskID *string `json:"ramdiskID,omitempty"`
+	RAMDiskID *string `json:"ramDiskID,omitempty"`
 	// The IDs of the security groups. You can create a security group using CreateSecurityGroup
 	// (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html).
 	//
