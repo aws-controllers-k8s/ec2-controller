@@ -34,8 +34,8 @@ func addInstanceIDsToTerminateRequest(r *resource,
 	return nil
 }
 
-// addReservationIDToListRequest uses Reservation InstanceIDs to populate instances field in
-// a TerminateInstances request.
+// addReservationIDToListRequest populates the Filter in a DescribeInstances request
+// with the ReservationID
 // Return error to indicate to callers that the resource is not yet created.
 func addReservationIDToListRequest(r *resource,
 	input *svcsdk.DescribeInstancesInput) error {
