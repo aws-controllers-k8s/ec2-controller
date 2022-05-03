@@ -80,13 +80,6 @@ func newResourceDelta(
 			}
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.ClientToken, b.ko.Spec.ClientToken) {
-		delta.Add("Spec.ClientToken", a.ko.Spec.ClientToken, b.ko.Spec.ClientToken)
-	} else if a.ko.Spec.ClientToken != nil && b.ko.Spec.ClientToken != nil {
-		if *a.ko.Spec.ClientToken != *b.ko.Spec.ClientToken {
-			delta.Add("Spec.ClientToken", a.ko.Spec.ClientToken, b.ko.Spec.ClientToken)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CPUOptions, b.ko.Spec.CPUOptions) {
 		delta.Add("Spec.CPUOptions", a.ko.Spec.CPUOptions, b.ko.Spec.CPUOptions)
 	} else if a.ko.Spec.CPUOptions != nil && b.ko.Spec.CPUOptions != nil {
@@ -426,11 +419,11 @@ func newResourceDelta(
 			delta.Add("Spec.PrivateIPAddress", a.ko.Spec.PrivateIPAddress, b.ko.Spec.PrivateIPAddress)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.RamdiskID, b.ko.Spec.RamdiskID) {
-		delta.Add("Spec.RamdiskID", a.ko.Spec.RamdiskID, b.ko.Spec.RamdiskID)
-	} else if a.ko.Spec.RamdiskID != nil && b.ko.Spec.RamdiskID != nil {
-		if *a.ko.Spec.RamdiskID != *b.ko.Spec.RamdiskID {
-			delta.Add("Spec.RamdiskID", a.ko.Spec.RamdiskID, b.ko.Spec.RamdiskID)
+	if ackcompare.HasNilDifference(a.ko.Spec.RAMdiskID, b.ko.Spec.RAMdiskID) {
+		delta.Add("Spec.RAMdiskID", a.ko.Spec.RAMdiskID, b.ko.Spec.RAMdiskID)
+	} else if a.ko.Spec.RAMdiskID != nil && b.ko.Spec.RAMdiskID != nil {
+		if *a.ko.Spec.RAMdiskID != *b.ko.Spec.RAMdiskID {
+			delta.Add("Spec.RAMdiskID", a.ko.Spec.RAMdiskID, b.ko.Spec.RAMdiskID)
 		}
 	}
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {

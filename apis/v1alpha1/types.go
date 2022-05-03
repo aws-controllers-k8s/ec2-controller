@@ -1357,10 +1357,10 @@ type Image struct {
 	PlatformDetails *string        `json:"platformDetails,omitempty"`
 	ProductCodes    []*ProductCode `json:"productCodes,omitempty"`
 	Public          *bool          `json:"public,omitempty"`
-	RamdiskID       *string        `json:"ramdiskID,omitempty"`
+	RAMdiskID       *string        `json:"ramdiskID,omitempty"`
 	RootDeviceName  *string        `json:"rootDeviceName,omitempty"`
 	RootDeviceType  *string        `json:"rootDeviceType,omitempty"`
-	SriovNetSupport *string        `json:"sriovNetSupport,omitempty"`
+	SRIOVNetSupport *string        `json:"sriovNetSupport,omitempty"`
 	// Describes a state change.
 	StateReason        *StateReason `json:"stateReason,omitempty"`
 	Tags               []*Tag       `json:"tags,omitempty"`
@@ -1506,13 +1506,13 @@ type Instance struct {
 	ProductCodes          []*ProductCode     `json:"productCodes,omitempty"`
 	PublicDNSName         *string            `json:"publicDNSName,omitempty"`
 	PublicIPAddress       *string            `json:"publicIPAddress,omitempty"`
-	RamdiskID             *string            `json:"ramdiskID,omitempty"`
+	RAMdiskID             *string            `json:"ramdiskID,omitempty"`
 	RootDeviceName        *string            `json:"rootDeviceName,omitempty"`
 	RootDeviceType        *string            `json:"rootDeviceType,omitempty"`
 	SecurityGroups        []*GroupIdentifier `json:"securityGroups,omitempty"`
 	SourceDestCheck       *bool              `json:"sourceDestCheck,omitempty"`
 	SpotInstanceRequestID *string            `json:"spotInstanceRequestID,omitempty"`
-	SriovNetSupport       *string            `json:"sriovNetSupport,omitempty"`
+	SRIOVNetSupport       *string            `json:"sriovNetSupport,omitempty"`
 	// Describes the current state of an instance.
 	State *InstanceState `json:"state,omitempty"`
 	// Describes a state change.
@@ -1885,7 +1885,7 @@ type LaunchSpecification struct {
 	// Describes the monitoring of an instance.
 	Monitoring        *RunInstancesMonitoringEnabled           `json:"monitoring,omitempty"`
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
-	RamdiskID         *string                                  `json:"ramdiskID,omitempty"`
+	RAMdiskID         *string                                  `json:"ramdiskID,omitempty"`
 	SecurityGroups    []*GroupIdentifier                       `json:"securityGroups,omitempty"`
 	SubnetID          *string                                  `json:"subnetID,omitempty"`
 	UserData          *string                                  `json:"userData,omitempty"`
@@ -2823,7 +2823,7 @@ type RequestLaunchTemplateData struct {
 	InstanceType                      *string                     `json:"instanceType,omitempty"`
 	KernelID                          *string                     `json:"kernelID,omitempty"`
 	KeyName                           *string                     `json:"keyName,omitempty"`
-	RamDiskID                         *string                     `json:"ramDiskID,omitempty"`
+	RAMDiskID                         *string                     `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs                  []*string                   `json:"securityGroupIDs,omitempty"`
 	SecurityGroups                    []*string                   `json:"securityGroups,omitempty"`
 	UserData                          *string                     `json:"userData,omitempty"`
@@ -2842,7 +2842,7 @@ type RequestSpotLaunchSpecification struct {
 	// Describes the monitoring of an instance.
 	Monitoring        *RunInstancesMonitoringEnabled           `json:"monitoring,omitempty"`
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
-	RamdiskID         *string                                  `json:"ramdiskID,omitempty"`
+	RAMdiskID         *string                                  `json:"ramdiskID,omitempty"`
 	SubnetID          *string                                  `json:"subnetID,omitempty"`
 	UserData          *string                                  `json:"userData,omitempty"`
 }
@@ -2956,7 +2956,7 @@ type ResponseLaunchTemplateData struct {
 	InstanceType                      *string   `json:"instanceType,omitempty"`
 	KernelID                          *string   `json:"kernelID,omitempty"`
 	KeyName                           *string   `json:"keyName,omitempty"`
-	RamDiskID                         *string   `json:"ramDiskID,omitempty"`
+	RAMDiskID                         *string   `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs                  []*string `json:"securityGroupIDs,omitempty"`
 	SecurityGroups                    []*string `json:"securityGroups,omitempty"`
 	UserData                          *string   `json:"userData,omitempty"`
@@ -3117,7 +3117,7 @@ type ScheduledInstancesLaunchSpecification struct {
 	InstanceType *string `json:"instanceType,omitempty"`
 	KernelID     *string `json:"kernelID,omitempty"`
 	KeyName      *string `json:"keyName,omitempty"`
-	RamdiskID    *string `json:"ramdiskID,omitempty"`
+	RAMdiskID    *string `json:"ramdiskID,omitempty"`
 	SubnetID     *string `json:"subnetID,omitempty"`
 	UserData     *string `json:"userData,omitempty"`
 }
@@ -3344,7 +3344,7 @@ type SpotFleetLaunchSpecification struct {
 	KernelID           *string                                  `json:"kernelID,omitempty"`
 	KeyName            *string                                  `json:"keyName,omitempty"`
 	NetworkInterfaces  []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
-	RamdiskID          *string                                  `json:"ramdiskID,omitempty"`
+	RAMdiskID          *string                                  `json:"ramdiskID,omitempty"`
 	SecurityGroups     []*GroupIdentifier                       `json:"securityGroups,omitempty"`
 	SpotPrice          *string                                  `json:"spotPrice,omitempty"`
 	SubnetID           *string                                  `json:"subnetID,omitempty"`

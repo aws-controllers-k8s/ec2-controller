@@ -38,14 +38,6 @@ type ReservationSpec struct {
 	// to open, which enables it to run in any open Capacity Reservation that has
 	// matching attributes (instance type, platform, Availability Zone).
 	CapacityReservationSpecification *CapacityReservationSpecification `json:"capacityReservationSpecification,omitempty"`
-	// Unique, case-sensitive identifier you provide to ensure the idempotency of
-	// the request. If you do not specify a client token, a randomly generated token
-	// is used for the request to ensure idempotency.
-	//
-	// For more information, see Ensuring Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
-	//
-	// Constraints: Maximum 64 ASCII characters
-	ClientToken *string `json:"clientToken,omitempty"`
 	// The CPU options for the instance. For more information, see Optimizing CPU
 	// options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html)
 	// in the Amazon EC2 User Guide.
@@ -206,7 +198,7 @@ type ReservationSpec struct {
 	// We recommend that you use PV-GRUB instead of kernels and RAM disks. For more
 	// information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
 	// in the Amazon EC2 User Guide.
-	RamdiskID *string `json:"ramdiskID,omitempty"`
+	RAMdiskID *string `json:"ramdiskID,omitempty"`
 	// The IDs of the security groups. You can create a security group using CreateSecurityGroup
 	// (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html).
 	//

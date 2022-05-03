@@ -104,13 +104,6 @@ spec:
                         type: string
                     type: object
                 type: object
-              clientToken:
-                description: "Unique, case-sensitive identifier you provide to ensure
-                  the idempotency of the request. If you do not specify a client token,
-                  a randomly generated token is used for the request to ensure idempotency.
-                  \n For more information, see Ensuring Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
-                  \n Constraints: Maximum 64 ASCII characters"
-                type: string
               cpuOptions:
                 description: The CPU options for the instance. For more information,
                   see Optimizing CPU options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html)

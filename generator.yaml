@@ -23,6 +23,7 @@ ignore:
     # support EC2-VPC only
     - AllocateAddressInput.Domain
     - AllocateAddressOutput.Domain
+    - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
   resource_names:
     - AccountAttribute
