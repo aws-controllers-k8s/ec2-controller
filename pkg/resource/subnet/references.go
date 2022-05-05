@@ -89,6 +89,7 @@ func resolveReferenceForRouteTables(
 	namespace string,
 	ko *svcapitypes.Subnet,
 ) error {
+
 	if ko.Spec.RouteTableRefs != nil &&
 		len(ko.Spec.RouteTableRefs) > 0 {
 		resolvedReferences := []*string{}
@@ -150,6 +151,7 @@ func resolveReferenceForVPCID(
 	namespace string,
 	ko *svcapitypes.Subnet,
 ) error {
+
 	if ko.Spec.VPCRef != nil &&
 		ko.Spec.VPCRef.From != nil {
 		arr := ko.Spec.VPCRef.From

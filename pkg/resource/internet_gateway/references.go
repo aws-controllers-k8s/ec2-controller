@@ -80,6 +80,7 @@ func resolveReferenceForVPC(
 	namespace string,
 	ko *svcapitypes.InternetGateway,
 ) error {
+
 	if ko.Spec.VPCRef != nil &&
 		ko.Spec.VPCRef.From != nil {
 		arr := ko.Spec.VPCRef.From

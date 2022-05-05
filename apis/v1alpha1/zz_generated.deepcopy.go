@@ -2314,6 +2314,11 @@ func (in *CreateRouteInput) DeepCopyInto(out *CreateRouteInput) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.GatewayRef != nil {
+		in, out := &in.GatewayRef, &out.GatewayRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.InstanceID != nil {
 		in, out := &in.InstanceID, &out.InstanceID
 		*out = new(string)
@@ -2329,6 +2334,11 @@ func (in *CreateRouteInput) DeepCopyInto(out *CreateRouteInput) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.NATGatewayRef != nil {
+		in, out := &in.NATGatewayRef, &out.NATGatewayRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.NetworkInterfaceID != nil {
 		in, out := &in.NetworkInterfaceID, &out.NetworkInterfaceID
 		*out = new(string)
@@ -2339,10 +2349,20 @@ func (in *CreateRouteInput) DeepCopyInto(out *CreateRouteInput) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.TransitGatewayRef != nil {
+		in, out := &in.TransitGatewayRef, &out.TransitGatewayRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.VPCEndpointID != nil {
 		in, out := &in.VPCEndpointID, &out.VPCEndpointID
 		*out = new(string)
 		**out = **in
+	}
+	if in.VPCEndpointRef != nil {
+		in, out := &in.VPCEndpointRef, &out.VPCEndpointRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.VPCPeeringConnectionID != nil {
 		in, out := &in.VPCPeeringConnectionID, &out.VPCPeeringConnectionID
@@ -5710,8 +5730,8 @@ func (in *Image) DeepCopyInto(out *Image) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.RamdiskID != nil {
-		in, out := &in.RamdiskID, &out.RamdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -5720,8 +5740,8 @@ func (in *Image) DeepCopyInto(out *Image) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.SriovNetSupport != nil {
-		in, out := &in.SriovNetSupport, &out.SriovNetSupport
+	if in.SRIOVNetSupport != nil {
+		in, out := &in.SRIOVNetSupport, &out.SRIOVNetSupport
 		*out = new(string)
 		**out = **in
 	}
@@ -6167,8 +6187,8 @@ func (in *Instance) DeepCopyInto(out *Instance) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.RamdiskID != nil {
-		in, out := &in.RamdiskID, &out.RamdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -6187,8 +6207,8 @@ func (in *Instance) DeepCopyInto(out *Instance) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.SriovNetSupport != nil {
-		in, out := &in.SriovNetSupport, &out.SriovNetSupport
+	if in.SRIOVNetSupport != nil {
+		in, out := &in.SRIOVNetSupport, &out.SRIOVNetSupport
 		*out = new(string)
 		**out = **in
 	}
@@ -7567,8 +7587,8 @@ func (in *LaunchSpecification) DeepCopyInto(out *LaunchSpecification) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.RamdiskID != nil {
-		in, out := &in.RamdiskID, &out.RamdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -11991,8 +12011,8 @@ func (in *ResponseLaunchTemplateData) DeepCopyInto(out *ResponseLaunchTemplateDa
 		*out = new(string)
 		**out = **in
 	}
-	if in.RamDiskID != nil {
-		in, out := &in.RamDiskID, &out.RamDiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}
@@ -13962,8 +13982,8 @@ func (in *SpotFleetLaunchSpecification) DeepCopyInto(out *SpotFleetLaunchSpecifi
 		*out = new(string)
 		**out = **in
 	}
-	if in.RamdiskID != nil {
-		in, out := &in.RamdiskID, &out.RamdiskID
+	if in.RAMDiskID != nil {
+		in, out := &in.RAMDiskID, &out.RAMDiskID
 		*out = new(string)
 		**out = **in
 	}

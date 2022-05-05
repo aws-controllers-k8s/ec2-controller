@@ -566,13 +566,21 @@ type CreateRouteInput struct {
 	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
 	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
 	GatewayID                   *string `json:"gatewayID,omitempty"`
-	InstanceID                  *string `json:"instanceID,omitempty"`
-	LocalGatewayID              *string `json:"localGatewayID,omitempty"`
-	NATGatewayID                *string `json:"natGatewayID,omitempty"`
-	NetworkInterfaceID          *string `json:"networkInterfaceID,omitempty"`
-	TransitGatewayID            *string `json:"transitGatewayID,omitempty"`
-	VPCEndpointID               *string `json:"vpcEndpointID,omitempty"`
-	VPCPeeringConnectionID      *string `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for GatewayID
+	GatewayRef     *ackv1alpha1.AWSResourceReferenceWrapper `json:"gatewayRef,omitempty"`
+	InstanceID     *string                                  `json:"instanceID,omitempty"`
+	LocalGatewayID *string                                  `json:"localGatewayID,omitempty"`
+	NATGatewayID   *string                                  `json:"natGatewayID,omitempty"`
+	// Reference field for NATGatewayID
+	NATGatewayRef      *ackv1alpha1.AWSResourceReferenceWrapper `json:"natGatewayRef,omitempty"`
+	NetworkInterfaceID *string                                  `json:"networkInterfaceID,omitempty"`
+	TransitGatewayID   *string                                  `json:"transitGatewayID,omitempty"`
+	// Reference field for TransitGatewayID
+	TransitGatewayRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"transitGatewayRef,omitempty"`
+	VPCEndpointID     *string                                  `json:"vpcEndpointID,omitempty"`
+	// Reference field for VPCEndpointID
+	VPCEndpointRef         *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcEndpointRef,omitempty"`
+	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
 }
 
 // Describes the options for a VPC attachment.
@@ -1294,9 +1302,9 @@ type Image struct {
 	OwnerID         *string `json:"ownerID,omitempty"`
 	PlatformDetails *string `json:"platformDetails,omitempty"`
 	Public          *bool   `json:"public,omitempty"`
-	RamdiskID       *string `json:"ramdiskID,omitempty"`
+	RAMDiskID       *string `json:"ramDiskID,omitempty"`
 	RootDeviceName  *string `json:"rootDeviceName,omitempty"`
-	SriovNetSupport *string `json:"sriovNetSupport,omitempty"`
+	SRIOVNetSupport *string `json:"sriovNetSupport,omitempty"`
 	Tags            []*Tag  `json:"tags,omitempty"`
 	UsageOperation  *string `json:"usageOperation,omitempty"`
 }
@@ -1392,11 +1400,11 @@ type Instance struct {
 	PrivateIPAddress         *string      `json:"privateIPAddress,omitempty"`
 	PublicDNSName            *string      `json:"publicDNSName,omitempty"`
 	PublicIPAddress          *string      `json:"publicIPAddress,omitempty"`
-	RamdiskID                *string      `json:"ramdiskID,omitempty"`
+	RAMDiskID                *string      `json:"ramDiskID,omitempty"`
 	RootDeviceName           *string      `json:"rootDeviceName,omitempty"`
 	SourceDestCheck          *bool        `json:"sourceDestCheck,omitempty"`
 	SpotInstanceRequestID    *string      `json:"spotInstanceRequestID,omitempty"`
-	SriovNetSupport          *string      `json:"sriovNetSupport,omitempty"`
+	SRIOVNetSupport          *string      `json:"sriovNetSupport,omitempty"`
 	StateTransitionReason    *string      `json:"stateTransitionReason,omitempty"`
 	SubnetID                 *string      `json:"subnetID,omitempty"`
 	Tags                     []*Tag       `json:"tags,omitempty"`
@@ -1706,7 +1714,7 @@ type LaunchSpecification struct {
 	ImageID        *string `json:"imageID,omitempty"`
 	KernelID       *string `json:"kernelID,omitempty"`
 	KeyName        *string `json:"keyName,omitempty"`
-	RamdiskID      *string `json:"ramdiskID,omitempty"`
+	RAMDiskID      *string `json:"ramDiskID,omitempty"`
 	SubnetID       *string `json:"subnetID,omitempty"`
 	UserData       *string `json:"userData,omitempty"`
 }
@@ -2679,7 +2687,7 @@ type ResponseLaunchTemplateData struct {
 	ImageID               *string   `json:"imageID,omitempty"`
 	KernelID              *string   `json:"kernelID,omitempty"`
 	KeyName               *string   `json:"keyName,omitempty"`
-	RamDiskID             *string   `json:"ramDiskID,omitempty"`
+	RAMDiskID             *string   `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs      []*string `json:"securityGroupIDs,omitempty"`
 	SecurityGroups        []*string `json:"securityGroups,omitempty"`
 	UserData              *string   `json:"userData,omitempty"`
@@ -3055,7 +3063,7 @@ type SpotFleetLaunchSpecification struct {
 	AddressingType *string `json:"addressingType,omitempty"`
 	EBSOptimized   *bool   `json:"ebsOptimized,omitempty"`
 	KernelID       *string `json:"kernelID,omitempty"`
-	RamdiskID      *string `json:"ramdiskID,omitempty"`
+	RAMDiskID      *string `json:"ramDiskID,omitempty"`
 	SpotPrice      *string `json:"spotPrice,omitempty"`
 	SubnetID       *string `json:"subnetID,omitempty"`
 	UserData       *string `json:"userData,omitempty"`

@@ -89,6 +89,7 @@ func resolveReferenceForAllocationID(
 	namespace string,
 	ko *svcapitypes.NATGateway,
 ) error {
+
 	if ko.Spec.AllocationRef != nil &&
 		ko.Spec.AllocationRef.From != nil {
 		arr := ko.Spec.AllocationRef.From
@@ -146,6 +147,7 @@ func resolveReferenceForSubnetID(
 	namespace string,
 	ko *svcapitypes.NATGateway,
 ) error {
+
 	if ko.Spec.SubnetRef != nil &&
 		ko.Spec.SubnetRef.From != nil {
 		arr := ko.Spec.SubnetRef.From
