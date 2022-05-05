@@ -101,7 +101,6 @@ func resolveReferenceForRouteTableIDs(
 	namespace string,
 	ko *svcapitypes.VPCEndpoint,
 ) error {
-
 	if ko.Spec.RouteTableRefs != nil &&
 		len(ko.Spec.RouteTableRefs) > 0 {
 		resolvedReferences := []*string{}
@@ -163,7 +162,6 @@ func resolveReferenceForSecurityGroupIDs(
 	namespace string,
 	ko *svcapitypes.VPCEndpoint,
 ) error {
-
 	if ko.Spec.SecurityGroupRefs != nil &&
 		len(ko.Spec.SecurityGroupRefs) > 0 {
 		resolvedReferences := []*string{}
@@ -225,7 +223,6 @@ func resolveReferenceForSubnetIDs(
 	namespace string,
 	ko *svcapitypes.VPCEndpoint,
 ) error {
-
 	if ko.Spec.SubnetRefs != nil &&
 		len(ko.Spec.SubnetRefs) > 0 {
 		resolvedReferences := []*string{}
@@ -287,7 +284,6 @@ func resolveReferenceForVPCID(
 	namespace string,
 	ko *svcapitypes.VPCEndpoint,
 ) error {
-
 	if ko.Spec.VPCRef != nil &&
 		ko.Spec.VPCRef.From != nil {
 		arr := ko.Spec.VPCRef.From

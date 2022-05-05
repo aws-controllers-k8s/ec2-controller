@@ -297,6 +297,9 @@ resources:
     update_operation:
       custom_method_name: customUpdate
     exceptions:
+      errors:
+        404:
+          code: InvalidVpcID.NotFound
       terminal_codes:
         - InvalidParameterCombination
     fields:

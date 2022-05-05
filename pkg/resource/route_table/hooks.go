@@ -46,7 +46,7 @@ func (rm *resourceManager) syncRoutes(
 	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
-		if *desiredRoute.GatewayID == LocalRouteGateway {
+		if (*desiredRoute).GatewayID != nil && *desiredRoute.GatewayID == LocalRouteGateway {
 			// no-op for default route
 			continue
 		}

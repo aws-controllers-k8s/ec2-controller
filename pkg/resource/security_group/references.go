@@ -83,7 +83,6 @@ func resolveReferenceForVPCID(
 	namespace string,
 	ko *svcapitypes.SecurityGroup,
 ) error {
-
 	if ko.Spec.VPCRef != nil &&
 		ko.Spec.VPCRef.From != nil {
 		arr := ko.Spec.VPCRef.From
