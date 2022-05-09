@@ -64,6 +64,10 @@ func (rm *resourceManager) syncRoutes(
 	}
 	if latest != nil {
 		for _, latestRoute := range latest.ko.Spec.Routes {
+			if (*latestRoute).GatewayID != nil && *latestRoute.GatewayID == LocalRouteGateway {
+				// no-op for default route
+				continue
+			}
 			if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
 				// latest has a route that is not desired; therefore, delete
 				toDelete = append(toDelete, latestRoute)
