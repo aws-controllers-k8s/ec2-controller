@@ -232,6 +232,8 @@ resources:
           resource: VPCEndpoint
           path: Status.VPCEndpointID
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(a, b)
       sdk_create_post_set_output:
         template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:

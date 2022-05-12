@@ -230,3 +230,29 @@ func (rm *resourceManager) addRoutesToStatus(
 		ko.Status.RouteStatuses = routesInStatus
 	}
 }
+
+// customPreCompare ensures that default values of types are initialised and
+// server side defaults are excluded from the delta.
+func customPreCompare(
+	a *resource,
+	b *resource,
+) {
+	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
+	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
+}
+
+// removeLocalRoute will filter out any routes that have a gateway ID that
+// matches the local gateway.
+func removeLocalRoute(
+	routes []*svcapitypes.CreateRouteInput,
+) (ret []*svcapitypes.CreateRouteInput) {
+	ret = make([]*svcapitypes.CreateRouteInput, 0)
+
+	for _, route := range routes {
+		if route.GatewayID == nil || *route.GatewayID != LocalRouteGateway {
+			ret = append(ret, route)
+		}
+	}
+
+	return ret
+}
