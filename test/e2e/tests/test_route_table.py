@@ -160,22 +160,14 @@ class TestRouteTable:
         ec2_validator.assert_route(resource_id, "local", "CreateRouteTable")
         ec2_validator.assert_route(resource_id, igw_id, "CreateRoute")
         
-        # Update Route
-        default_cidr = "10.0.0.0/16"
+        # Update the Route
         updated_cidr = "192.168.1.0/24"
-        patch = {"spec": {"routes": [
-                    {
-                        #Default route cannot be changed
-                        "destinationCIDRBlock": default_cidr,
-                        "gatewayID": "local"
-                    },
+        patch = {"spec": {"routes":[
                     {
                         "destinationCIDRBlock": updated_cidr,
                         "gatewayID": igw_id
                     }
-                ]
-            }
-        }
+        ]}}
         _ = k8s.patch_custom_resource(ref, patch)
         time.sleep(DEFAULT_WAIT_AFTER_SECONDS)
 
@@ -183,36 +175,17 @@ class TestRouteTable:
         resource = k8s.get_resource(ref)
         assert len(resource['status']['routeStatuses']) == 2
         
-        # Delete Route
-        patch = {"spec": {"routes": [
-                    {
-                        "destinationCIDRBlock": default_cidr,
-                        "gatewayID": "local"
-                    }
-                ]
-            }
-        }
+        # Delete the Route
+        patch = {"spec": {"routes": []}}
         _ = k8s.patch_custom_resource(ref, patch)
         time.sleep(DEFAULT_WAIT_AFTER_SECONDS)
 
         resource = k8s.get_resource(ref)
-        assert len(resource['spec']['routes']) == 1
+        assert len(resource['spec']['routes']) == 0
 
         # Route should no longer exist in AWS (default will remain)
         ec2_validator.assert_route(resource_id, "local", "CreateRouteTable")
         ec2_validator.assert_route(resource_id, igw_id, "CreateRoute", exists=False)
-
-        # Should not be able to delete default route
-        patch = {"spec": {"routes": [
-                ]
-            }
-        }
-        _ = k8s.patch_custom_resource(ref, patch)
-        time.sleep(DEFAULT_WAIT_AFTER_SECONDS)
-
-        expected_msg = "InvalidParameterValue: cannot remove local route"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        assert expected_msg in terminal_condition['message']
 
         # Delete Route Table
         _, deleted = k8s.delete_custom_resource(ref)

@@ -242,7 +242,9 @@ func customPreCompare(
 }
 
 // removeLocalRoute will filter out any routes that have a gateway ID that
-// matches the local gateway.
+// matches the local gateway. Every route table contains a local route for
+// communication within the VPC, which cannot be deleted or modified, and should
+// not be included as part of the spec.
 func removeLocalRoute(
 	routes []*svcapitypes.CreateRouteInput,
 ) (ret []*svcapitypes.CreateRouteInput) {
