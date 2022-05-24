@@ -23,6 +23,12 @@ ignore:
     # support EC2-VPC only
     - AllocateAddressInput.Domain
     - AllocateAddressOutput.Domain
+    - Instance.ClientToken
+    - InstanceNetworkInterfaceSpecification.Groups
+    - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.ClientToken
+    - RunInstancesInput.DryRun
+    - TerminateInstancesInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -38,7 +44,7 @@ ignore:
     - Fleet
     - FpgaImage
     - Image
-    - Instance
+    #- Instance
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
@@ -111,12 +117,69 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  RunInstances:
+    #ouput shape: Reservation
+    output_wrapper_field_path: Instances
+    operation_type:
+      - Create
+    resource_name: Instance
+  DescribeInstances:
+    #output shape: DescribeInstancesOutput
+    output_wrapper_field_path: Reservations.Instances
+    operation_type:
+      - List
+    resource_name: Instance
+  TerminateInstances:
+    operation_type:
+      - Delete
+    resource_name: Instance
 resources:
   DhcpOptions:
     fields:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+  Instance:
+    fields:
+      SecurityGroups:
+        set:
+          - from: GroupName
+    hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/instance/sdk_delete_post_build_request.go.tpl
+  RouteTable:
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+        - InvalidParameterValue
+    fields:
+      # RouteStatuses as Route to ensure
+      # fields set server-side (active, origin)
+      # are exposed in Status
+      RouteStatuses:
+        from:
+          operation: DescribeRouteTables
+          path: RouteTables.Routes
+        is_read_only: true
+      # Routes as CreateRouteInput to ensure only
+      # user-editable fields are exposed in Spec
+      Routes:
+        custom_field:
+          list_of: CreateRouteInput
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/route_table/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/route_table/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateRouteTable
   ElasticIPAddress:
     exceptions:
       terminal_codes:
