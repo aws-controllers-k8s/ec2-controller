@@ -1371,9 +1371,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 		}
 		res.SetLicenseSpecifications(f20)
 	}
-	if r.ko.Spec.MaxCount != nil {
-		res.SetMaxCount(*r.ko.Spec.MaxCount)
-	}
+	res.SetMaxCount(1)
 	if r.ko.Spec.MetadataOptions != nil {
 		f22 := &svcsdk.InstanceMetadataOptionsRequest{}
 		if r.ko.Spec.MetadataOptions.HTTPEndpoint != nil {
@@ -1390,9 +1388,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 		}
 		res.SetMetadataOptions(f22)
 	}
-	if r.ko.Spec.MinCount != nil {
-		res.SetMinCount(*r.ko.Spec.MinCount)
-	}
+	res.SetMinCount(1)
 	if r.ko.Spec.Monitoring != nil {
 		f24 := &svcsdk.RunInstancesMonitoringEnabled{}
 		if r.ko.Spec.Monitoring.Enabled != nil {

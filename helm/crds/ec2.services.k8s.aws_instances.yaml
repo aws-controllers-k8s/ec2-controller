@@ -517,9 +517,6 @@ spec:
                   you must provide base64-encoded text. User data is limited to 16
                   KB.
                 type: string
-            required:
-            - maxCount
-            - minCount
             type: object
           status:
             description: InstanceStatus defines the observed state of Instance

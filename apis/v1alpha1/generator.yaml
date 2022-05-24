@@ -123,6 +123,16 @@ operations:
     operation_type:
       - Create
     resource_name: Instance
+    override_values:
+      # Hard-code MaxCount and MinCount to 1 so the Reservation 
+      # response can only contain a single instance. This
+      # instance will be managed by the Instance controller.
+      # Although RunInstances can handle creating multiple 
+      # instances at once (returning them in a single Reservation),
+      # a Reservation controller does not align with the declarative state model 
+      # in Kubernetes because users would not be able to update the underlying instances.
+      MaxCount: 1
+      MinCount: 1
   DescribeInstances:
     #output shape: DescribeInstancesOutput
     output_wrapper_field_path: Reservations.Instances
@@ -144,6 +154,10 @@ resources:
       SecurityGroups:
         set:
           - from: GroupName
+      MaxCount:
+        is_required: false
+      MinCount:
+        is_required: false
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/instance/sdk_delete_post_build_request.go.tpl

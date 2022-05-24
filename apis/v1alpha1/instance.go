@@ -152,8 +152,7 @@ type InstanceSpec struct {
 	// instance type. For more information about the default limits, and how to
 	// request an increase, see How many instances can I run in Amazon EC2 (http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2)
 	// in the Amazon EC2 FAQ.
-	// +kubebuilder:validation:Required
-	MaxCount *int64 `json:"maxCount"`
+	MaxCount *int64 `json:"maxCount,omitempty"`
 	// The metadata options for the instance. For more information, see Instance
 	// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
 	MetadataOptions *InstanceMetadataOptionsRequest `json:"metadataOptions,omitempty"`
@@ -165,8 +164,7 @@ type InstanceSpec struct {
 	// instance type. For more information about the default limits, and how to
 	// request an increase, see How many instances can I run in Amazon EC2 (http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2)
 	// in the Amazon EC2 General FAQ.
-	// +kubebuilder:validation:Required
-	MinCount *int64 `json:"minCount"`
+	MinCount *int64 `json:"minCount,omitempty"`
 	// Specifies whether detailed monitoring is enabled for the instance.
 	Monitoring *RunInstancesMonitoringEnabled `json:"monitoring,omitempty"`
 	// The network interfaces to associate with the instance. If you specify a network
