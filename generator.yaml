@@ -144,6 +144,9 @@ resources:
       SecurityGroups:
         set:
           - from: GroupName
+    hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/instance/sdk_delete_post_build_request.go.tpl
   RouteTable:
     exceptions:
       terminal_codes:
