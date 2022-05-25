@@ -1,0 +1,8 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: Instance
+metadata:
+  name: $INSTANCE_NAME
+spec:
+  imageID: $INSTANCE_AMI_ID
+  instanceType: $INSTANCE_TYPE
+  subnetID: $INSTANCE_SUBNET_ID
