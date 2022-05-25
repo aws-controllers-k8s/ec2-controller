@@ -151,13 +151,15 @@ resources:
           - from: AttributeValue.Value
   Instance:
     fields:
-      SecurityGroups:
-        set:
-          - from: GroupName
+      HibernationOptions:
+        late_initialize: {}
       MaxCount:
         is_required: false
       MinCount:
         is_required: false
+      SecurityGroups:
+        set:
+          - from: GroupName
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/instance/sdk_delete_post_build_request.go.tpl
