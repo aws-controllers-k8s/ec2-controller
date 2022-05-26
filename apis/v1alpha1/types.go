@@ -1459,38 +1459,6 @@ type ImportVolumeTaskDetails struct {
 	Description      *string `json:"description,omitempty"`
 }
 
-// Describes an instance.
-type Instance struct {
-	AMILaunchIndex           *int64       `json:"amiLaunchIndex,omitempty"`
-	CapacityReservationID    *string      `json:"capacityReservationID,omitempty"`
-	ClientToken              *string      `json:"clientToken,omitempty"`
-	EBSOptimized             *bool        `json:"ebsOptimized,omitempty"`
-	ENASupport               *bool        `json:"enaSupport,omitempty"`
-	ImageID                  *string      `json:"imageID,omitempty"`
-	InstanceID               *string      `json:"instanceID,omitempty"`
-	KernelID                 *string      `json:"kernelID,omitempty"`
-	KeyName                  *string      `json:"keyName,omitempty"`
-	LaunchTime               *metav1.Time `json:"launchTime,omitempty"`
-	OutpostARN               *string      `json:"outpostARN,omitempty"`
-	PlatformDetails          *string      `json:"platformDetails,omitempty"`
-	PrivateDNSName           *string      `json:"privateDNSName,omitempty"`
-	PrivateIPAddress         *string      `json:"privateIPAddress,omitempty"`
-	PublicDNSName            *string      `json:"publicDNSName,omitempty"`
-	PublicIPAddress          *string      `json:"publicIPAddress,omitempty"`
-	RAMDiskID                *string      `json:"ramDiskID,omitempty"`
-	RootDeviceName           *string      `json:"rootDeviceName,omitempty"`
-	SourceDestCheck          *bool        `json:"sourceDestCheck,omitempty"`
-	SpotInstanceRequestID    *string      `json:"spotInstanceRequestID,omitempty"`
-	SRIOVNetSupport          *string      `json:"sriovNetSupport,omitempty"`
-	StateTransitionReason    *string      `json:"stateTransitionReason,omitempty"`
-	SubnetID                 *string      `json:"subnetID,omitempty"`
-	Tags                     []*Tag       `json:"tags,omitempty"`
-	UsageOperation           *string      `json:"usageOperation,omitempty"`
-	UsageOperationUpdateTime *metav1.Time `json:"usageOperationUpdateTime,omitempty"`
-	VPCID                    *string      `json:"vpcID,omitempty"`
-}
-
-
 // Describes a block device mapping.
 type InstanceBlockDeviceMapping struct {
 	DeviceName *string `json:"deviceName,omitempty"`
@@ -1914,14 +1882,6 @@ type LaunchPermission struct {
 type LaunchSpecification struct {
 	AddressingType *string `json:"addressingType,omitempty"`
 	EBSOptimized   *bool   `json:"ebsOptimized,omitempty"`
-<<<<<<< HEAD
-	ImageID        *string `json:"imageID,omitempty"`
-	KernelID       *string `json:"kernelID,omitempty"`
-	KeyName        *string `json:"keyName,omitempty"`
-	RAMDiskID      *string `json:"ramDiskID,omitempty"`
-	SubnetID       *string `json:"subnetID,omitempty"`
-	UserData       *string `json:"userData,omitempty"`
-=======
 	// Describes an IAM instance profile.
 	IAMInstanceProfile *IAMInstanceProfileSpecification `json:"iamInstanceProfile,omitempty"`
 	ImageID            *string                          `json:"imageID,omitempty"`
@@ -1935,7 +1895,6 @@ type LaunchSpecification struct {
 	SecurityGroups    []*GroupIdentifier                       `json:"securityGroups,omitempty"`
 	SubnetID          *string                                  `json:"subnetID,omitempty"`
 	UserData          *string                                  `json:"userData,omitempty"`
->>>>>>> 038e218 (add generated Instance code with hooks)
 }
 
 // Describes a launch template.
@@ -2996,17 +2955,6 @@ type ResponseError struct {
 
 // The information for a launch template.
 type ResponseLaunchTemplateData struct {
-<<<<<<< HEAD
-	DisableAPITermination *bool     `json:"disableAPITermination,omitempty"`
-	EBSOptimized          *bool     `json:"ebsOptimized,omitempty"`
-	ImageID               *string   `json:"imageID,omitempty"`
-	KernelID              *string   `json:"kernelID,omitempty"`
-	KeyName               *string   `json:"keyName,omitempty"`
-	RAMDiskID             *string   `json:"ramDiskID,omitempty"`
-	SecurityGroupIDs      []*string `json:"securityGroupIDs,omitempty"`
-	SecurityGroups        []*string `json:"securityGroups,omitempty"`
-	UserData              *string   `json:"userData,omitempty"`
-=======
 	DisableAPITermination             *bool     `json:"disableAPITermination,omitempty"`
 	EBSOptimized                      *bool     `json:"ebsOptimized,omitempty"`
 	ImageID                           *string   `json:"imageID,omitempty"`
@@ -3018,7 +2966,6 @@ type ResponseLaunchTemplateData struct {
 	SecurityGroupIDs                  []*string `json:"securityGroupIDs,omitempty"`
 	SecurityGroups                    []*string `json:"securityGroups,omitempty"`
 	UserData                          *string   `json:"userData,omitempty"`
->>>>>>> 038e218 (add generated Instance code with hooks)
 }
 
 // Describes a route in a route table.
@@ -3396,13 +3343,6 @@ type SpotDatafeedSubscription struct {
 type SpotFleetLaunchSpecification struct {
 	AddressingType *string `json:"addressingType,omitempty"`
 	EBSOptimized   *bool   `json:"ebsOptimized,omitempty"`
-<<<<<<< HEAD
-	KernelID       *string `json:"kernelID,omitempty"`
-	RAMDiskID      *string `json:"ramDiskID,omitempty"`
-	SpotPrice      *string `json:"spotPrice,omitempty"`
-	SubnetID       *string `json:"subnetID,omitempty"`
-	UserData       *string `json:"userData,omitempty"`
-=======
 	// Describes an IAM instance profile.
 	IAMInstanceProfile *IAMInstanceProfileSpecification         `json:"iamInstanceProfile,omitempty"`
 	ImageID            *string                                  `json:"imageID,omitempty"`
@@ -3415,7 +3355,6 @@ type SpotFleetLaunchSpecification struct {
 	SpotPrice          *string                                  `json:"spotPrice,omitempty"`
 	SubnetID           *string                                  `json:"subnetID,omitempty"`
 	UserData           *string                                  `json:"userData,omitempty"`
->>>>>>> 038e218 (add generated Instance code with hooks)
 }
 
 // Describes whether monitoring is enabled.

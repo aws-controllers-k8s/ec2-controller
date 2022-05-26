@@ -85,41 +85,53 @@ def get_ami_id(ec2_client):
     except Exception as e:
         logging.debug(e)
 
+
+@pytest.fixture
+def instance(ec2_client):
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("instance-ack-test", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    subnet_id = test_vpc.public_subnets.subnet_ids[0]
+        
+    ami_id = get_ami_id(ec2_client)
+    test_resource_values["INSTANCE_NAME"] = resource_name
+    test_resource_values["INSTANCE_AMI_ID"] = ami_id
+    test_resource_values["INSTANCE_TYPE"] = INSTANCE_TYPE
+    test_resource_values["INSTANCE_SUBNET_ID"] = subnet_id
+
+    # Load Instance CR
+    resource_data = load_ec2_resource(
+        "instance",
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+    
+    yield (ref, cr)
+
+    # Delete the instance when tests complete
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestInstance:
-    def test_create_delete(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("instance-ack-test", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        subnet_id = test_vpc.public_subnets.subnet_ids[0]
-        
-        ami_id = get_ami_id(ec2_client)
-        test_resource_values["INSTANCE_NAME"] = resource_name
-        test_resource_values["INSTANCE_AMI_ID"] = ami_id
-        test_resource_values["INSTANCE_TYPE"] = INSTANCE_TYPE
-        test_resource_values["INSTANCE_SUBNET_ID"] = subnet_id
-
-        # Load Instance CR
-        resource_data = load_ec2_resource(
-            "instance",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["instanceID"]
+    def test_create_delete(self, ec2_client, instance):
+        (ref, cr) = instance
+        resource_id = cr["status"]["instanceID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
