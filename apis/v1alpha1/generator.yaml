@@ -117,39 +117,6 @@ resources:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
-  RouteTable:
-    exceptions:
-      terminal_codes:
-        - InvalidVpcID.Malformed
-        - InvalidVpcID.NotFound
-        - InvalidParameterValue
-    fields:
-      # RouteStatuses as Route to ensure
-      # fields set server-side (active, origin)
-      # are exposed in Status
-      RouteStatuses:
-        from:
-          operation: DescribeRouteTables
-          path: RouteTables.Routes
-        is_read_only: true
-      # Routes as CreateRouteInput to ensure only
-      # user-editable fields are exposed in Spec
-      Routes:
-        custom_field:
-          list_of: CreateRouteInput
-      VpcId:
-        references:
-          resource: VPC
-          path: Status.VPCID
-    hooks:
-      sdk_create_post_set_output:
-        template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
-      sdk_read_many_post_set_output:
-        template_path: hooks/route_table/sdk_read_many_post_set_output.go.tpl
-      sdk_file_end:
-        template_path: hooks/route_table/sdk_file_end.go.tpl
-    update_operation:
-      custom_method_name: customUpdateRouteTable
   ElasticIPAddress:
     exceptions:
       terminal_codes:
@@ -224,6 +191,57 @@ resources:
       - path: Status.State
         in:
         - available
+  RouteTable:
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+        - InvalidParameterValue
+    fields:
+      # RouteStatuses as Route to ensure
+      # fields set server-side (active, origin)
+      # are exposed in Status
+      RouteStatuses:
+        from:
+          operation: DescribeRouteTables
+          path: RouteTables.Routes
+        is_read_only: true
+      # Routes as CreateRouteInput to ensure only
+      # user-editable fields are exposed in Spec
+      Routes:
+        custom_field:
+          list_of: CreateRouteInput
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      Routes.GatewayId:
+        references:
+          resource: InternetGateway
+          path: Status.InternetGatewayID
+      Routes.NatGatewayId:
+        references:
+          resource: NATGateway
+          path: Status.NATGatewayID
+      Routes.TransitGatewayId:
+        references:
+          resource: TransitGateway
+          path: Status.TransitGatewayID
+      Routes.VpcEndpointId:
+        references:
+          resource: VPCEndpoint
+          path: Status.VPCEndpointID
+    hooks:
+      delta_pre_compare:
+        code: customPreCompare(a, b)
+      sdk_create_post_set_output:
+        template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/route_table/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/route_table/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateRouteTable
   SecurityGroup:
     fields:
       # support EC2-VPC only
@@ -281,6 +299,9 @@ resources:
     update_operation:
       custom_method_name: customUpdate
     exceptions:
+      errors:
+        404:
+          code: InvalidVpcID.NotFound
       terminal_codes:
         - InvalidParameterCombination
     fields:

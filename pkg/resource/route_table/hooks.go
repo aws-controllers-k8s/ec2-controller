@@ -46,7 +46,7 @@ func (rm *resourceManager) syncRoutes(
 	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
-		if *desiredRoute.GatewayID == LocalRouteGateway {
+		if (*desiredRoute).GatewayID != nil && *desiredRoute.GatewayID == LocalRouteGateway {
 			// no-op for default route
 			continue
 		}
@@ -64,6 +64,10 @@ func (rm *resourceManager) syncRoutes(
 	}
 	if latest != nil {
 		for _, latestRoute := range latest.ko.Spec.Routes {
+			if (*latestRoute).GatewayID != nil && *latestRoute.GatewayID == LocalRouteGateway {
+				// no-op for default route
+				continue
+			}
 			if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
 				// latest has a route that is not desired; therefore, delete
 				toDelete = append(toDelete, latestRoute)
@@ -225,4 +229,32 @@ func (rm *resourceManager) addRoutesToStatus(
 		}
 		ko.Status.RouteStatuses = routesInStatus
 	}
+}
+
+// customPreCompare ensures that default values of types are initialised and
+// server side defaults are excluded from the delta.
+func customPreCompare(
+	a *resource,
+	b *resource,
+) {
+	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
+	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
+}
+
+// removeLocalRoute will filter out any routes that have a gateway ID that
+// matches the local gateway. Every route table contains a local route for
+// communication within the VPC, which cannot be deleted or modified, and should
+// not be included as part of the spec.
+func removeLocalRoute(
+	routes []*svcapitypes.CreateRouteInput,
+) (ret []*svcapitypes.CreateRouteInput) {
+	ret = make([]*svcapitypes.CreateRouteInput, 0)
+
+	for _, route := range routes {
+		if route.GatewayID == nil || *route.GatewayID != LocalRouteGateway {
+			ret = append(ret, route)
+		}
+	}
+
+	return ret
 }

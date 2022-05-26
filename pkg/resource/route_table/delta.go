@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	customPreCompare(a, b)
 
 	if !reflect.DeepEqual(a.ko.Spec.Routes, b.ko.Spec.Routes) {
 		delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
