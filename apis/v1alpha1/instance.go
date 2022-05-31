@@ -217,6 +217,8 @@ type InstanceSpec struct {
 	// volumes that are created during launch. To tag a resource after it has been
 	// created, see CreateTags (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html).
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags to apply to the resource.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The user data to make available to the instance. For more information, see
 	// Running commands on your Linux instance at launch (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
 	// (Linux) and Adding User Data (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-instance-metadata.html#instancedata-add-user-data)
@@ -340,9 +342,6 @@ type InstanceStatus struct {
 	// The reason for the most recent state transition. This might be an empty string.
 	// +kubebuilder:validation:Optional
 	StateTransitionReason *string `json:"stateTransitionReason,omitempty"`
-	// Any tags assigned to the instance.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 	// The usage operation value for the instance. For more information, see AMI
 	// billing information fields (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/billing-info-fields.html)
 	// in the Amazon EC2 User Guide.

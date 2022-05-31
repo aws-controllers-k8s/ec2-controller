@@ -552,9 +552,9 @@ func (rm *resourceManager) sdkFind(
 					}
 					f46 = append(f46, f46elem)
 				}
-				ko.Status.Tags = f46
+				ko.Spec.Tags = f46
 			} else {
-				ko.Status.Tags = nil
+				ko.Spec.Tags = nil
 			}
 			if elem.UsageOperation != nil {
 				ko.Status.UsageOperation = elem.UsageOperation
@@ -629,6 +629,7 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+	updateTagSpecificationsInCreateRequest(desired, input)
 
 	var resp *svcsdk.Reservation
 	_ = resp
@@ -1112,9 +1113,9 @@ func (rm *resourceManager) sdkCreate(
 				}
 				f46 = append(f46, f46elem)
 			}
-			ko.Status.Tags = f46
+			ko.Spec.Tags = f46
 		} else {
-			ko.Status.Tags = nil
+			ko.Spec.Tags = nil
 		}
 		if elem.UsageOperation != nil {
 			ko.Status.UsageOperation = elem.UsageOperation

@@ -15,6 +15,7 @@ package instance
 
 import (
 	"errors"
+	"strings"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -29,4 +30,46 @@ func addInstanceIDsToTerminateRequest(r *resource,
 	}
 	input.InstanceIds = append(input.InstanceIds, r.ko.Status.InstanceID)
 	return nil
+}
+
+// updateTagSpecificationsInCreateRequest removes
+// Tags related to 'volume' and adds/merges Tags related to 'instance'
+// defined in the resource's Spec to the Create Request (RunInstancesInput).
+// This is needed for a couple reasons:
+//	- 'Tags' can be exposed in Spec for a clearer CX
+//  - Instance Controller should not be able to edit other resources
+func updateTagSpecificationsInCreateRequest(r *resource,
+	input *svcsdk.RunInstancesInput) {
+	instanceTags := []*svcsdk.Tag{}
+	if input.TagSpecifications != nil {
+		for _, ts := range input.TagSpecifications {
+			// Discard tag from request if it applies to
+			// a resource other than instance
+			if strings.EqualFold("instance", *ts.ResourceType) {
+				for _, reqTag := range ts.Tags {
+					tag := &svcsdk.Tag{}
+					if reqTag.Key != nil && reqTag.Value != nil {
+						tag.SetKey(*reqTag.Key)
+						tag.SetValue(*reqTag.Value)
+					}
+					instanceTags = append(instanceTags, tag)
+				}
+			}
+		}
+	}
+	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs.SetResourceType("instance")
+	if r.ko.Spec.Tags != nil {
+		for _, desiredTag := range r.ko.Spec.Tags {
+			// Merge in tags defined in the Spec
+			tag := &svcsdk.Tag{}
+			if desiredTag.Key != nil && desiredTag.Value != nil {
+				tag.SetKey(*desiredTag.Key)
+				tag.SetValue(*desiredTag.Value)
+			}
+			instanceTags = append(instanceTags, tag)
+		}
+	}
+	desiredTagSpecs.SetTags(instanceTags)
+	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }

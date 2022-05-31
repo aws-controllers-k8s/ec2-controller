@@ -507,6 +507,17 @@ spec:
                       type: array
                   type: object
                 type: array
+              tags:
+                description: The tags to apply to the resource.
+                items:
+                  description: Describes a tag.
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
               userData:
                 description: The user data to make available to the instance. For
                   more information, see Running commands on your Linux instance at
@@ -744,17 +755,6 @@ spec:
                 description: The reason for the most recent state transition. This
                   might be an empty string.
                 type: string
-              tags:
-                description: Any tags assigned to the instance.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
               usageOperation:
                 description: The usage operation value for the instance. For more
                   information, see AMI billing information fields (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/billing-info-fields.html)

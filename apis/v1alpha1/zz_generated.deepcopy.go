@@ -7634,6 +7634,17 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 			}
 		}
 	}
+	if in.Tags != nil {
+		in, out := &in.Tags, &out.Tags
+		*out = make([]*Tag, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Tag)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	if in.UserData != nil {
 		in, out := &in.UserData, &out.UserData
 		*out = new(string)
@@ -7907,17 +7918,6 @@ func (in *InstanceStatus) DeepCopyInto(out *InstanceStatus) {
 		in, out := &in.StateTransitionReason, &out.StateTransitionReason
 		*out = new(string)
 		**out = **in
-	}
-	if in.Tags != nil {
-		in, out := &in.Tags, &out.Tags
-		*out = make([]*Tag, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Tag)
-				(*in).DeepCopyInto(*out)
-			}
-		}
 	}
 	if in.UsageOperation != nil {
 		in, out := &in.UsageOperation, &out.UsageOperation
