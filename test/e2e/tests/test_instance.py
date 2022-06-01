@@ -29,6 +29,8 @@ RESOURCE_PLURAL = "instances"
 # highly available instance type for deterministic testing
 INSTANCE_TYPE = "m4.large"
 INSTANCE_AMI = "Amazon Linux 2 Kernel"
+INSTANCE_TAG_KEY = "owner"
+INSTANCE_TAG_VAL = "ack-controller"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
@@ -98,6 +100,8 @@ def instance(ec2_client):
     test_resource_values["INSTANCE_AMI_ID"] = ami_id
     test_resource_values["INSTANCE_TYPE"] = INSTANCE_TYPE
     test_resource_values["INSTANCE_SUBNET_ID"] = subnet_id
+    test_resource_values["INSTANCE_TAG_KEY"] = INSTANCE_TAG_KEY
+    test_resource_values["INSTANCE_TAG_VAL"] = INSTANCE_TAG_VAL
 
     # Load Instance CR
     resource_data = load_ec2_resource(
@@ -136,10 +140,20 @@ class TestInstance:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check Instance exists
-        assert get_instance(ec2_client, resource_id) is not None
-
+        instance = get_instance(ec2_client, resource_id)
+        assert instance is not None
+        
         # Give time for instance to come up
         wait_for_instance_or_die(ec2_client, resource_id, 'running', TIMEOUT_SECONDS)
+
+        # Validate instance tags
+        instance_tags = instance["Tags"]
+        tag_present = False
+        for t in instance_tags:
+            if (t['Key'] == INSTANCE_TAG_KEY and
+                    t['Value'] == INSTANCE_TAG_VAL):
+                tag_present = True
+        assert tag_present
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)

@@ -32,19 +32,19 @@ func addInstanceIDsToTerminateRequest(r *resource,
 	return nil
 }
 
-// updateTagSpecificationsInCreateRequest removes
-// Tags related to 'volume' and adds/merges Tags related to 'instance'
+// updateTagSpecificationsInCreateRequest updates the
+// TagSpecification in RunInstancesInput (Create) to
+// remove Tags unrelated to 'instance' and merge
 // defined in the resource's Spec to the Create Request (RunInstancesInput).
 // This is needed for a couple reasons:
-//	- 'Tags' can be exposed in Spec for a clearer CX
+//	- Expose 'Tags' in Spec for a clearer CX
 //  - Instance Controller should not be able to edit other resources
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.RunInstancesInput) {
 	instanceTags := []*svcsdk.Tag{}
 	if input.TagSpecifications != nil {
 		for _, ts := range input.TagSpecifications {
-			// Discard tag from request if it applies to
-			// a resource other than instance
+			// Persist tags from TagSpecification related to instance only
 			if strings.EqualFold("instance", *ts.ResourceType) {
 				for _, reqTag := range ts.Tags {
 					tag := &svcsdk.Tag{}
@@ -58,10 +58,9 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 	}
 	desiredTagSpecs := svcsdk.TagSpecification{}
-	desiredTagSpecs.SetResourceType("instance")
 	if r.ko.Spec.Tags != nil {
 		for _, desiredTag := range r.ko.Spec.Tags {
-			// Merge in tags defined in the Spec
+			// Add in tags defined in the Spec
 			tag := &svcsdk.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
 				tag.SetKey(*desiredTag.Key)
@@ -70,6 +69,9 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 			instanceTags = append(instanceTags, tag)
 		}
 	}
-	desiredTagSpecs.SetTags(instanceTags)
+	if len(instanceTags) > 0 {
+		desiredTagSpecs.SetResourceType("instance")
+		desiredTagSpecs.SetTags(instanceTags)
+	}
 	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }

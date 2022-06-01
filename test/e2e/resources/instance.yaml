@@ -6,3 +6,6 @@ spec:
   imageID: $INSTANCE_AMI_ID
   instanceType: $INSTANCE_TYPE
   subnetID: $INSTANCE_SUBNET_ID
+  tags:
+    - key: $INSTANCE_TAG_KEY
+      value: $INSTANCE_TAG_VAL
