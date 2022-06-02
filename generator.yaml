@@ -23,6 +23,13 @@ ignore:
     # support EC2-VPC only
     - AllocateAddressInput.Domain
     - AllocateAddressOutput.Domain
+    - Instance.ClientToken
+    - InstanceNetworkInterfaceSpecification.Groups
+    - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.ClientToken
+    - RunInstancesInput.DryRun
+    - RunInstancesInput.TagSpecifications
+    - TerminateInstancesInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -38,7 +45,7 @@ ignore:
     - Fleet
     - FpgaImage
     - Image
-    - Instance
+    #- Instance
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
@@ -111,12 +118,58 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  RunInstances:
+    #ouput shape: Reservation
+    output_wrapper_field_path: Instances
+    operation_type:
+      - Create
+    resource_name: Instance
+    override_values:
+      # Hard-code MaxCount and MinCount to 1 so the Reservation 
+      # response can only contain a single instance. This
+      # instance will be managed by the Instance controller.
+      # Although RunInstances can handle creating multiple 
+      # instances at once (returning them in a single Reservation),
+      # a Reservation controller does not align with the declarative state model 
+      # in Kubernetes because users would not be able to update the underlying instances.
+      MaxCount: 1
+      MinCount: 1
+  DescribeInstances:
+    #output shape: DescribeInstancesOutput
+    output_wrapper_field_path: Reservations.Instances
+    operation_type:
+      - List
+    resource_name: Instance
+  TerminateInstances:
+    operation_type:
+      - Delete
+    resource_name: Instance
 resources:
   DhcpOptions:
     fields:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+  Instance:
+    fields:
+      HibernationOptions:
+        late_initialize: {}
+      MaxCount:
+        is_required: false
+      MinCount:
+        is_required: false
+      SecurityGroups:
+        set:
+          - from: GroupName
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/instance/sdk_create_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/instance/sdk_delete_post_build_request.go.tpl
   ElasticIPAddress:
     exceptions:
       terminal_codes:

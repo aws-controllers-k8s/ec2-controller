@@ -11,6 +11,7 @@ rules:
   resources:
   - dhcpoptions
   - elasticipaddresses
+  - instances
   - internetgateways
   - natgateways
   - routetables

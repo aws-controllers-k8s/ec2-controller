@@ -75,6 +75,26 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - instances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - instances/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
   - internetgateways
   verbs:
   - create
