@@ -1549,31 +1549,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.SubnetID != nil {
 		res.SetSubnetId(*r.ko.Spec.SubnetID)
 	}
-	if r.ko.Spec.TagSpecifications != nil {
-		f32 := []*svcsdk.TagSpecification{}
-		for _, f32iter := range r.ko.Spec.TagSpecifications {
-			f32elem := &svcsdk.TagSpecification{}
-			if f32iter.ResourceType != nil {
-				f32elem.SetResourceType(*f32iter.ResourceType)
-			}
-			if f32iter.Tags != nil {
-				f32elemf1 := []*svcsdk.Tag{}
-				for _, f32elemf1iter := range f32iter.Tags {
-					f32elemf1elem := &svcsdk.Tag{}
-					if f32elemf1iter.Key != nil {
-						f32elemf1elem.SetKey(*f32elemf1iter.Key)
-					}
-					if f32elemf1iter.Value != nil {
-						f32elemf1elem.SetValue(*f32elemf1iter.Value)
-					}
-					f32elemf1 = append(f32elemf1, f32elemf1elem)
-				}
-				f32elem.SetTags(f32elemf1)
-			}
-			f32 = append(f32, f32elem)
-		}
-		res.SetTagSpecifications(f32)
-	}
 	if r.ko.Spec.UserData != nil {
 		res.SetUserData(*r.ko.Spec.UserData)
 	}

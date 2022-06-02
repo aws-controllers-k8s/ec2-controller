@@ -7623,17 +7623,6 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.TagSpecifications != nil {
-		in, out := &in.TagSpecifications, &out.TagSpecifications
-		*out = make([]*TagSpecification, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(TagSpecification)
-				(*in).DeepCopyInto(*out)
-			}
-		}
-	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
 		*out = make([]*Tag, len(*in))

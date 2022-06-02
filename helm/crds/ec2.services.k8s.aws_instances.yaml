@@ -483,32 +483,10 @@ spec:
                   into. \n If you specify a network interface, you must specify any
                   subnets as part of the network interface."
                 type: string
-              tagSpecifications:
-                description: The tags to apply to the resources during launch. You
-                  can only tag instances and volumes on launch. The specified tags
-                  are applied to all instances or volumes that are created during
-                  launch. To tag a resource after it has been created, see CreateTags
-                  (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html).
-                items:
-                  description: The tags to apply to a resource when the resource is
-                    being created.
-                  properties:
-                    resourceType:
-                      type: string
-                    tags:
-                      items:
-                        description: Describes a tag.
-                        properties:
-                          key:
-                            type: string
-                          value:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
-                type: array
               tags:
-                description: The tags to apply to the resource.
+                description: The tags. The value parameter is required, but if you
+                  don't want the tag to have a value, specify the parameter with no
+                  value, and we set the value to an empty string.
                 items:
                   description: Describes a tag.
                   properties:

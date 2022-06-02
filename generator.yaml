@@ -28,6 +28,7 @@ ignore:
     - RunInstancesInput.AdditionalInfo
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
+    - RunInstancesInput.TagSpecifications
     - TerminateInstancesInput.DryRun
   resource_names:
     - AccountAttribute
@@ -162,8 +163,8 @@ resources:
           - from: GroupName
       Tags:
         from:
-          operation: RunInstances
-          path: TagSpecifications.Tags
+          operation: CreateTags
+          path: Tags
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/instance/sdk_create_post_build_request.go.tpl
