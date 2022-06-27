@@ -242,3 +242,26 @@ func inAssociations(
 func toStrPtr(str string) *string {
 	return &str
 }
+
+// updateTagSpecificationsInCreateRequest adds
+// Tags defined in the Spec to CreateSubnetInput.TagSpecification
+// and ensures the ResourceType is always set to 'subnet'
+func updateTagSpecificationsInCreateRequest(r *resource,
+	input *svcsdk.CreateSubnetInput) {
+	desiredTagSpecs := svcsdk.TagSpecification{}
+	if r.ko.Spec.Tags != nil {
+		requestedTags := []*svcsdk.Tag{}
+		for _, desiredTag := range r.ko.Spec.Tags {
+			// Add in tags defined in the Spec
+			tag := &svcsdk.Tag{}
+			if desiredTag.Key != nil && desiredTag.Value != nil {
+				tag.SetKey(*desiredTag.Key)
+				tag.SetValue(*desiredTag.Value)
+			}
+			requestedTags = append(requestedTags, tag)
+		}
+		desiredTagSpecs.SetResourceType("subnet")
+		desiredTagSpecs.SetTags(requestedTags)
+	}
+	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+}

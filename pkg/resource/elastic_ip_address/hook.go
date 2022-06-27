@@ -11,30 +11,17 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package vpc_endpoint
+package elastic_ip_address
 
 import (
-	"errors"
-
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// addIDToDeleteRequest adds resource's Vpc Endpoint ID to DeleteRequest.
-// Return error to indicate to callers that the resource is not yet created.
-func addIDToDeleteRequest(r *resource,
-	input *svcsdk.DeleteVpcEndpointsInput) error {
-	if r.ko.Status.VPCEndpointID == nil {
-		return errors.New("unable to extract VPCEndpointID from resource")
-	}
-	input.VpcEndpointIds = []*string{r.ko.Status.VPCEndpointID}
-	return nil
-}
-
 // updateTagSpecificationsInCreateRequest adds
-// Tags defined in the Spec to CreateVpcEndpointInput.TagSpecification
-// and ensures the ResourceType is always set to 'vpc-endpoint'
+// Tags defined in the Spec to AllocateAddressInput.TagSpecification
+// and ensures the ResourceType is always set to 'elastic-ip'
 func updateTagSpecificationsInCreateRequest(r *resource,
-	input *svcsdk.CreateVpcEndpointInput) {
+	input *svcsdk.AllocateAddressInput) {
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -47,7 +34,7 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("vpc-endpoint")
+		desiredTagSpecs.SetResourceType("elastic-ip")
 		desiredTagSpecs.SetTags(requestedTags)
 	}
 	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}

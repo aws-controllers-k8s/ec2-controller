@@ -164,6 +164,9 @@ resources:
         from:
           operation: CreateTags
           path: Tags
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/dhcp_options/sdk_create_post_build_request.go.tpl
   Instance:
     fields:
       HibernationOptions:
@@ -243,6 +246,8 @@ resources:
           resource: VPC
           path: Status.VPCID
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/internet_gateway/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/internet_gateway/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -270,6 +275,9 @@ resources:
       - path: Status.State
         in:
         - available
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
   RouteTable:
     exceptions:
       terminal_codes:
@@ -317,6 +325,8 @@ resources:
     hooks:
       delta_pre_compare:
         code: customPreCompare(a, b)
+      sdk_create_post_build_request:
+        template_path: hooks/route_table/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -359,6 +369,9 @@ resources:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
         - VPCIdNotSpecified
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
   Subnet:
     fields:
       RouteTables:
@@ -380,6 +393,8 @@ resources:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/subnet/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/subnet/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -392,6 +407,9 @@ resources:
         from:
           operation: CreateTags
           path: Tags
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/transit_gateway/sdk_create_post_build_request.go.tpl
   Vpc:
     update_operation:
       custom_method_name: customUpdate
@@ -415,6 +433,8 @@ resources:
           operation: CreateTags
           path: Tags
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/vpc/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/vpc/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -449,5 +469,7 @@ resources:
         - InvalidVpcId.NotFound
         - InvalidServiceName
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/vpc_endpoint/sdk_create_post_build_request.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl

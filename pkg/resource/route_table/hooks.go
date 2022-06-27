@@ -258,3 +258,26 @@ func removeLocalRoute(
 
 	return ret
 }
+
+// updateTagSpecificationsInCreateRequest adds
+// Tags defined in the Spec to CreateRouteTableInput.TagSpecification
+// and ensures the ResourceType is always set to 'route-table'
+func updateTagSpecificationsInCreateRequest(r *resource,
+	input *svcsdk.CreateRouteTableInput) {
+	desiredTagSpecs := svcsdk.TagSpecification{}
+	if r.ko.Spec.Tags != nil {
+		requestedTags := []*svcsdk.Tag{}
+		for _, desiredTag := range r.ko.Spec.Tags {
+			// Add in tags defined in the Spec
+			tag := &svcsdk.Tag{}
+			if desiredTag.Key != nil && desiredTag.Value != nil {
+				tag.SetKey(*desiredTag.Key)
+				tag.SetValue(*desiredTag.Value)
+			}
+			requestedTags = append(requestedTags, tag)
+		}
+		desiredTagSpecs.SetResourceType("route-table")
+		desiredTagSpecs.SetTags(requestedTags)
+	}
+	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+}
