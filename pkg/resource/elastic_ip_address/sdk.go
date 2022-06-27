@@ -54,7 +54,9 @@ func (rm *resourceManager) sdkFind(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	if r.ko.Status.AllocationID == nil {
 		return nil, ackerr.NotFound
 	}
@@ -130,6 +132,22 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.PublicIPv4Pool = nil
 		}
+		if elem.Tags != nil {
+			f13 := []*svcapitypes.Tag{}
+			for _, f13iter := range elem.Tags {
+				f13elem := &svcapitypes.Tag{}
+				if f13iter.Key != nil {
+					f13elem.Key = f13iter.Key
+				}
+				if f13iter.Value != nil {
+					f13elem.Value = f13iter.Value
+				}
+				f13 = append(f13, f13elem)
+			}
+			ko.Spec.Tags = f13
+		} else {
+			ko.Spec.Tags = nil
+		}
 		found = true
 		break
 	}
@@ -169,11 +187,14 @@ func (rm *resourceManager) sdkCreate(
 ) (created *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkCreate")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	input, err := rm.newCreateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
 	}
+	updateTagSpecificationsInCreateRequest(desired, input)
 	// EC2-VPC only supports setting Domain to "vpc"
 	input.SetDomain(svcsdk.DomainTypeVpc)
 
@@ -248,31 +269,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.PublicIPv4Pool != nil {
 		res.SetPublicIpv4Pool(*r.ko.Spec.PublicIPv4Pool)
 	}
-	if r.ko.Spec.TagSpecifications != nil {
-		f4 := []*svcsdk.TagSpecification{}
-		for _, f4iter := range r.ko.Spec.TagSpecifications {
-			f4elem := &svcsdk.TagSpecification{}
-			if f4iter.ResourceType != nil {
-				f4elem.SetResourceType(*f4iter.ResourceType)
-			}
-			if f4iter.Tags != nil {
-				f4elemf1 := []*svcsdk.Tag{}
-				for _, f4elemf1iter := range f4iter.Tags {
-					f4elemf1elem := &svcsdk.Tag{}
-					if f4elemf1iter.Key != nil {
-						f4elemf1elem.SetKey(*f4elemf1iter.Key)
-					}
-					if f4elemf1iter.Value != nil {
-						f4elemf1elem.SetValue(*f4elemf1iter.Value)
-					}
-					f4elemf1 = append(f4elemf1, f4elemf1elem)
-				}
-				f4elem.SetTags(f4elemf1)
-			}
-			f4 = append(f4, f4elem)
-		}
-		res.SetTagSpecifications(f4)
-	}
 
 	return res, nil
 }
@@ -296,7 +292,9 @@ func (rm *resourceManager) sdkDelete(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err

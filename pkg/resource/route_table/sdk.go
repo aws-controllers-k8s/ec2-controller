@@ -54,7 +54,9 @@ func (rm *resourceManager) sdkFind(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. Return NotFound here to indicate to callers that the
 	// resource isn't yet created.
@@ -198,9 +200,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				f5 = append(f5, f5elem)
 			}
-			ko.Status.Tags = f5
+			ko.Spec.Tags = f5
 		} else {
-			ko.Status.Tags = nil
+			ko.Spec.Tags = nil
 		}
 		if elem.VpcId != nil {
 			ko.Spec.VPCID = elem.VpcId
@@ -258,11 +260,14 @@ func (rm *resourceManager) sdkCreate(
 ) (created *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkCreate")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	input, err := rm.newCreateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
 	}
+	updateTagSpecificationsInCreateRequest(desired, input)
 
 	var resp *svcsdk.CreateRouteTableOutput
 	_ = resp
@@ -391,9 +396,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			f5 = append(f5, f5elem)
 		}
-		ko.Status.Tags = f5
+		ko.Spec.Tags = f5
 	} else {
-		ko.Status.Tags = nil
+		ko.Spec.Tags = nil
 	}
 	if resp.RouteTable.VpcId != nil {
 		ko.Spec.VPCID = resp.RouteTable.VpcId
@@ -426,31 +431,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateRouteTableInput, error) {
 	res := &svcsdk.CreateRouteTableInput{}
 
-	if r.ko.Spec.TagSpecifications != nil {
-		f0 := []*svcsdk.TagSpecification{}
-		for _, f0iter := range r.ko.Spec.TagSpecifications {
-			f0elem := &svcsdk.TagSpecification{}
-			if f0iter.ResourceType != nil {
-				f0elem.SetResourceType(*f0iter.ResourceType)
-			}
-			if f0iter.Tags != nil {
-				f0elemf1 := []*svcsdk.Tag{}
-				for _, f0elemf1iter := range f0iter.Tags {
-					f0elemf1elem := &svcsdk.Tag{}
-					if f0elemf1iter.Key != nil {
-						f0elemf1elem.SetKey(*f0elemf1iter.Key)
-					}
-					if f0elemf1iter.Value != nil {
-						f0elemf1elem.SetValue(*f0elemf1iter.Value)
-					}
-					f0elemf1 = append(f0elemf1, f0elemf1elem)
-				}
-				f0elem.SetTags(f0elemf1)
-			}
-			f0 = append(f0, f0elem)
-		}
-		res.SetTagSpecifications(f0)
-	}
 	if r.ko.Spec.VPCID != nil {
 		res.SetVpcId(*r.ko.Spec.VPCID)
 	}
@@ -476,7 +456,9 @@ func (rm *resourceManager) sdkDelete(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err

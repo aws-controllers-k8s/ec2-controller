@@ -79,24 +79,17 @@ spec:
                 description: The ID of an IPv6 address pool from which to allocate
                   the IPv6 CIDR block.
                 type: string
-              tagSpecifications:
-                description: The tags to assign to the VPC.
+              tags:
+                description: The tags. The value parameter is required, but if you
+                  don't want the tag to have a value, specify the parameter with no
+                  value, and we set the value to an empty string.
                 items:
-                  description: The tags to apply to a resource when the resource is
-                    being created.
+                  description: Describes a tag.
                   properties:
-                    resourceType:
+                    key:
                       type: string
-                    tags:
-                      items:
-                        description: Describes a tag.
-                        properties:
-                          key:
-                            type: string
-                          value:
-                            type: string
-                        type: object
-                      type: array
+                    value:
+                      type: string
                   type: object
                 type: array
             required:
@@ -224,17 +217,6 @@ spec:
               state:
                 description: The current state of the VPC.
                 type: string
-              tags:
-                description: Any tags assigned to the VPC.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
               vpcID:
                 description: The ID of the VPC.
                 type: string

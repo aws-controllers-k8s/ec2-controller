@@ -4,18 +4,28 @@ ignore:
     - ModifyVpcEndpoint
   field_paths:
     - AllocateAddressInput.DryRun
+    - AllocateAddressInput.TagSpecifications
     - CreateDhcpOptionsInput.DryRun
+    - CreateDhcpOptionsInput.TagSpecifications
     - CreateInternetGatewayInput.DryRun
+    - CreateInternetGatewayInput.TagSpecifications
     - CreateNatGatewayInput.ClientToken
     - CreateNatGatewayInput.DryRun
+    - CreateNatGatewayInput.TagSpecifications
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
+    - CreateRouteTableInput.TagSpecifications
     - CreateSecurityGroupInput.DryRun
+    - CreateSecurityGroupInput.TagSpecifications
     - CreateSubnetInput.DryRun
+    - CreateSubnetInput.TagSpecifications
     - CreateTransitGatewayInput.DryRun
+    - CreateTransitGatewayInput.TagSpecifications
     - CreateVpcInput.DryRun
+    - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
+    - CreateVpcEndpointInput.TagSpecifications
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
@@ -150,6 +160,13 @@ resources:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/dhcp_options/sdk_create_post_build_request.go.tpl
   Instance:
     fields:
       HibernationOptions:
@@ -199,6 +216,10 @@ resources:
       PublicIp:
         print:
           name: PUBLIC-IP
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
     list_operation:
       match_fields:
       - AllocationId
@@ -213,6 +234,10 @@ resources:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
   InternetGateway:
     fields:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
       VPC:
         from:
           operation: AttachInternetGateway
@@ -221,6 +246,8 @@ resources:
           resource: VPC
           path: Status.VPCID
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/internet_gateway/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/internet_gateway/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -239,11 +266,18 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
     synced:
       when:
       - path: Status.State
         in:
         - available
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
   RouteTable:
     exceptions:
       terminal_codes:
@@ -264,6 +298,10 @@ resources:
       Routes:
         custom_field:
           list_of: CreateRouteInput
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
       VpcId:
         references:
           resource: VPC
@@ -287,6 +325,8 @@ resources:
     hooks:
       delta_pre_compare:
         code: customPreCompare(a, b)
+      sdk_create_post_build_request:
+        template_path: hooks/route_table/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -300,6 +340,10 @@ resources:
       # support EC2-VPC only
       Id:
         is_primary_key: true
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
       VpcId:
         is_required: true
         references:
@@ -325,6 +369,9 @@ resources:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
         - VPCIdNotSpecified
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
   Subnet:
     fields:
       RouteTables:
@@ -333,6 +380,10 @@ resources:
         references:
           resource: RouteTable
           path: Status.RouteTableID
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
       VpcId:
         references:
           resource: VPC
@@ -342,12 +393,23 @@ resources:
         - InvalidVpcID.Malformed
         - InvalidVpcID.NotFound
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/subnet/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/subnet/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/subnet/sdk_read_many_post_set_output.go.tpl
     update_operation:
       custom_method_name: customUpdateSubnet
+  TransitGateway:
+    fields:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/transit_gateway/sdk_create_post_build_request.go.tpl
   Vpc:
     update_operation:
       custom_method_name: customUpdate
@@ -366,7 +428,13 @@ resources:
         from:
           operation: ModifyVpcAttribute
           path: EnableDnsHostnames.Value
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/vpc/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/vpc/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
@@ -375,6 +443,10 @@ resources:
     fields:
       PolicyDocument:
         late_initialize: {}
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
       VpcId:
         references:
           resource: VPC
@@ -397,5 +469,7 @@ resources:
         - InvalidVpcId.NotFound
         - InvalidServiceName
     hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/vpc_endpoint/sdk_create_post_build_request.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl

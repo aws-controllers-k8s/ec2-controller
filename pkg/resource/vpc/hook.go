@@ -176,3 +176,26 @@ func (rm *resourceManager) customUpdate(
 	rm.setStatusDefaults(ko)
 	return &resource{ko}, nil
 }
+
+// updateTagSpecificationsInCreateRequest adds
+// Tags defined in the Spec to CreateVpcInput.TagSpecification
+// and ensures the ResourceType is always set to 'vpc'
+func updateTagSpecificationsInCreateRequest(r *resource,
+	input *svcsdk.CreateVpcInput) {
+	desiredTagSpecs := svcsdk.TagSpecification{}
+	if r.ko.Spec.Tags != nil {
+		requestedTags := []*svcsdk.Tag{}
+		for _, desiredTag := range r.ko.Spec.Tags {
+			// Add in tags defined in the Spec
+			tag := &svcsdk.Tag{}
+			if desiredTag.Key != nil && desiredTag.Value != nil {
+				tag.SetKey(*desiredTag.Key)
+				tag.SetValue(*desiredTag.Value)
+			}
+			requestedTags = append(requestedTags, tag)
+		}
+		desiredTagSpecs.SetResourceType("vpc")
+		desiredTagSpecs.SetTags(requestedTags)
+	}
+	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+}

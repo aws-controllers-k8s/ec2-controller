@@ -24,8 +24,10 @@ import (
 //
 // Describes an internet gateway.
 type InternetGatewaySpec struct {
-	// The tags to assign to the internet gateway.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
 	VPC    *string                                  `json:"vpc,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
@@ -53,9 +55,6 @@ type InternetGatewayStatus struct {
 	// The ID of the Amazon Web Services account that owns the internet gateway.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
-	// Any tags assigned to the internet gateway.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // InternetGateway is the Schema for the InternetGateways API

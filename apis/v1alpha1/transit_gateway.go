@@ -28,8 +28,10 @@ type TransitGatewaySpec struct {
 	Description *string `json:"description,omitempty"`
 	// The transit gateway options.
 	Options *TransitGatewayRequestOptions `json:"options,omitempty"`
-	// The tags to apply to the transit gateway.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // TransitGatewayStatus defines the observed state of TransitGateway
@@ -54,9 +56,6 @@ type TransitGatewayStatus struct {
 	// The state of the transit gateway.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
-	// The tags for the transit gateway.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the transit gateway.
 	// +kubebuilder:validation:Optional
 	TransitGatewayID *string `json:"transitGatewayID,omitempty"`

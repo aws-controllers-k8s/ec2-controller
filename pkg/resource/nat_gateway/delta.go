@@ -68,8 +68,8 @@ func newResourceDelta(
 	if !reflect.DeepEqual(a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef) {
 		delta.Add("Spec.SubnetRef", a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef)
 	}
-	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
-		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
+	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta

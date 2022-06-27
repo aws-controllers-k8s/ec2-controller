@@ -37,24 +37,17 @@ spec:
             description: "InternetGatewaySpec defines the desired state of InternetGateway.
               \n Describes an internet gateway."
             properties:
-              tagSpecifications:
-                description: The tags to assign to the internet gateway.
+              tags:
+                description: The tags. The value parameter is required, but if you
+                  don't want the tag to have a value, specify the parameter with no
+                  value, and we set the value to an empty string.
                 items:
-                  description: The tags to apply to a resource when the resource is
-                    being created.
+                  description: Describes a tag.
                   properties:
-                    resourceType:
+                    key:
                       type: string
-                    tags:
-                      items:
-                        description: Describes a tag.
-                        properties:
-                          key:
-                            type: string
-                          value:
-                            type: string
-                        type: object
-                      type: array
+                    value:
+                      type: string
                   type: object
                 type: array
               vpc:
@@ -158,17 +151,6 @@ spec:
                 description: The ID of the Amazon Web Services account that owns the
                   internet gateway.
                 type: string
-              tags:
-                description: Any tags assigned to the internet gateway.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
             type: object
         type: object
     served: true

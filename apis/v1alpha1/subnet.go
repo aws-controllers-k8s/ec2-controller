@@ -54,8 +54,10 @@ type SubnetSpec struct {
 	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
 
 	RouteTables []*string `json:"routeTables,omitempty"`
-	// The tags to assign to the subnet.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
 	VPCID  *string                                  `json:"vpcID,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
@@ -109,9 +111,6 @@ type SubnetStatus struct {
 	// The ID of the subnet.
 	// +kubebuilder:validation:Optional
 	SubnetID *string `json:"subnetID,omitempty"`
-	// Any tags assigned to the subnet.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // Subnet is the Schema for the Subnets API

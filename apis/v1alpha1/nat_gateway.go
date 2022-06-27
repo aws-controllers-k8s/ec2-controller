@@ -36,8 +36,10 @@ type NATGatewaySpec struct {
 	// The subnet in which to create the NAT gateway.
 	SubnetID  *string                                  `json:"subnetID,omitempty"`
 	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
-	// The tags to assign to the NAT gateway.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // NATGatewayStatus defines the observed state of NATGateway
@@ -117,9 +119,6 @@ type NATGatewayStatus struct {
 	//    traffic.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
-	// The tags for the NAT gateway.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC in which the NAT gateway is located.
 	// +kubebuilder:validation:Optional
 	VPCID *string `json:"vpcID,omitempty"`
