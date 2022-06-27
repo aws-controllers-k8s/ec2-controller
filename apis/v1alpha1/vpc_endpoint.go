@@ -62,8 +62,10 @@ type VPCEndpointSpec struct {
 	// endpoint, you can specify one subnet only.
 	SubnetIDs  []*string                                  `json:"subnetIDs,omitempty"`
 	SubnetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRefs,omitempty"`
-	// The tags to associate with the endpoint.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The type of endpoint.
 	//
 	// Default: Gateway
@@ -111,9 +113,6 @@ type VPCEndpointStatus struct {
 	// The state of the VPC endpoint.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
-	// Any tags assigned to the VPC endpoint.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC endpoint.
 	// +kubebuilder:validation:Optional
 	VPCEndpointID *string `json:"vpcEndpointID,omitempty"`

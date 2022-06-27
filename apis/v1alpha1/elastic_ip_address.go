@@ -44,8 +44,10 @@ type ElasticIPAddressSpec struct {
 	// EC2 select an address from the address pool. To specify a specific address
 	// from the address pool, use the Address parameter instead.
 	PublicIPv4Pool *string `json:"publicIPv4Pool,omitempty"`
-	// The tags to assign to the Elastic IP address.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // ElasticIPAddressStatus defines the observed state of ElasticIPAddress

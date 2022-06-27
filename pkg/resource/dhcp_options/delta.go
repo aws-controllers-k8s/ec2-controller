@@ -44,8 +44,8 @@ func newResourceDelta(
 	if !reflect.DeepEqual(a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations) {
 		delta.Add("Spec.DHCPConfigurations", a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations)
 	}
-	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
-		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
+	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta

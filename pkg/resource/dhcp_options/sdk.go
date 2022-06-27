@@ -54,7 +54,9 @@ func (rm *resourceManager) sdkFind(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. Return NotFound here to indicate to callers that the
 	// resource isn't yet created.
@@ -128,9 +130,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				f3 = append(f3, f3elem)
 			}
-			ko.Status.Tags = f3
+			ko.Spec.Tags = f3
 		} else {
-			ko.Status.Tags = nil
+			ko.Spec.Tags = nil
 		}
 		found = true
 		break
@@ -178,7 +180,9 @@ func (rm *resourceManager) sdkCreate(
 ) (created *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkCreate")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	input, err := rm.newCreateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
@@ -241,9 +245,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			f3 = append(f3, f3elem)
 		}
-		ko.Status.Tags = f3
+		ko.Spec.Tags = f3
 	} else {
-		ko.Status.Tags = nil
+		ko.Spec.Tags = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -278,31 +282,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 		}
 		res.SetDhcpConfigurations(f0)
 	}
-	if r.ko.Spec.TagSpecifications != nil {
-		f1 := []*svcsdk.TagSpecification{}
-		for _, f1iter := range r.ko.Spec.TagSpecifications {
-			f1elem := &svcsdk.TagSpecification{}
-			if f1iter.ResourceType != nil {
-				f1elem.SetResourceType(*f1iter.ResourceType)
-			}
-			if f1iter.Tags != nil {
-				f1elemf1 := []*svcsdk.Tag{}
-				for _, f1elemf1iter := range f1iter.Tags {
-					f1elemf1elem := &svcsdk.Tag{}
-					if f1elemf1iter.Key != nil {
-						f1elemf1elem.SetKey(*f1elemf1iter.Key)
-					}
-					if f1elemf1iter.Value != nil {
-						f1elemf1elem.SetValue(*f1elemf1iter.Value)
-					}
-					f1elemf1 = append(f1elemf1, f1elemf1elem)
-				}
-				f1elem.SetTags(f1elemf1)
-			}
-			f1 = append(f1, f1elem)
-		}
-		res.SetTagSpecifications(f1)
-	}
 
 	return res, nil
 }
@@ -326,7 +305,9 @@ func (rm *resourceManager) sdkDelete(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err

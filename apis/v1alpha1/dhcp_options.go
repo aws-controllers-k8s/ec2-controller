@@ -27,8 +27,10 @@ type DHCPOptionsSpec struct {
 	// A DHCP configuration option.
 	// +kubebuilder:validation:Required
 	DHCPConfigurations []*NewDHCPConfiguration `json:"dhcpConfigurations"`
-	// The tags to assign to the DHCP option.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // DHCPOptionsStatus defines the observed state of DHCPOptions
@@ -50,9 +52,6 @@ type DHCPOptionsStatus struct {
 	// The ID of the Amazon Web Services account that owns the DHCP options set.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
-	// Any tags assigned to the DHCP options set.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // DHCPOptions is the Schema for the DHCPOptions API

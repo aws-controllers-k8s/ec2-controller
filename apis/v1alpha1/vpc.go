@@ -60,8 +60,10 @@ type VPCSpec struct {
 	IPv6CIDRBlockNetworkBorderGroup *string `json:"ipv6CIDRBlockNetworkBorderGroup,omitempty"`
 	// The ID of an IPv6 address pool from which to allocate the IPv6 CIDR block.
 	IPv6Pool *string `json:"ipv6Pool,omitempty"`
-	// The tags to assign to the VPC.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // VPCStatus defines the observed state of VPC
@@ -95,9 +97,6 @@ type VPCStatus struct {
 	// The current state of the VPC.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
-	// Any tags assigned to the VPC.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
 	// +kubebuilder:validation:Optional
 	VPCID *string `json:"vpcID,omitempty"`

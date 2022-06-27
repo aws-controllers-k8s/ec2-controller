@@ -2157,14 +2157,12 @@ type LaunchTemplateSpotMarketOptionsRequest struct {
 
 // The tag specification for the launch template.
 type LaunchTemplateTagSpecification struct {
-	ResourceType *string `json:"resourceType,omitempty"`
-	Tags         []*Tag  `json:"tags,omitempty"`
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // The tags specification for the launch template.
 type LaunchTemplateTagSpecificationRequest struct {
-	ResourceType *string `json:"resourceType,omitempty"`
-	Tags         []*Tag  `json:"tags,omitempty"`
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // Describes a launch template version.
@@ -3371,27 +3369,25 @@ type SpotFleetRequestConfig struct {
 
 // Describes the configuration of a Spot Fleet request.
 type SpotFleetRequestConfigData struct {
-	ClientToken                      *string             `json:"clientToken,omitempty"`
-	Context                          *string             `json:"context,omitempty"`
-	IAMFleetRole                     *string             `json:"iamFleetRole,omitempty"`
-	InstanceInterruptionBehavior     *string             `json:"instanceInterruptionBehavior,omitempty"`
-	InstancePoolsToUseCount          *int64              `json:"instancePoolsToUseCount,omitempty"`
-	OnDemandMaxTotalPrice            *string             `json:"onDemandMaxTotalPrice,omitempty"`
-	OnDemandTargetCapacity           *int64              `json:"onDemandTargetCapacity,omitempty"`
-	ReplaceUnhealthyInstances        *bool               `json:"replaceUnhealthyInstances,omitempty"`
-	SpotMaxTotalPrice                *string             `json:"spotMaxTotalPrice,omitempty"`
-	SpotPrice                        *string             `json:"spotPrice,omitempty"`
-	TagSpecifications                []*TagSpecification `json:"tagSpecifications,omitempty"`
-	TargetCapacity                   *int64              `json:"targetCapacity,omitempty"`
-	TerminateInstancesWithExpiration *bool               `json:"terminateInstancesWithExpiration,omitempty"`
-	ValidFrom                        *metav1.Time        `json:"validFrom,omitempty"`
-	ValidUntil                       *metav1.Time        `json:"validUntil,omitempty"`
+	ClientToken                      *string      `json:"clientToken,omitempty"`
+	Context                          *string      `json:"context,omitempty"`
+	IAMFleetRole                     *string      `json:"iamFleetRole,omitempty"`
+	InstanceInterruptionBehavior     *string      `json:"instanceInterruptionBehavior,omitempty"`
+	InstancePoolsToUseCount          *int64       `json:"instancePoolsToUseCount,omitempty"`
+	OnDemandMaxTotalPrice            *string      `json:"onDemandMaxTotalPrice,omitempty"`
+	OnDemandTargetCapacity           *int64       `json:"onDemandTargetCapacity,omitempty"`
+	ReplaceUnhealthyInstances        *bool        `json:"replaceUnhealthyInstances,omitempty"`
+	SpotMaxTotalPrice                *string      `json:"spotMaxTotalPrice,omitempty"`
+	SpotPrice                        *string      `json:"spotPrice,omitempty"`
+	TargetCapacity                   *int64       `json:"targetCapacity,omitempty"`
+	TerminateInstancesWithExpiration *bool        `json:"terminateInstancesWithExpiration,omitempty"`
+	ValidFrom                        *metav1.Time `json:"validFrom,omitempty"`
+	ValidUntil                       *metav1.Time `json:"validUntil,omitempty"`
 }
 
 // The tags for a Spot Fleet resource.
 type SpotFleetTagSpecification struct {
-	ResourceType *string `json:"resourceType,omitempty"`
-	Tags         []*Tag  `json:"tags,omitempty"`
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // Describes a Spot Instance request.
@@ -3584,16 +3580,14 @@ type Tag struct {
 
 // Describes a tag.
 type TagDescription struct {
-	Key          *string `json:"key,omitempty"`
-	ResourceID   *string `json:"resourceID,omitempty"`
-	ResourceType *string `json:"resourceType,omitempty"`
-	Value        *string `json:"value,omitempty"`
+	Key        *string `json:"key,omitempty"`
+	ResourceID *string `json:"resourceID,omitempty"`
+	Value      *string `json:"value,omitempty"`
 }
 
 // The tags to apply to a resource when the resource is being created.
 type TagSpecification struct {
-	ResourceType *string `json:"resourceType,omitempty"`
-	Tags         []*Tag  `json:"tags,omitempty"`
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // The number of units to request. You can choose to set the target capacity

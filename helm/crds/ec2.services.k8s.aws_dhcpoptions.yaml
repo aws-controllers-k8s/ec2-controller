@@ -49,24 +49,17 @@ spec:
                       type: array
                   type: object
                 type: array
-              tagSpecifications:
-                description: The tags to assign to the DHCP option.
+              tags:
+                description: The tags. The value parameter is required, but if you
+                  don't want the tag to have a value, specify the parameter with no
+                  value, and we set the value to an empty string.
                 items:
-                  description: The tags to apply to a resource when the resource is
-                    being created.
+                  description: Describes a tag.
                   properties:
-                    resourceType:
+                    key:
                       type: string
-                    tags:
-                      items:
-                        description: Describes a tag.
-                        properties:
-                          key:
-                            type: string
-                          value:
-                            type: string
-                        type: object
-                      type: array
+                    value:
+                      type: string
                   type: object
                 type: array
             required:
@@ -143,17 +136,6 @@ spec:
                 description: The ID of the Amazon Web Services account that owns the
                   DHCP options set.
                 type: string
-              tags:
-                description: Any tags assigned to the DHCP options set.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
             type: object
         type: object
     served: true

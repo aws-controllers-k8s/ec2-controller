@@ -25,8 +25,10 @@ import (
 // Describes a route table.
 type RouteTableSpec struct {
 	Routes []*CreateRouteInput `json:"routes,omitempty"`
-	// The tags to assign to the route table.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
 	VPCID  *string                                  `json:"vpcID,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
@@ -60,9 +62,6 @@ type RouteTableStatus struct {
 	// The ID of the route table.
 	// +kubebuilder:validation:Optional
 	RouteTableID *string `json:"routeTableID,omitempty"`
-	// Any tags assigned to the route table.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // RouteTable is the Schema for the RouteTables API

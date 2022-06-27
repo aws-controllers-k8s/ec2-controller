@@ -79,24 +79,17 @@ spec:
                         type: string
                     type: object
                 type: object
-              tagSpecifications:
-                description: The tags to assign to the NAT gateway.
+              tags:
+                description: The tags. The value parameter is required, but if you
+                  don't want the tag to have a value, specify the parameter with no
+                  value, and we set the value to an empty string.
                 items:
-                  description: The tags to apply to a resource when the resource is
-                    being created.
+                  description: Describes a tag.
                   properties:
-                    resourceType:
+                    key:
                       type: string
-                    tags:
-                      items:
-                        description: Describes a tag.
-                        properties:
-                          key:
-                            type: string
-                          value:
-                            type: string
-                        type: object
-                      type: array
+                    value:
+                      type: string
                   type: object
                 type: array
             type: object
@@ -243,17 +236,6 @@ spec:
                   traffic. \n    * deleted: The NAT gateway has been terminated and
                   is no longer processing    traffic."
                 type: string
-              tags:
-                description: The tags for the NAT gateway.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
               vpcID:
                 description: The ID of the VPC in which the NAT gateway is located.
                 type: string
