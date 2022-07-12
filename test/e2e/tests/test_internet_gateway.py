@@ -185,7 +185,7 @@ class TestInternetGateway:
 
     def test_terminal_condition_invalid_vpcid(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("ig-invalid-vpcid", 24)
+        resource_name = random_suffix_name("internet-gateway-fail-1", 24)
         test_resource_values["INTERNET_GATEWAY_NAME"] = resource_name
         test_resource_values["VPC_ID"] = "vpc-12345678"
 
@@ -216,7 +216,7 @@ class TestInternetGateway:
 
     def test_terminal_condition_malformed_vpc(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("ig-malformed-vpcid", 24)
+        resource_name = random_suffix_name("internet-gateway-fail-2", 24)
         test_resource_values["INTERNET_GATEWAY_NAME"] = resource_name
         test_resource_values["VPC_ID"] = "MalformedVpcId"
 

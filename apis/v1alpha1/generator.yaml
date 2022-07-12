@@ -237,8 +237,6 @@ resources:
       terminal_codes:
       - InvalidInternetGatewayID.NotFound
       - InvalidInternetGatewayId.Malformed
-      - Resource.AlreadyAssociated
-      - Gateway.NotAttached
       - InvalidVpcId.Malformed
       - InvalidVpcID.NotFound
       - InvalidParameterValue

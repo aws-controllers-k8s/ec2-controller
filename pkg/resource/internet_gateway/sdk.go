@@ -421,8 +421,6 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	switch awsErr.Code() {
 	case "InvalidInternetGatewayID.NotFound",
 		"InvalidInternetGatewayId.Malformed",
-		"Resource.AlreadyAssociated",
-		"Gateway.NotAttached",
 		"InvalidVpcId.Malformed",
 		"InvalidVpcID.NotFound",
 		"InvalidParameterValue":
