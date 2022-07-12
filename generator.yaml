@@ -233,6 +233,15 @@ resources:
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
   InternetGateway:
+    exceptions:
+      terminal_codes:
+      - InvalidInternetGatewayID.NotFound
+      - InvalidInternetGatewayId.Malformed
+      - Resource.AlreadyAssociated
+      - Gateway.NotAttached
+      - InvalidVpcId.Malformed
+      - InvalidVpcID.NotFound
+      - InvalidParameterValue
     fields:
       Tags:
         from:
