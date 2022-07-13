@@ -235,11 +235,7 @@ resources:
   InternetGateway:
     exceptions:
       terminal_codes:
-      - InvalidInternetGatewayID.NotFound
-      - InvalidInternetGatewayId.Malformed
       - InvalidVpcId.Malformed
-      - InvalidVpcID.NotFound
-      - InvalidParameterValue
     fields:
       Tags:
         from:

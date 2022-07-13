@@ -419,11 +419,7 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch awsErr.Code() {
-	case "InvalidInternetGatewayID.NotFound",
-		"InvalidInternetGatewayId.Malformed",
-		"InvalidVpcId.Malformed",
-		"InvalidVpcID.NotFound",
-		"InvalidParameterValue":
+	case "InvalidVpcId.Malformed":
 		return true
 	default:
 		return false
