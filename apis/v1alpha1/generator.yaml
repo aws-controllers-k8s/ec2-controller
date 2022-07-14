@@ -233,6 +233,9 @@ resources:
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
   InternetGateway:
+    exceptions:
+      terminal_codes:
+      - InvalidVpcId.Malformed
     fields:
       Tags:
         from:
