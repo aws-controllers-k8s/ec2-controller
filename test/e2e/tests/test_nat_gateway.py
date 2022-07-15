@@ -198,6 +198,8 @@ class TestNATGateway:
 
         test_resource_values["NAT_GATEWAY_NAME"] = resource_name
         test_resource_values["SUBNET_ID"] = subnet_id
+        
+        # ALLOCATION_ID is required for creating public nat gateways only
         test_resource_values["ALLOCATION_ID"] = ""
 
         # Load NAT Gateway CR
