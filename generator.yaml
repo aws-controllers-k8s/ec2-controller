@@ -260,6 +260,11 @@ resources:
     update_operation:
       custom_method_name: customUpdateInternetGateway
   NatGateway:
+    exceptions:
+      terminal_codes:
+      - InvalidSubnet
+      - InvalidElasticIpID.Malformed
+      - MissingParameter
     fields:
       AllocationId:
         references:
