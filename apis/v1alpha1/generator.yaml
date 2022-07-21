@@ -156,6 +156,9 @@ operations:
     resource_name: Instance
 resources:
   DhcpOptions:
+    exceptions:
+      terminal_codes:
+      - InvalidParameterValue
     fields:
       DHCPConfigurations.Values:
         set:
