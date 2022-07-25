@@ -118,3 +118,112 @@ class TestNATGateway:
 
         # Check NAT Gateway no longer exists in AWS
         ec2_validator.assert_nat_gateway(resource_id, exists=False)
+
+    def test_terminal_condition_invalid_subnet(self, standard_elastic_address):
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("nat-gateway-fail-1", 24)
+        subnet_id = "InvalidSubnet"
+
+        (_, eip) = standard_elastic_address
+
+        test_resource_values["NAT_GATEWAY_NAME"] = resource_name
+        test_resource_values["SUBNET_ID"] = subnet_id
+        test_resource_values["ALLOCATION_ID"] = eip["status"]["allocationID"]
+
+        # Load NAT Gateway CR
+        resource_data = load_ec2_resource(
+            "nat_gateway",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "InvalidSubnet: The subnet ID 'InvalidSubnet' is malformed"
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (InvalidSubnet) when calling the CreateNatGateway operation:
+        # The subnet ID 'InvalidSubnet' is malformed
+        assert expected_msg in terminal_condition['message']
+
+    def test_terminal_condition_malformed_elastic_ip(self):
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("nat-gateway-fail-2", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        subnet_id = test_vpc.public_subnets.subnet_ids[0]
+
+        test_resource_values["NAT_GATEWAY_NAME"] = resource_name
+        test_resource_values["SUBNET_ID"] = subnet_id
+        test_resource_values["ALLOCATION_ID"] = "MalformedElasticIpId"
+
+        # Load NAT Gateway CR
+        resource_data = load_ec2_resource(
+            "nat_gateway",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "InvalidElasticIpID.Malformed: The elastic-ip ID 'MalformedElasticIpId' is malformed"
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (InvalidElasticIpID.Malformed) when calling the CreateNatGateway operation:
+        # The elastic-ip ID 'MalformedElasticIpId' is malformed"
+        assert expected_msg in terminal_condition['message']
+
+    def test_terminal_condition_missing_parameter(self):
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("nat-gateway-fail-3", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        subnet_id = test_vpc.public_subnets.subnet_ids[0]
+
+        test_resource_values["NAT_GATEWAY_NAME"] = resource_name
+        test_resource_values["SUBNET_ID"] = subnet_id
+
+        # ALLOCATION_ID is required for creating public nat gateways only
+        test_resource_values["ALLOCATION_ID"] = ""
+
+        # Load NAT Gateway CR
+        resource_data = load_ec2_resource(
+            "nat_gateway",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "MissingParameter: The request must include the AllocationId parameter. Add the required parameter and retry the request."
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (MissingParameter) when calling the CreateNatGateway operation:
+        # The request must include the AllocationId parameter. 
+        # Add the required parameter and retry the request.
+        assert expected_msg in terminal_condition['message']
