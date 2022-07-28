@@ -155,3 +155,35 @@ class TestVpc:
 
         # Check VPC no longer exists in AWS
         ec2_validator.assert_vpc(resource_id, exists=False)
+
+    def test_terminal_condition_invalid_parameter_value(self):
+        resource_name = random_suffix_name("vpc-ack-fail", 24)
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["VPC_NAME"] = resource_name
+        replacements["CIDR_BLOCK"] = "InvalidValue"
+
+        # Load VPC CR
+        resource_data = load_ec2_resource(
+            "vpc",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "InvalidParameterValue: Value (InvalidValue) for parameter cidrBlock is invalid. This is not a valid CIDR block."
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (InvalidParameterValue) when calling the CreateVpc operation:
+        # Value (dsfre) for parameter cidrBlock is invalid.
+        # This is not a valid CIDR block.
+        assert expected_msg in terminal_condition['message']

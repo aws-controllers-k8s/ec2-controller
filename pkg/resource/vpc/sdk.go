@@ -570,7 +570,7 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch awsErr.Code() {
-	case "InvalidParameterCombination":
+	case "InvalidParameterValue":
 		return true
 	default:
 		return false
