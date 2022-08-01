@@ -429,7 +429,7 @@ resources:
         404:
           code: InvalidVpcID.NotFound
       terminal_codes:
-        - InvalidParameterCombination
+        - InvalidParameterValue
     fields:
       EnableDNSSupport:
         from:
