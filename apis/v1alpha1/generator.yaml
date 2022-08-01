@@ -39,6 +39,9 @@ ignore:
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
     - RunInstancesInput.TagSpecifications
+    - SecurityGroupRule.GroupId
+    - SecurityGroupRule.GroupOwnerId
+    - SecurityGroupRule.ReferencedGroupInfo
     - TerminateInstancesInput.DryRun
   resource_names:
     - AccountAttribute
@@ -351,6 +354,17 @@ resources:
       # support EC2-VPC only
       Id:
         is_primary_key: true
+      IngressRules:
+        custom_field:
+          list_of: IpPermission
+      EgressRules:
+        custom_field:
+          list_of: IpPermission
+      Rules:
+        from:
+          operation: DescribeSecurityGroupRules
+          path: SecurityGroupRules
+        is_read_only: true
       Tags:
         from:
           operation: CreateTags
