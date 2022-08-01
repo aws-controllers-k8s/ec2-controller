@@ -3171,17 +3171,16 @@ type SecurityGroupReference struct {
 
 // Describes a security group rule.
 type SecurityGroupRule struct {
-	CIDRIPv4     *string `json:"cidrIPv4,omitempty"`
-	CIDRIPv6     *string `json:"cidrIPv6,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	FromPort     *int64  `json:"fromPort,omitempty"`
-	GroupID      *string `json:"groupID,omitempty"`
-	GroupOwnerID *string `json:"groupOwnerID,omitempty"`
-	IPProtocol   *string `json:"ipProtocol,omitempty"`
-	IsEgress     *bool   `json:"isEgress,omitempty"`
-	PrefixListID *string `json:"prefixListID,omitempty"`
-	Tags         []*Tag  `json:"tags,omitempty"`
-	ToPort       *int64  `json:"toPort,omitempty"`
+	CIDRIPv4            *string `json:"cidrIPv4,omitempty"`
+	CIDRIPv6            *string `json:"cidrIPv6,omitempty"`
+	Description         *string `json:"description,omitempty"`
+	FromPort            *int64  `json:"fromPort,omitempty"`
+	IPProtocol          *string `json:"ipProtocol,omitempty"`
+	IsEgress            *bool   `json:"isEgress,omitempty"`
+	PrefixListID        *string `json:"prefixListID,omitempty"`
+	SecurityGroupRuleID *string `json:"securityGroupRuleID,omitempty"`
+	Tags                []*Tag  `json:"tags,omitempty"`
+	ToPort              *int64  `json:"toPort,omitempty"`
 }
 
 // Describes the description of a security group rule.
@@ -3218,6 +3217,11 @@ type SecurityGroupRuleRequest struct {
 	PrefixListID      *string `json:"prefixListID,omitempty"`
 	ReferencedGroupID *string `json:"referencedGroupID,omitempty"`
 	ToPort            *int64  `json:"toPort,omitempty"`
+}
+
+// Describes an update to a security group rule.
+type SecurityGroupRuleUpdate struct {
+	SecurityGroupRuleID *string `json:"securityGroupRuleID,omitempty"`
 }
 
 // Describes a security group.

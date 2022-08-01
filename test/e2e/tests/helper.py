@@ -95,6 +95,15 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def get_security_group(self, sg_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_security_groups(GroupIds=[sg_id])
+            if len(aws_res["SecurityGroups"]) > 0:
+                return aws_res["SecurityGroups"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
     def get_subnet(self, subnet_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_subnets(SubnetIds=[subnet_id])
