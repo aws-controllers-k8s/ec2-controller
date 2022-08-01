@@ -397,6 +397,8 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/security_group/sdk_file_end.go.tpl
   Subnet:
     fields:
       RouteTables:
