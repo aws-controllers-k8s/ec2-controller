@@ -148,10 +148,14 @@ func (rm *resourceManager) syncSGRules(
 		}
 	}
 
-	if err = rm.createSecurityGroupRules(ctx, desired, toAddIngress, toAddEgress); err != nil {
+	// Delete before create for the following reasons:
+	// - Updating a rule requires that it be removed before the updated version be added.
+	// - If there is an error with adding new rules, it occurs after deletion of old ones;
+	//   This is safer and closer to achieving desired resource state.
+	if err = rm.deleteSecurityGroupRules(ctx, latest, toDeleteIngress, toDeleteEgress); err != nil {
 		return err
 	}
-	if err = rm.deleteSecurityGroupRules(ctx, latest, toDeleteIngress, toDeleteEgress); err != nil {
+	if err = rm.createSecurityGroupRules(ctx, desired, toAddIngress, toAddEgress); err != nil {
 		return err
 	}
 
