@@ -656,7 +656,6 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	}
 	switch awsErr.Code() {
 	case "InvalidVpcId.Malformed",
-		"InvalidVpcId.NotFound",
 		"InvalidServiceName":
 		return true
 	default:
