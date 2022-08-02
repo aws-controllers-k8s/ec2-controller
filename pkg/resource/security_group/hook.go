@@ -15,6 +15,7 @@ package security_group
 
 import (
 	"context"
+	"fmt"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 
@@ -27,9 +28,6 @@ func (rm *resourceManager) addRulesToSpec(
 	ko *svcapitypes.SecurityGroup,
 	resp *svcsdk.SecurityGroup,
 ) {
-	ko.Spec.IngressRules = nil
-	ko.Spec.EgressRules = nil
-
 	if resp.IpPermissions != nil {
 		specIngress := []*svcapitypes.IPPermission{}
 		for _, ip := range resp.IpPermissions {
@@ -50,7 +48,6 @@ func (rm *resourceManager) addRulesToStatus(
 	ko *svcapitypes.SecurityGroup,
 	ctx context.Context,
 ) (err error) {
-	ko.Status.Rules = nil
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.addRulesToStatus")
 	defer exit(err)
@@ -87,27 +84,21 @@ func (rm *resourceManager) addRulesToStatus(
 	return nil
 }
 
-func (rm *resourceManager) removeDefaultEgressRule(
-	ctx context.Context,
-	res *resource,
-) (err error) {
-	defaultEgressRule := &svcapitypes.IPPermission{
-		IPRanges:   []*svcapitypes.IPRange{{CIDRIP: toStrPtr("0.0.0.0/0")}},
-		FromPort:   toInt64Ptr(-1),
-		IPProtocol: toStrPtr("-1"),
-		ToPort:     toInt64Ptr(-1),
-	}
-	err = rm.deleteSecurityGroupRules(ctx, res, nil, []*svcapitypes.IPPermission{defaultEgressRule})
-	if err != nil {
-		return err
-	}
-	return rm.addRulesToStatus(res.ko, ctx)
-}
-
 func (rm *resourceManager) requiredFieldsMissingForSGRule(
 	r *resource,
 ) bool {
 	return r.ko.Status.ID == nil
+}
+
+func (rm *resourceManager) removeDefaultEgressRule(
+	ctx context.Context,
+	res *resource,
+) (err error) {
+	err = rm.deleteSecurityGroupRules(ctx, res, nil, []*svcapitypes.IPPermission{defaultEgressRule()})
+	if err != nil {
+		return err
+	}
+	return rm.addRulesToStatus(res.ko, ctx)
 }
 
 func (rm *resourceManager) syncSGRules(
@@ -148,6 +139,13 @@ func (rm *resourceManager) syncSGRules(
 		}
 	}
 
+	// remove default egress rule iff user defines their own
+	if len(toAddEgress) > 0 && !contains(toAddEgress, defaultEgressRule()) {
+		fmt.Printf("desired before remove Default egress rule: %+v\n", *desired)
+		rm.removeDefaultEgressRule(ctx, desired)
+		fmt.Printf("desired after remove Default egress rule: %+v\n", *desired)
+	}
+
 	// Delete before create for the following reasons:
 	// - Updating a rule requires that it be removed before the updated version be added.
 	// - If there is an error with adding new rules, it occurs after deletion of old ones;
@@ -155,10 +153,11 @@ func (rm *resourceManager) syncSGRules(
 	if err = rm.deleteSecurityGroupRules(ctx, latest, toDeleteIngress, toDeleteEgress); err != nil {
 		return err
 	}
+	fmt.Printf("desired after deleteSecurityGroupRules: %+v\n", *desired)
 	if err = rm.createSecurityGroupRules(ctx, desired, toAddIngress, toAddEgress); err != nil {
 		return err
 	}
-
+	fmt.Printf("desired after createSecurityGroupRules: %+v\n", *desired)
 	return nil
 }
 
@@ -294,6 +293,17 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	}
 
 	return latest, nil
+}
+
+// defaultEgressRule returns the egress rule that
+// is created and associated with a security group by default
+func defaultEgressRule() *svcapitypes.IPPermission {
+	return &svcapitypes.IPPermission{
+		IPRanges:   []*svcapitypes.IPRange{{CIDRIP: toStrPtr("0.0.0.0/0")}},
+		FromPort:   toInt64Ptr(-1),
+		IPProtocol: toStrPtr("-1"),
+		ToPort:     toInt64Ptr(-1),
+	}
 }
 
 // contains returns true if security group rule

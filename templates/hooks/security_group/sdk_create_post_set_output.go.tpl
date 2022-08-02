@@ -2,9 +2,6 @@
 	if rm.requiredFieldsMissingForSGRule(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
-	if err = rm.removeDefaultEgressRule(ctx, &resource{ko}); err != nil {
-		return nil, err
-	}
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
 		return nil, err
 	}

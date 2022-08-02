@@ -123,13 +123,12 @@ class TestSecurityGroup:
         test_resource_values["VPC_ID"] = vpc_id
         test_resource_values["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroupRule-create-delete"
         
-        # Create Security Group CR with ingress and egress rules
+        # Create Security Group CR with ingress rule
         test_resource_values["IP_PROTOCOL"] = "tcp"
         test_resource_values["FROM_PORT"] = "80"
         test_resource_values["TO_PORT"] = "80"
         test_resource_values["CIDR_IP"] = "172.31.0.0/16"
         test_resource_values["DESCRIPTION_INGRESS"] = "test ingress rule"
-        test_resource_values["DESCRIPTION_EGRESS"] = "test egress rule"
 
         # Load Security Group CR
         resource_data = load_ec2_resource(
@@ -161,19 +160,21 @@ class TestSecurityGroup:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_security_group(resource_id)
 
-        # Check ingress and egress rules added
+        # Check ingress rule added and default egress rule present
+        # default egress rule will be present iff user has NOT specified their own egress rules
+        print(f'resource: {resource}')
         assert len(resource["status"]["rules"]) == 2
         sg_group = ec2_validator.get_security_group(resource_id)
+        print(f'sg_group: {sg_group}')
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
         
-        # Check egress rule data (i.e. default egress rule removed)
-        assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
-        assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 80
-        assert sg_group["IpPermissionsEgress"][0]["ToPort"] == 80
-        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"] == "test egress rule"
+        # Check default egress rule data
+        print(f'sg_group: {sg_group}')
+        assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
+        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
 
-        # Update Egress rule
+        # Add Egress rule
         patch = {"spec": {"egressRules":[
                     {
                         "ipProtocol": "tcp",
@@ -187,11 +188,19 @@ class TestSecurityGroup:
                         ]
                     }
         ]}}
-        _ = k8s.patch_custom_resource(ref, patch)
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        patchResp = k8s.patch_custom_resource(ref, patch)
+        print(f'patchResp: {patchResp}')
+        # TODO?
+        # time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        time.sleep(15)
+
+        # Check resource gets into synced state
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # assert patched state
         resource = k8s.get_resource(ref)
+        print(f'ref: {ref}')
+        print(f'resource: {resource}')
         assert len(resource['status']['rules']) == 2
 
         # Check ingress and egress rules persist
@@ -200,7 +209,8 @@ class TestSecurityGroup:
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
         
-        # Check egress rule data updated
+        print(f'sg_group: {sg_group}')
+        # Check egress rule data (i.e. ensure default egress rule removed)
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
         assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 25
         assert sg_group["IpPermissionsEgress"][0]["ToPort"] == 25

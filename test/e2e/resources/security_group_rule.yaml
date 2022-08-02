@@ -13,10 +13,3 @@ spec:
       ipRanges:
         - cidrIP: $CIDR_IP
           description: $DESCRIPTION_INGRESS
-  egressRules:
-    - ipProtocol: $IP_PROTOCOL
-      fromPort: $FROM_PORT
-      toPort: $TO_PORT
-      ipRanges:
-        - cidrIP: $CIDR_IP
-          description: $DESCRIPTION_EGRESS
