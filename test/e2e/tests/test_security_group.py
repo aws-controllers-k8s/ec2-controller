@@ -149,9 +149,7 @@ class TestSecurityGroup:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
-        print(f'{ref}')
         resource = k8s.get_resource(ref)
-        print(f'{resource}')
         resource_id = resource["status"]["id"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -193,9 +191,7 @@ class TestSecurityGroup:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # assert patched state
-        print(f'{ref}')
         resource = k8s.get_resource(ref)
-        print(f'{resource}')
         assert len(resource['status']['rules']) == 2
 
         # Check ingress and egress rules persist
@@ -216,9 +212,7 @@ class TestSecurityGroup:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # assert patched state
-        print(f'{ref}')
         resource = k8s.get_resource(ref)
-        print(f'{resource}')
         assert len(resource['status']['rules']) == 1
 
         # Check ingress rule removed; egress rule remains
