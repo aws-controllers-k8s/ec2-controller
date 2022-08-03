@@ -477,7 +477,6 @@ resources:
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed
-        - InvalidVpcId.NotFound
         - InvalidServiceName
     hooks:
       sdk_create_post_build_request:
