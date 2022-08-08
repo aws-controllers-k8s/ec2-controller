@@ -23,6 +23,8 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// addRulesToSpec updates a resource's Spec EgressRules and IngressRules
+// using data from a DescribeSecurityGroups response
 func (rm *resourceManager) addRulesToSpec(
 	ko *svcapitypes.SecurityGroup,
 	resp *svcsdk.SecurityGroup,
@@ -43,6 +45,9 @@ func (rm *resourceManager) addRulesToSpec(
 	}
 }
 
+// addRulesToStatus updates a resource's Status Rules
+// by calling DescribeSecurityGroupRules and using data
+// from the response
 func (rm *resourceManager) addRulesToStatus(
 	ko *svcapitypes.SecurityGroup,
 	ctx context.Context,
@@ -89,17 +94,9 @@ func (rm *resourceManager) requiredFieldsMissingForSGRule(
 	return r.ko.Status.ID == nil
 }
 
-func (rm *resourceManager) removeDefaultEgressRule(
-	ctx context.Context,
-	res *resource,
-) (err error) {
-	err = rm.deleteSecurityGroupRules(ctx, res, nil, []*svcapitypes.IPPermission{defaultEgressRule()})
-	if err != nil {
-		return err
-	}
-	return rm.addRulesToStatus(res.ko, ctx)
-}
-
+// syncSGRules analyzes desired and latest (if any)
+// resources and executes API calls to Create/Delete
+// rules in order to achieve desired state.
 func (rm *resourceManager) syncSGRules(
 	ctx context.Context,
 	desired *resource,
@@ -114,25 +111,25 @@ func (rm *resourceManager) syncSGRules(
 	toDeleteEgress := []*svcapitypes.IPPermission{}
 
 	for _, desiredIngress := range desired.ko.Spec.IngressRules {
-		if latest == nil || !contains(latest.ko.Spec.IngressRules, desiredIngress) {
+		if latest == nil || !containsRule(latest.ko.Spec.IngressRules, desiredIngress) {
 			// a desired rule is not in the latest resource; therefore, create
 			toAddIngress = append(toAddIngress, desiredIngress)
 		}
 	}
 	for _, desiredEgress := range desired.ko.Spec.EgressRules {
-		if latest == nil || !contains(latest.ko.Spec.EgressRules, desiredEgress) {
+		if latest == nil || !containsRule(latest.ko.Spec.EgressRules, desiredEgress) {
 			toAddEgress = append(toAddEgress, desiredEgress)
 		}
 	}
 	if latest != nil {
 		for _, latestIngress := range latest.ko.Spec.IngressRules {
-			if !contains(desired.ko.Spec.IngressRules, latestIngress) {
+			if !containsRule(desired.ko.Spec.IngressRules, latestIngress) {
 				// a rule is in latest resource, but not in desired resource; therefore, delete
 				toDeleteIngress = append(toDeleteIngress, latestIngress)
 			}
 		}
 		for _, latestEgress := range latest.ko.Spec.EgressRules {
-			if !contains(desired.ko.Spec.EgressRules, latestEgress) {
+			if !containsRule(desired.ko.Spec.EgressRules, latestEgress) {
 				toDeleteEgress = append(toDeleteEgress, latestEgress)
 			}
 		}
@@ -174,6 +171,9 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }
 
+// createSecurityGroupRules takes a list of ingress and egress
+// rules and attaches them to a SecurityGroup resource via
+// AuthorizeSecurityGroup API calls
 func (rm *resourceManager) createSecurityGroupRules(
 	ctx context.Context,
 	r *resource,
@@ -217,6 +217,9 @@ func (rm *resourceManager) createSecurityGroupRules(
 	return err
 }
 
+// deleteSecurityGroupRules takes a list of ingress and egress
+// rules and removes them from a SecurityGroup resource via
+// RevokeSecurityGroup API calls
 func (rm *resourceManager) deleteSecurityGroupRules(
 	ctx context.Context,
 	r *resource,
@@ -259,6 +262,8 @@ func (rm *resourceManager) deleteSecurityGroupRules(
 	return err
 }
 
+// customUpdateSecurityGroup updates IngressRules and/or
+// EgressRules, if a delta be detected between resources.
 func (rm *resourceManager) customUpdateSecurityGroup(
 	ctx context.Context,
 	desired *resource,
@@ -285,21 +290,10 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	return latest, nil
 }
 
-// defaultEgressRule returns the egress rule that
-// is created and associated with a security group by default
-func defaultEgressRule() *svcapitypes.IPPermission {
-	return &svcapitypes.IPPermission{
-		IPRanges:   []*svcapitypes.IPRange{{CIDRIP: toStrPtr("0.0.0.0/0")}},
-		FromPort:   toInt64Ptr(-1),
-		IPProtocol: toStrPtr("-1"),
-		ToPort:     toInt64Ptr(-1),
-	}
-}
-
-// contains returns true if security group rule
+// containsRule returns true if security group rule
 // is found in the rule collection (all fields must match);
 // otherwise, return false.
-func contains(
+func containsRule(
 	ruleCollection []*svcapitypes.IPPermission,
 	rule *svcapitypes.IPPermission,
 ) bool {
@@ -314,10 +308,6 @@ func contains(
 		}
 	}
 	return false
-}
-
-func toBoolPtr(boolean bool) *bool {
-	return &boolean
 }
 
 func toStrPtr(str string) *string {
