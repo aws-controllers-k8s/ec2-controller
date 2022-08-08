@@ -153,8 +153,8 @@ class TestSecurityGroup:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check resource gets into synced state
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        # Check resource is late initialized successfully (sets default egress rule)
+        assert k8s.wait_on_condition(ref, "ACK.LateInitialized", "True", wait_periods=5)
 
         # Check Security Group exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -162,21 +162,17 @@ class TestSecurityGroup:
 
         # Check ingress rule added and default egress rule present
         # default egress rule will be present iff user has NOT specified their own egress rules
-        print(f'resource: {resource}')
         assert len(resource["status"]["rules"]) == 2
         sg_group = ec2_validator.get_security_group(resource_id)
-        print(f'sg_group: {sg_group}')
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
         
         # Check default egress rule data
-        print(f'sg_group: {sg_group}')
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
         assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
 
-        # Add Egress rule
-        patch = {"spec": {"egressRules":[
-                    {
+        # Add Egress rule via patch
+        new_egress_rule = {
                         "ipProtocol": "tcp",
                         "fromPort": 25,
                         "toPort": 25,
@@ -186,30 +182,21 @@ class TestSecurityGroup:
                                 "description": "test egress update"
                             }
                         ]
-                    }
-        ]}}
-        patchResp = k8s.patch_custom_resource(ref, patch)
-        print(f'patchResp: {patchResp}')
-        # TODO?
-        # time.sleep(CREATE_WAIT_AFTER_SECONDS)
-        time.sleep(15)
+        }
+        patch = {"spec": {"egressRules":[new_egress_rule]}}
+        _ = k8s.patch_custom_resource(ref, patch)
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resource gets into synced state
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        # assert patched state
-        resource = k8s.get_resource(ref)
-        print(f'ref: {ref}')
-        print(f'resource: {resource}')
-        assert len(resource['status']['rules']) == 2
-
-        # Check ingress and egress rules persist
+        # Check ingress and egress rules exist
         assert len(resource["status"]["rules"]) == 2
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
         
-        print(f'sg_group: {sg_group}')
         # Check egress rule data (i.e. ensure default egress rule removed)
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
         assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 25
