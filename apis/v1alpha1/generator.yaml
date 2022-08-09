@@ -398,8 +398,7 @@ resources:
           path: Status.VPCID
     exceptions:
       terminal_codes:
-        - InvalidVpcID.Malformed
-        - InvalidVpcID.NotFound
+        - InvalidParameterValue
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/subnet/sdk_create_post_build_request.go.tpl
