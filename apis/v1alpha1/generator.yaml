@@ -287,11 +287,6 @@ resources:
       sdk_create_post_build_request:
         template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
   RouteTable:
-    exceptions:
-      terminal_codes:
-        - InvalidVpcID.Malformed
-        - InvalidVpcID.NotFound
-        - InvalidParameterValue
     fields:
       # RouteStatuses as Route to ensure
       # fields set server-side (active, origin)
