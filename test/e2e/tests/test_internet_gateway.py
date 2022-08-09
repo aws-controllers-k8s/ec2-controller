@@ -182,35 +182,3 @@ class TestInternetGateway:
 
         # Check Internet Gateway no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)
-
-    def test_terminal_condition_malformed_vpc(self):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("ig-ack-fail-1", 24)
-        test_resource_values["INTERNET_GATEWAY_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = "MalformedVpcId"
-
-        # Load Internet Gateway CR
-        resource_data = load_ec2_resource(
-            "internet_gateway_vpc_attachment",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        expected_msg = 'InvalidVpcId.Malformed: Invalid id: "MalformedVpcId"'
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidVpcId.Malformed) when calling the AttachInternetGateway operation:
-        # Invalid id: "MalformedVpcId" 
-        # (expecting "vpc-...")
-        assert expected_msg in terminal_condition['message']
