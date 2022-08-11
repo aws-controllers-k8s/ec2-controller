@@ -239,9 +239,6 @@ resources:
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
   InternetGateway:
-    exceptions:
-      terminal_codes:
-      - InvalidVpcId.Malformed
     fields:
       Tags:
         from:
@@ -423,8 +420,7 @@ resources:
           path: Status.VPCID
     exceptions:
       terminal_codes:
-        - InvalidVpcID.Malformed
-        - InvalidVpcID.NotFound
+        - InvalidParameterValue
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/subnet/sdk_create_post_build_request.go.tpl
@@ -499,7 +495,6 @@ resources:
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed
-        - InvalidVpcId.NotFound
         - InvalidServiceName
     hooks:
       sdk_create_post_build_request:

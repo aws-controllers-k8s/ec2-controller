@@ -134,42 +134,6 @@ class TestSubnet:
         # Check Subnet no longer exists in AWS
         ec2_validator.assert_subnet(resource_id, exists=False)
 
-    def test_terminal_condition(self):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("subnet-fail", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_cidr = test_vpc.vpc_cidr_block
-
-        test_resource_values["SUBNET_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = "InvalidVpcId"
-        test_resource_values["CIDR_BLOCK"] = vpc_cidr
-
-        # Load Subnet CR
-        resource_data = load_ec2_resource(
-            "subnet",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        expected_msg = "InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        #   InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist
-        #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
-        # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
-        assert expected_msg in terminal_condition['message']
-
     def test_route_table_assocations(self, ec2_client, default_route_tables):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-test", 24)
@@ -232,3 +196,39 @@ class TestSubnet:
 
         # Check Subnet no longer exists in AWS
         ec2_validator.assert_subnet(resource_id, exists=False)
+
+    def test_terminal_condition_invalid_parameter_value(self):
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("subnet-fail", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        vpc_id = test_vpc.vpc_id
+
+        test_resource_values["SUBNET_NAME"] = resource_name
+        test_resource_values["CIDR_BLOCK"] = "InvalidCidrBlock"
+        test_resource_values["VPC_ID"] = vpc_id
+
+        # Load Subnet CR
+        resource_data = load_ec2_resource(
+            "subnet",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "InvalidParameterValue: Value (InvalidCidrBlock) for parameter cidrBlock is invalid. This is not a valid CIDR block."
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (InvalidParameterValue) when calling the CreateSubnet operation:
+        # Value (InvalidCidrBlock) for parameter cidrBlock is invalid.
+        # This is not a valid CIDR block.
+        assert expected_msg in terminal_condition['message']
