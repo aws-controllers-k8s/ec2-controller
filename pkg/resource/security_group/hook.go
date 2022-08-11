@@ -29,6 +29,13 @@ func (rm *resourceManager) addRulesToSpec(
 	ko *svcapitypes.SecurityGroup,
 	resp *svcsdk.SecurityGroup,
 ) {
+	// if there are no rules to add to Spec, then
+	// set Spec rules to nil to align with latest state;
+	// otherwise, data from an older version of the
+	// resource will persist.
+	ko.Spec.IngressRules = nil
+	ko.Spec.EgressRules = nil
+
 	if resp.IpPermissions != nil {
 		specIngress := []*svcapitypes.IPPermission{}
 		for _, ip := range resp.IpPermissions {
@@ -105,6 +112,7 @@ func (rm *resourceManager) syncSGRules(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncSGRules")
 	defer exit(err)
+
 	toAddIngress := []*svcapitypes.IPPermission{}
 	toAddEgress := []*svcapitypes.IPPermission{}
 	toDeleteIngress := []*svcapitypes.IPPermission{}
@@ -145,6 +153,10 @@ func (rm *resourceManager) syncSGRules(
 	if err = rm.createSecurityGroupRules(ctx, desired, toAddIngress, toAddEgress); err != nil {
 		return err
 	}
+	if err = rm.addRulesToStatus(desired.ko, ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -217,6 +229,40 @@ func (rm *resourceManager) createSecurityGroupRules(
 	return err
 }
 
+// deleteDefaultSecurityGroupRule deletes the default
+// egress rule that is attached to a SecurityGroup upon creation.
+// The rule is set explicitly (without helpers); otherwise, the quotes
+// around IpProtocol value will not be set properly
+func (rm *resourceManager) deleteDefaultSecurityGroupRule(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteDefaultSecurityGroupRule")
+	defer exit(err)
+
+	ipRange := &svcsdk.IpRange{
+		CidrIp: toStrPtr("0.0.0.0/0"),
+	}
+	input := &svcsdk.IpPermission{
+		FromPort:   toInt64Ptr(-1),
+		ToPort:     toInt64Ptr(-1),
+		IpProtocol: toStrPtr("-1"),
+		IpRanges:   []*svcsdk.IpRange{ipRange},
+	}
+	req := &svcsdk.RevokeSecurityGroupEgressInput{
+		GroupId:       r.ko.Status.ID,
+		IpPermissions: []*svcsdk.IpPermission{input},
+	}
+	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, req)
+	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 // deleteSecurityGroupRules takes a list of ingress and egress
 // rules and removes them from a SecurityGroup resource via
 // RevokeSecurityGroup API calls
@@ -273,7 +319,6 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateSecurityGroup")
 	defer exit(err)
-
 	ko := desired.ko.DeepCopy()
 	rm.setStatusDefaults(ko)
 
@@ -281,13 +326,21 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 		if err := rm.syncSGRules(ctx, desired, latest); err != nil {
 			return nil, err
 		}
-		latest, err = rm.sdkFind(ctx, latest)
-		if err != nil {
-			return nil, err
-		}
 	}
 
-	return latest, nil
+	return desired, nil
+}
+
+// defaultEgressRule returns the egress rule that
+// is created and associated with a security group by default
+func (rm *resourceManager) defaultEgressRule() *svcapitypes.IPPermission {
+	defaultRule := &svcapitypes.IPPermission{
+		IPRanges:   []*svcapitypes.IPRange{{CIDRIP: toStrPtr("0.0.0.0/0")}},
+		FromPort:   toInt64Ptr(-1),
+		IPProtocol: toStrPtr("-1"),
+		ToPort:     toInt64Ptr(-1),
+	}
+	return defaultRule
 }
 
 // containsRule returns true if security group rule

@@ -360,8 +360,6 @@ resources:
       EgressRules:
         custom_field:
           list_of: IpPermission
-        # a default egress rule is always created with SecurityGroup
-        late_initialize: {}
       Rules:
         from:
           operation: DescribeSecurityGroupRules

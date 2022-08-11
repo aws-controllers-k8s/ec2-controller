@@ -160,6 +160,10 @@ class TestSecurityGroup:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_security_group(resource_id)
 
+        # Hook code should update Spec rules using data from ReadOne resp
+        assert len(resource["spec"]["ingressRules"]) == 1
+        assert len(resource["spec"]["egressRules"]) == 1
+
         # Check ingress rule added and default egress rule present
         # default egress rule will be present iff user has NOT specified their own egress rules
         assert len(resource["status"]["rules"]) == 2
