@@ -154,7 +154,7 @@ class TestSecurityGroup:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resource is late initialized successfully (sets default egress rule)
-        assert k8s.wait_on_condition(ref, "ACK.LateInitialized", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check Security Group exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -166,7 +166,7 @@ class TestSecurityGroup:
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
-        
+
         # Check default egress rule data
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
         assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
