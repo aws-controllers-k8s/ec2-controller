@@ -193,24 +193,8 @@ resources:
   ElasticIPAddress:
     exceptions:
       terminal_codes:
-      - IdempotentParameterMismatch
-      - InvalidAction
-      - InvalidCharacter
-      - InvalidClientTokenId
-      - InvalidPaginationToken
-      - InvalidParameter
       - InvalidParameterCombination
       - InvalidParameterValue
-      - InvalidQueryParameter
-      - MalformedQueryString
-      - MissingAction
-      - MissingAuthenticationToken
-      - MissingParameter
-      - UnknownParameter
-      - UnsupportedInstanceAttribute
-      - UnsupportedOperation
-      - UnsupportedProtocol
-      - ValidationError
     fields:
       AllocationId:
         is_primary_key: true

@@ -53,6 +53,7 @@ class TestElasticIPAddress:
         resource_name = random_suffix_name("elastic-ip-ack-test", 24)
         replacements = REPLACEMENT_VALUES.copy()
         replacements["ADDRESS_NAME"] = resource_name
+        replacements["PUBLIC_IPV4_POOL"] = "amazon"
 
         # Load ElasticIPAddress CR
         resource_data = load_ec2_resource(
@@ -90,3 +91,66 @@ class TestElasticIPAddress:
         # Check Address doesn't exist
         exists = address_exists(ec2_client, resource_id)
         assert not exists
+        
+    def test_terminal_condition_invalid_parameter_value(self):
+        resource_name = random_suffix_name("elastic-ip-ack-fail-1", 24)
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        test_resource_values["ADDRESS_NAME"] = resource_name
+        test_resource_values["PUBLIC_IPV4_POOL"] = "InvalidIpV4Address"
+
+        # Load ElasticIPAddress CR
+        resource_data = load_ec2_resource(
+            "elastic_ip_address",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "InvalidParameterValue: invalid value for parameter pool: InvalidIpV4Address"
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (InvalidParameterValue) when calling the AllocateAddress operation:
+        # invalid value for parameter pool: InvalidIpV4Address
+        assert expected_msg in terminal_condition['message']
+
+    def test_terminal_condition_invalid_parameter_combination(self):
+        resource_name = random_suffix_name("elastic-ip-ack-fail-2", 24)
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        test_resource_values["ADDRESS_NAME"] = resource_name
+        test_resource_values["PUBLIC_IPV4_POOL"] = "amazon"
+        test_resource_values["ADDRESS"] = "52.27.68.220"
+
+        # Load ElasticIPAddress CR
+        resource_data = load_ec2_resource(
+            "invalid/elastic_ip_invalid_combination",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        expected_msg = "InvalidParameterCombination: The parameter PublicIpv4Pool cannot be used with the parameter Address"
+        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
+        # Example condition message:
+        # An error occurred (InvalidParameterCombination) when calling the AllocateAddress operation:
+        # The parameter PublicIpv4Pool cannot be used with the parameter Address
+        assert expected_msg in terminal_condition['message']

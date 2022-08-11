@@ -5,3 +5,4 @@ metadata:
 spec:
   domain: vpc
   publicIPv4Pool: $PUBLIC_IPV4_POOL
+  address: $ADDRESS
