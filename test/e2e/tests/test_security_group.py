@@ -112,3 +112,122 @@ class TestSecurityGroup:
         #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
         # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
         assert expected_msg in terminal_condition['message']
+
+    def test_rules_create_update_delete(self, ec2_client):
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("sec-group-rules", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        vpc_id = test_vpc.vpc_id
+
+        test_resource_values["SECURITY_GROUP_NAME"] = resource_name
+        test_resource_values["VPC_ID"] = vpc_id
+        test_resource_values["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroupRule-create-delete"
+        
+        # Create Security Group CR with ingress rule
+        test_resource_values["IP_PROTOCOL"] = "tcp"
+        test_resource_values["FROM_PORT"] = "80"
+        test_resource_values["TO_PORT"] = "80"
+        test_resource_values["CIDR_IP"] = "172.31.0.0/16"
+        test_resource_values["DESCRIPTION_INGRESS"] = "test ingress rule"
+
+        # Load Security Group CR
+        resource_data = load_ec2_resource(
+            "security_group_rule",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        resource = k8s.get_resource(ref)
+        resource_id = resource["status"]["id"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check resource is late initialized successfully (sets default egress rule)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check Security Group exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_security_group(resource_id)
+
+        # Hook code should update Spec rules using data from ReadOne resp
+        assert len(resource["spec"]["ingressRules"]) == 1
+        assert len(resource["spec"]["egressRules"]) == 1
+
+        # Check ingress rule added and default egress rule present
+        # default egress rule will be present iff user has NOT specified their own egress rules
+        assert len(resource["status"]["rules"]) == 2
+        sg_group = ec2_validator.get_security_group(resource_id)
+        assert len(sg_group["IpPermissions"]) == 1
+        assert len(sg_group["IpPermissionsEgress"]) == 1
+
+        # Check default egress rule data
+        assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
+        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
+
+        # Add Egress rule via patch
+        new_egress_rule = {
+                        "ipProtocol": "tcp",
+                        "fromPort": 25,
+                        "toPort": 25,
+                        "ipRanges": [
+                            {
+                                "cidrIP": "172.31.0.0/16",
+                                "description": "test egress update"
+                            }
+                        ]
+        }
+        patch = {"spec": {"egressRules":[new_egress_rule]}}
+        _ = k8s.patch_custom_resource(ref, patch)
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check resource gets into synced state
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check ingress and egress rules exist
+        assert len(resource["status"]["rules"]) == 2
+        sg_group = ec2_validator.get_security_group(resource_id)
+        assert len(sg_group["IpPermissions"]) == 1
+        assert len(sg_group["IpPermissionsEgress"]) == 1
+        
+        # Check egress rule data (i.e. ensure default egress rule removed)
+        assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
+        assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 25
+        assert sg_group["IpPermissionsEgress"][0]["ToPort"] == 25
+        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"] == "test egress update"
+
+        # Remove Ingress rule
+        patch = {"spec": {"ingressRules":[]}}
+        _ = k8s.patch_custom_resource(ref, patch)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # assert patched state
+        resource = k8s.get_resource(ref)
+        assert len(resource['status']['rules']) == 1
+
+        # Check ingress rule removed; egress rule remains
+        assert len(resource["status"]["rules"]) == 1
+        sg_group = ec2_validator.get_security_group(resource_id)
+        assert len(sg_group["IpPermissions"]) == 0
+        assert len(sg_group["IpPermissionsEgress"]) == 1
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Security Group no longer exists in AWS
+        # Deleting Security Group will also delete rules
+        ec2_validator.assert_security_group(resource_id, exists=False)
