@@ -37,6 +37,7 @@ def standard_elastic_address():
 
     replacements = REPLACEMENT_VALUES.copy()
     replacements["ADDRESS_NAME"] = cluster_name
+    replacements["PUBLIC_IPV4_POOL"] = "amazon"
 
     resource_data = load_ec2_resource(
         "elastic_ip_address",
