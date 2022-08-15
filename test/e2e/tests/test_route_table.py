@@ -83,39 +83,6 @@ class TestRouteTable:
         # Check Route Table no longer exists in AWS
         ec2_validator.assert_route_table(resource_id, exists=False)
 
-
-    def test_terminal_condition(self):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("route-table-fail", 24)
-        test_resource_values["ROUTE_TABLE_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = "InvalidVpcId"
-
-        # Load RouteTable CR
-        resource_data = load_ec2_resource(
-            "route_table",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        expected_msg = "InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        #   InvalidVpcID.NotFound: The vpc ID 'InvalidVpcId' does not exist
-        #   status code: 400, request id: 5801fc80-67cf-465f-8b83-5e02d517d554
-        # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
-        assert expected_msg in terminal_condition['message']
-
     def test_crud_route(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("route-table-test", 24)

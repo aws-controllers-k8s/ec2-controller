@@ -33,6 +33,10 @@ type SecurityGroupSpec struct {
 	// Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
 	// +kubebuilder:validation:Required
 	Description *string `json:"description"`
+
+	EgressRules []*IPPermission `json:"egressRules,omitempty"`
+
+	IngressRules []*IPPermission `json:"ingressRules,omitempty"`
 	// The name of the security group.
 	//
 	// Constraints: Up to 255 characters in length. Cannot start with sg-.
@@ -67,6 +71,9 @@ type SecurityGroupStatus struct {
 	// The ID of the security group.
 	// +kubebuilder:validation:Optional
 	ID *string `json:"id,omitempty"`
+	// Information about security group rules.
+	// +kubebuilder:validation:Optional
+	Rules []*SecurityGroupRule `json:"rules,omitempty"`
 }
 
 // SecurityGroup is the Schema for the SecurityGroups API
