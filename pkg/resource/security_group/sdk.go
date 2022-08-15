@@ -122,6 +122,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	if found {
+		rm.addRulesToSpec(ko, resp.SecurityGroups[0])
+		rm.addRulesToStatus(ko, ctx)
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -203,6 +209,24 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	if rm.requiredFieldsMissingForSGRule(&resource{ko}) {
+		return nil, ackerr.NotFound
+	}
+	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
+		return nil, err
+	}
+	// if user defines any egress rule, then remove the default
+	// egress rule; otherwise, add default rule Spec to align with
+	// resource's server-side state (i.e. Status.Rules)
+	if len(desired.ko.Spec.EgressRules) > 0 {
+		if err = rm.deleteDefaultSecurityGroupRule(ctx, &resource{ko}); err != nil {
+			return nil, err
+		}
+	} else {
+		ko.Spec.EgressRules = append(ko.Spec.EgressRules, rm.defaultEgressRule())
+	}
+	rm.addRulesToStatus(ko, ctx)
 	return &resource{ko}, nil
 }
 
@@ -235,8 +259,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateSecurityGroup(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -388,4 +411,278 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	default:
 		return false
 	}
+}
+
+func compareIPPermission(
+	a *svcapitypes.IPPermission,
+	b *svcapitypes.IPPermission,
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+	if ackcompare.HasNilDifference(a.FromPort, b.FromPort) {
+		delta.Add("IPPermission.FromPort", a.FromPort, b.FromPort)
+	} else if a.FromPort != nil && b.FromPort != nil {
+		if *a.FromPort != *b.FromPort {
+			delta.Add("IPPermission.FromPort", a.FromPort, b.FromPort)
+		}
+	}
+	if ackcompare.HasNilDifference(a.IPProtocol, b.IPProtocol) {
+		delta.Add("IPPermission.IPProtocol", a.IPProtocol, b.IPProtocol)
+	} else if a.IPProtocol != nil && b.IPProtocol != nil {
+		if *a.IPProtocol != *b.IPProtocol {
+			delta.Add("IPPermission.IPProtocol", a.IPProtocol, b.IPProtocol)
+		}
+	}
+	if !reflect.DeepEqual(a.IPRanges, b.IPRanges) {
+		delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
+	}
+	if !reflect.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
+		delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
+	}
+	if !reflect.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
+		delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
+	}
+	if ackcompare.HasNilDifference(a.ToPort, b.ToPort) {
+		delta.Add("IPPermission.ToPort", a.ToPort, b.ToPort)
+	} else if a.ToPort != nil && b.ToPort != nil {
+		if *a.ToPort != *b.ToPort {
+			delta.Add("IPPermission.ToPort", a.ToPort, b.ToPort)
+		}
+	}
+	if !reflect.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
+		delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
+	}
+
+	return delta
+}
+
+func (rm *resourceManager) newIPPermission(
+	c svcapitypes.IPPermission,
+) *svcsdk.IpPermission {
+	res := &svcsdk.IpPermission{}
+
+	if c.FromPort != nil {
+		res.SetFromPort(*c.FromPort)
+	}
+	if c.IPProtocol != nil {
+		res.SetIpProtocol(*c.IPProtocol)
+	}
+	if c.IPRanges != nil {
+		resf2 := []*svcsdk.IpRange{}
+		for _, resf2iter := range c.IPRanges {
+			resf2elem := &svcsdk.IpRange{}
+			if resf2iter.CIDRIP != nil {
+				resf2elem.SetCidrIp(*resf2iter.CIDRIP)
+			}
+			if resf2iter.Description != nil {
+				resf2elem.SetDescription(*resf2iter.Description)
+			}
+			resf2 = append(resf2, resf2elem)
+		}
+		res.SetIpRanges(resf2)
+	}
+	if c.IPv6Ranges != nil {
+		resf3 := []*svcsdk.Ipv6Range{}
+		for _, resf3iter := range c.IPv6Ranges {
+			resf3elem := &svcsdk.Ipv6Range{}
+			if resf3iter.CIDRIPv6 != nil {
+				resf3elem.SetCidrIpv6(*resf3iter.CIDRIPv6)
+			}
+			if resf3iter.Description != nil {
+				resf3elem.SetDescription(*resf3iter.Description)
+			}
+			resf3 = append(resf3, resf3elem)
+		}
+		res.SetIpv6Ranges(resf3)
+	}
+	if c.PrefixListIDs != nil {
+		resf4 := []*svcsdk.PrefixListId{}
+		for _, resf4iter := range c.PrefixListIDs {
+			resf4elem := &svcsdk.PrefixListId{}
+			if resf4iter.Description != nil {
+				resf4elem.SetDescription(*resf4iter.Description)
+			}
+			if resf4iter.PrefixListID != nil {
+				resf4elem.SetPrefixListId(*resf4iter.PrefixListID)
+			}
+			resf4 = append(resf4, resf4elem)
+		}
+		res.SetPrefixListIds(resf4)
+	}
+	if c.ToPort != nil {
+		res.SetToPort(*c.ToPort)
+	}
+	if c.UserIDGroupPairs != nil {
+		resf6 := []*svcsdk.UserIdGroupPair{}
+		for _, resf6iter := range c.UserIDGroupPairs {
+			resf6elem := &svcsdk.UserIdGroupPair{}
+			if resf6iter.Description != nil {
+				resf6elem.SetDescription(*resf6iter.Description)
+			}
+			if resf6iter.GroupID != nil {
+				resf6elem.SetGroupId(*resf6iter.GroupID)
+			}
+			if resf6iter.GroupName != nil {
+				resf6elem.SetGroupName(*resf6iter.GroupName)
+			}
+			if resf6iter.PeeringStatus != nil {
+				resf6elem.SetPeeringStatus(*resf6iter.PeeringStatus)
+			}
+			if resf6iter.UserID != nil {
+				resf6elem.SetUserId(*resf6iter.UserID)
+			}
+			if resf6iter.VPCID != nil {
+				resf6elem.SetVpcId(*resf6iter.VPCID)
+			}
+			if resf6iter.VPCPeeringConnectionID != nil {
+				resf6elem.SetVpcPeeringConnectionId(*resf6iter.VPCPeeringConnectionID)
+			}
+			resf6 = append(resf6, resf6elem)
+		}
+		res.SetUserIdGroupPairs(resf6)
+	}
+
+	return res
+}
+
+// setSecurityGroupRule sets a resource SecurityGroupRule type
+// given the SDK type.
+func (rm *resourceManager) setResourceSecurityGroupRule(
+	resp *svcsdk.SecurityGroupRule,
+) *svcapitypes.SecurityGroupRule {
+	res := &svcapitypes.SecurityGroupRule{}
+
+	if resp.CidrIpv4 != nil {
+		res.CIDRIPv4 = resp.CidrIpv4
+	}
+	if resp.CidrIpv6 != nil {
+		res.CIDRIPv6 = resp.CidrIpv6
+	}
+	if resp.Description != nil {
+		res.Description = resp.Description
+	}
+	if resp.FromPort != nil {
+		res.FromPort = resp.FromPort
+	}
+	if resp.IpProtocol != nil {
+		res.IPProtocol = resp.IpProtocol
+	}
+	if resp.IsEgress != nil {
+		res.IsEgress = resp.IsEgress
+	}
+	if resp.PrefixListId != nil {
+		res.PrefixListID = resp.PrefixListId
+	}
+	if resp.SecurityGroupRuleId != nil {
+		res.SecurityGroupRuleID = resp.SecurityGroupRuleId
+	}
+	if resp.Tags != nil {
+		resf8 := []*svcapitypes.Tag{}
+		for _, resf8iter := range resp.Tags {
+			resf8elem := &svcapitypes.Tag{}
+			if resf8iter.Key != nil {
+				resf8elem.Key = resf8iter.Key
+			}
+			if resf8iter.Value != nil {
+				resf8elem.Value = resf8iter.Value
+			}
+			resf8 = append(resf8, resf8elem)
+		}
+		res.Tags = resf8
+	}
+	if resp.ToPort != nil {
+		res.ToPort = resp.ToPort
+	}
+
+	return res
+}
+
+// setIPPermission sets a resource IPPermission type
+// given the SDK type.
+func (rm *resourceManager) setResourceIPPermission(
+	resp *svcsdk.IpPermission,
+) *svcapitypes.IPPermission {
+	res := &svcapitypes.IPPermission{}
+
+	if resp.FromPort != nil {
+		res.FromPort = resp.FromPort
+	}
+	if resp.IpProtocol != nil {
+		res.IPProtocol = resp.IpProtocol
+	}
+	if resp.IpRanges != nil {
+		resf2 := []*svcapitypes.IPRange{}
+		for _, resf2iter := range resp.IpRanges {
+			resf2elem := &svcapitypes.IPRange{}
+			if resf2iter.CidrIp != nil {
+				resf2elem.CIDRIP = resf2iter.CidrIp
+			}
+			if resf2iter.Description != nil {
+				resf2elem.Description = resf2iter.Description
+			}
+			resf2 = append(resf2, resf2elem)
+		}
+		res.IPRanges = resf2
+	}
+	if resp.Ipv6Ranges != nil {
+		resf3 := []*svcapitypes.IPv6Range{}
+		for _, resf3iter := range resp.Ipv6Ranges {
+			resf3elem := &svcapitypes.IPv6Range{}
+			if resf3iter.CidrIpv6 != nil {
+				resf3elem.CIDRIPv6 = resf3iter.CidrIpv6
+			}
+			if resf3iter.Description != nil {
+				resf3elem.Description = resf3iter.Description
+			}
+			resf3 = append(resf3, resf3elem)
+		}
+		res.IPv6Ranges = resf3
+	}
+	if resp.PrefixListIds != nil {
+		resf4 := []*svcapitypes.PrefixListID{}
+		for _, resf4iter := range resp.PrefixListIds {
+			resf4elem := &svcapitypes.PrefixListID{}
+			if resf4iter.Description != nil {
+				resf4elem.Description = resf4iter.Description
+			}
+			if resf4iter.PrefixListId != nil {
+				resf4elem.PrefixListID = resf4iter.PrefixListId
+			}
+			resf4 = append(resf4, resf4elem)
+		}
+		res.PrefixListIDs = resf4
+	}
+	if resp.ToPort != nil {
+		res.ToPort = resp.ToPort
+	}
+	if resp.UserIdGroupPairs != nil {
+		resf6 := []*svcapitypes.UserIDGroupPair{}
+		for _, resf6iter := range resp.UserIdGroupPairs {
+			resf6elem := &svcapitypes.UserIDGroupPair{}
+			if resf6iter.Description != nil {
+				resf6elem.Description = resf6iter.Description
+			}
+			if resf6iter.GroupId != nil {
+				resf6elem.GroupID = resf6iter.GroupId
+			}
+			if resf6iter.GroupName != nil {
+				resf6elem.GroupName = resf6iter.GroupName
+			}
+			if resf6iter.PeeringStatus != nil {
+				resf6elem.PeeringStatus = resf6iter.PeeringStatus
+			}
+			if resf6iter.UserId != nil {
+				resf6elem.UserID = resf6iter.UserId
+			}
+			if resf6iter.VpcId != nil {
+				resf6elem.VPCID = resf6iter.VpcId
+			}
+			if resf6iter.VpcPeeringConnectionId != nil {
+				resf6elem.VPCPeeringConnectionID = resf6iter.VpcPeeringConnectionId
+			}
+			resf6 = append(resf6, resf6elem)
+		}
+		res.UserIDGroupPairs = resf6
+	}
+
+	return res
 }

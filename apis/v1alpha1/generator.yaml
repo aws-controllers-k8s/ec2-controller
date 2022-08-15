@@ -39,6 +39,9 @@ ignore:
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
     - RunInstancesInput.TagSpecifications
+    - SecurityGroupRule.GroupId
+    - SecurityGroupRule.GroupOwnerId
+    - SecurityGroupRule.ReferencedGroupInfo
     - TerminateInstancesInput.DryRun
   resource_names:
     - AccountAttribute
@@ -271,11 +274,6 @@ resources:
       sdk_create_post_build_request:
         template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
   RouteTable:
-    exceptions:
-      terminal_codes:
-        - InvalidVpcID.Malformed
-        - InvalidVpcID.NotFound
-        - InvalidParameterValue
     fields:
       # RouteStatuses as Route to ensure
       # fields set server-side (active, origin)
@@ -332,6 +330,17 @@ resources:
       # support EC2-VPC only
       Id:
         is_primary_key: true
+      IngressRules:
+        custom_field:
+          list_of: IpPermission
+      EgressRules:
+        custom_field:
+          list_of: IpPermission
+      Rules:
+        from:
+          operation: DescribeSecurityGroupRules
+          path: SecurityGroupRules
+        is_read_only: true
       Tags:
         from:
           operation: CreateTags
@@ -364,6 +373,14 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/security_group/sdk_file_end.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/security_group/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/security_group/sdk_read_many_post_set_output.go.tpl
+    update_operation:
+      custom_method_name: customUpdateSecurityGroup
   Subnet:
     fields:
       RouteTables:
