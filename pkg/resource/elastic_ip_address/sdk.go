@@ -444,24 +444,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch awsErr.Code() {
-	case "IdempotentParameterMismatch",
-		"InvalidAction",
-		"InvalidCharacter",
-		"InvalidClientTokenId",
-		"InvalidPaginationToken",
-		"InvalidParameter",
-		"InvalidParameterCombination",
-		"InvalidParameterValue",
-		"InvalidQueryParameter",
-		"MalformedQueryString",
-		"MissingAction",
-		"MissingAuthenticationToken",
-		"MissingParameter",
-		"UnknownParameter",
-		"UnsupportedInstanceAttribute",
-		"UnsupportedOperation",
-		"UnsupportedProtocol",
-		"ValidationError":
+	case "InvalidParameterCombination",
+		"InvalidParameterValue":
 		return true
 	default:
 		return false
