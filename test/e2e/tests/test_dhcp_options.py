@@ -30,40 +30,62 @@ DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
+@pytest.fixture
+def simple_dhcp_options(request):
+    replacements = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("dhcp-opts-test", 24)
+
+    replacements["DHCP_OPTIONS_NAME"] = resource_name
+    replacements["DHCP_KEY_1"] = "domain-name"
+    replacements["DHCP_VAL_1"] = "ack-example.com"
+    replacements["DHCP_KEY_2"] = "domain-name-servers"
+    replacements["DHCP_VAL_2_1"] = "10.2.5.1"
+    replacements["DHCP_VAL_2_2"] = "10.2.5.2"
+
+    marker = request.node.get_closest_marker("dhcp_options_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'dhcp_key_1' in data:
+            replacements["DHCP_KEY_1"] = data['dhcp_key_1']
+
+
+    # Load DHCP Options CR
+    resource_data = load_ec2_resource(
+        "dhcp_options",
+        additional_replacements=replacements,
+    )
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    # Get latest DHCP Options CR
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestDhcpOptions:
-    def test_create_delete(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("dhcp-opts-test", 24)
+    def test_create_delete(self, ec2_client, simple_dhcp_options):
+        (ref, cr) = simple_dhcp_options
 
-        test_resource_values["DHCP_OPTIONS_NAME"] = resource_name
-        test_resource_values["DHCP_KEY_1"] = "domain-name"
-        test_resource_values["DHCP_VAL_1"] = "ack-example.com"
-        test_resource_values["DHCP_KEY_2"] = "domain-name-servers"
-        test_resource_values["DHCP_VAL_2_1"] = "10.2.5.1"
-        test_resource_values["DHCP_VAL_2_2"] = "10.2.5.2"
-
-        # Load DHCP Options CR
-        resource_data = load_ec2_resource(
-            "dhcp_options",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["dhcpOptionsID"]
+        resource_id = cr["status"]["dhcpOptionsID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
@@ -80,34 +102,9 @@ class TestDhcpOptions:
         # Check DHCP Options no longer exists in AWS
         ec2_validator.assert_dhcp_options(resource_id, exists=False)
 
-    def test_terminal_condition_invalid_parameter_value(self):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("dhcp-opts-fail", 24)
-
-        test_resource_values["DHCP_OPTIONS_NAME"] = resource_name
-        test_resource_values["DHCP_KEY_1"] = "InvalidValue"
-        test_resource_values["DHCP_VAL_1"] = "ack-example.com"
-        test_resource_values["DHCP_KEY_2"] = "domain-name-servers"
-        test_resource_values["DHCP_VAL_2_1"] = "10.2.5.1"
-        test_resource_values["DHCP_VAL_2_2"] = "10.2.5.2"
-
-        # Load DHCP Options CR
-        resource_data = load_ec2_resource(
-            "dhcp_options",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
+    @pytest.mark.dhcp_options_data({'dhcp_key_1': 'InvalidValue'})
+    def test_terminal_condition_invalid_parameter_value(self, simple_dhcp_options):
+        (ref, _) = simple_dhcp_options
 
         expected_msg = "InvalidParameterValue: Value (InvalidValue) for parameter name is invalid. Unknown DHCP option"
         terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
