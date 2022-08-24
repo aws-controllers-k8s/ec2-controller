@@ -29,6 +29,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: mark test as slow to run"
     )
+    config.addinivalue_line(
+        "markers", "vpc_data: mark test with data to pass to vpc fixture"
+    )
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--runslow"):

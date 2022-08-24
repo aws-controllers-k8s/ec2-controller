@@ -41,35 +41,60 @@ def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
     attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsHostnames')
     return attribute['EnableDnsHostnames']['Value']
 
+@pytest.fixture
+def simple_vpc(request):
+    resource_name = random_suffix_name("vpc-ack-test", 24)
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_NAME"] = resource_name
+    replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+    replacements["ENABLE_DNS_SUPPORT"] = "False"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+
+    marker = request.node.get_closest_marker("vpc_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'cidr_block' in data:
+            replacements["CIDR_BLOCK"] = data['cidr_block']
+        if 'enable_dns_support' in data:
+            replacements["ENABLE_DNS_SUPPORT"] = data['enable_dns_support']
+        if 'enable_dns_hostnames' in data:
+            replacements["ENABLE_DNS_HOSTNAMES"] = data['enable_dns_hostnames']
+
+    # Load VPC CR
+    resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestVpc:
-    def test_create_delete(self, ec2_client):
-        resource_name = random_suffix_name("vpc-ack-test", 24)
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["VPC_NAME"] = resource_name
-        replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+    def test_create_delete(self, ec2_client, simple_vpc):
+        (ref, cr) = simple_vpc
 
-        # Load VPC CR
-        resource_data = load_ec2_resource(
-            "vpc",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["vpcID"]
+        resource_id = cr["status"]["vpcID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
@@ -86,34 +111,10 @@ class TestVpc:
         # Check VPC no longer exists in AWS
         ec2_validator.assert_vpc(resource_id, exists=False)
 
-    def test_enable_attributes(self, ec2_client):
-        resource_name = random_suffix_name("vpc-ack-test", 24)
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["VPC_NAME"] = resource_name
-        replacements["CIDR_BLOCK"] = "10.0.0.0/16"
-        replacements["ENABLE_DNS_SUPPORT"] = "True"
-        replacements["ENABLE_DNS_HOSTNAMES"] = "True"
-
-        # Load VPC CR
-        resource_data = load_ec2_resource(
-            "vpc",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["vpcID"]
+    @pytest.mark.vpc_data({'enable_dns_support': 'true', 'enable_dns_hostnames': 'true'})
+    def test_enable_attributes(self, ec2_client, simple_vpc):
+        (ref, cr) = simple_vpc
+        resource_id = cr["status"]["vpcID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
