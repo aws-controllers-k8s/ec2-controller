@@ -34,39 +34,51 @@ ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
+@pytest.fixture
+def simple_vpc_endpoint():
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("vpc-endpoint-test", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    vpc_id = test_vpc.vpc_id
+
+    test_resource_values["VPC_ENDPOINT_NAME"] = resource_name
+    test_resource_values["SERVICE_NAME"] = ENDPOINT_SERVICE_NAME
+    test_resource_values["VPC_ID"] = vpc_id
+
+    # Load VPC Endpoint CR
+    resource_data = load_ec2_resource(
+        "vpc_endpoint",
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
 @service_marker
 @pytest.mark.canary
 class TestVpcEndpoint:
-    def test_create_delete(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("vpc-endpoint-test", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_id = test_vpc.vpc_id
+    def test_create_delete(self, ec2_client, simple_vpc_endpoint):
+        (ref, cr) = simple_vpc_endpoint
 
-        test_resource_values["VPC_ENDPOINT_NAME"] = resource_name
-        test_resource_values["SERVICE_NAME"] = ENDPOINT_SERVICE_NAME
-        test_resource_values["VPC_ID"] = vpc_id
-
-        # Load VPC Endpoint CR
-        resource_data = load_ec2_resource(
-            "vpc_endpoint",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["vpcEndpointID"]
+        resource_id = cr["status"]["vpcEndpointID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
