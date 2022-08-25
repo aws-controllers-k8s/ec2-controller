@@ -31,44 +31,54 @@ DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
+@pytest.fixture
+def simple_route_table():
+    replacements = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("route-table-test", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    vpc_id = test_vpc.vpc_id
+    igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
+    test_cidr_block = "192.168.0.0/24"
+
+    replacements["ROUTE_TABLE_NAME"] = resource_name
+    replacements["VPC_ID"] = vpc_id
+    replacements["IGW_ID"] = igw_id
+    replacements["DEST_CIDR_BLOCK"] = test_cidr_block
+
+    # Load RouteTable CR
+    resource_data = load_ec2_resource(
+        "route_table",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestRouteTable:
-    def test_create_delete(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("route-table-test", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_id = test_vpc.vpc_id
-        igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
-        test_cidr_block = "192.168.0.0/24"
-
-        test_resource_values["ROUTE_TABLE_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["IGW_ID"] = igw_id
-        test_resource_values["DEST_CIDR_BLOCK"] = test_cidr_block
-
-        # Load Route Table CR
-        resource_data = load_ec2_resource(
-            "route_table",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["routeTableID"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+    def test_create_delete(self, ec2_client, simple_route_table):
+        (ref, cr) = simple_route_table
+        resource_id = cr["status"]["routeTableID"]
 
         # Check Route Table exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -83,41 +93,12 @@ class TestRouteTable:
         # Check Route Table no longer exists in AWS
         ec2_validator.assert_route_table(resource_id, exists=False)
 
-    def test_crud_route(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("route-table-test", 24)
+    def test_crud_route(self, ec2_client, simple_route_table):
+        (ref, cr) = simple_route_table
+        resource_id = cr["status"]["routeTableID"]
+
         test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_id = test_vpc.vpc_id
         igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
-        test_cidr_block = "192.168.0.0/24"
-
-        test_resource_values["ROUTE_TABLE_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["IGW_ID"] = igw_id
-        test_resource_values["DEST_CIDR_BLOCK"] = test_cidr_block
-
-        # Load Route Table CR
-        resource_data = load_ec2_resource(
-            "route_table",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create Route Table
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["routeTableID"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check Route Table exists in AWS
         ec2_validator = EC2Validator(ec2_client)
