@@ -21,11 +21,11 @@ import logging
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
+from e2e.conftest import simple_vpc
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 from e2e.bootstrap_resources import get_bootstrap_resources
 
-from .test_vpc import RESOURCE_PLURAL as VPC_RESOURCE_PLURAL, CREATE_WAIT_AFTER_SECONDS as VPC_CREATE_WAIT
 
 RESOURCE_PLURAL = "internetgateways"
 
@@ -34,29 +34,39 @@ MODIFY_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
 @pytest.fixture
-def empty_vpc():
-    resource_name = random_suffix_name("igw-empty-vpc", 32)
+def simple_internet_gateway(request, simple_vpc):
+    resource_name = random_suffix_name("ig-ack-test", 24)
+    resource_file = "internet_gateway"
 
     replacements = REPLACEMENT_VALUES.copy()
-    replacements["VPC_NAME"] = resource_name
-    replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+    replacements["INTERNET_GATEWAY_NAME"] = resource_name
 
+    marker = request.node.get_closest_marker("bootstrap_options")
+    if marker is not None:
+        data = marker.args[0]
+        if 'resource_file' in data:
+            resource_file = data['resource_file']
+        if 'create_vpc' in data and data['create_vpc'] is True:
+            (_, vpc_cr) = simple_vpc
+            vpc_id = vpc_cr["status"]["vpcID"]
+            replacements["VPC_ID"] = vpc_id
+
+    # Load Internet Gateway CR
     resource_data = load_ec2_resource(
-        "vpc",
+        resource_file,
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
 
-    # Create the k8s resource
+    # Create k8s resource
     ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
         resource_name, namespace="default",
     )
     k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
     cr = k8s.wait_resource_consumed_by_controller(ref)
-
-    time.sleep(VPC_CREATE_WAIT)
-
     assert cr is not None
     assert k8s.get_resource_exists(ref)
 
@@ -72,33 +82,9 @@ def empty_vpc():
 @service_marker
 @pytest.mark.canary
 class TestInternetGateway:
-    def test_create_delete(self, ec2_client):
-        resource_name = random_suffix_name("ig-ack-test", 24)
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["INTERNET_GATEWAY_NAME"] = resource_name
-
-        # Load Internet Gateway CR
-        resource_data = load_ec2_resource(
-            "internet_gateway",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["internetGatewayID"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+    def test_create_delete(self, ec2_client, simple_internet_gateway):
+        (ref, cr) = simple_internet_gateway
+        resource_id = cr["status"]["internetGatewayID"]
 
         # Check Internet Gateway exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -113,38 +99,12 @@ class TestInternetGateway:
         # Check Internet Gateway no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)
 
-    def test_vpc_association(self, ec2_client, empty_vpc):
-        resource_name = random_suffix_name("ig-ack-test", 24)
+    @pytest.mark.bootstrap_options({'create_vpc': True, 'resource_file': 'internet_gateway_vpc_attachment'})
+    def test_vpc_association(self, ec2_client, simple_internet_gateway):
+        (ref, cr) = simple_internet_gateway
 
-        (_, vpc_cr) = empty_vpc
-        vpc_id = vpc_cr["status"]["vpcID"]
-
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["INTERNET_GATEWAY_NAME"] = resource_name
-        replacements["VPC_ID"] = vpc_id
-
-        # Load Internet Gateway CR
-        resource_data = load_ec2_resource(
-            "internet_gateway_vpc_attachment",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["internetGatewayID"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        vpc_id = cr["spec"]["vpc"]
+        resource_id = cr["status"]["internetGatewayID"]
 
         # Check Internet Gateway exists in AWS
         ec2_validator = EC2Validator(ec2_client)
