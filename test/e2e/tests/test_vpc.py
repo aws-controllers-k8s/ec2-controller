@@ -21,6 +21,7 @@ import logging
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
+from e2e.conftest import simple_vpc
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
@@ -40,53 +41,6 @@ def get_dns_support(ec2_client, vpc_id: str) -> bool:
 def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
     attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsHostnames')
     return attribute['EnableDnsHostnames']['Value']
-
-@pytest.fixture
-def simple_vpc(request):
-    resource_name = random_suffix_name("vpc-ack-test", 24)
-    replacements = REPLACEMENT_VALUES.copy()
-    replacements["VPC_NAME"] = resource_name
-    replacements["CIDR_BLOCK"] = "10.0.0.0/16"
-    replacements["ENABLE_DNS_SUPPORT"] = "False"
-    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
-
-    marker = request.node.get_closest_marker("vpc_data")
-    if marker is not None:
-        data = marker.args[0]
-        if 'cidr_block' in data:
-            replacements["CIDR_BLOCK"] = data['cidr_block']
-        if 'enable_dns_support' in data:
-            replacements["ENABLE_DNS_SUPPORT"] = data['enable_dns_support']
-        if 'enable_dns_hostnames' in data:
-            replacements["ENABLE_DNS_HOSTNAMES"] = data['enable_dns_hostnames']
-
-    # Load VPC CR
-    resource_data = load_ec2_resource(
-        "vpc",
-        additional_replacements=replacements,
-    )
-    logging.debug(resource_data)
-
-    # Create k8s resource
-    ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        resource_name, namespace="default",
-    )
-    k8s.create_custom_resource(ref, resource_data)
-    time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-    cr = k8s.wait_resource_consumed_by_controller(ref)
-    assert cr is not None
-    assert k8s.get_resource_exists(ref)
-
-    yield (ref, cr)
-
-    # Try to delete, if doesn't already exist
-    try:
-        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
-        assert deleted
-    except:
-        pass
 
 @service_marker
 @pytest.mark.canary
