@@ -16,6 +16,7 @@ package subnet
 import (
 	"context"
 
+	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutils "github.com/aws-controllers-k8s/runtime/pkg/util"
@@ -39,6 +40,12 @@ func (rm *resourceManager) customUpdateSubnet(
 
 	if delta.DifferentAt("Spec.RouteTables") {
 		if err = rm.updateRouteTableAssociations(ctx, desired, latest, delta); err != nil {
+			return nil, err
+		}
+	}
+
+	if delta.DifferentAt("Spec.Tags") {
+		if err = rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 	}
@@ -241,6 +248,131 @@ func inAssociations(
 
 func toStrPtr(str string) *string {
 	return &str
+}
+
+// syncTags used to keep tags in sync by calling DeleteTags and CreateTags API's as desired
+func (rm *resourceManager) syncTags(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncTags")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	resourceId := []*string{latest.ko.Status.SubnetID}
+
+	toAdd, toDelete := computeTagsDelta(
+		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+	)
+
+	if len(toDelete) > 0 {
+		rlog.Debug("removing tags from subnet", "tags", toDelete)
+		_, err := rm.sdkapi.DeleteTagsWithContext(
+			ctx,
+			&svcsdk.DeleteTagsInput{
+				Resources: resourceId,
+				Tags:      sdkTagsFromResourceTags(toDelete),
+			},
+		)
+		rm.metrics.RecordAPICall("UPDATE", "DeleteTags", err)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(toAdd) > 0 {
+		rlog.Debug("adding tags to subnet", "tags", toAdd)
+		_, err := rm.sdkapi.CreateTagsWithContext(
+			ctx,
+			&svcsdk.CreateTagsInput{
+				Resources: resourceId,
+				Tags:      sdkTagsFromResourceTags(toAdd),
+			},
+		)
+
+		rm.metrics.RecordAPICall("UPDATE", "CreateTags", err)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// compareTags compares the tags and adds the difference to delta
+func compareTags(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	} else if len(a.ko.Spec.Tags) > 0 {
+		if !equalTags(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+		}
+	}
+}
+
+// equalTags function used to compare whether two tag arrays are equal or not
+func equalTags(
+	a []*svcapitypes.Tag,
+	b []*svcapitypes.Tag,
+) bool {
+	added, removed := computeTagsDelta(a, b)
+	return len(added) == 0 && len(removed) == 0
+}
+
+// computeTagsDelta returns tags to be added and removed from the resource
+func computeTagsDelta(
+	desired []*svcapitypes.Tag,
+	latest []*svcapitypes.Tag,
+) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
+
+	desiredTags := map[string]string{}
+	for _, tag := range desired {
+		desiredTags[*tag.Key] = *tag.Value
+	}
+
+	latestTags := map[string]string{}
+	for _, tag := range latest {
+		latestTags[*tag.Key] = *tag.Value
+	}
+
+	for _, tag := range desired {
+		val, ok := latestTags[*tag.Key]
+		if !ok || val != *tag.Value {
+			toAdd = append(toAdd, tag)
+		}
+	}
+
+	for _, tag := range latest {
+		_, ok := desiredTags[*tag.Key]
+		if !ok {
+			toDelete = append(toDelete, tag)
+		}
+	}
+
+	return toAdd, toDelete
+
+}
+
+// sdkTagsFromResourceTags converts svcapitypes.Tag array to svcsdk.Tag array
+func sdkTagsFromResourceTags(
+	rTags []*svcapitypes.Tag,
+) []*svcsdk.Tag {
+	tags := make([]*svcsdk.Tag, len(rTags))
+	for i := range rTags {
+		tags[i] = &svcsdk.Tag{
+			Key:   rTags[i].Key,
+			Value: rTags[i].Value,
+		}
+	}
+	return tags
 }
 
 // updateTagSpecificationsInCreateRequest adds

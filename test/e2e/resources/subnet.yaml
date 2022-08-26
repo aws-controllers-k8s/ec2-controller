@@ -5,3 +5,6 @@ metadata:
 spec:
   cidrBlock: $CIDR_BLOCK
   vpcID: $VPC_ID
+  tags:
+    - key: $KEY
+      value: $VALUE
