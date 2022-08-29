@@ -41,7 +41,7 @@ def simple_internet_gateway(request, simple_vpc):
     replacements = REPLACEMENT_VALUES.copy()
     replacements["INTERNET_GATEWAY_NAME"] = resource_name
 
-    marker = request.node.get_closest_marker("bootstrap_options")
+    marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
         if 'resource_file' in data:
@@ -99,7 +99,7 @@ class TestInternetGateway:
         # Check Internet Gateway no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)
 
-    @pytest.mark.bootstrap_options({'create_vpc': True, 'resource_file': 'internet_gateway_vpc_attachment'})
+    @pytest.mark.resource_data({'create_vpc': True, 'resource_file': 'internet_gateway_vpc_attachment'})
     def test_vpc_association(self, ec2_client, simple_internet_gateway):
         (ref, cr) = simple_internet_gateway
 

@@ -42,7 +42,7 @@ def simple_dhcp_options(request):
     replacements["DHCP_VAL_2_1"] = "10.2.5.1"
     replacements["DHCP_VAL_2_2"] = "10.2.5.2"
 
-    marker = request.node.get_closest_marker("dhcp_options_data")
+    marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
         if 'dhcp_key_1' in data:
@@ -102,7 +102,7 @@ class TestDhcpOptions:
         # Check DHCP Options no longer exists in AWS
         ec2_validator.assert_dhcp_options(resource_id, exists=False)
 
-    @pytest.mark.dhcp_options_data({'dhcp_key_1': 'InvalidValue'})
+    @pytest.mark.resource_data({'dhcp_key_1': 'InvalidValue'})
     def test_terminal_condition_invalid_parameter_value(self, simple_dhcp_options):
         (ref, _) = simple_dhcp_options
 

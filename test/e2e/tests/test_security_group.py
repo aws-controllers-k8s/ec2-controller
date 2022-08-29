@@ -41,7 +41,7 @@ def simple_security_group(request):
     replacements["VPC_ID"] = test_vpc.vpc_id
     replacements["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroup"
 
-    marker = request.node.get_closest_marker("fixture_overrides")
+    marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
         if 'resource_file' in data:
@@ -97,7 +97,7 @@ class TestSecurityGroup:
         # Check Security Group no longer exists in AWS
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    @pytest.mark.fixture_overrides({
+    @pytest.mark.resource_data({
         'resource_file': 'security_group_rule',
         'IP_PROTOCOL': 'tcp',
         'FROM_PORT': "80",
