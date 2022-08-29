@@ -24,7 +24,6 @@ from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.tests.helper import EC2Validator
-from .test_elastic_ip_address import RESOURCE_PLURAL as ELASTIC_IP_PLURAL
 
 RESOURCE_PLURAL = "natgateways"
 
@@ -47,8 +46,52 @@ def standard_elastic_address():
 
     # Create the k8s resource
     ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, ELASTIC_IP_PLURAL,
+        CRD_GROUP, CRD_VERSION, "elasticipaddresses",
         cluster_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    # ElasticIP are not usable immediately after they are created, so this will
+    # buy us some time in case we try to mount it too early.
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
+@pytest.fixture
+def simple_nat_gateway(standard_elastic_address):
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("nat-gateway-test", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    subnet_id = test_vpc.public_subnets.subnet_ids[0]
+
+    (_, eip) = standard_elastic_address
+
+    test_resource_values["NAT_GATEWAY_NAME"] = resource_name
+    test_resource_values["SUBNET_ID"] = subnet_id
+    test_resource_values["ALLOCATION_ID"] = eip["status"]["allocationID"]
+
+    # Load NAT Gateway CR
+    resource_data = load_ec2_resource(
+        "nat_gateway",
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
     )
     k8s.create_custom_resource(ref, resource_data)
     cr = k8s.wait_resource_consumed_by_controller(ref)
@@ -72,38 +115,9 @@ def standard_elastic_address():
 @service_marker
 @pytest.mark.canary
 class TestNATGateway:
-    def test_create_delete(self, standard_elastic_address, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("nat-gateway-test", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        subnet_id = test_vpc.public_subnets.subnet_ids[0]
-
-        (_, eip) = standard_elastic_address
-
-        test_resource_values["NAT_GATEWAY_NAME"] = resource_name
-        test_resource_values["SUBNET_ID"] = subnet_id
-        test_resource_values["ALLOCATION_ID"] = eip["status"]["allocationID"]
-
-        # Load NAT Gateway CR
-        resource_data = load_ec2_resource(
-            "nat_gateway",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["natGatewayID"]
+    def test_create_delete(self, simple_nat_gateway, ec2_client):
+        (ref, cr) = simple_nat_gateway
+        resource_id = cr["status"]["natGatewayID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
