@@ -65,7 +65,7 @@ class TestVpc:
         # Check VPC no longer exists in AWS
         ec2_validator.assert_vpc(resource_id, exists=False)
 
-    @pytest.mark.vpc_data({'enable_dns_support': 'true', 'enable_dns_hostnames': 'true'})
+    @pytest.mark.resource_data({'enable_dns_support': 'true', 'enable_dns_hostnames': 'true'})
     def test_enable_attributes(self, ec2_client, simple_vpc):
         (ref, cr) = simple_vpc
         resource_id = cr["status"]["vpcID"]

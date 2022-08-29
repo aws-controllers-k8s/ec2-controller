@@ -39,7 +39,7 @@ def pytest_configure(config):
         "markers", "slow: mark test as slow to run"
     )
     config.addinivalue_line(
-        "markers", "vpc_data: mark test with data to pass to vpc fixture"
+        "markers", "resource_data: mark test with data to use when creating fixture"
     )
 
 def pytest_collection_modifyitems(config, items):
@@ -65,7 +65,7 @@ def simple_vpc(request):
     replacements["ENABLE_DNS_SUPPORT"] = "False"
     replacements["ENABLE_DNS_HOSTNAMES"] = "False"
 
-    marker = request.node.get_closest_marker("vpc_data")
+    marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
         if 'cidr_block' in data:

@@ -55,7 +55,7 @@ def simple_elastic_ip_address(request):
     replacements["ADDRESS_NAME"] = resource_name
     replacements["PUBLIC_IPV4_POOL"] = "amazon"
 
-    marker = request.node.get_closest_marker("elastic_ip_address_data")
+    marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
         if 'resource_file' in data:
@@ -114,7 +114,7 @@ class TestElasticIPAddress:
         exists = address_exists(ec2_client, resource_id)
         assert not exists
     
-    @pytest.mark.elastic_ip_address_data({'public_ipv4_pool': 'InvalidIpV4Address'})
+    @pytest.mark.resource_data({'public_ipv4_pool': 'InvalidIpV4Address'})
     def test_terminal_condition_invalid_parameter_value(self, simple_elastic_ip_address):
         (ref, _) = simple_elastic_ip_address
 
@@ -125,7 +125,7 @@ class TestElasticIPAddress:
         # invalid value for parameter pool: InvalidIpV4Address
         assert expected_msg in terminal_condition['message']
 
-    @pytest.mark.elastic_ip_address_data({'address': '52.27.68.220', 'resource_file': 'invalid/elastic_ip_invalid_combination'})
+    @pytest.mark.resource_data({'address': '52.27.68.220', 'resource_file': 'invalid/elastic_ip_invalid_combination'})
     def test_terminal_condition_invalid_parameter_combination(self, simple_elastic_ip_address):
         (ref, _) = simple_elastic_ip_address
 
