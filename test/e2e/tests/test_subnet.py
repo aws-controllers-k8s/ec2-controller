@@ -118,6 +118,9 @@ class TestSubnet:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
         resource = k8s.get_resource(ref)
         resource_id = resource["status"]["subnetID"]
 
@@ -167,6 +170,9 @@ class TestSubnet:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
         resource = k8s.get_resource(ref)
         resource_id = resource["status"]["subnetID"]
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -194,6 +200,9 @@ class TestSubnet:
 
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         resource = k8s.get_resource(ref)
         assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
@@ -239,6 +248,9 @@ class TestSubnet:
         assert cr is not None
         assert k8s.get_resource_exists(ref)
 
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
         resource = k8s.get_resource(ref)
         resource_id = resource["status"]["subnetID"]
 
@@ -258,6 +270,9 @@ class TestSubnet:
         }
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         assert ec2_validator.get_route_table_association(initial_rt_cr["status"]["routeTableID"], resource_id) is None
         assert ec2_validator.get_route_table_association(default_route_tables[1][1]["status"]["routeTableID"], resource_id) is not None
