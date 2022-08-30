@@ -3,6 +3,7 @@ kind: VPC
 metadata:
   name: $VPC_NAME
 spec:
-  cidrBlock: $CIDR_BLOCK
+  cidrBlocks: 
+  - $CIDR_BLOCK
   enableDNSSupport: $ENABLE_DNS_SUPPORT
   enableDNSHostnames: $ENABLE_DNS_HOSTNAMES

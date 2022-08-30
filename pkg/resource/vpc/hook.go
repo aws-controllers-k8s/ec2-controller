@@ -177,6 +177,16 @@ func (rm *resourceManager) customUpdate(
 	return &resource{ko}, nil
 }
 
+// applyPrimaryCIDRBlockInCreateRequest populates
+// CreateVpcInput.CidrBlock field with the FIRST
+// CIDR block defined in the resource's Spec
+func applyPrimaryCIDRBlockInCreateRequest(r *resource,
+	input *svcsdk.CreateVpcInput) {
+	if r.ko.Spec.CIDRBlocks != nil && len(r.ko.Spec.CIDRBlocks) > 0 {
+		input.CidrBlock = r.ko.Spec.CIDRBlocks[0]
+	}
+}
+
 // updateTagSpecificationsInCreateRequest adds
 // Tags defined in the Spec to CreateVpcInput.TagSpecification
 // and ensures the ResourceType is always set to 'vpc'
