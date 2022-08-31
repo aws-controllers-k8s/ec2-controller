@@ -1,3 +1,4 @@
+	rm.setSpecCIDRs(ko)
 	if dnsAttrs, err := rm.getDNSAttributes(ctx, *ko.Status.VPCID); err != nil {
 		return nil, err
 	} else {

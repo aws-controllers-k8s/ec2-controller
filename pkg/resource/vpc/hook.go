@@ -16,6 +16,7 @@ package vpc
 import (
 	"context"
 
+	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
@@ -128,6 +129,95 @@ func (rm *resourceManager) syncDNSHostnamesAttribute(
 	return nil
 }
 
+// computeStringPDifference uses the underlying string value
+// to discern which elements are in slice `a` that aren't in slice `b`
+// and vice-versa
+func computeStringPDifference(a, b []*string) (aNotB, bNotA []*string) {
+	mapOfB := map[string]struct{}{}
+	for _, elemB := range b {
+		mapOfB[*elemB] = struct{}{}
+	}
+	mapOfA := map[string]struct{}{}
+	for _, elemA := range a {
+		mapOfA[*elemA] = struct{}{}
+	}
+
+	for _, elemA := range a {
+		if _, found := mapOfB[*elemA]; !found {
+			aNotB = append(aNotB, elemA)
+		}
+	}
+	for _, elemB := range b {
+		if _, found := mapOfB[*elemB]; !found {
+			bNotA = append(bNotA, elemB)
+		}
+	}
+
+	return aNotB, bNotA
+}
+
+// syncCIDRBlocks analyzes desired and latest
+// IPv4 CIDRBlocks and executes API calls to
+// Associate/Disassociate CIDRs as needed
+func (rm *resourceManager) syncCIDRBlocks(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncCIDRBlocks")
+	defer exit(err)
+
+	desRes := desired.ko.DeepCopy()
+	latestRes := latest.ko.DeepCopy()
+	desiredCIDRs := desRes.Spec.CIDRBlocks
+	latestCIDRs := latestRes.Spec.CIDRBlocks
+	latestCIDRStates := latestRes.Status.CIDRBlockAssociationSet
+	toAddCIDRs, toDeleteCIDRs := computeStringPDifference(desiredCIDRs, latestCIDRs)
+
+	// extract associationID for the DisassociateVpcCidr request
+	for _, cidr := range toDeleteCIDRs {
+		input := &svcsdk.DisassociateVpcCidrBlockInput{}
+		for _, cidrAssociation := range latestCIDRStates {
+			if *cidr == *cidrAssociation.CIDRBlock {
+				input.AssociationId = cidrAssociation.AssociationID
+				_, err = rm.sdkapi.DisassociateVpcCidrBlockWithContext(ctx, input)
+				rm.metrics.RecordAPICall("UPDATE", "DisassociateVpcCidrBlock", err)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	for _, cidr := range toAddCIDRs {
+		input := &svcsdk.AssociateVpcCidrBlockInput{
+			VpcId:     latest.ko.Status.VPCID,
+			CidrBlock: cidr,
+		}
+		_, err = rm.sdkapi.AssociateVpcCidrBlockWithContext(ctx, input)
+		rm.metrics.RecordAPICall("UPDATE", "AssociateVpcCidrBlock", err)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// setSpecCIDRs sets Spec.CIDRBlocks using the CIDRs in
+// Status.CIDRBlockAssociationSet, which is set via sdkCreate/sdkFind
+func (rm *resourceManager) setSpecCIDRs(
+	ko *svcapitypes.VPC,
+) {
+	ko.Spec.CIDRBlocks = nil
+	if ko.Status.CIDRBlockAssociationSet != nil {
+		for _, cidrAssoc := range ko.Status.CIDRBlockAssociationSet {
+			ko.Spec.CIDRBlocks = append(ko.Spec.CIDRBlocks, cidrAssoc.CIDRBlock)
+		}
+	}
+}
+
 func (rm *resourceManager) createAttributes(
 	ctx context.Context,
 	r *resource,
@@ -161,6 +251,12 @@ func (rm *resourceManager) customUpdate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if delta.DifferentAt("Spec.CIDRBlocks") {
+		if err := rm.syncCIDRBlocks(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
+
 	if delta.DifferentAt("Spec.EnableDNSSupport") {
 		if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
 			return nil, err
@@ -182,7 +278,7 @@ func (rm *resourceManager) customUpdate(
 // CIDR block defined in the resource's Spec
 func applyPrimaryCIDRBlockInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcInput) {
-	if r.ko.Spec.CIDRBlocks != nil && len(r.ko.Spec.CIDRBlocks) > 0 {
+	if len(r.ko.Spec.CIDRBlocks) > 0 {
 		input.CidrBlock = r.ko.Spec.CIDRBlocks[0]
 	}
 }
