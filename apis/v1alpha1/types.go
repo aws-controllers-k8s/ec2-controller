@@ -4164,7 +4164,6 @@ type VPCPeeringConnectionVPCInfo struct {
 
 // Describes a VPC.
 type VPC_SDK struct {
-	CIDRBlock                   *string                        `json:"cidrBlock,omitempty"`
 	CIDRBlockAssociationSet     []*VPCCIDRBlockAssociation     `json:"cidrBlockAssociationSet,omitempty"`
 	DHCPOptionsID               *string                        `json:"dhcpOptionsID,omitempty"`
 	InstanceTenancy             *string                        `json:"instanceTenancy,omitempty"`

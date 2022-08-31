@@ -22,6 +22,8 @@ ignore:
     - CreateSubnetInput.TagSpecifications
     - CreateTransitGatewayInput.DryRun
     - CreateTransitGatewayInput.TagSpecifications
+    - CreateVpcInput.CidrBlock
+    - CreateVpcOutput.Vpc.CidrBlock
     - CreateVpcInput.DryRun
     - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
@@ -423,6 +425,9 @@ resources:
       terminal_codes:
         - InvalidParameterValue
     fields:
+      CIDRBlocks:
+        custom_field:
+          list_of: String
       EnableDNSSupport:
         from:
           operation: ModifyVpcAttribute
