@@ -168,11 +168,9 @@ func (rm *resourceManager) syncCIDRBlocks(
 	exit := rlog.Trace("rm.syncCIDRBlocks")
 	defer exit(err)
 
-	desRes := desired.ko.DeepCopy()
-	latestRes := latest.ko.DeepCopy()
-	desiredCIDRs := desRes.Spec.CIDRBlocks
-	latestCIDRs := latestRes.Spec.CIDRBlocks
-	latestCIDRStates := latestRes.Status.CIDRBlockAssociationSet
+	desiredCIDRs := desired.ko.Spec.CIDRBlocks
+	latestCIDRs := latest.ko.Spec.CIDRBlocks
+	latestCIDRStates := latest.ko.Status.CIDRBlockAssociationSet
 	toAddCIDRs, toDeleteCIDRs := computeStringPDifference(desiredCIDRs, latestCIDRs)
 
 	// extract associationID for the DisassociateVpcCidr request

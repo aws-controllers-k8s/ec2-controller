@@ -29,7 +29,8 @@ type VPCSpec struct {
 	// CIDR block.
 	AmazonProvidedIPv6CIDRBlock *bool `json:"amazonProvidedIPv6CIDRBlock,omitempty"`
 
-	CIDRBlocks []*string `json:"cidrBlocks,omitempty"`
+	// +kubebuilder:validation:Required
+	CIDRBlocks []*string `json:"cidrBlocks"`
 	// The attribute value. The valid values are true or false.
 	EnableDNSHostnames *bool `json:"enableDNSHostnames,omitempty"`
 	// The attribute value. The valid values are true or false.
