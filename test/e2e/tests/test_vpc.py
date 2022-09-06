@@ -26,6 +26,7 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "vpcs"
+PRIMARY_CIDR_DEFAULT = "10.0.0.0/16"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
@@ -45,7 +46,7 @@ def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
 @service_marker
 @pytest.mark.canary
 class TestVpc:
-    def test_create_delete(self, ec2_client, simple_vpc):
+    def test_crud(self, ec2_client, simple_vpc):
         (ref, cr) = simple_vpc
 
         resource_id = cr["status"]["vpcID"]
@@ -55,6 +56,24 @@ class TestVpc:
         # Check VPC exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc(resource_id)
+
+        # Validate CIDR Block
+        vpc = ec2_validator.get_vpc(resource_id)
+        assert len(vpc['CidrBlockAssociationSet']) == 1
+        assert vpc['CidrBlockAssociationSet'][0]['CidrBlock'] == PRIMARY_CIDR_DEFAULT
+
+        # Associate secondary CIDR
+        secondary_cidr = "10.2.0.0/16"
+        updates = {
+            "spec": {"cidrBlocks": [PRIMARY_CIDR_DEFAULT, secondary_cidr]}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        vpc = ec2_validator.get_vpc(resource_id)
+        assert len(vpc['CidrBlockAssociationSet']) == 2
+        assert vpc['CidrBlockAssociationSet'][0]['CidrBlock'] == PRIMARY_CIDR_DEFAULT
+        assert vpc['CidrBlockAssociationSet'][1]['CidrBlock'] == secondary_cidr
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)

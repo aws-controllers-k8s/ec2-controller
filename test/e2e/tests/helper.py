@@ -128,6 +128,15 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def get_vpc(self, vpc_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_vpcs(VpcIds=[vpc_id])
+            if len(aws_res["Vpcs"]) > 0:
+                return aws_res["Vpcs"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+            
     def assert_vpc(self, vpc_id: str, exists=True):
         res_found = False
         try:

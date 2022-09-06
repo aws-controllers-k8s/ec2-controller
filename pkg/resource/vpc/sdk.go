@@ -200,6 +200,7 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	rm.setSpecCIDRs(ko)
 	if dnsAttrs, err := rm.getDNSAttributes(ctx, *ko.Status.VPCID); err != nil {
 		return nil, err
 	} else {
@@ -373,6 +374,7 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	rm.setSpecCIDRs(ko)
 	err = rm.createAttributes(ctx, &resource{ko})
 	if err != nil {
 		return nil, err

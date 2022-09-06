@@ -429,6 +429,7 @@ resources:
       CIDRBlocks:
         custom_field:
           list_of: String
+        is_required: true
       EnableDNSSupport:
         from:
           operation: ModifyVpcAttribute
