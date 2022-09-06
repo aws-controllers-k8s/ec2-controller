@@ -24,9 +24,6 @@ import (
 //
 // Describes a VPC endpoint.
 type VPCEndpointSpec struct {
-	// Unique, case-sensitive identifier that you provide to ensure the idempotency
-	// of the request. For more information, see How to ensure idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
-	ClientToken *string `json:"clientToken,omitempty"`
 	// (Interface and gateway endpoints) A policy to attach to the endpoint that
 	// controls access to the service. The policy must be in valid JSON format.
 	// If this parameter is not specified, we attach a default policy that allows
