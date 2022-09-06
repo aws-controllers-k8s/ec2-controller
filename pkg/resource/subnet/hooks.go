@@ -250,7 +250,7 @@ func toStrPtr(str string) *string {
 	return &str
 }
 
-// syncTags used to keep tags in sync by calling DeleteTags and CreateTags API's as desired
+// syncTags used to keep tags in sync using createTags and deleteTags functions
 func (rm *resourceManager) syncTags(
 	ctx context.Context,
 	desired *resource,
@@ -262,69 +262,73 @@ func (rm *resourceManager) syncTags(
 		exit(err)
 	}(err)
 
-	resourceId := []*string{latest.ko.Status.SubnetID}
-
 	toAdd, toDelete := computeTagsDelta(
 		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 	)
 
-	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from subnet", "tags", toDelete)
-		_, err := rm.sdkapi.DeleteTagsWithContext(
-			ctx,
-			&svcsdk.DeleteTagsInput{
-				Resources: resourceId,
-				Tags:      sdkTagsFromResourceTags(toDelete),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "DeleteTags", err)
-		if err != nil {
-			return err
-		}
+	if err = rm.deleteTags(ctx, latest, toDelete); err != nil {
+		return err
 	}
 
-	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to subnet", "tags", toAdd)
-		_, err := rm.sdkapi.CreateTagsWithContext(
-			ctx,
-			&svcsdk.CreateTagsInput{
-				Resources: resourceId,
-				Tags:      sdkTagsFromResourceTags(toAdd),
-			},
-		)
-
-		rm.metrics.RecordAPICall("UPDATE", "CreateTags", err)
-
-		if err != nil {
-			return err
-		}
+	if err = rm.createTags(ctx, desired, toAdd); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// compareTags compares the tags and adds the difference to delta
-func compareTags(
-	delta *ackcompare.Delta,
-	a *resource,
-	b *resource,
-) {
-	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	} else if len(a.ko.Spec.Tags) > 0 {
-		if !equalTags(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+// createTags function creates tags for subnet resource using CreateTags API calls
+func (rm *resourceManager) createTags(
+	ctx context.Context,
+	r *resource,
+	tags []*svcapitypes.Tag,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.createTags")
+	defer exit(err)
+
+	resourceId := []*string{r.ko.Status.SubnetID}
+
+	for _, i := range tags {
+		toAdd := rm.newTag(*i)
+		req := &svcsdk.CreateTagsInput{
+			Resources: resourceId,
+			Tags:      []*svcsdk.Tag{toAdd},
+		}
+		_, err := rm.sdkapi.CreateTagsWithContext(ctx, req)
+		rm.metrics.RecordAPICall("CREATE", "CreateTags", err)
+		if err != nil {
+			return err
 		}
 	}
+	return err
 }
 
-// equalTags function used to compare whether two tag arrays are equal or not
-func equalTags(
-	a []*svcapitypes.Tag,
-	b []*svcapitypes.Tag,
-) bool {
-	added, removed := computeTagsDelta(a, b)
-	return len(added) == 0 && len(removed) == 0
+// deleteTags function deletes tags from subnet resource using DeleteTags API calls
+func (rm *resourceManager) deleteTags(
+	ctx context.Context,
+	r *resource,
+	tags []*svcapitypes.Tag,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteTags")
+	defer exit(err)
+
+	resourceId := []*string{r.ko.Status.SubnetID}
+
+	for _, i := range tags {
+		toDelete := rm.newTag(*i)
+		req := &svcsdk.DeleteTagsInput{
+			Resources: resourceId,
+			Tags:      []*svcsdk.Tag{toDelete},
+		}
+		_, err = rm.sdkapi.DeleteTagsWithContext(ctx, req)
+		rm.metrics.RecordAPICall("DELETE", "DeleteTags", err)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 // computeTagsDelta returns tags to be added and removed from the resource
@@ -359,20 +363,6 @@ func computeTagsDelta(
 
 	return toAdd, toDelete
 
-}
-
-// sdkTagsFromResourceTags converts svcapitypes.Tag array to svcsdk.Tag array
-func sdkTagsFromResourceTags(
-	rTags []*svcapitypes.Tag,
-) []*svcsdk.Tag {
-	tags := make([]*svcsdk.Tag, len(rTags))
-	for i := range rTags {
-		tags[i] = &svcsdk.Tag{
-			Key:   rTags[i].Key,
-			Value: rTags[i].Value,
-		}
-	}
-	return tags
 }
 
 // updateTagSpecificationsInCreateRequest adds

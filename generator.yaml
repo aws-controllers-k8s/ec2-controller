@@ -402,8 +402,8 @@ resources:
         template_path: hooks/subnet/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/subnet/sdk_read_many_post_set_output.go.tpl
-      delta_pre_compare:
-        template_path: hooks/subnet/delta_pre_compare.go.tpl
+      sdk_file_end:
+        template_path: hooks/subnet/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateSubnet
   TransitGateway:

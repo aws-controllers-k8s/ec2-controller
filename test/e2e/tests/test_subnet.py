@@ -97,8 +97,6 @@ class TestSubnet:
         test_resource_values["VPC_ID"] = vpc_id
         # CIDR needs to be within SharedTestVPC range and not overlap other subnets
         test_resource_values["CIDR_BLOCK"] = "10.0.255.0/24"
-        test_resource_values["KEY"] = "createKey"
-        test_resource_values["VALUE"] = "createValue"
 
         # Load Subnet CR
         resource_data = load_ec2_resource(
@@ -139,7 +137,7 @@ class TestSubnet:
         # Check Subnet no longer exists in AWS
         ec2_validator.assert_subnet(resource_id, exists=False)
 
-    def test_update_tags(self, ec2_client):
+    def test_crud_tags(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-test", 24)
         test_vpc = get_bootstrap_resources().SharedTestVPC
@@ -180,11 +178,12 @@ class TestSubnet:
         # Check Subnet exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_subnet(resource_id)
-
+        
+        # Check tags exist for subnet resource
         assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
         assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
 
-
+        # New pair of tags
         new_tags = [
                 {
                     "key": "updatedtagkey",
@@ -193,7 +192,7 @@ class TestSubnet:
                
             ]
 
-        # Patch the subnet, updating the tags
+        # Patch the subnet, updating the tags with new pair
         updates = {
             "spec": {"tags": new_tags},
         }
@@ -203,10 +202,26 @@ class TestSubnet:
 
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
-
+        
+        # Assert tags are updated for subnet resource
         resource = k8s.get_resource(ref)
         assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
         assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the subnet resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -295,8 +310,6 @@ class TestSubnet:
         test_resource_values["SUBNET_NAME"] = resource_name
         test_resource_values["CIDR_BLOCK"] = "InvalidCidrBlock"
         test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["KEY"] = "invalidKey"
-        test_resource_values["VALUE"] = "invalidValue"
 
         # Load Subnet CR
         resource_data = load_ec2_resource(
