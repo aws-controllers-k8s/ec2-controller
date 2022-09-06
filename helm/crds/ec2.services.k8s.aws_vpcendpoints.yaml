@@ -37,11 +37,6 @@ spec:
             description: "VpcEndpointSpec defines the desired state of VpcEndpoint.
               \n Describes a VPC endpoint."
             properties:
-              clientToken:
-                description: Unique, case-sensitive identifier that you provide to
-                  ensure the idempotency of the request. For more information, see
-                  How to ensure idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
-                type: string
               policyDocument:
                 description: (Interface and gateway endpoints) A policy to attach
                   to the endpoint that controls access to the service. The policy

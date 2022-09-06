@@ -28,6 +28,7 @@ ignore:
     - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
+    - CreateVpcEndpointInput.ClientToken
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
