@@ -30,41 +30,59 @@ RESOURCE_PLURAL = "securitygroups"
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
+@pytest.fixture
+def simple_security_group(request):
+    resource_name = random_suffix_name("security-group-tes", 24)
+    resource_file = "security_group"
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["SECURITY_GROUP_NAME"] = resource_name
+    replacements["VPC_ID"] = test_vpc.vpc_id
+    replacements["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroup"
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'resource_file' in data:
+            resource_file = data['resource_file']
+            replacements.update(data)
+
+    # Load Security Group CR
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestSecurityGroup:
-    def test_create_delete(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("security-group-test", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_id = test_vpc.vpc_id
-
-        test_resource_values["SECURITY_GROUP_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroup-create-delete"
-
-        # Load Security Group CR
-        resource_data = load_ec2_resource(
-            "security_group",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["id"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+    def test_create_delete(self, ec2_client, simple_security_group):
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
 
         # Check Security Group exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -79,46 +97,18 @@ class TestSecurityGroup:
         # Check Security Group no longer exists in AWS
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    def test_rules_create_update_delete(self, ec2_client):
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        resource_name = random_suffix_name("sec-group-rules", 24)
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        vpc_id = test_vpc.vpc_id
-
-        test_resource_values["SECURITY_GROUP_NAME"] = resource_name
-        test_resource_values["VPC_ID"] = vpc_id
-        test_resource_values["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroupRule-create-delete"
-        
-        # Create Security Group CR with ingress rule
-        test_resource_values["IP_PROTOCOL"] = "tcp"
-        test_resource_values["FROM_PORT"] = "80"
-        test_resource_values["TO_PORT"] = "80"
-        test_resource_values["CIDR_IP"] = "172.31.0.0/16"
-        test_resource_values["DESCRIPTION_INGRESS"] = "test ingress rule"
-
-        # Load Security Group CR
-        resource_data = load_ec2_resource(
-            "security_group_rule",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["id"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
+    @pytest.mark.resource_data({
+        'resource_file': 'security_group_rule',
+        'IP_PROTOCOL': 'tcp',
+        'FROM_PORT': "80",
+        'TO_PORT': "80",
+        'CIDR_IP': '172.31.0.0/16',
+        'DESCRIPTION_INGRESS': 'test ingress rule',
+    })
+    def test_rules_create_update_delete(self, ec2_client, simple_security_group):
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+    
         # Check resource is late initialized successfully (sets default egress rule)
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
@@ -127,12 +117,12 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id)
 
         # Hook code should update Spec rules using data from ReadOne resp
-        assert len(resource["spec"]["ingressRules"]) == 1
-        assert len(resource["spec"]["egressRules"]) == 1
+        assert len(cr["spec"]["ingressRules"]) == 1
+        assert len(cr["spec"]["egressRules"]) == 1
 
         # Check ingress rule added and default egress rule present
         # default egress rule will be present iff user has NOT specified their own egress rules
-        assert len(resource["status"]["rules"]) == 2
+        assert len(cr["status"]["rules"]) == 2
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
@@ -162,7 +152,7 @@ class TestSecurityGroup:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check ingress and egress rules exist
-        assert len(resource["status"]["rules"]) == 2
+        assert len(cr["status"]["rules"]) == 2
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
@@ -179,11 +169,11 @@ class TestSecurityGroup:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # assert patched state
-        resource = k8s.get_resource(ref)
-        assert len(resource['status']['rules']) == 1
+        cr = k8s.get_resource(ref)
+        assert len(cr['status']['rules']) == 1
 
         # Check ingress rule removed; egress rule remains
-        assert len(resource["status"]["rules"]) == 1
+        assert len(cr["status"]["rules"]) == 1
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 0
         assert len(sg_group["IpPermissionsEgress"]) == 1

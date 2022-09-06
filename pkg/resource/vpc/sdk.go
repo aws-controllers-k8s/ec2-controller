@@ -88,34 +88,29 @@ func (rm *resourceManager) sdkFind(
 
 	found := false
 	for _, elem := range resp.Vpcs {
-		if elem.CidrBlock != nil {
-			ko.Spec.CIDRBlock = elem.CidrBlock
-		} else {
-			ko.Spec.CIDRBlock = nil
-		}
 		if elem.CidrBlockAssociationSet != nil {
-			f1 := []*svcapitypes.VPCCIDRBlockAssociation{}
-			for _, f1iter := range elem.CidrBlockAssociationSet {
-				f1elem := &svcapitypes.VPCCIDRBlockAssociation{}
-				if f1iter.AssociationId != nil {
-					f1elem.AssociationID = f1iter.AssociationId
+			f0 := []*svcapitypes.VPCCIDRBlockAssociation{}
+			for _, f0iter := range elem.CidrBlockAssociationSet {
+				f0elem := &svcapitypes.VPCCIDRBlockAssociation{}
+				if f0iter.AssociationId != nil {
+					f0elem.AssociationID = f0iter.AssociationId
 				}
-				if f1iter.CidrBlock != nil {
-					f1elem.CIDRBlock = f1iter.CidrBlock
+				if f0iter.CidrBlock != nil {
+					f0elem.CIDRBlock = f0iter.CidrBlock
 				}
-				if f1iter.CidrBlockState != nil {
-					f1elemf2 := &svcapitypes.VPCCIDRBlockState{}
-					if f1iter.CidrBlockState.State != nil {
-						f1elemf2.State = f1iter.CidrBlockState.State
+				if f0iter.CidrBlockState != nil {
+					f0elemf2 := &svcapitypes.VPCCIDRBlockState{}
+					if f0iter.CidrBlockState.State != nil {
+						f0elemf2.State = f0iter.CidrBlockState.State
 					}
-					if f1iter.CidrBlockState.StatusMessage != nil {
-						f1elemf2.StatusMessage = f1iter.CidrBlockState.StatusMessage
+					if f0iter.CidrBlockState.StatusMessage != nil {
+						f0elemf2.StatusMessage = f0iter.CidrBlockState.StatusMessage
 					}
-					f1elem.CIDRBlockState = f1elemf2
+					f0elem.CIDRBlockState = f0elemf2
 				}
-				f1 = append(f1, f1elem)
+				f0 = append(f0, f0elem)
 			}
-			ko.Status.CIDRBlockAssociationSet = f1
+			ko.Status.CIDRBlockAssociationSet = f0
 		} else {
 			ko.Status.CIDRBlockAssociationSet = nil
 		}
@@ -130,34 +125,34 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.InstanceTenancy = nil
 		}
 		if elem.Ipv6CidrBlockAssociationSet != nil {
-			f4 := []*svcapitypes.VPCIPv6CIDRBlockAssociation{}
-			for _, f4iter := range elem.Ipv6CidrBlockAssociationSet {
-				f4elem := &svcapitypes.VPCIPv6CIDRBlockAssociation{}
-				if f4iter.AssociationId != nil {
-					f4elem.AssociationID = f4iter.AssociationId
+			f3 := []*svcapitypes.VPCIPv6CIDRBlockAssociation{}
+			for _, f3iter := range elem.Ipv6CidrBlockAssociationSet {
+				f3elem := &svcapitypes.VPCIPv6CIDRBlockAssociation{}
+				if f3iter.AssociationId != nil {
+					f3elem.AssociationID = f3iter.AssociationId
 				}
-				if f4iter.Ipv6CidrBlock != nil {
-					f4elem.IPv6CIDRBlock = f4iter.Ipv6CidrBlock
+				if f3iter.Ipv6CidrBlock != nil {
+					f3elem.IPv6CIDRBlock = f3iter.Ipv6CidrBlock
 				}
-				if f4iter.Ipv6CidrBlockState != nil {
-					f4elemf2 := &svcapitypes.VPCCIDRBlockState{}
-					if f4iter.Ipv6CidrBlockState.State != nil {
-						f4elemf2.State = f4iter.Ipv6CidrBlockState.State
+				if f3iter.Ipv6CidrBlockState != nil {
+					f3elemf2 := &svcapitypes.VPCCIDRBlockState{}
+					if f3iter.Ipv6CidrBlockState.State != nil {
+						f3elemf2.State = f3iter.Ipv6CidrBlockState.State
 					}
-					if f4iter.Ipv6CidrBlockState.StatusMessage != nil {
-						f4elemf2.StatusMessage = f4iter.Ipv6CidrBlockState.StatusMessage
+					if f3iter.Ipv6CidrBlockState.StatusMessage != nil {
+						f3elemf2.StatusMessage = f3iter.Ipv6CidrBlockState.StatusMessage
 					}
-					f4elem.IPv6CIDRBlockState = f4elemf2
+					f3elem.IPv6CIDRBlockState = f3elemf2
 				}
-				if f4iter.Ipv6Pool != nil {
-					f4elem.IPv6Pool = f4iter.Ipv6Pool
+				if f3iter.Ipv6Pool != nil {
+					f3elem.IPv6Pool = f3iter.Ipv6Pool
 				}
-				if f4iter.NetworkBorderGroup != nil {
-					f4elem.NetworkBorderGroup = f4iter.NetworkBorderGroup
+				if f3iter.NetworkBorderGroup != nil {
+					f3elem.NetworkBorderGroup = f3iter.NetworkBorderGroup
 				}
-				f4 = append(f4, f4elem)
+				f3 = append(f3, f3elem)
 			}
-			ko.Status.IPv6CIDRBlockAssociationSet = f4
+			ko.Status.IPv6CIDRBlockAssociationSet = f3
 		} else {
 			ko.Status.IPv6CIDRBlockAssociationSet = nil
 		}
@@ -177,18 +172,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.State = nil
 		}
 		if elem.Tags != nil {
-			f8 := []*svcapitypes.Tag{}
-			for _, f8iter := range elem.Tags {
-				f8elem := &svcapitypes.Tag{}
-				if f8iter.Key != nil {
-					f8elem.Key = f8iter.Key
+			f7 := []*svcapitypes.Tag{}
+			for _, f7iter := range elem.Tags {
+				f7elem := &svcapitypes.Tag{}
+				if f7iter.Key != nil {
+					f7elem.Key = f7iter.Key
 				}
-				if f8iter.Value != nil {
-					f8elem.Value = f8iter.Value
+				if f7iter.Value != nil {
+					f7elem.Value = f7iter.Value
 				}
-				f8 = append(f8, f8elem)
+				f7 = append(f7, f7elem)
 			}
-			ko.Spec.Tags = f8
+			ko.Spec.Tags = f7
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -205,6 +200,7 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	rm.setSpecCIDRs(ko)
 	if dnsAttrs, err := rm.getDNSAttributes(ctx, *ko.Status.VPCID); err != nil {
 		return nil, err
 	} else {
@@ -258,6 +254,9 @@ func (rm *resourceManager) sdkCreate(
 	}
 	updateTagSpecificationsInCreateRequest(desired, input)
 
+	// The first CIDR block will be used as the primary IPv4 CIDR block for the VPC
+	applyPrimaryCIDRBlockInCreateRequest(desired, input)
+
 	var resp *svcsdk.CreateVpcOutput
 	_ = resp
 	resp, err = rm.sdkapi.CreateVpcWithContext(ctx, input)
@@ -269,34 +268,29 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	if resp.Vpc.CidrBlock != nil {
-		ko.Spec.CIDRBlock = resp.Vpc.CidrBlock
-	} else {
-		ko.Spec.CIDRBlock = nil
-	}
 	if resp.Vpc.CidrBlockAssociationSet != nil {
-		f1 := []*svcapitypes.VPCCIDRBlockAssociation{}
-		for _, f1iter := range resp.Vpc.CidrBlockAssociationSet {
-			f1elem := &svcapitypes.VPCCIDRBlockAssociation{}
-			if f1iter.AssociationId != nil {
-				f1elem.AssociationID = f1iter.AssociationId
+		f0 := []*svcapitypes.VPCCIDRBlockAssociation{}
+		for _, f0iter := range resp.Vpc.CidrBlockAssociationSet {
+			f0elem := &svcapitypes.VPCCIDRBlockAssociation{}
+			if f0iter.AssociationId != nil {
+				f0elem.AssociationID = f0iter.AssociationId
 			}
-			if f1iter.CidrBlock != nil {
-				f1elem.CIDRBlock = f1iter.CidrBlock
+			if f0iter.CidrBlock != nil {
+				f0elem.CIDRBlock = f0iter.CidrBlock
 			}
-			if f1iter.CidrBlockState != nil {
-				f1elemf2 := &svcapitypes.VPCCIDRBlockState{}
-				if f1iter.CidrBlockState.State != nil {
-					f1elemf2.State = f1iter.CidrBlockState.State
+			if f0iter.CidrBlockState != nil {
+				f0elemf2 := &svcapitypes.VPCCIDRBlockState{}
+				if f0iter.CidrBlockState.State != nil {
+					f0elemf2.State = f0iter.CidrBlockState.State
 				}
-				if f1iter.CidrBlockState.StatusMessage != nil {
-					f1elemf2.StatusMessage = f1iter.CidrBlockState.StatusMessage
+				if f0iter.CidrBlockState.StatusMessage != nil {
+					f0elemf2.StatusMessage = f0iter.CidrBlockState.StatusMessage
 				}
-				f1elem.CIDRBlockState = f1elemf2
+				f0elem.CIDRBlockState = f0elemf2
 			}
-			f1 = append(f1, f1elem)
+			f0 = append(f0, f0elem)
 		}
-		ko.Status.CIDRBlockAssociationSet = f1
+		ko.Status.CIDRBlockAssociationSet = f0
 	} else {
 		ko.Status.CIDRBlockAssociationSet = nil
 	}
@@ -311,34 +305,34 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.InstanceTenancy = nil
 	}
 	if resp.Vpc.Ipv6CidrBlockAssociationSet != nil {
-		f4 := []*svcapitypes.VPCIPv6CIDRBlockAssociation{}
-		for _, f4iter := range resp.Vpc.Ipv6CidrBlockAssociationSet {
-			f4elem := &svcapitypes.VPCIPv6CIDRBlockAssociation{}
-			if f4iter.AssociationId != nil {
-				f4elem.AssociationID = f4iter.AssociationId
+		f3 := []*svcapitypes.VPCIPv6CIDRBlockAssociation{}
+		for _, f3iter := range resp.Vpc.Ipv6CidrBlockAssociationSet {
+			f3elem := &svcapitypes.VPCIPv6CIDRBlockAssociation{}
+			if f3iter.AssociationId != nil {
+				f3elem.AssociationID = f3iter.AssociationId
 			}
-			if f4iter.Ipv6CidrBlock != nil {
-				f4elem.IPv6CIDRBlock = f4iter.Ipv6CidrBlock
+			if f3iter.Ipv6CidrBlock != nil {
+				f3elem.IPv6CIDRBlock = f3iter.Ipv6CidrBlock
 			}
-			if f4iter.Ipv6CidrBlockState != nil {
-				f4elemf2 := &svcapitypes.VPCCIDRBlockState{}
-				if f4iter.Ipv6CidrBlockState.State != nil {
-					f4elemf2.State = f4iter.Ipv6CidrBlockState.State
+			if f3iter.Ipv6CidrBlockState != nil {
+				f3elemf2 := &svcapitypes.VPCCIDRBlockState{}
+				if f3iter.Ipv6CidrBlockState.State != nil {
+					f3elemf2.State = f3iter.Ipv6CidrBlockState.State
 				}
-				if f4iter.Ipv6CidrBlockState.StatusMessage != nil {
-					f4elemf2.StatusMessage = f4iter.Ipv6CidrBlockState.StatusMessage
+				if f3iter.Ipv6CidrBlockState.StatusMessage != nil {
+					f3elemf2.StatusMessage = f3iter.Ipv6CidrBlockState.StatusMessage
 				}
-				f4elem.IPv6CIDRBlockState = f4elemf2
+				f3elem.IPv6CIDRBlockState = f3elemf2
 			}
-			if f4iter.Ipv6Pool != nil {
-				f4elem.IPv6Pool = f4iter.Ipv6Pool
+			if f3iter.Ipv6Pool != nil {
+				f3elem.IPv6Pool = f3iter.Ipv6Pool
 			}
-			if f4iter.NetworkBorderGroup != nil {
-				f4elem.NetworkBorderGroup = f4iter.NetworkBorderGroup
+			if f3iter.NetworkBorderGroup != nil {
+				f3elem.NetworkBorderGroup = f3iter.NetworkBorderGroup
 			}
-			f4 = append(f4, f4elem)
+			f3 = append(f3, f3elem)
 		}
-		ko.Status.IPv6CIDRBlockAssociationSet = f4
+		ko.Status.IPv6CIDRBlockAssociationSet = f3
 	} else {
 		ko.Status.IPv6CIDRBlockAssociationSet = nil
 	}
@@ -358,18 +352,18 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.State = nil
 	}
 	if resp.Vpc.Tags != nil {
-		f8 := []*svcapitypes.Tag{}
-		for _, f8iter := range resp.Vpc.Tags {
-			f8elem := &svcapitypes.Tag{}
-			if f8iter.Key != nil {
-				f8elem.Key = f8iter.Key
+		f7 := []*svcapitypes.Tag{}
+		for _, f7iter := range resp.Vpc.Tags {
+			f7elem := &svcapitypes.Tag{}
+			if f7iter.Key != nil {
+				f7elem.Key = f7iter.Key
 			}
-			if f8iter.Value != nil {
-				f8elem.Value = f8iter.Value
+			if f7iter.Value != nil {
+				f7elem.Value = f7iter.Value
 			}
-			f8 = append(f8, f8elem)
+			f7 = append(f7, f7elem)
 		}
-		ko.Spec.Tags = f8
+		ko.Spec.Tags = f7
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -380,6 +374,7 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	rm.setSpecCIDRs(ko)
 	err = rm.createAttributes(ctx, &resource{ko})
 	if err != nil {
 		return nil, err
@@ -397,9 +392,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 
 	if r.ko.Spec.AmazonProvidedIPv6CIDRBlock != nil {
 		res.SetAmazonProvidedIpv6CidrBlock(*r.ko.Spec.AmazonProvidedIPv6CIDRBlock)
-	}
-	if r.ko.Spec.CIDRBlock != nil {
-		res.SetCidrBlock(*r.ko.Spec.CIDRBlock)
 	}
 	if r.ko.Spec.InstanceTenancy != nil {
 		res.SetInstanceTenancy(*r.ko.Spec.InstanceTenancy)

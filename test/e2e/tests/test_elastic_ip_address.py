@@ -46,37 +46,59 @@ def get_address(ec2_client, allocation_id: str) -> dict:
 def address_exists(ec2_client, allocation_id: str) -> bool:
     return get_address(ec2_client, allocation_id) is not None
 
+@pytest.fixture
+def simple_elastic_ip_address(request):
+    resource_name = random_suffix_name("elastic-ip-ack-test", 24)
+    resource_file = "elastic_ip_address"
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["ADDRESS_NAME"] = resource_name
+    replacements["PUBLIC_IPV4_POOL"] = "amazon"
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'resource_file' in data:
+            resource_file = data['resource_file']
+        if 'address' in data:
+            replacements["ADDRESS"] = data['address']
+        if 'public_ipv4_pool' in data:
+            replacements["PUBLIC_IPV4_POOL"] = data['public_ipv4_pool']
+
+    # Load ElasticIPAddress CR
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestElasticIPAddress:
-    def test_create_delete(self, ec2_client):
-        resource_name = random_suffix_name("elastic-ip-ack-test", 24)
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["ADDRESS_NAME"] = resource_name
-        replacements["PUBLIC_IPV4_POOL"] = "amazon"
-
-        # Load ElasticIPAddress CR
-        resource_data = load_ec2_resource(
-            "elastic_ip_address",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["allocationID"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+    def test_create_delete(self, ec2_client, simple_elastic_ip_address):
+        (ref, cr) = simple_elastic_ip_address
+        resource_id = cr["status"]["allocationID"]
 
         # Check Address exists
         exists = address_exists(ec2_client, resource_id)
@@ -91,30 +113,10 @@ class TestElasticIPAddress:
         # Check Address doesn't exist
         exists = address_exists(ec2_client, resource_id)
         assert not exists
-        
-    def test_terminal_condition_invalid_parameter_value(self):
-        resource_name = random_suffix_name("elastic-ip-ack-fail-1", 24)
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        test_resource_values["ADDRESS_NAME"] = resource_name
-        test_resource_values["PUBLIC_IPV4_POOL"] = "InvalidIpV4Address"
-
-        # Load ElasticIPAddress CR
-        resource_data = load_ec2_resource(
-            "elastic_ip_address",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
+    
+    @pytest.mark.resource_data({'public_ipv4_pool': 'InvalidIpV4Address'})
+    def test_terminal_condition_invalid_parameter_value(self, simple_elastic_ip_address):
+        (ref, _) = simple_elastic_ip_address
 
         expected_msg = "InvalidParameterValue: invalid value for parameter pool: InvalidIpV4Address"
         terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
@@ -123,30 +125,9 @@ class TestElasticIPAddress:
         # invalid value for parameter pool: InvalidIpV4Address
         assert expected_msg in terminal_condition['message']
 
-    def test_terminal_condition_invalid_parameter_combination(self):
-        resource_name = random_suffix_name("elastic-ip-ack-fail-2", 24)
-        test_resource_values = REPLACEMENT_VALUES.copy()
-        test_resource_values["ADDRESS_NAME"] = resource_name
-        test_resource_values["PUBLIC_IPV4_POOL"] = "amazon"
-        test_resource_values["ADDRESS"] = "52.27.68.220"
-
-        # Load ElasticIPAddress CR
-        resource_data = load_ec2_resource(
-            "invalid/elastic_ip_invalid_combination",
-            additional_replacements=test_resource_values,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
+    @pytest.mark.resource_data({'address': '52.27.68.220', 'resource_file': 'invalid/elastic_ip_invalid_combination'})
+    def test_terminal_condition_invalid_parameter_combination(self, simple_elastic_ip_address):
+        (ref, _) = simple_elastic_ip_address
 
         expected_msg = "InvalidParameterCombination: The parameter PublicIpv4Pool cannot be used with the parameter Address"
         terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")

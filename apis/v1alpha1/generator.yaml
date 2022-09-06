@@ -22,10 +22,13 @@ ignore:
     - CreateSubnetInput.TagSpecifications
     - CreateTransitGatewayInput.DryRun
     - CreateTransitGatewayInput.TagSpecifications
+    - CreateVpcInput.CidrBlock
+    - CreateVpcOutput.Vpc.CidrBlock
     - CreateVpcInput.DryRun
     - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
+    - CreateVpcEndpointInput.ClientToken
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
@@ -425,6 +428,10 @@ resources:
       terminal_codes:
         - InvalidParameterValue
     fields:
+      CIDRBlocks:
+        custom_field:
+          list_of: String
+        is_required: true
       EnableDNSSupport:
         from:
           operation: ModifyVpcAttribute

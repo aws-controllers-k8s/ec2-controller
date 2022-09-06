@@ -32,34 +32,47 @@ RESOURCE_PLURAL = "transitgateways"
 CREATE_WAIT_AFTER_SECONDS = 90
 DELETE_WAIT_AFTER_SECONDS = 10
 
+@pytest.fixture
+def simple_transit_gateway():
+    resource_name = random_suffix_name("tgw-ack-test", 24)
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["TGW_NAME"] = resource_name
+
+    # Load TGW CR
+    resource_data = load_ec2_resource(
+        "transitgateway",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestTGW:
-    def test_create_delete(self, ec2_client):
-        resource_name = random_suffix_name("tgw-ack-test", 24)
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["TGW_NAME"] = resource_name
-
-        # Load TGW CR
-        resource_data = load_ec2_resource(
-            "transitgateway",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        resource = k8s.get_resource(ref)
-        resource_id = resource["status"]["transitGatewayID"]
+    def test_create_delete(self, ec2_client, simple_transit_gateway):
+        (ref, cr) = simple_transit_gateway
+        resource_id = cr["status"]["transitGatewayID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 

@@ -453,9 +453,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateVpcEndpointInput, error) {
 	res := &svcsdk.CreateVpcEndpointInput{}
 
-	if r.ko.Spec.ClientToken != nil {
-		res.SetClientToken(*r.ko.Spec.ClientToken)
-	}
 	if r.ko.Spec.PolicyDocument != nil {
 		res.SetPolicyDocument(*r.ko.Spec.PolicyDocument)
 	}
@@ -463,34 +460,34 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetPrivateDnsEnabled(*r.ko.Spec.PrivateDNSEnabled)
 	}
 	if r.ko.Spec.RouteTableIDs != nil {
+		f2 := []*string{}
+		for _, f2iter := range r.ko.Spec.RouteTableIDs {
+			var f2elem string
+			f2elem = *f2iter
+			f2 = append(f2, &f2elem)
+		}
+		res.SetRouteTableIds(f2)
+	}
+	if r.ko.Spec.SecurityGroupIDs != nil {
 		f3 := []*string{}
-		for _, f3iter := range r.ko.Spec.RouteTableIDs {
+		for _, f3iter := range r.ko.Spec.SecurityGroupIDs {
 			var f3elem string
 			f3elem = *f3iter
 			f3 = append(f3, &f3elem)
 		}
-		res.SetRouteTableIds(f3)
-	}
-	if r.ko.Spec.SecurityGroupIDs != nil {
-		f4 := []*string{}
-		for _, f4iter := range r.ko.Spec.SecurityGroupIDs {
-			var f4elem string
-			f4elem = *f4iter
-			f4 = append(f4, &f4elem)
-		}
-		res.SetSecurityGroupIds(f4)
+		res.SetSecurityGroupIds(f3)
 	}
 	if r.ko.Spec.ServiceName != nil {
 		res.SetServiceName(*r.ko.Spec.ServiceName)
 	}
 	if r.ko.Spec.SubnetIDs != nil {
-		f6 := []*string{}
-		for _, f6iter := range r.ko.Spec.SubnetIDs {
-			var f6elem string
-			f6elem = *f6iter
-			f6 = append(f6, &f6elem)
+		f5 := []*string{}
+		for _, f5iter := range r.ko.Spec.SubnetIDs {
+			var f5elem string
+			f5elem = *f5iter
+			f5 = append(f5, &f5elem)
 		}
-		res.SetSubnetIds(f6)
+		res.SetSubnetIds(f5)
 	}
 	if r.ko.Spec.VPCEndpointType != nil {
 		res.SetVpcEndpointType(*r.ko.Spec.VPCEndpointType)

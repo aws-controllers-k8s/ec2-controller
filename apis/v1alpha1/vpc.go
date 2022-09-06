@@ -28,11 +28,9 @@ type VPCSpec struct {
 	// the VPC. You cannot specify the range of IP addresses, or the size of the
 	// CIDR block.
 	AmazonProvidedIPv6CIDRBlock *bool `json:"amazonProvidedIPv6CIDRBlock,omitempty"`
-	// The IPv4 network range for the VPC, in CIDR notation. For example, 10.0.0.0/16.
-	// We modify the specified CIDR block to its canonical form; for example, if
-	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
+
 	// +kubebuilder:validation:Required
-	CIDRBlock *string `json:"cidrBlock"`
+	CIDRBlocks []*string `json:"cidrBlocks"`
 	// The attribute value. The valid values are true or false.
 	EnableDNSHostnames *bool `json:"enableDNSHostnames,omitempty"`
 	// The attribute value. The valid values are true or false.
