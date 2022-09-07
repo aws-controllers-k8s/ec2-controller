@@ -281,6 +281,121 @@ func applyPrimaryCIDRBlockInCreateRequest(r *resource,
 	}
 }
 
+// syncTags used to keep tags in sync using createTags and deleteTags functions
+func (rm *resourceManager) syncTags(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncTags")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	toAdd, toDelete := computeTagsDelta(
+		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+	)
+
+	if err = rm.deleteTags(ctx, latest, toDelete); err != nil {
+		return err
+	}
+
+	if err = rm.createTags(ctx, desired, toAdd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createTags function creates tags for VPC resource using CreateTags API calls
+func (rm *resourceManager) createTags(
+	ctx context.Context,
+	r *resource,
+	tags []*svcapitypes.Tag,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.createTags")
+	defer exit(err)
+
+	resourceId := []*string{r.ko.Status.VPCID}
+
+	for _, i := range tags {
+		toAdd := rm.newTag(*i)
+		req := &svcsdk.CreateTagsInput{
+			Resources: resourceId,
+			Tags:      []*svcsdk.Tag{toAdd},
+		}
+		_, err := rm.sdkapi.CreateTagsWithContext(ctx, req)
+		rm.metrics.RecordAPICall("CREATE", "CreateTags", err)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// deleteTags function deletes tags from VPC resource using DeleteTags API calls
+func (rm *resourceManager) deleteTags(
+	ctx context.Context,
+	r *resource,
+	tags []*svcapitypes.Tag,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteTags")
+	defer exit(err)
+
+	resourceId := []*string{r.ko.Status.VPCID}
+
+	for _, i := range tags {
+		toDelete := rm.newTag(*i)
+		req := &svcsdk.DeleteTagsInput{
+			Resources: resourceId,
+			Tags:      []*svcsdk.Tag{toDelete},
+		}
+		_, err = rm.sdkapi.DeleteTagsWithContext(ctx, req)
+		rm.metrics.RecordAPICall("DELETE", "DeleteTags", err)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// computeTagsDelta returns tags to be added and removed from the resource
+func computeTagsDelta(
+	desired []*svcapitypes.Tag,
+	latest []*svcapitypes.Tag,
+) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
+
+	desiredTags := map[string]string{}
+	for _, tag := range desired {
+		desiredTags[*tag.Key] = *tag.Value
+	}
+
+	latestTags := map[string]string{}
+	for _, tag := range latest {
+		latestTags[*tag.Key] = *tag.Value
+	}
+
+	for _, tag := range desired {
+		val, ok := latestTags[*tag.Key]
+		if !ok || val != *tag.Value {
+			toAdd = append(toAdd, tag)
+		}
+	}
+
+	for _, tag := range latest {
+		_, ok := desiredTags[*tag.Key]
+		if !ok {
+			toDelete = append(toDelete, tag)
+		}
+	}
+
+	return toAdd, toDelete
+
+}
+
 // updateTagSpecificationsInCreateRequest adds
 // Tags defined in the Spec to CreateVpcInput.TagSpecification
 // and ensures the ResourceType is always set to 'vpc'

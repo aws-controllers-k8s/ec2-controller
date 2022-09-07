@@ -74,6 +74,10 @@ def simple_vpc(request):
             replacements["ENABLE_DNS_SUPPORT"] = data['enable_dns_support']
         if 'enable_dns_hostnames' in data:
             replacements["ENABLE_DNS_HOSTNAMES"] = data['enable_dns_hostnames']
+        if 'key' in data:
+            replacements["KEY"] = data['key']
+        if 'value' in data:
+            replacements["VALUE"] = data['value']
 
     # Load VPC CR
     resource_data = load_ec2_resource(

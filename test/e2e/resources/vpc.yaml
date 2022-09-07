@@ -7,3 +7,6 @@ spec:
   - $CIDR_BLOCK
   enableDNSSupport: $ENABLE_DNS_SUPPORT
   enableDNSHostnames: $ENABLE_DNS_HOSTNAMES
+  tags:
+    - key: $KEY
+      value: $VALUE
