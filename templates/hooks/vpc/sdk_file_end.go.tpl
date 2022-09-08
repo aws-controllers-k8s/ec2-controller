@@ -10,15 +10,6 @@
 {{- if eq $vpcRefName "Tags" }}
 {{- $vpcRef := $vpcMemberRefs.Shape.MemberRef }}
 {{- $vpcRefName = "Tag" }}
-func compare{{ $vpcRefName }}(
-	    a *svcapitypes.{{ $vpcRefName }},
-	    b *svcapitypes.{{ $vpcRefName }},
-) *ackcompare.Delta {
-	delta := ackcompare.NewDelta()
-{{ GoCodeCompareStruct $CRD $vpcRef.Shape "delta" "a" "b" $vpcRefName 1 }}
-	return delta
-}
-
 func (rm *resourceManager) new{{ $vpcRefName }}(
 	    c svcapitypes.{{ $vpcRefName }},
 ) *svcsdk.{{ $vpcRefName }} {

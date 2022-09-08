@@ -8,5 +8,5 @@ spec:
   enableDNSSupport: $ENABLE_DNS_SUPPORT
   enableDNSHostnames: $ENABLE_DNS_HOSTNAMES
   tags:
-    - key: $KEY
-      value: $VALUE
+    - key: $TAG_KEY
+      value: $TAG_VALUE

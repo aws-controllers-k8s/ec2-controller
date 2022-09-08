@@ -569,29 +569,6 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	}
 }
 
-func compareTag(
-	a *svcapitypes.Tag,
-	b *svcapitypes.Tag,
-) *ackcompare.Delta {
-	delta := ackcompare.NewDelta()
-	if ackcompare.HasNilDifference(a.Key, b.Key) {
-		delta.Add("Tag.Key", a.Key, b.Key)
-	} else if a.Key != nil && b.Key != nil {
-		if *a.Key != *b.Key {
-			delta.Add("Tag.Key", a.Key, b.Key)
-		}
-	}
-	if ackcompare.HasNilDifference(a.Value, b.Value) {
-		delta.Add("Tag.Value", a.Value, b.Value)
-	} else if a.Value != nil && b.Value != nil {
-		if *a.Value != *b.Value {
-			delta.Add("Tag.Value", a.Value, b.Value)
-		}
-	}
-
-	return delta
-}
-
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
 ) *svcsdk.Tag {

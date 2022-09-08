@@ -267,6 +267,12 @@ func (rm *resourceManager) customUpdate(
 		}
 	}
 
+	if delta.DifferentAt("Spec.Tags") {
+		if err := rm.syncTags(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
+
 	rm.setStatusDefaults(ko)
 	return &resource{ko}, nil
 }
