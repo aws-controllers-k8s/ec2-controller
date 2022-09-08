@@ -84,7 +84,7 @@ class TestVpc:
         # Check VPC no longer exists in AWS
         ec2_validator.assert_vpc(resource_id, exists=False)
 
-    @pytest.mark.resource_data({'key': 'initialtagkey', 'value': 'initialtagvalue'})
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
     def test_crud_tags(self, ec2_client, simple_vpc):
         (ref, cr) = simple_vpc
         
