@@ -109,29 +109,29 @@ func validateReferenceFields(ko *svcapitypes.RouteTable) error {
 // resource
 func hasNonNilReferences(ko *svcapitypes.RouteTable) bool {
 	if ko.Spec.Routes != nil {
-		for _, iter35 := range ko.Spec.Routes {
-			if iter35.GatewayRef != nil {
-				return true
-			}
-		}
-	}
-	if ko.Spec.Routes != nil {
-		for _, iter38 := range ko.Spec.Routes {
-			if iter38.NATGatewayRef != nil {
+		for _, iter37 := range ko.Spec.Routes {
+			if iter37.GatewayRef != nil {
 				return true
 			}
 		}
 	}
 	if ko.Spec.Routes != nil {
 		for _, iter40 := range ko.Spec.Routes {
-			if iter40.TransitGatewayRef != nil {
+			if iter40.NATGatewayRef != nil {
 				return true
 			}
 		}
 	}
 	if ko.Spec.Routes != nil {
-		for _, iter41 := range ko.Spec.Routes {
-			if iter41.VPCEndpointRef != nil {
+		for _, iter42 := range ko.Spec.Routes {
+			if iter42.TransitGatewayRef != nil {
+				return true
+			}
+		}
+	}
+	if ko.Spec.Routes != nil {
+		for _, iter43 := range ko.Spec.Routes {
+			if iter43.VPCEndpointRef != nil {
 				return true
 			}
 		}

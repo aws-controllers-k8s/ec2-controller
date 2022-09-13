@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: securitygroups.ec2.services.k8s.aws
 spec:
@@ -88,8 +87,12 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: Describes a security group and Amazon Web Services
-                          account ID pair.
+                        description: "Describes a security group and Amazon Web Services
+                          account ID pair. \n We are retiring EC2-Classic on August
+                          15, 2022. We recommend that you migrate from EC2-Classic
+                          to a VPC. For more information, see Migrate from EC2-Classic
+                          to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+                          in the Amazon Elastic Compute Cloud User Guide."
                         properties:
                           description:
                             type: string
@@ -154,8 +157,12 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: Describes a security group and Amazon Web Services
-                          account ID pair.
+                        description: "Describes a security group and Amazon Web Services
+                          account ID pair. \n We are retiring EC2-Classic on August
+                          15, 2022. We recommend that you migrate from EC2-Classic
+                          to a VPC. For more information, see Migrate from EC2-Classic
+                          to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+                          in the Amazon Elastic Compute Cloud User Guide."
                         properties:
                           description:
                             type: string
@@ -200,8 +207,7 @@ spec:
               vpcRef:
                 description: 'AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference type to provide more user friendly syntax
-                  for references using ''from'' field Ex: APIIDRef:   from:     name:
-                  my-api'
+                  for references using ''from'' field Ex: APIIDRef: from: name: my-api'
                 properties:
                   from:
                     description: AWSResourceReference provides all the values necessary
@@ -325,9 +331,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

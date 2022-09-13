@@ -72,6 +72,20 @@ func newResourceDelta(
 			delta.Add("Spec.InstanceTenancy", a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv4IPamPoolID, b.ko.Spec.IPv4IPamPoolID) {
+		delta.Add("Spec.IPv4IPamPoolID", a.ko.Spec.IPv4IPamPoolID, b.ko.Spec.IPv4IPamPoolID)
+	} else if a.ko.Spec.IPv4IPamPoolID != nil && b.ko.Spec.IPv4IPamPoolID != nil {
+		if *a.ko.Spec.IPv4IPamPoolID != *b.ko.Spec.IPv4IPamPoolID {
+			delta.Add("Spec.IPv4IPamPoolID", a.ko.Spec.IPv4IPamPoolID, b.ko.Spec.IPv4IPamPoolID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv4NetmaskLength, b.ko.Spec.IPv4NetmaskLength) {
+		delta.Add("Spec.IPv4NetmaskLength", a.ko.Spec.IPv4NetmaskLength, b.ko.Spec.IPv4NetmaskLength)
+	} else if a.ko.Spec.IPv4NetmaskLength != nil && b.ko.Spec.IPv4NetmaskLength != nil {
+		if *a.ko.Spec.IPv4NetmaskLength != *b.ko.Spec.IPv4NetmaskLength {
+			delta.Add("Spec.IPv4NetmaskLength", a.ko.Spec.IPv4NetmaskLength, b.ko.Spec.IPv4NetmaskLength)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPv6CIDRBlock, b.ko.Spec.IPv6CIDRBlock) {
 		delta.Add("Spec.IPv6CIDRBlock", a.ko.Spec.IPv6CIDRBlock, b.ko.Spec.IPv6CIDRBlock)
 	} else if a.ko.Spec.IPv6CIDRBlock != nil && b.ko.Spec.IPv6CIDRBlock != nil {
@@ -84,6 +98,20 @@ func newResourceDelta(
 	} else if a.ko.Spec.IPv6CIDRBlockNetworkBorderGroup != nil && b.ko.Spec.IPv6CIDRBlockNetworkBorderGroup != nil {
 		if *a.ko.Spec.IPv6CIDRBlockNetworkBorderGroup != *b.ko.Spec.IPv6CIDRBlockNetworkBorderGroup {
 			delta.Add("Spec.IPv6CIDRBlockNetworkBorderGroup", a.ko.Spec.IPv6CIDRBlockNetworkBorderGroup, b.ko.Spec.IPv6CIDRBlockNetworkBorderGroup)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv6IPamPoolID, b.ko.Spec.IPv6IPamPoolID) {
+		delta.Add("Spec.IPv6IPamPoolID", a.ko.Spec.IPv6IPamPoolID, b.ko.Spec.IPv6IPamPoolID)
+	} else if a.ko.Spec.IPv6IPamPoolID != nil && b.ko.Spec.IPv6IPamPoolID != nil {
+		if *a.ko.Spec.IPv6IPamPoolID != *b.ko.Spec.IPv6IPamPoolID {
+			delta.Add("Spec.IPv6IPamPoolID", a.ko.Spec.IPv6IPamPoolID, b.ko.Spec.IPv6IPamPoolID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv6NetmaskLength, b.ko.Spec.IPv6NetmaskLength) {
+		delta.Add("Spec.IPv6NetmaskLength", a.ko.Spec.IPv6NetmaskLength, b.ko.Spec.IPv6NetmaskLength)
+	} else if a.ko.Spec.IPv6NetmaskLength != nil && b.ko.Spec.IPv6NetmaskLength != nil {
+		if *a.ko.Spec.IPv6NetmaskLength != *b.ko.Spec.IPv6NetmaskLength {
+			delta.Add("Spec.IPv6NetmaskLength", a.ko.Spec.IPv6NetmaskLength, b.ko.Spec.IPv6NetmaskLength)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPv6Pool, b.ko.Spec.IPv6Pool) {

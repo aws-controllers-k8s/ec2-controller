@@ -153,6 +153,9 @@ func (rm *resourceManager) sdkFind(
 				if f4iter.CarrierGatewayId != nil {
 					f4elem.CarrierGatewayID = f4iter.CarrierGatewayId
 				}
+				if f4iter.CoreNetworkArn != nil {
+					f4elem.CoreNetworkARN = f4iter.CoreNetworkArn
+				}
 				if f4iter.DestinationCidrBlock != nil {
 					f4elem.DestinationCIDRBlock = f4iter.DestinationCidrBlock
 				}
@@ -348,6 +351,9 @@ func (rm *resourceManager) sdkCreate(
 			f4elem := &svcapitypes.CreateRouteInput{}
 			if f4iter.CarrierGatewayId != nil {
 				f4elem.CarrierGatewayID = f4iter.CarrierGatewayId
+			}
+			if f4iter.CoreNetworkArn != nil {
+				f4elem.CoreNetworkARN = f4iter.CoreNetworkArn
 			}
 			if f4iter.DestinationCidrBlock != nil {
 				f4elem.DestinationCIDRBlock = f4iter.DestinationCidrBlock
@@ -603,6 +609,13 @@ func compareCreateRouteInput(
 			delta.Add("CreateRouteInput.CarrierGatewayID", a.CarrierGatewayID, b.CarrierGatewayID)
 		}
 	}
+	if ackcompare.HasNilDifference(a.CoreNetworkARN, b.CoreNetworkARN) {
+		delta.Add("CreateRouteInput.CoreNetworkARN", a.CoreNetworkARN, b.CoreNetworkARN)
+	} else if a.CoreNetworkARN != nil && b.CoreNetworkARN != nil {
+		if *a.CoreNetworkARN != *b.CoreNetworkARN {
+			delta.Add("CreateRouteInput.CoreNetworkARN", a.CoreNetworkARN, b.CoreNetworkARN)
+		}
+	}
 	if ackcompare.HasNilDifference(a.DestinationCIDRBlock, b.DestinationCIDRBlock) {
 		delta.Add("CreateRouteInput.DestinationCIDRBlock", a.DestinationCIDRBlock, b.DestinationCIDRBlock)
 	} else if a.DestinationCIDRBlock != nil && b.DestinationCIDRBlock != nil {
@@ -699,6 +712,9 @@ func (rm *resourceManager) newCreateRouteInput(
 	if c.CarrierGatewayID != nil {
 		res.SetCarrierGatewayId(*c.CarrierGatewayID)
 	}
+	if c.CoreNetworkARN != nil {
+		res.SetCoreNetworkArn(*c.CoreNetworkARN)
+	}
 	if c.DestinationCIDRBlock != nil {
 		res.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
 	}
@@ -766,6 +782,9 @@ func (rm *resourceManager) setResourceRoute(
 
 	if resp.CarrierGatewayId != nil {
 		res.CarrierGatewayID = resp.CarrierGatewayId
+	}
+	if resp.CoreNetworkArn != nil {
+		res.CoreNetworkARN = resp.CoreNetworkArn
 	}
 	if resp.DestinationCidrBlock != nil {
 		res.DestinationCIDRBlock = resp.DestinationCidrBlock

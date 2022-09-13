@@ -24,6 +24,10 @@ import (
 //
 // Describes a VPC endpoint.
 type VPCEndpointSpec struct {
+	// The DNS options for the endpoint.
+	DNSOptions *DNSOptionsSpecification `json:"dnsOptions,omitempty"`
+	// The IP address type for the endpoint.
+	IPAddressType *string `json:"ipAddressType,omitempty"`
 	// (Interface and gateway endpoints) A policy to attach to the endpoint that
 	// controls access to the service. The policy must be in valid JSON format.
 	// If this parameter is not specified, we attach a default policy that allows
@@ -85,7 +89,7 @@ type VPCEndpointStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// The date and time that the VPC endpoint was created.
+	// The date and time that the endpoint was created.
 	// +kubebuilder:validation:Optional
 	CreationTimestamp *metav1.Time `json:"creationTimestamp,omitempty"`
 	// (Interface endpoint) The DNS entries for the endpoint.
@@ -95,22 +99,22 @@ type VPCEndpointStatus struct {
 	// with the network interface.
 	// +kubebuilder:validation:Optional
 	Groups []*SecurityGroupIdentifier `json:"groups,omitempty"`
-	// The last error that occurred for VPC endpoint.
+	// The last error that occurred for endpoint.
 	// +kubebuilder:validation:Optional
 	LastError *LastError `json:"lastError,omitempty"`
 	// (Interface endpoint) One or more network interfaces for the endpoint.
 	// +kubebuilder:validation:Optional
 	NetworkInterfaceIDs []*string `json:"networkInterfaceIDs,omitempty"`
-	// The ID of the Amazon Web Services account that owns the VPC endpoint.
+	// The ID of the Amazon Web Services account that owns the endpoint.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
-	// Indicates whether the VPC endpoint is being managed by its service.
+	// Indicates whether the endpoint is being managed by its service.
 	// +kubebuilder:validation:Optional
 	RequesterManaged *bool `json:"requesterManaged,omitempty"`
-	// The state of the VPC endpoint.
+	// The state of the endpoint.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
-	// The ID of the VPC endpoint.
+	// The ID of the endpoint.
 	// +kubebuilder:validation:Optional
 	VPCEndpointID *string `json:"vpcEndpointID,omitempty"`
 }

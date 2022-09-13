@@ -102,6 +102,13 @@ func newResourceDelta(
 			}
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.DisableAPIStop, b.ko.Spec.DisableAPIStop) {
+		delta.Add("Spec.DisableAPIStop", a.ko.Spec.DisableAPIStop, b.ko.Spec.DisableAPIStop)
+	} else if a.ko.Spec.DisableAPIStop != nil && b.ko.Spec.DisableAPIStop != nil {
+		if *a.ko.Spec.DisableAPIStop != *b.ko.Spec.DisableAPIStop {
+			delta.Add("Spec.DisableAPIStop", a.ko.Spec.DisableAPIStop, b.ko.Spec.DisableAPIStop)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.DisableAPITermination, b.ko.Spec.DisableAPITermination) {
 		delta.Add("Spec.DisableAPITermination", a.ko.Spec.DisableAPITermination, b.ko.Spec.DisableAPITermination)
 	} else if a.ko.Spec.DisableAPITermination != nil && b.ko.Spec.DisableAPITermination != nil {
@@ -285,6 +292,17 @@ func newResourceDelta(
 	if !reflect.DeepEqual(a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications) {
 		delta.Add("Spec.LicenseSpecifications", a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications)
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.MaintenanceOptions, b.ko.Spec.MaintenanceOptions) {
+		delta.Add("Spec.MaintenanceOptions", a.ko.Spec.MaintenanceOptions, b.ko.Spec.MaintenanceOptions)
+	} else if a.ko.Spec.MaintenanceOptions != nil && b.ko.Spec.MaintenanceOptions != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.MaintenanceOptions.AutoRecovery, b.ko.Spec.MaintenanceOptions.AutoRecovery) {
+			delta.Add("Spec.MaintenanceOptions.AutoRecovery", a.ko.Spec.MaintenanceOptions.AutoRecovery, b.ko.Spec.MaintenanceOptions.AutoRecovery)
+		} else if a.ko.Spec.MaintenanceOptions.AutoRecovery != nil && b.ko.Spec.MaintenanceOptions.AutoRecovery != nil {
+			if *a.ko.Spec.MaintenanceOptions.AutoRecovery != *b.ko.Spec.MaintenanceOptions.AutoRecovery {
+				delta.Add("Spec.MaintenanceOptions.AutoRecovery", a.ko.Spec.MaintenanceOptions.AutoRecovery, b.ko.Spec.MaintenanceOptions.AutoRecovery)
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.MaxCount, b.ko.Spec.MaxCount) {
 		delta.Add("Spec.MaxCount", a.ko.Spec.MaxCount, b.ko.Spec.MaxCount)
 	} else if a.ko.Spec.MaxCount != nil && b.ko.Spec.MaxCount != nil {
@@ -321,6 +339,13 @@ func newResourceDelta(
 		} else if a.ko.Spec.MetadataOptions.HTTPTokens != nil && b.ko.Spec.MetadataOptions.HTTPTokens != nil {
 			if *a.ko.Spec.MetadataOptions.HTTPTokens != *b.ko.Spec.MetadataOptions.HTTPTokens {
 				delta.Add("Spec.MetadataOptions.HTTPTokens", a.ko.Spec.MetadataOptions.HTTPTokens, b.ko.Spec.MetadataOptions.HTTPTokens)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.MetadataOptions.InstanceMetadataTags, b.ko.Spec.MetadataOptions.InstanceMetadataTags) {
+			delta.Add("Spec.MetadataOptions.InstanceMetadataTags", a.ko.Spec.MetadataOptions.InstanceMetadataTags, b.ko.Spec.MetadataOptions.InstanceMetadataTags)
+		} else if a.ko.Spec.MetadataOptions.InstanceMetadataTags != nil && b.ko.Spec.MetadataOptions.InstanceMetadataTags != nil {
+			if *a.ko.Spec.MetadataOptions.InstanceMetadataTags != *b.ko.Spec.MetadataOptions.InstanceMetadataTags {
+				delta.Add("Spec.MetadataOptions.InstanceMetadataTags", a.ko.Spec.MetadataOptions.InstanceMetadataTags, b.ko.Spec.MetadataOptions.InstanceMetadataTags)
 			}
 		}
 	}
@@ -402,6 +427,31 @@ func newResourceDelta(
 		} else if a.ko.Spec.Placement.Tenancy != nil && b.ko.Spec.Placement.Tenancy != nil {
 			if *a.ko.Spec.Placement.Tenancy != *b.ko.Spec.Placement.Tenancy {
 				delta.Add("Spec.Placement.Tenancy", a.ko.Spec.Placement.Tenancy, b.ko.Spec.Placement.Tenancy)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSNameOptions, b.ko.Spec.PrivateDNSNameOptions) {
+		delta.Add("Spec.PrivateDNSNameOptions", a.ko.Spec.PrivateDNSNameOptions, b.ko.Spec.PrivateDNSNameOptions)
+	} else if a.ko.Spec.PrivateDNSNameOptions != nil && b.ko.Spec.PrivateDNSNameOptions != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord, b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord) {
+			delta.Add("Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord", a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord, b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord)
+		} else if a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord != nil && b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord != nil {
+			if *a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord != *b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord {
+				delta.Add("Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord", a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord, b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord, b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord) {
+			delta.Add("Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord", a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord, b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord)
+		} else if a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord != nil && b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord != nil {
+			if *a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord != *b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord {
+				delta.Add("Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord", a.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord, b.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSNameOptions.HostnameType, b.ko.Spec.PrivateDNSNameOptions.HostnameType) {
+			delta.Add("Spec.PrivateDNSNameOptions.HostnameType", a.ko.Spec.PrivateDNSNameOptions.HostnameType, b.ko.Spec.PrivateDNSNameOptions.HostnameType)
+		} else if a.ko.Spec.PrivateDNSNameOptions.HostnameType != nil && b.ko.Spec.PrivateDNSNameOptions.HostnameType != nil {
+			if *a.ko.Spec.PrivateDNSNameOptions.HostnameType != *b.ko.Spec.PrivateDNSNameOptions.HostnameType {
+				delta.Add("Spec.PrivateDNSNameOptions.HostnameType", a.ko.Spec.PrivateDNSNameOptions.HostnameType, b.ko.Spec.PrivateDNSNameOptions.HostnameType)
 			}
 		}
 	}

@@ -123,31 +123,46 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.DefaultForAZ = nil
 		}
+		if elem.EnableDns64 != nil {
+			ko.Status.EnableDNS64 = elem.EnableDns64
+		} else {
+			ko.Status.EnableDNS64 = nil
+		}
+		if elem.EnableLniAtDeviceIndex != nil {
+			ko.Status.EnableLniAtDeviceIndex = elem.EnableLniAtDeviceIndex
+		} else {
+			ko.Status.EnableLniAtDeviceIndex = nil
+		}
 		if elem.Ipv6CidrBlockAssociationSet != nil {
-			f7 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
-			for _, f7iter := range elem.Ipv6CidrBlockAssociationSet {
-				f7elem := &svcapitypes.SubnetIPv6CIDRBlockAssociation{}
-				if f7iter.AssociationId != nil {
-					f7elem.AssociationID = f7iter.AssociationId
+			f9 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
+			for _, f9iter := range elem.Ipv6CidrBlockAssociationSet {
+				f9elem := &svcapitypes.SubnetIPv6CIDRBlockAssociation{}
+				if f9iter.AssociationId != nil {
+					f9elem.AssociationID = f9iter.AssociationId
 				}
-				if f7iter.Ipv6CidrBlock != nil {
-					f7elem.IPv6CIDRBlock = f7iter.Ipv6CidrBlock
+				if f9iter.Ipv6CidrBlock != nil {
+					f9elem.IPv6CIDRBlock = f9iter.Ipv6CidrBlock
 				}
-				if f7iter.Ipv6CidrBlockState != nil {
-					f7elemf2 := &svcapitypes.SubnetCIDRBlockState{}
-					if f7iter.Ipv6CidrBlockState.State != nil {
-						f7elemf2.State = f7iter.Ipv6CidrBlockState.State
+				if f9iter.Ipv6CidrBlockState != nil {
+					f9elemf2 := &svcapitypes.SubnetCIDRBlockState{}
+					if f9iter.Ipv6CidrBlockState.State != nil {
+						f9elemf2.State = f9iter.Ipv6CidrBlockState.State
 					}
-					if f7iter.Ipv6CidrBlockState.StatusMessage != nil {
-						f7elemf2.StatusMessage = f7iter.Ipv6CidrBlockState.StatusMessage
+					if f9iter.Ipv6CidrBlockState.StatusMessage != nil {
+						f9elemf2.StatusMessage = f9iter.Ipv6CidrBlockState.StatusMessage
 					}
-					f7elem.IPv6CIDRBlockState = f7elemf2
+					f9elem.IPv6CIDRBlockState = f9elemf2
 				}
-				f7 = append(f7, f7elem)
+				f9 = append(f9, f9elem)
 			}
-			ko.Status.IPv6CIDRBlockAssociationSet = f7
+			ko.Status.IPv6CIDRBlockAssociationSet = f9
 		} else {
 			ko.Status.IPv6CIDRBlockAssociationSet = nil
+		}
+		if elem.Ipv6Native != nil {
+			ko.Spec.IPv6Native = elem.Ipv6Native
+		} else {
+			ko.Spec.IPv6Native = nil
 		}
 		if elem.MapCustomerOwnedIpOnLaunch != nil {
 			ko.Status.MapCustomerOwnedIPOnLaunch = elem.MapCustomerOwnedIpOnLaunch
@@ -169,6 +184,21 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.OwnerID = nil
 		}
+		if elem.PrivateDnsNameOptionsOnLaunch != nil {
+			f15 := &svcapitypes.PrivateDNSNameOptionsOnLaunch{}
+			if elem.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord != nil {
+				f15.EnableResourceNameDNSAAAARecord = elem.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord
+			}
+			if elem.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord != nil {
+				f15.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord
+			}
+			if elem.PrivateDnsNameOptionsOnLaunch.HostnameType != nil {
+				f15.HostnameType = elem.PrivateDnsNameOptionsOnLaunch.HostnameType
+			}
+			ko.Status.PrivateDNSNameOptionsOnLaunch = f15
+		} else {
+			ko.Status.PrivateDNSNameOptionsOnLaunch = nil
+		}
 		if elem.State != nil {
 			ko.Status.State = elem.State
 		} else {
@@ -187,18 +217,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.SubnetID = nil
 		}
 		if elem.Tags != nil {
-			f15 := []*svcapitypes.Tag{}
-			for _, f15iter := range elem.Tags {
-				f15elem := &svcapitypes.Tag{}
-				if f15iter.Key != nil {
-					f15elem.Key = f15iter.Key
+			f19 := []*svcapitypes.Tag{}
+			for _, f19iter := range elem.Tags {
+				f19elem := &svcapitypes.Tag{}
+				if f19iter.Key != nil {
+					f19elem.Key = f19iter.Key
 				}
-				if f15iter.Value != nil {
-					f15elem.Value = f15iter.Value
+				if f19iter.Value != nil {
+					f19elem.Value = f19iter.Value
 				}
-				f15 = append(f15, f15elem)
+				f19 = append(f19, f19elem)
 			}
-			ko.Spec.Tags = f15
+			ko.Spec.Tags = f19
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -317,31 +347,46 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.DefaultForAZ = nil
 	}
+	if resp.Subnet.EnableDns64 != nil {
+		ko.Status.EnableDNS64 = resp.Subnet.EnableDns64
+	} else {
+		ko.Status.EnableDNS64 = nil
+	}
+	if resp.Subnet.EnableLniAtDeviceIndex != nil {
+		ko.Status.EnableLniAtDeviceIndex = resp.Subnet.EnableLniAtDeviceIndex
+	} else {
+		ko.Status.EnableLniAtDeviceIndex = nil
+	}
 	if resp.Subnet.Ipv6CidrBlockAssociationSet != nil {
-		f7 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
-		for _, f7iter := range resp.Subnet.Ipv6CidrBlockAssociationSet {
-			f7elem := &svcapitypes.SubnetIPv6CIDRBlockAssociation{}
-			if f7iter.AssociationId != nil {
-				f7elem.AssociationID = f7iter.AssociationId
+		f9 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
+		for _, f9iter := range resp.Subnet.Ipv6CidrBlockAssociationSet {
+			f9elem := &svcapitypes.SubnetIPv6CIDRBlockAssociation{}
+			if f9iter.AssociationId != nil {
+				f9elem.AssociationID = f9iter.AssociationId
 			}
-			if f7iter.Ipv6CidrBlock != nil {
-				f7elem.IPv6CIDRBlock = f7iter.Ipv6CidrBlock
+			if f9iter.Ipv6CidrBlock != nil {
+				f9elem.IPv6CIDRBlock = f9iter.Ipv6CidrBlock
 			}
-			if f7iter.Ipv6CidrBlockState != nil {
-				f7elemf2 := &svcapitypes.SubnetCIDRBlockState{}
-				if f7iter.Ipv6CidrBlockState.State != nil {
-					f7elemf2.State = f7iter.Ipv6CidrBlockState.State
+			if f9iter.Ipv6CidrBlockState != nil {
+				f9elemf2 := &svcapitypes.SubnetCIDRBlockState{}
+				if f9iter.Ipv6CidrBlockState.State != nil {
+					f9elemf2.State = f9iter.Ipv6CidrBlockState.State
 				}
-				if f7iter.Ipv6CidrBlockState.StatusMessage != nil {
-					f7elemf2.StatusMessage = f7iter.Ipv6CidrBlockState.StatusMessage
+				if f9iter.Ipv6CidrBlockState.StatusMessage != nil {
+					f9elemf2.StatusMessage = f9iter.Ipv6CidrBlockState.StatusMessage
 				}
-				f7elem.IPv6CIDRBlockState = f7elemf2
+				f9elem.IPv6CIDRBlockState = f9elemf2
 			}
-			f7 = append(f7, f7elem)
+			f9 = append(f9, f9elem)
 		}
-		ko.Status.IPv6CIDRBlockAssociationSet = f7
+		ko.Status.IPv6CIDRBlockAssociationSet = f9
 	} else {
 		ko.Status.IPv6CIDRBlockAssociationSet = nil
+	}
+	if resp.Subnet.Ipv6Native != nil {
+		ko.Spec.IPv6Native = resp.Subnet.Ipv6Native
+	} else {
+		ko.Spec.IPv6Native = nil
 	}
 	if resp.Subnet.MapCustomerOwnedIpOnLaunch != nil {
 		ko.Status.MapCustomerOwnedIPOnLaunch = resp.Subnet.MapCustomerOwnedIpOnLaunch
@@ -363,6 +408,21 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.OwnerID = nil
 	}
+	if resp.Subnet.PrivateDnsNameOptionsOnLaunch != nil {
+		f15 := &svcapitypes.PrivateDNSNameOptionsOnLaunch{}
+		if resp.Subnet.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord != nil {
+			f15.EnableResourceNameDNSAAAARecord = resp.Subnet.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord
+		}
+		if resp.Subnet.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord != nil {
+			f15.EnableResourceNameDNSARecord = resp.Subnet.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord
+		}
+		if resp.Subnet.PrivateDnsNameOptionsOnLaunch.HostnameType != nil {
+			f15.HostnameType = resp.Subnet.PrivateDnsNameOptionsOnLaunch.HostnameType
+		}
+		ko.Status.PrivateDNSNameOptionsOnLaunch = f15
+	} else {
+		ko.Status.PrivateDNSNameOptionsOnLaunch = nil
+	}
 	if resp.Subnet.State != nil {
 		ko.Status.State = resp.Subnet.State
 	} else {
@@ -381,18 +441,18 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.SubnetID = nil
 	}
 	if resp.Subnet.Tags != nil {
-		f15 := []*svcapitypes.Tag{}
-		for _, f15iter := range resp.Subnet.Tags {
-			f15elem := &svcapitypes.Tag{}
-			if f15iter.Key != nil {
-				f15elem.Key = f15iter.Key
+		f19 := []*svcapitypes.Tag{}
+		for _, f19iter := range resp.Subnet.Tags {
+			f19elem := &svcapitypes.Tag{}
+			if f19iter.Key != nil {
+				f19elem.Key = f19iter.Key
 			}
-			if f15iter.Value != nil {
-				f15elem.Value = f15iter.Value
+			if f19iter.Value != nil {
+				f19elem.Value = f19iter.Value
 			}
-			f15 = append(f15, f15elem)
+			f19 = append(f19, f19elem)
 		}
-		ko.Spec.Tags = f15
+		ko.Spec.Tags = f19
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -428,6 +488,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.IPv6CIDRBlock != nil {
 		res.SetIpv6CidrBlock(*r.ko.Spec.IPv6CIDRBlock)
+	}
+	if r.ko.Spec.IPv6Native != nil {
+		res.SetIpv6Native(*r.ko.Spec.IPv6Native)
 	}
 	if r.ko.Spec.OutpostARN != nil {
 		res.SetOutpostArn(*r.ko.Spec.OutpostARN)
