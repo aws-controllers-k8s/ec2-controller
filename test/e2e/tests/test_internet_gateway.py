@@ -50,6 +50,10 @@ def simple_internet_gateway(request, simple_vpc):
             (_, vpc_cr) = simple_vpc
             vpc_id = vpc_cr["status"]["vpcID"]
             replacements["VPC_ID"] = vpc_id
+        if 'tag_key' in data:
+            replacements["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            replacements["TAG_VALUE"] = data["tag_value"]
 
     # Load Internet Gateway CR
     resource_data = load_ec2_resource(
@@ -141,4 +145,70 @@ class TestInternetGateway:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check Internet Gateway no longer exists in AWS
+        ec2_validator.assert_internet_gateway(resource_id, exists=False)
+    
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_internet_gateway):
+        (ref, cr) = simple_internet_gateway
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["internetGatewayID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check IGW exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_internet_gateway(resource_id)
+        
+        # Check tags exist for IGW resource
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the IGW, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are updated for IGW resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the IGW resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check IGW no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)

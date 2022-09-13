@@ -250,7 +250,7 @@ func toStrPtr(str string) *string {
 	return &str
 }
 
-// syncTags used to keep tags in sync using createTags and deleteTags functions
+// syncTags used to keep tags in sync by calling Create and Delete Tags API's
 func (rm *resourceManager) syncTags(
 	ctx context.Context,
 	desired *resource,
