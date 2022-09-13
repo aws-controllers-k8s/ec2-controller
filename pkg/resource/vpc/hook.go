@@ -306,7 +306,7 @@ func (rm *resourceManager) syncTags(
 	)
 
 	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from parameter group", "tags", toDelete)
+		rlog.Debug("removing tags from vpc resource", "tags", toDelete)
 		_, err = rm.sdkapi.DeleteTagsWithContext(
 			ctx,
 			&svcsdk.DeleteTagsInput{
@@ -322,7 +322,7 @@ func (rm *resourceManager) syncTags(
 	}
 
 	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to parameter group", "tags", toAdd)
+		rlog.Debug("adding tags to vpc resource", "tags", toAdd)
 		_, err = rm.sdkapi.CreateTagsWithContext(
 			ctx,
 			&svcsdk.CreateTagsInput{

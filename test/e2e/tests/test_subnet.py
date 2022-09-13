@@ -147,8 +147,8 @@ class TestSubnet:
         test_resource_values["VPC_ID"] = vpc_id
         # CIDR needs to be within SharedTestVPC range and not overlap other subnets
         test_resource_values["CIDR_BLOCK"] = "10.0.255.0/24"
-        test_resource_values["KEY"] = "initialtagkey"
-        test_resource_values["VALUE"] = "initialtagvalue"
+        test_resource_values["TAG_KEY"] = "initialtagkey"
+        test_resource_values["TAG_VALUE"] = "initialtagvalue"
 
         # Load Subnet CR
         resource_data = load_ec2_resource(

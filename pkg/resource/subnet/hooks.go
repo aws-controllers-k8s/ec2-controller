@@ -262,73 +262,57 @@ func (rm *resourceManager) syncTags(
 		exit(err)
 	}(err)
 
+	resourceId := []*string{latest.ko.Status.SubnetID}
+
 	toAdd, toDelete := computeTagsDelta(
 		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 	)
 
-	if err = rm.deleteTags(ctx, latest, toDelete); err != nil {
-		return err
+	if len(toDelete) > 0 {
+		rlog.Debug("removing tags from subnet resource", "tags", toDelete)
+		_, err = rm.sdkapi.DeleteTagsWithContext(
+			ctx,
+			&svcsdk.DeleteTagsInput{
+				Resources: resourceId,
+				Tags:      rm.sdkTags(toDelete),
+			},
+		)
+		rm.metrics.RecordAPICall("UPDATE", "DeleteTags", err)
+		if err != nil {
+			return err
+		}
+
 	}
 
-	if err = rm.createTags(ctx, desired, toAdd); err != nil {
-		return err
+	if len(toAdd) > 0 {
+		rlog.Debug("adding tags to subnet resource", "tags", toAdd)
+		_, err = rm.sdkapi.CreateTagsWithContext(
+			ctx,
+			&svcsdk.CreateTagsInput{
+				Resources: resourceId,
+				Tags:      rm.sdkTags(toAdd),
+			},
+		)
+		rm.metrics.RecordAPICall("UPDATE", "CreateTags", err)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// createTags function creates tags for subnet resource using CreateTags API calls
-func (rm *resourceManager) createTags(
-	ctx context.Context,
-	r *resource,
+// sdkTags converts *svcapitypes.Tag array to a *svcsdk.Tag array
+func (rm *resourceManager) sdkTags(
 	tags []*svcapitypes.Tag,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.createTags")
-	defer exit(err)
-
-	resourceId := []*string{r.ko.Status.SubnetID}
+) (sdktags []*svcsdk.Tag) {
 
 	for _, i := range tags {
-		toAdd := rm.newTag(*i)
-		req := &svcsdk.CreateTagsInput{
-			Resources: resourceId,
-			Tags:      []*svcsdk.Tag{toAdd},
-		}
-		_, err := rm.sdkapi.CreateTagsWithContext(ctx, req)
-		rm.metrics.RecordAPICall("CREATE", "CreateTags", err)
-		if err != nil {
-			return err
-		}
+		sdktag := rm.newTag(*i)
+		sdktags = append(sdktags, sdktag)
 	}
-	return err
-}
 
-// deleteTags function deletes tags from subnet resource using DeleteTags API calls
-func (rm *resourceManager) deleteTags(
-	ctx context.Context,
-	r *resource,
-	tags []*svcapitypes.Tag,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.deleteTags")
-	defer exit(err)
-
-	resourceId := []*string{r.ko.Status.SubnetID}
-
-	for _, i := range tags {
-		toDelete := rm.newTag(*i)
-		req := &svcsdk.DeleteTagsInput{
-			Resources: resourceId,
-			Tags:      []*svcsdk.Tag{toDelete},
-		}
-		_, err = rm.sdkapi.DeleteTagsWithContext(ctx, req)
-		rm.metrics.RecordAPICall("DELETE", "DeleteTags", err)
-		if err != nil {
-			return err
-		}
-	}
-	return err
+	return sdktags
 }
 
 // computeTagsDelta returns tags to be added and removed from the resource
