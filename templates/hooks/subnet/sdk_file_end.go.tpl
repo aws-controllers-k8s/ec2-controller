@@ -10,15 +10,6 @@
 {{- if eq $subnetRefName "Tags" }}
 {{- $subnetRef := $subnetMemberRefs.Shape.MemberRef }}
 {{- $subnetRefName = "Tag" }}
-func compare{{ $subnetRefName }}(
-	    a *svcapitypes.{{ $subnetRefName }},
-	    b *svcapitypes.{{ $subnetRefName }},
-) *ackcompare.Delta {
-	delta := ackcompare.NewDelta()
-{{ GoCodeCompareStruct $CRD $subnetRef.Shape "delta" "a" "b" $subnetRefName 1 }}
-	return delta
-}
-
 func (rm *resourceManager) new{{ $subnetRefName }}(
 	    c svcapitypes.{{ $subnetRefName }},
 ) *svcsdk.{{ $subnetRefName }} {
