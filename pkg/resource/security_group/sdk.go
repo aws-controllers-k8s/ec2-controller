@@ -531,6 +531,20 @@ func (rm *resourceManager) newIPPermission(
 	return res
 }
 
+func (rm *resourceManager) newTag(
+	c svcapitypes.Tag,
+) *svcsdk.Tag {
+	res := &svcsdk.Tag{}
+	if c.Key != nil {
+		res.SetKey(*c.Key)
+	}
+	if c.Value != nil {
+		res.SetValue(*c.Value)
+	}
+
+	return res
+}
+
 // setSecurityGroupRule sets a resource SecurityGroupRule type
 // given the SDK type.
 func (rm *resourceManager) setResourceSecurityGroupRule(

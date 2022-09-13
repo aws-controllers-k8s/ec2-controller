@@ -28,8 +28,30 @@ func (rm *resourceManager) new{{ $sgRuleRefName }}(
 	return res
 }
 
+{{/* Helper method for tag support */}}
+{{- range $specFieldName, $specField := $CRD.Config.Resources.SecurityGroup.Fields }}
+{{- if $specField.From }}
+{{- $operationName := $specField.From.Operation }}
+{{- $operation := (index $SDKAPI.API.Operations $operationName) -}}
+{{- range $securityGroupRefName, $securityGroupMemberRefs := $operation.InputRef.Shape.MemberRefs -}}
+{{- if eq $securityGroupRefName "Tags" }}
+{{- $securityGroupRef := $securityGroupMemberRefs.Shape.MemberRef }}
+{{- $securityGroupRefName = "Tag" }}
+
+func (rm *resourceManager) new{{ $securityGroupRefName }}(
+	    c svcapitypes.{{ $securityGroupRefName }},
+) *svcsdk.{{ $securityGroupRefName }} {
+	res := &svcsdk.{{ $securityGroupRefName }}{}
+{{ GoCodeSetSDKForStruct $CRD "" "res" $securityGroupRef "" "c" 1 }}
+	return res
+}
+
 {{- end }}
 
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
