@@ -183,6 +183,10 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/dhcp_options/sdk_create_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/dhcp_options/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateDhcpOptions
   Instance:
     fields:
       HibernationOptions:
