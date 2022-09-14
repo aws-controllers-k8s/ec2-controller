@@ -5,3 +5,6 @@ metadata:
 spec:
   domain: vpc
   publicIPv4Pool: $PUBLIC_IPV4_POOL
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
