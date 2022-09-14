@@ -6,3 +6,6 @@ spec:
   description: $SECURITY_GROUP_DESCRIPTION
   name: $SECURITY_GROUP_NAME
   vpcID: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
