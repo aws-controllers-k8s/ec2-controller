@@ -55,6 +55,11 @@ type AcceleratorTotalMemoryMiBRequest struct {
 	Min *int64 `json:"min,omitempty"`
 }
 
+// Describes a finding for a Network Access Scope.
+type AccessScopeAnalysisFinding struct {
+	FindingID *string `json:"findingID,omitempty"`
+}
+
 // Describes an account attribute.
 type AccountAttribute struct {
 	AttributeName *string `json:"attributeName,omitempty"`
@@ -72,10 +77,26 @@ type ActiveInstance struct {
 	SpotInstanceRequestID *string `json:"spotInstanceRequestID,omitempty"`
 }
 
+// Add an operating Region to an IPAM. Operating Regions are Amazon Web Services
+// Regions where the IPAM is allowed to manage IP address CIDRs. IPAM only discovers
+// and monitors resources in the Amazon Web Services Regions you select as operating
+// Regions.
+//
+// For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type AddIPAMOperatingRegion struct {
+	RegionName *string `json:"regionName,omitempty"`
+}
+
 // An entry for a prefix list.
 type AddPrefixListEntry struct {
 	CIDR        *string `json:"cidr,omitempty"`
 	Description *string `json:"description,omitempty"`
+}
+
+// Describes an additional detail for a path analysis.
+type AdditionalDetail struct {
+	AdditionalDetailType *string `json:"additionalDetailType,omitempty"`
 }
 
 // Describes an Elastic IP address, or a carrier IP address.
@@ -125,8 +146,9 @@ type AnalysisACLRule struct {
 
 // Describes a path component.
 type AnalysisComponent struct {
-	ARN *string `json:"arn,omitempty"`
-	ID  *string `json:"id,omitempty"`
+	ARN  *string `json:"arn,omitempty"`
+	ID   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // Describes a load balancer target.
@@ -432,6 +454,12 @@ type ClassicLinkDNSSupport struct {
 	VPCID                   *string `json:"vpcID,omitempty"`
 }
 
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
 // Describes a linked EC2-Classic instance.
 type ClassicLinkInstance struct {
 	Groups     []*GroupIdentifier `json:"groups,omitempty"`
@@ -467,6 +495,20 @@ type ClientData struct {
 	Comment     *string      `json:"comment,omitempty"`
 	UploadEnd   *metav1.Time `json:"uploadEnd,omitempty"`
 	UploadStart *metav1.Time `json:"uploadStart,omitempty"`
+}
+
+// Options for enabling a customizable text banner that will be displayed on
+// Amazon Web Services provided clients when a VPN session is established.
+type ClientLoginBannerOptions struct {
+	BannerText *string `json:"bannerText,omitempty"`
+	Enabled    *bool   `json:"enabled,omitempty"`
+}
+
+// Current state of options for customizable text banner that will be displayed
+// on Amazon Web Services provided clients when a VPN session is established.
+type ClientLoginBannerResponseOptions struct {
+	BannerText *string `json:"bannerText,omitempty"`
+	Enabled    *bool   `json:"enabled,omitempty"`
 }
 
 // Describes the state of an authorization rule.
@@ -507,6 +549,7 @@ type ClientVPNEndpoint struct {
 	DNSServers           []*string `json:"dnsServers,omitempty"`
 	SelfServicePortalURL *string   `json:"selfServicePortalURL,omitempty"`
 	ServerCertificateARN *string   `json:"serverCertificateARN,omitempty"`
+	SessionTimeoutHours  *int64    `json:"sessionTimeoutHours,omitempty"`
 	SplitTunnel          *bool     `json:"splitTunnel,omitempty"`
 	Tags                 []*Tag    `json:"tags,omitempty"`
 	VPCID                *string   `json:"vpcID,omitempty"`
@@ -538,6 +581,19 @@ type ClientVPNRouteStatus struct {
 	Message *string `json:"message,omitempty"`
 }
 
+// Options for sending VPN tunnel logs to CloudWatch.
+type CloudWatchLogOptions struct {
+	LogEnabled      *bool   `json:"logEnabled,omitempty"`
+	LogGroupARN     *string `json:"logGroupARN,omitempty"`
+	LogOutputFormat *string `json:"logOutputFormat,omitempty"`
+}
+
+// Options for sending VPN tunnel logs to CloudWatch.
+type CloudWatchLogOptionsSpecification struct {
+	LogEnabled      *bool   `json:"logEnabled,omitempty"`
+	LogOutputFormat *string `json:"logOutputFormat,omitempty"`
+}
+
 // Describes address usage for a customer-owned address pool.
 type CoipAddressUsage struct {
 	AllocationID *string `json:"allocationID,omitempty"`
@@ -549,7 +605,6 @@ type CoipAddressUsage struct {
 // Describes a customer-owned address pool.
 type CoipPool struct {
 	PoolCIDRs []*string `json:"poolCIDRs,omitempty"`
-	PoolID    *string   `json:"poolID,omitempty"`
 	Tags      []*Tag    `json:"tags,omitempty"`
 }
 
@@ -599,6 +654,7 @@ type CreateFleetInstance struct {
 
 type CreateRouteInput struct {
 	CarrierGatewayID            *string `json:"carrierGatewayID,omitempty"`
+	CoreNetworkARN              *string `json:"coreNetworkARN,omitempty"`
 	DestinationCIDRBlock        *string `json:"destinationCIDRBlock,omitempty"`
 	DestinationIPv6CIDRBlock    *string `json:"destinationIPv6CIDRBlock,omitempty"`
 	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
@@ -632,12 +688,12 @@ type CreateVolumePermission struct {
 	UserID *string `json:"userID,omitempty"`
 }
 
-// Describes the credit option for CPU usage of a T2, T3, or T3a instance.
+// Describes the credit option for CPU usage of a T instance.
 type CreditSpecification struct {
 	CPUCredits *string `json:"cpuCredits,omitempty"`
 }
 
-// The credit option for CPU usage of a T2, T3, or T3a instance.
+// The credit option for CPU usage of a T instance.
 type CreditSpecificationRequest struct {
 	CPUCredits *string `json:"cpuCredits,omitempty"`
 }
@@ -672,6 +728,16 @@ type DHCPOptions_SDK struct {
 type DNSEntry struct {
 	DNSName      *string `json:"dnsName,omitempty"`
 	HostedZoneID *string `json:"hostedZoneID,omitempty"`
+}
+
+// Describes the DNS options for an endpoint.
+type DNSOptions struct {
+	DNSRecordIPType *string `json:"dnsRecordIPType,omitempty"`
+}
+
+// Describes the DNS options for an endpoint.
+type DNSOptionsSpecification struct {
+	DNSRecordIPType *string `json:"dnsRecordIPType,omitempty"`
 }
 
 // Information about the DNS server to be used.
@@ -711,6 +777,17 @@ type DeleteQueuedReservedInstancesError struct {
 // in the request
 type DeregisterInstanceTagAttributeRequest struct {
 	IncludeAllTagsOfInstance *bool `json:"includeAllTagsOfInstance,omitempty"`
+}
+
+// Describe details about a fast-launch enabled Windows image that meets the
+// requested criteria. Criteria are defined by the DescribeFastLaunchImages
+// action filters.
+type DescribeFastLaunchImagesSuccessItem struct {
+	ImageID               *string      `json:"imageID,omitempty"`
+	MaxParallelLaunches   *int64       `json:"maxParallelLaunches,omitempty"`
+	OwnerID               *string      `json:"ownerID,omitempty"`
+	StateTransitionReason *string      `json:"stateTransitionReason,omitempty"`
+	StateTransitionTime   *metav1.Time `json:"stateTransitionTime,omitempty"`
 }
 
 // Describes fast snapshot restores for a snapshot.
@@ -1035,6 +1112,36 @@ type FailedQueuedPurchaseDeletion struct {
 	ReservedInstancesID *string `json:"reservedInstancesID,omitempty"`
 }
 
+// Request to create a launch template for a fast-launch enabled Windows AMI.
+//
+// Note - You can specify either the LaunchTemplateName or the LaunchTemplateId,
+// but not both.
+type FastLaunchLaunchTemplateSpecificationRequest struct {
+	LaunchTemplateID   *string `json:"launchTemplateID,omitempty"`
+	LaunchTemplateName *string `json:"launchTemplateName,omitempty"`
+	Version            *string `json:"version,omitempty"`
+}
+
+// Identifies the launch template to use for faster launching of the Windows
+// AMI.
+type FastLaunchLaunchTemplateSpecificationResponse struct {
+	LaunchTemplateID   *string `json:"launchTemplateID,omitempty"`
+	LaunchTemplateName *string `json:"launchTemplateName,omitempty"`
+	Version            *string `json:"version,omitempty"`
+}
+
+// Configuration settings for creating and managing pre-provisioned snapshots
+// for a fast-launch enabled Windows AMI.
+type FastLaunchSnapshotConfigurationRequest struct {
+	TargetResourceCount *int64 `json:"targetResourceCount,omitempty"`
+}
+
+// Configuration settings for creating and managing pre-provisioned snapshots
+// for a fast-launch enabled Windows AMI.
+type FastLaunchSnapshotConfigurationResponse struct {
+	TargetResourceCount *int64 `json:"targetResourceCount,omitempty"`
+}
+
 // Describes the IAM SAML identity providers used for federated authentication.
 type FederatedAuthentication struct {
 	SamlProviderARN            *string `json:"samlProviderARN,omitempty"`
@@ -1050,6 +1157,9 @@ type FederatedAuthenticationRequest struct {
 // A filter name and value pair that is used to return a more specific list
 // of results from a describe operation. Filters can be used to match a set
 // of resources by specific criteria, such as tags, attributes, or IDs.
+//
+// If you specify multiple filters, the filters are joined with an AND, and
+// the request returns only results that match all of the specified filters.
 type Filter struct {
 	Name   *string   `json:"name,omitempty"`
 	Values []*string `json:"values,omitempty"`
@@ -1096,20 +1206,24 @@ type FleetLaunchTemplateOverridesRequest struct {
 	SubnetID  *string    `json:"subnetID,omitempty"`
 }
 
-// Describes the Amazon EC2 launch template and the launch template version
-// that can be used by a Spot Fleet request to configure Amazon EC2 instances.
-// For information about launch templates, see Launching an instance from a
-// launch template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+// The Amazon EC2 launch template that can be used by a Spot Fleet to configure
+// Amazon EC2 instances. You must specify either the ID or name of the launch
+// template in the request, but not both.
+//
+// For information about launch templates, see Launch an instance from a launch
+// template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
 // in the Amazon EC2 User Guide for Linux Instances.
 type FleetLaunchTemplateSpecification struct {
 	LaunchTemplateID *string `json:"launchTemplateID,omitempty"`
 	Version          *string `json:"version,omitempty"`
 }
 
-// Describes the Amazon EC2 launch template and the launch template version
-// that can be used by an EC2 Fleet to configure Amazon EC2 instances. For information
-// about launch templates, see Launching an instance from a launch template
-// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+// The Amazon EC2 launch template that can be used by an EC2 Fleet to configure
+// Amazon EC2 instances. You must specify either the ID or name of the launch
+// template in the request, but not both.
+//
+// For information about launch templates, see Launch an instance from a launch
+// template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
 // in the Amazon EC2 User Guide.
 type FleetLaunchTemplateSpecificationRequest struct {
 	LaunchTemplateID *string `json:"launchTemplateID,omitempty"`
@@ -1124,7 +1238,7 @@ type FleetSpotCapacityRebalance struct {
 
 // The Spot Instance replacement strategy to use when Amazon EC2 emits a rebalance
 // notification signal that your Spot Instance is at an elevated risk of being
-// interrupted. For more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-configuration-strategies.html#ec2-fleet-capacity-rebalance)
+// interrupted. For more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-capacity-rebalance.html)
 // in the Amazon EC2 User Guide.
 type FleetSpotCapacityRebalanceRequest struct {
 	TerminationDelay *int64 `json:"terminationDelay,omitempty"`
@@ -1187,6 +1301,7 @@ type Host struct {
 	HostID                             *string      `json:"hostID,omitempty"`
 	HostReservationID                  *string      `json:"hostReservationID,omitempty"`
 	MemberOfServiceLinkedResourceGroup *bool        `json:"memberOfServiceLinkedResourceGroup,omitempty"`
+	OutpostARN                         *string      `json:"outpostARN,omitempty"`
 	OwnerID                            *string      `json:"ownerID,omitempty"`
 	ReleaseTime                        *metav1.Time `json:"releaseTime,omitempty"`
 	Tags                               []*Tag       `json:"tags,omitempty"`
@@ -1204,7 +1319,6 @@ type HostOffering struct {
 	Duration       *int64  `json:"duration,omitempty"`
 	HourlyPrice    *string `json:"hourlyPrice,omitempty"`
 	InstanceFamily *string `json:"instanceFamily,omitempty"`
-	OfferingID     *string `json:"offeringID,omitempty"`
 	UpfrontPrice   *string `json:"upfrontPrice,omitempty"`
 }
 
@@ -1219,16 +1333,14 @@ type HostProperties struct {
 
 // Details about the Dedicated Host Reservation and associated Dedicated Hosts.
 type HostReservation struct {
-	Count             *int64       `json:"count,omitempty"`
-	Duration          *int64       `json:"duration,omitempty"`
-	End               *metav1.Time `json:"end,omitempty"`
-	HostReservationID *string      `json:"hostReservationID,omitempty"`
-	HourlyPrice       *string      `json:"hourlyPrice,omitempty"`
-	InstanceFamily    *string      `json:"instanceFamily,omitempty"`
-	OfferingID        *string      `json:"offeringID,omitempty"`
-	Start             *metav1.Time `json:"start,omitempty"`
-	Tags              []*Tag       `json:"tags,omitempty"`
-	UpfrontPrice      *string      `json:"upfrontPrice,omitempty"`
+	Count          *int64       `json:"count,omitempty"`
+	Duration       *int64       `json:"duration,omitempty"`
+	End            *metav1.Time `json:"end,omitempty"`
+	HourlyPrice    *string      `json:"hourlyPrice,omitempty"`
+	InstanceFamily *string      `json:"instanceFamily,omitempty"`
+	Start          *metav1.Time `json:"start,omitempty"`
+	Tags           []*Tag       `json:"tags,omitempty"`
+	UpfrontPrice   *string      `json:"upfrontPrice,omitempty"`
 }
 
 // Describes an IAM instance profile.
@@ -1273,6 +1385,128 @@ type IKEVersionsListValue struct {
 // The IKE version that is permitted for the VPN tunnel.
 type IKEVersionsRequestListValue struct {
 	Value *string `json:"value,omitempty"`
+}
+
+// IPAM is a VPC feature that you can use to automate your IP address management
+// workflows including assigning, tracking, troubleshooting, and auditing IP
+// addresses across Amazon Web Services Regions and accounts throughout your
+// Amazon Web Services Organization. For more information, see What is IPAM?
+// (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html) in the
+// Amazon VPC IPAM User Guide.
+type IPAM struct {
+	Description *string `json:"description,omitempty"`
+	IPAMRegion  *string `json:"ipamRegion,omitempty"`
+	OwnerID     *string `json:"ownerID,omitempty"`
+	ScopeCount  *int64  `json:"scopeCount,omitempty"`
+	Tags        []*Tag  `json:"tags,omitempty"`
+}
+
+// The historical record of a CIDR within an IPAM scope. For more information,
+// see View the history of IP addresses (https://docs.aws.amazon.com/vpc/latest/ipam/view-history-cidr-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type IPAMAddressHistoryRecord struct {
+	ResourceCIDR     *string      `json:"resourceCIDR,omitempty"`
+	ResourceID       *string      `json:"resourceID,omitempty"`
+	ResourceName     *string      `json:"resourceName,omitempty"`
+	ResourceOwnerID  *string      `json:"resourceOwnerID,omitempty"`
+	ResourceRegion   *string      `json:"resourceRegion,omitempty"`
+	SampledEndTime   *metav1.Time `json:"sampledEndTime,omitempty"`
+	SampledStartTime *metav1.Time `json:"sampledStartTime,omitempty"`
+	VPCID            *string      `json:"vpcID,omitempty"`
+}
+
+// A signed document that proves that you are authorized to bring the specified
+// IP address range to Amazon using BYOIP.
+type IPAMCIDRAuthorizationContext struct {
+	Message   *string `json:"message,omitempty"`
+	Signature *string `json:"signature,omitempty"`
+}
+
+// The operating Regions for an IPAM. Operating Regions are Amazon Web Services
+// Regions where the IPAM is allowed to manage IP address CIDRs. IPAM only discovers
+// and monitors resources in the Amazon Web Services Regions you select as operating
+// Regions.
+//
+// For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type IPAMOperatingRegion struct {
+	RegionName *string `json:"regionName,omitempty"`
+}
+
+// In IPAM, a pool is a collection of contiguous IP addresses CIDRs. Pools enable
+// you to organize your IP addresses according to your routing and security
+// needs. For example, if you have separate routing and security needs for development
+// and production applications, you can create a pool for each.
+type IPAMPool struct {
+	AutoImport           *bool   `json:"autoImport,omitempty"`
+	Description          *string `json:"description,omitempty"`
+	IPAMPoolID           *string `json:"ipamPoolID,omitempty"`
+	IPAMRegion           *string `json:"ipamRegion,omitempty"`
+	Locale               *string `json:"locale,omitempty"`
+	OwnerID              *string `json:"ownerID,omitempty"`
+	PoolDepth            *int64  `json:"poolDepth,omitempty"`
+	PubliclyAdvertisable *bool   `json:"publiclyAdvertisable,omitempty"`
+	SourceIPAMPoolID     *string `json:"sourceIPAMPoolID,omitempty"`
+	StateMessage         *string `json:"stateMessage,omitempty"`
+	Tags                 []*Tag  `json:"tags,omitempty"`
+}
+
+// In IPAM, an allocation is a CIDR assignment from an IPAM pool to another
+// resource or IPAM pool.
+type IPAMPoolAllocation struct {
+	CIDR           *string `json:"cidr,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	ResourceID     *string `json:"resourceID,omitempty"`
+	ResourceOwner  *string `json:"resourceOwner,omitempty"`
+	ResourceRegion *string `json:"resourceRegion,omitempty"`
+}
+
+// A CIDR provisioned to an IPAM pool.
+type IPAMPoolCIDR struct {
+	CIDR *string `json:"cidr,omitempty"`
+}
+
+// Details related to why an IPAM pool CIDR failed to be provisioned.
+type IPAMPoolCIDRFailureReason struct {
+	Message *string `json:"message,omitempty"`
+}
+
+// The CIDR for an IPAM resource.
+type IPAMResourceCIDR struct {
+	IPAMPoolID      *string `json:"ipamPoolID,omitempty"`
+	ResourceCIDR    *string `json:"resourceCIDR,omitempty"`
+	ResourceID      *string `json:"resourceID,omitempty"`
+	ResourceName    *string `json:"resourceName,omitempty"`
+	ResourceOwnerID *string `json:"resourceOwnerID,omitempty"`
+	ResourceRegion  *string `json:"resourceRegion,omitempty"`
+	VPCID           *string `json:"vpcID,omitempty"`
+}
+
+// The key/value combination of a tag assigned to the resource. Use the tag
+// key in the filter name and the tag value as the filter value. For example,
+// to find all resources that have a tag with the key Owner and the value TeamA,
+// specify tag:Owner for the filter name and TeamA for the filter value.
+type IPAMResourceTag struct {
+	Key   *string `json:"key,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
+// In IPAM, a scope is the highest-level container within IPAM. An IPAM contains
+// two default scopes. Each scope represents the IP space for a single network.
+// The private scope is intended for all private IP address space. The public
+// scope is intended for all public IP address space. Scopes enable you to reuse
+// IP addresses across multiple unconnected networks without causing IP address
+// overlap or conflict.
+//
+// For more information, see How IPAM works (https://docs.aws.amazon.com/vpc/latest/ipam/how-it-works-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type IPAMScope struct {
+	Description *string `json:"description,omitempty"`
+	IPAMRegion  *string `json:"ipamRegion,omitempty"`
+	IsDefault   *bool   `json:"isDefault,omitempty"`
+	OwnerID     *string `json:"ownerID,omitempty"`
+	PoolCount   *int64  `json:"poolCount,omitempty"`
+	Tags        []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes a set of permissions for a security group rule.
@@ -1383,6 +1617,15 @@ type ImageDiskContainer struct {
 	Format      *string `json:"format,omitempty"`
 	SnapshotID  *string `json:"snapshotID,omitempty"`
 	URL         *string `json:"url,omitempty"`
+}
+
+// Information about an AMI that is currently in the Recycle Bin.
+type ImageRecycleBinInfo struct {
+	Description         *string      `json:"description,omitempty"`
+	ImageID             *string      `json:"imageID,omitempty"`
+	Name                *string      `json:"name,omitempty"`
+	RecycleBinEnterTime *metav1.Time `json:"recycleBinEnterTime,omitempty"`
+	RecycleBinExitTime  *metav1.Time `json:"recycleBinExitTime,omitempty"`
 }
 
 // The request information of license configurations.
@@ -1552,6 +1795,16 @@ type InstanceIPv6Prefix struct {
 	IPv6Prefix *string `json:"ipv6Prefix,omitempty"`
 }
 
+// The maintenance options for the instance.
+type InstanceMaintenanceOptions struct {
+	AutoRecovery *string `json:"autoRecovery,omitempty"`
+}
+
+// The maintenance options for the instance.
+type InstanceMaintenanceOptionsRequest struct {
+	AutoRecovery *string `json:"autoRecovery,omitempty"`
+}
+
 // Describes the market (purchasing) option for the instances.
 type InstanceMarketOptionsRequest struct {
 	MarketType *string `json:"marketType,omitempty"`
@@ -1565,6 +1818,7 @@ type InstanceMetadataOptionsRequest struct {
 	HTTPProtocolIPv6        *string `json:"httpProtocolIPv6,omitempty"`
 	HTTPPutResponseHopLimit *int64  `json:"httpPutResponseHopLimit,omitempty"`
 	HTTPTokens              *string `json:"httpTokens,omitempty"`
+	InstanceMetadataTags    *string `json:"instanceMetadataTags,omitempty"`
 }
 
 // The metadata options for the instance.
@@ -1573,6 +1827,7 @@ type InstanceMetadataOptionsResponse struct {
 	HTTPProtocolIPv6        *string `json:"httpProtocolIPv6,omitempty"`
 	HTTPPutResponseHopLimit *int64  `json:"httpPutResponseHopLimit,omitempty"`
 	HTTPTokens              *string `json:"httpTokens,omitempty"`
+	InstanceMetadataTags    *string `json:"instanceMetadataTags,omitempty"`
 	State                   *string `json:"state,omitempty"`
 }
 
@@ -1803,10 +2058,13 @@ type Instance_SDK struct {
 	InstanceID         *string                 `json:"instanceID,omitempty"`
 	InstanceLifecycle  *string                 `json:"instanceLifecycle,omitempty"`
 	InstanceType       *string                 `json:"instanceType,omitempty"`
+	IPv6Address        *string                 `json:"ipv6Address,omitempty"`
 	KernelID           *string                 `json:"kernelID,omitempty"`
 	KeyName            *string                 `json:"keyName,omitempty"`
 	LaunchTime         *metav1.Time            `json:"launchTime,omitempty"`
 	Licenses           []*LicenseConfiguration `json:"licenses,omitempty"`
+	// The maintenance options for the instance.
+	MaintenanceOptions *InstanceMaintenanceOptions `json:"maintenanceOptions,omitempty"`
 	// The metadata options for the instance.
 	MetadataOptions *InstanceMetadataOptionsResponse `json:"metadataOptions,omitempty"`
 	// Describes the monitoring of an instance.
@@ -1814,21 +2072,23 @@ type Instance_SDK struct {
 	NetworkInterfaces []*InstanceNetworkInterface `json:"networkInterfaces,omitempty"`
 	OutpostARN        *string                     `json:"outpostARN,omitempty"`
 	// Describes the placement of an instance.
-	Placement             *Placement         `json:"placement,omitempty"`
-	Platform              *string            `json:"platform,omitempty"`
-	PlatformDetails       *string            `json:"platformDetails,omitempty"`
-	PrivateDNSName        *string            `json:"privateDNSName,omitempty"`
-	PrivateIPAddress      *string            `json:"privateIPAddress,omitempty"`
-	ProductCodes          []*ProductCode     `json:"productCodes,omitempty"`
-	PublicDNSName         *string            `json:"publicDNSName,omitempty"`
-	PublicIPAddress       *string            `json:"publicIPAddress,omitempty"`
-	RAMDiskID             *string            `json:"ramDiskID,omitempty"`
-	RootDeviceName        *string            `json:"rootDeviceName,omitempty"`
-	RootDeviceType        *string            `json:"rootDeviceType,omitempty"`
-	SecurityGroups        []*GroupIdentifier `json:"securityGroups,omitempty"`
-	SourceDestCheck       *bool              `json:"sourceDestCheck,omitempty"`
-	SpotInstanceRequestID *string            `json:"spotInstanceRequestID,omitempty"`
-	SRIOVNetSupport       *string            `json:"sriovNetSupport,omitempty"`
+	Placement       *Placement `json:"placement,omitempty"`
+	Platform        *string    `json:"platform,omitempty"`
+	PlatformDetails *string    `json:"platformDetails,omitempty"`
+	PrivateDNSName  *string    `json:"privateDNSName,omitempty"`
+	// Describes the options for instance hostnames.
+	PrivateDNSNameOptions *PrivateDNSNameOptionsResponse `json:"privateDNSNameOptions,omitempty"`
+	PrivateIPAddress      *string                        `json:"privateIPAddress,omitempty"`
+	ProductCodes          []*ProductCode                 `json:"productCodes,omitempty"`
+	PublicDNSName         *string                        `json:"publicDNSName,omitempty"`
+	PublicIPAddress       *string                        `json:"publicIPAddress,omitempty"`
+	RAMDiskID             *string                        `json:"ramDiskID,omitempty"`
+	RootDeviceName        *string                        `json:"rootDeviceName,omitempty"`
+	RootDeviceType        *string                        `json:"rootDeviceType,omitempty"`
+	SecurityGroups        []*GroupIdentifier             `json:"securityGroups,omitempty"`
+	SourceDestCheck       *bool                          `json:"sourceDestCheck,omitempty"`
+	SpotInstanceRequestID *string                        `json:"spotInstanceRequestID,omitempty"`
+	SRIOVNetSupport       *string                        `json:"sriovNetSupport,omitempty"`
 	// Describes the current state of an instance.
 	State *InstanceState `json:"state,omitempty"`
 	// Describes a state change.
@@ -1836,6 +2096,7 @@ type Instance_SDK struct {
 	StateTransitionReason    *string      `json:"stateTransitionReason,omitempty"`
 	SubnetID                 *string      `json:"subnetID,omitempty"`
 	Tags                     []*Tag       `json:"tags,omitempty"`
+	TPMSupport               *string      `json:"tpmSupport,omitempty"`
 	UsageOperation           *string      `json:"usageOperation,omitempty"`
 	UsageOperationUpdateTime *metav1.Time `json:"usageOperationUpdateTime,omitempty"`
 	VirtualizationType       *string      `json:"virtualizationType,omitempty"`
@@ -1859,10 +2120,12 @@ type InternetGateway_SDK struct {
 
 // Describes a key pair.
 type KeyPairInfo struct {
-	KeyFingerprint *string `json:"keyFingerprint,omitempty"`
-	KeyName        *string `json:"keyName,omitempty"`
-	KeyPairID      *string `json:"keyPairID,omitempty"`
-	Tags           []*Tag  `json:"tags,omitempty"`
+	CreateTime     *metav1.Time `json:"createTime,omitempty"`
+	KeyFingerprint *string      `json:"keyFingerprint,omitempty"`
+	KeyName        *string      `json:"keyName,omitempty"`
+	KeyPairID      *string      `json:"keyPairID,omitempty"`
+	PublicKey      *string      `json:"publicKey,omitempty"`
+	Tags           []*Tag       `json:"tags,omitempty"`
 }
 
 // The last error that occurred for a VPC endpoint.
@@ -1879,6 +2142,11 @@ type LaunchPermission struct {
 }
 
 // Describes the launch specification for an instance.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon EC2 User Guide for Linux Instances.
 type LaunchSpecification struct {
 	AddressingType *string `json:"addressingType,omitempty"`
 	EBSOptimized   *bool   `json:"ebsOptimized,omitempty"`
@@ -2004,7 +2272,7 @@ type LaunchTemplateHibernationOptions struct {
 }
 
 // Indicates whether the instance is configured for hibernation. This parameter
-// is valid only if the instance meets the hibernation prerequisites (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html#hibernating-prerequisites).
+// is valid only if the instance meets the hibernation prerequisites (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html).
 type LaunchTemplateHibernationOptionsRequest struct {
 	Configured *bool `json:"configured,omitempty"`
 }
@@ -2032,14 +2300,14 @@ type LaunchTemplateInstanceMarketOptionsRequest struct {
 }
 
 // The metadata options for the instance. For more information, see Instance
-// Metadata and User Data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
 // in the Amazon Elastic Compute Cloud User Guide.
 type LaunchTemplateInstanceMetadataOptions struct {
 	HTTPPutResponseHopLimit *int64 `json:"httpPutResponseHopLimit,omitempty"`
 }
 
 // The metadata options for the instance. For more information, see Instance
-// Metadata and User Data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
 // in the Amazon Elastic Compute Cloud User Guide.
 type LaunchTemplateInstanceMetadataOptionsRequest struct {
 	HTTPPutResponseHopLimit *int64 `json:"httpPutResponseHopLimit,omitempty"`
@@ -2129,6 +2397,20 @@ type LaunchTemplatePlacementRequest struct {
 	Tenancy              *string `json:"tenancy,omitempty"`
 }
 
+// Describes the options for instance hostnames.
+type LaunchTemplatePrivateDNSNameOptions struct {
+	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
+	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
+	HostnameType                    *string `json:"hostnameType,omitempty"`
+}
+
+// Describes the options for instance hostnames.
+type LaunchTemplatePrivateDNSNameOptionsRequest struct {
+	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
+	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
+	HostnameType                    *string `json:"hostnameType,omitempty"`
+}
+
 // The launch template to use. You must specify either the launch template ID
 // or launch template name in the request, but not both.
 type LaunchTemplateSpecification struct {
@@ -2155,12 +2437,13 @@ type LaunchTemplateSpotMarketOptionsRequest struct {
 	ValidUntil                   *metav1.Time `json:"validUntil,omitempty"`
 }
 
-// The tag specification for the launch template.
+// The tags specification for the launch template.
 type LaunchTemplateTagSpecification struct {
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
-// The tags specification for the launch template.
+// The tags specification for the resources that are created during instance
+// launch.
 type LaunchTemplateTagSpecificationRequest struct {
 	Tags []*Tag `json:"tags,omitempty"`
 }
@@ -2295,6 +2578,7 @@ type MemoryMiBRequest struct {
 // The transit gateway options.
 type ModifyTransitGatewayOptions struct {
 	AddTransitGatewayCIDRBlocks    []*string `json:"addTransitGatewayCIDRBlocks,omitempty"`
+	AmazonSideASN                  *int64    `json:"amazonSideASN,omitempty"`
 	AutoAcceptSharedAttachments    *string   `json:"autoAcceptSharedAttachments,omitempty"`
 	DefaultRouteTableAssociation   *string   `json:"defaultRouteTableAssociation,omitempty"`
 	DefaultRouteTablePropagation   *string   `json:"defaultRouteTablePropagation,omitempty"`
@@ -2329,6 +2613,11 @@ type Monitoring struct {
 }
 
 // Describes the status of a moving Elastic IP address.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
 type MovingAddressStatus struct {
 	PublicIP *string `json:"publicIP,omitempty"`
 }
@@ -2385,12 +2674,30 @@ type NetworkACLEntry struct {
 	RuleNumber    *int64  `json:"ruleNumber,omitempty"`
 }
 
+// Describes a Network Access Scope.
+type NetworkInsightsAccessScope struct {
+	CreatedDate *metav1.Time `json:"createdDate,omitempty"`
+	Tags        []*Tag       `json:"tags,omitempty"`
+	UpdatedDate *metav1.Time `json:"updatedDate,omitempty"`
+}
+
+// Describes a Network Access Scope analysis.
+type NetworkInsightsAccessScopeAnalysis struct {
+	AnalyzedEniCount *int64       `json:"analyzedEniCount,omitempty"`
+	EndDate          *metav1.Time `json:"endDate,omitempty"`
+	StartDate        *metav1.Time `json:"startDate,omitempty"`
+	StatusMessage    *string      `json:"statusMessage,omitempty"`
+	Tags             []*Tag       `json:"tags,omitempty"`
+	WarningMessage   *string      `json:"warningMessage,omitempty"`
+}
+
 // Describes a network insights analysis.
 type NetworkInsightsAnalysis struct {
 	NetworkPathFound *bool        `json:"networkPathFound,omitempty"`
 	StartDate        *metav1.Time `json:"startDate,omitempty"`
 	StatusMessage    *string      `json:"statusMessage,omitempty"`
 	Tags             []*Tag       `json:"tags,omitempty"`
+	WarningMessage   *string      `json:"warningMessage,omitempty"`
 }
 
 // Describes a path.
@@ -2408,6 +2715,8 @@ type NetworkInterface struct {
 	DenyAllIgwTraffic  *bool              `json:"denyAllIgwTraffic,omitempty"`
 	Description        *string            `json:"description,omitempty"`
 	Groups             []*GroupIdentifier `json:"groups,omitempty"`
+	IPv6Address        *string            `json:"ipv6Address,omitempty"`
+	IPv6Native         *bool              `json:"ipv6Native,omitempty"`
 	MacAddress         *string            `json:"macAddress,omitempty"`
 	NetworkInterfaceID *string            `json:"networkInterfaceID,omitempty"`
 	OutpostARN         *string            `json:"outpostARN,omitempty"`
@@ -2511,6 +2820,26 @@ type OnDemandOptionsRequest struct {
 	SingleInstanceType     *bool   `json:"singleInstanceType,omitempty"`
 }
 
+// Describes a packet header statement.
+type PacketHeaderStatement struct {
+	DestinationAddresses   []*string `json:"destinationAddresses,omitempty"`
+	DestinationPorts       []*string `json:"destinationPorts,omitempty"`
+	DestinationPrefixLists []*string `json:"destinationPrefixLists,omitempty"`
+	SourceAddresses        []*string `json:"sourceAddresses,omitempty"`
+	SourcePorts            []*string `json:"sourcePorts,omitempty"`
+	SourcePrefixLists      []*string `json:"sourcePrefixLists,omitempty"`
+}
+
+// Describes a packet header statement.
+type PacketHeaderStatementRequest struct {
+	DestinationAddresses   []*string `json:"destinationAddresses,omitempty"`
+	DestinationPorts       []*string `json:"destinationPorts,omitempty"`
+	DestinationPrefixLists []*string `json:"destinationPrefixLists,omitempty"`
+	SourceAddresses        []*string `json:"sourceAddresses,omitempty"`
+	SourcePorts            []*string `json:"sourcePorts,omitempty"`
+	SourcePrefixLists      []*string `json:"sourcePrefixLists,omitempty"`
+}
+
 // Describes a path component.
 type PathComponent struct {
 	SequenceNumber *int64 `json:"sequenceNumber,omitempty"`
@@ -2531,6 +2860,12 @@ type PeeringAttachmentStatus struct {
 	Message *string `json:"message,omitempty"`
 }
 
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
 // Describes the VPC peering connection options.
 type PeeringConnectionOptions struct {
 	AllowDNSResolutionFromRemoteVPC            *bool `json:"allowDNSResolutionFromRemoteVPC,omitempty"`
@@ -2538,6 +2873,12 @@ type PeeringConnectionOptions struct {
 	AllowEgressFromLocalVPCToRemoteClassicLink *bool `json:"allowEgressFromLocalVPCToRemoteClassicLink,omitempty"`
 }
 
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
 // The VPC peering connection options.
 type PeeringConnectionOptionsRequest struct {
 	AllowDNSResolutionFromRemoteVPC            *bool `json:"allowDNSResolutionFromRemoteVPC,omitempty"`
@@ -2547,6 +2888,7 @@ type PeeringConnectionOptionsRequest struct {
 
 // Information about the transit gateway in the peering attachment.
 type PeeringTgwInfo struct {
+	CoreNetworkID    *string `json:"coreNetworkID,omitempty"`
 	OwnerID          *string `json:"ownerID,omitempty"`
 	Region           *string `json:"region,omitempty"`
 	TransitGatewayID *string `json:"transitGatewayID,omitempty"`
@@ -2628,6 +2970,7 @@ type Placement struct {
 
 // Describes a placement group.
 type PlacementGroup struct {
+	GroupARN       *string `json:"groupARN,omitempty"`
 	GroupID        *string `json:"groupID,omitempty"`
 	GroupName      *string `json:"groupName,omitempty"`
 	PartitionCount *int64  `json:"partitionCount,omitempty"`
@@ -2701,14 +3044,32 @@ type PrivateDNSDetails struct {
 	PrivateDNSName *string `json:"privateDNSName,omitempty"`
 }
 
-// Information about the private DNS name for the service endpoint. For more
-// information about these parameters, see VPC Endpoint Service Private DNS
-// Name Verification (https://docs.aws.amazon.com/vpc/latest/userguide/ndpoint-services-dns-validation.html)
-// in the Amazon Virtual Private Cloud User Guide.
+// Information about the private DNS name for the service endpoint.
 type PrivateDNSNameConfiguration struct {
 	Name  *string `json:"name,omitempty"`
 	Type  *string `json:"type_,omitempty"`
 	Value *string `json:"value,omitempty"`
+}
+
+// Describes the options for instance hostnames.
+type PrivateDNSNameOptionsOnLaunch struct {
+	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
+	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
+	HostnameType                    *string `json:"hostnameType,omitempty"`
+}
+
+// Describes the options for instance hostnames.
+type PrivateDNSNameOptionsRequest struct {
+	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
+	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
+	HostnameType                    *string `json:"hostnameType,omitempty"`
+}
+
+// Describes the options for instance hostnames.
+type PrivateDNSNameOptionsResponse struct {
+	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
+	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
+	HostnameType                    *string `json:"hostnameType,omitempty"`
 }
 
 // Describes a secondary private IPv4 address for a network interface.
@@ -2766,11 +3127,10 @@ type PublicIPv4PoolRange struct {
 
 // Describes the result of the purchase.
 type Purchase struct {
-	Duration          *int64  `json:"duration,omitempty"`
-	HostReservationID *string `json:"hostReservationID,omitempty"`
-	HourlyPrice       *string `json:"hourlyPrice,omitempty"`
-	InstanceFamily    *string `json:"instanceFamily,omitempty"`
-	UpfrontPrice      *string `json:"upfrontPrice,omitempty"`
+	Duration       *int64  `json:"duration,omitempty"`
+	HourlyPrice    *string `json:"hourlyPrice,omitempty"`
+	InstanceFamily *string `json:"instanceFamily,omitempty"`
+	UpfrontPrice   *string `json:"upfrontPrice,omitempty"`
 }
 
 // Describes a request to purchase Scheduled Instances.
@@ -2803,6 +3163,17 @@ type RegisterInstanceTagAttributeRequest struct {
 	IncludeAllTagsOfInstance *bool `json:"includeAllTagsOfInstance,omitempty"`
 }
 
+// Remove an operating Region from an IPAM. Operating Regions are Amazon Web
+// Services Regions where the IPAM is allowed to manage IP address CIDRs. IPAM
+// only discovers and monitors resources in the Amazon Web Services Regions
+// you select as operating Regions.
+//
+// For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
+// in the Amazon VPC IPAM User Guide
+type RemoveIPAMOperatingRegion struct {
+	RegionName *string `json:"regionName,omitempty"`
+}
+
 // An entry for a prefix list.
 type RemovePrefixListEntry struct {
 	CIDR *string `json:"cidr,omitempty"`
@@ -2816,10 +3187,19 @@ type ReplaceRootVolumeTask struct {
 	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
+// A tag on an IPAM resource.
+type RequestIPAMResourceTag struct {
+	Key   *string `json:"key,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
 // The information to include in the launch template.
+//
+// You must specify at least one parameter for the launch template data.
 type RequestLaunchTemplateData struct {
-	// The credit option for CPU usage of a T2, T3, or T3a instance.
+	// The credit option for CPU usage of a T instance.
 	CreditSpecification               *CreditSpecificationRequest `json:"creditSpecification,omitempty"`
+	DisableAPIStop                    *bool                       `json:"disableAPIStop,omitempty"`
 	DisableAPITermination             *bool                       `json:"disableAPITermination,omitempty"`
 	EBSOptimized                      *bool                       `json:"ebsOptimized,omitempty"`
 	ImageID                           *string                     `json:"imageID,omitempty"`
@@ -2854,6 +3234,11 @@ type RequestSpotLaunchSpecification struct {
 // Describes a launch request for one or more instances, and includes owner,
 // requester, and security group information that applies to all instances in
 // the launch request.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon EC2 User Guide.
 type Reservation struct {
 	Groups        []*GroupIdentifier `json:"groups,omitempty"`
 	Instances     []*Instance_SDK    `json:"instances,omitempty"`
@@ -2896,6 +3281,11 @@ type ReservedInstances struct {
 }
 
 // Describes the configuration settings for the modified Reserved Instances.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
 type ReservedInstancesConfiguration struct {
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	InstanceCount    *int64  `json:"instanceCount,omitempty"`
@@ -2945,6 +3335,18 @@ type ReservedInstancesOffering struct {
 	ReservedInstancesOfferingID *string `json:"reservedInstancesOfferingID,omitempty"`
 }
 
+// Describes a resource statement.
+type ResourceStatement struct {
+	ResourceTypes []*string `json:"resourceTypes,omitempty"`
+	Resources     []*string `json:"resources,omitempty"`
+}
+
+// Describes a resource statement.
+type ResourceStatementRequest struct {
+	ResourceTypes []*string `json:"resourceTypes,omitempty"`
+	Resources     []*string `json:"resources,omitempty"`
+}
+
 // Describes the error that's returned when you cannot delete a launch template
 // version.
 type ResponseError struct {
@@ -2953,6 +3355,7 @@ type ResponseError struct {
 
 // The information for a launch template.
 type ResponseLaunchTemplateData struct {
+	DisableAPIStop                    *bool     `json:"disableAPIStop,omitempty"`
 	DisableAPITermination             *bool     `json:"disableAPITermination,omitempty"`
 	EBSOptimized                      *bool     `json:"ebsOptimized,omitempty"`
 	ImageID                           *string   `json:"imageID,omitempty"`
@@ -2969,6 +3372,7 @@ type ResponseLaunchTemplateData struct {
 // Describes a route in a route table.
 type Route struct {
 	CarrierGatewayID            *string `json:"carrierGatewayID,omitempty"`
+	CoreNetworkARN              *string `json:"coreNetworkARN,omitempty"`
 	DestinationCIDRBlock        *string `json:"destinationCIDRBlock,omitempty"`
 	DestinationIPv6CIDRBlock    *string `json:"destinationIPv6CIDRBlock,omitempty"`
 	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
@@ -3038,6 +3442,11 @@ type S3Storage struct {
 }
 
 // Describes a Scheduled Instance.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
 type ScheduledInstance struct {
 	AvailabilityZone            *string      `json:"availabilityZone,omitempty"`
 	CreateDate                  *metav1.Time `json:"createDate,omitempty"`
@@ -3056,6 +3465,11 @@ type ScheduledInstance struct {
 }
 
 // Describes a schedule that is available for your Scheduled Instances.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
 type ScheduledInstanceAvailability struct {
 	AvailabilityZone            *string      `json:"availabilityZone,omitempty"`
 	AvailableInstanceCount      *int64       `json:"availableInstanceCount,omitempty"`
@@ -3310,6 +3724,15 @@ type SnapshotInfo struct {
 	VolumeSize  *int64       `json:"volumeSize,omitempty"`
 }
 
+// Information about a snapshot that is currently in the Recycle Bin.
+type SnapshotRecycleBinInfo struct {
+	Description         *string      `json:"description,omitempty"`
+	RecycleBinEnterTime *metav1.Time `json:"recycleBinEnterTime,omitempty"`
+	RecycleBinExitTime  *metav1.Time `json:"recycleBinExitTime,omitempty"`
+	SnapshotID          *string      `json:"snapshotID,omitempty"`
+	VolumeID            *string      `json:"volumeID,omitempty"`
+}
+
 // Details about the import snapshot task.
 type SnapshotTaskDetail struct {
 	Description   *string `json:"description,omitempty"`
@@ -3323,9 +3746,21 @@ type SnapshotTaskDetail struct {
 	URL           *string `json:"url,omitempty"`
 }
 
+// Provides information about a snapshot's storage tier.
+type SnapshotTierStatus struct {
+	ArchivalCompleteTime             *metav1.Time `json:"archivalCompleteTime,omitempty"`
+	LastTieringOperationStatusDetail *string      `json:"lastTieringOperationStatusDetail,omitempty"`
+	LastTieringProgress              *int64       `json:"lastTieringProgress,omitempty"`
+	LastTieringStartTime             *metav1.Time `json:"lastTieringStartTime,omitempty"`
+	OwnerID                          *string      `json:"ownerID,omitempty"`
+	RestoreExpiryTime                *metav1.Time `json:"restoreExpiryTime,omitempty"`
+	SnapshotID                       *string      `json:"snapshotID,omitempty"`
+	Tags                             []*Tag       `json:"tags,omitempty"`
+}
+
 // The Spot Instance replacement strategy to use when Amazon EC2 emits a signal
 // that your Spot Instance is at an elevated risk of being interrupted. For
-// more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-configuration-strategies.html#spot-fleet-capacity-rebalance)
+// more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-capacity-rebalance.html)
 // in the Amazon EC2 User Guide for Linux Instances.
 type SpotCapacityRebalance struct {
 	TerminationDelay *int64 `json:"terminationDelay,omitempty"`
@@ -3342,6 +3777,11 @@ type SpotDatafeedSubscription struct {
 // include On-Demand capacity in your fleet request or want to specify an EFA
 // network device, you can't use SpotFleetLaunchSpecification; you must use
 // LaunchTemplateConfig (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_LaunchTemplateConfig.html).
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon EC2 User Guide for Linux Instances.
 type SpotFleetLaunchSpecification struct {
 	AddressingType *string `json:"addressingType,omitempty"`
 	EBSOptimized   *bool   `json:"ebsOptimized,omitempty"`
@@ -3469,8 +3909,13 @@ type SpotPlacementScore struct {
 	Score              *int64  `json:"score,omitempty"`
 }
 
-// Describes the maximum price per hour that you are willing to pay for a Spot
-// Instance.
+// The maximum price per unit hour that you are willing to pay for a Spot Instance.
+// We do not recommend using this parameter because it can lead to increased
+// interruptions. If you do not specify this parameter, you will pay the current
+// Spot price.
+//
+// If you specify a maximum price, your instances will be interrupted more frequently
+// than if you do not specify this parameter.
 type SpotPrice struct {
 	AvailabilityZone *string      `json:"availabilityZone,omitempty"`
 	InstanceType     *string      `json:"instanceType,omitempty"`
@@ -3536,7 +3981,7 @@ type SubnetCIDRReservation struct {
 	Tags        []*Tag  `json:"tags,omitempty"`
 }
 
-// Describes an IPv6 CIDR block associated with a subnet.
+// Describes an association between a subnet and an IPv6 CIDR block.
 type SubnetIPv6CIDRBlockAssociation struct {
 	AssociationID *string `json:"associationID,omitempty"`
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
@@ -3553,16 +3998,21 @@ type Subnet_SDK struct {
 	CIDRBlock                   *string                           `json:"cidrBlock,omitempty"`
 	CustomerOwnedIPv4Pool       *string                           `json:"customerOwnedIPv4Pool,omitempty"`
 	DefaultForAZ                *bool                             `json:"defaultForAZ,omitempty"`
+	EnableDNS64                 *bool                             `json:"enableDNS64,omitempty"`
+	EnableLniAtDeviceIndex      *int64                            `json:"enableLniAtDeviceIndex,omitempty"`
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
+	IPv6Native                  *bool                             `json:"ipv6Native,omitempty"`
 	MapCustomerOwnedIPOnLaunch  *bool                             `json:"mapCustomerOwnedIPOnLaunch,omitempty"`
 	MapPublicIPOnLaunch         *bool                             `json:"mapPublicIPOnLaunch,omitempty"`
 	OutpostARN                  *string                           `json:"outpostARN,omitempty"`
 	OwnerID                     *string                           `json:"ownerID,omitempty"`
-	State                       *string                           `json:"state,omitempty"`
-	SubnetARN                   *string                           `json:"subnetARN,omitempty"`
-	SubnetID                    *string                           `json:"subnetID,omitempty"`
-	Tags                        []*Tag                            `json:"tags,omitempty"`
-	VPCID                       *string                           `json:"vpcID,omitempty"`
+	// Describes the options for instance hostnames.
+	PrivateDNSNameOptionsOnLaunch *PrivateDNSNameOptionsOnLaunch `json:"privateDNSNameOptionsOnLaunch,omitempty"`
+	State                         *string                        `json:"state,omitempty"`
+	SubnetARN                     *string                        `json:"subnetARN,omitempty"`
+	SubnetID                      *string                        `json:"subnetID,omitempty"`
+	Tags                          []*Tag                         `json:"tags,omitempty"`
+	VPCID                         *string                        `json:"vpcID,omitempty"`
 }
 
 // Describes the burstable performance instance whose credit option for CPU
@@ -3590,6 +4040,11 @@ type TagDescription struct {
 }
 
 // The tags to apply to a resource when the resource is being created.
+//
+// The Valid Values lists all the resource types that can be tagged. However,
+// the action you're using might not support tagging all of these resource types.
+// If you try to tag a resource type that is unsupported for the action you're
+// using, you'll get an error.
 type TagSpecification struct {
 	Tags []*Tag `json:"tags,omitempty"`
 }
@@ -3712,12 +4167,13 @@ type TrafficMirrorSession struct {
 
 // Describes a Traffic Mirror target.
 type TrafficMirrorTarget struct {
-	Description            *string `json:"description,omitempty"`
-	NetworkInterfaceID     *string `json:"networkInterfaceID,omitempty"`
-	NetworkLoadBalancerARN *string `json:"networkLoadBalancerARN,omitempty"`
-	OwnerID                *string `json:"ownerID,omitempty"`
-	Tags                   []*Tag  `json:"tags,omitempty"`
-	TrafficMirrorTargetID  *string `json:"trafficMirrorTargetID,omitempty"`
+	Description                   *string `json:"description,omitempty"`
+	GatewayLoadBalancerEndpointID *string `json:"gatewayLoadBalancerEndpointID,omitempty"`
+	NetworkInterfaceID            *string `json:"networkInterfaceID,omitempty"`
+	NetworkLoadBalancerARN        *string `json:"networkLoadBalancerARN,omitempty"`
+	OwnerID                       *string `json:"ownerID,omitempty"`
+	Tags                          []*Tag  `json:"tags,omitempty"`
+	TrafficMirrorTargetID         *string `json:"trafficMirrorTargetID,omitempty"`
 }
 
 // Describes an association between a resource attachment and a transit gateway
@@ -3860,9 +4316,42 @@ type TransitGatewayOptions struct {
 
 // Describes the transit gateway peering attachment.
 type TransitGatewayPeeringAttachment struct {
-	CreationTime               *metav1.Time `json:"creationTime,omitempty"`
-	Tags                       []*Tag       `json:"tags,omitempty"`
-	TransitGatewayAttachmentID *string      `json:"transitGatewayAttachmentID,omitempty"`
+	AccepterTransitGatewayAttachmentID *string      `json:"accepterTransitGatewayAttachmentID,omitempty"`
+	CreationTime                       *metav1.Time `json:"creationTime,omitempty"`
+	Tags                               []*Tag       `json:"tags,omitempty"`
+	TransitGatewayAttachmentID         *string      `json:"transitGatewayAttachmentID,omitempty"`
+}
+
+// Describes a rule associated with a transit gateway policy.
+type TransitGatewayPolicyRule struct {
+	DestinationCIDRBlock *string `json:"destinationCIDRBlock,omitempty"`
+	DestinationPortRange *string `json:"destinationPortRange,omitempty"`
+	Protocol             *string `json:"protocol,omitempty"`
+	SourceCIDRBlock      *string `json:"sourceCIDRBlock,omitempty"`
+	SourcePortRange      *string `json:"sourcePortRange,omitempty"`
+}
+
+// Describes the meta data tags associated with a transit gateway policy rule.
+type TransitGatewayPolicyRuleMetaData struct {
+	MetaDataKey   *string `json:"metaDataKey,omitempty"`
+	MetaDataValue *string `json:"metaDataValue,omitempty"`
+}
+
+// Describes a transit gateway policy table.
+type TransitGatewayPolicyTable struct {
+	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
+	Tags             []*Tag       `json:"tags,omitempty"`
+	TransitGatewayID *string      `json:"transitGatewayID,omitempty"`
+}
+
+// Describes a transit gateway policy table association.
+type TransitGatewayPolicyTableAssociation struct {
+	ResourceID *string `json:"resourceID,omitempty"`
+}
+
+// Describes a transit gateway policy table entry
+type TransitGatewayPolicyTableEntry struct {
+	PolicyRuleNumber *string `json:"policyRuleNumber,omitempty"`
 }
 
 // Describes a transit gateway prefix list attachment.
@@ -3917,6 +4406,16 @@ type TransitGatewayRouteTable struct {
 	TransitGatewayRouteTableID   *string      `json:"transitGatewayRouteTableID,omitempty"`
 }
 
+// Describes a transit gateway route table announcement.
+type TransitGatewayRouteTableAnnouncement struct {
+	CoreNetworkID        *string      `json:"coreNetworkID,omitempty"`
+	CreationTime         *metav1.Time `json:"creationTime,omitempty"`
+	PeerCoreNetworkID    *string      `json:"peerCoreNetworkID,omitempty"`
+	PeerTransitGatewayID *string      `json:"peerTransitGatewayID,omitempty"`
+	Tags                 []*Tag       `json:"tags,omitempty"`
+	TransitGatewayID     *string      `json:"transitGatewayID,omitempty"`
+}
+
 // Describes an association between a route table and a resource attachment.
 type TransitGatewayRouteTableAssociation struct {
 	ResourceID                 *string `json:"resourceID,omitempty"`
@@ -3927,6 +4426,17 @@ type TransitGatewayRouteTableAssociation struct {
 type TransitGatewayRouteTablePropagation struct {
 	ResourceID                 *string `json:"resourceID,omitempty"`
 	TransitGatewayAttachmentID *string `json:"transitGatewayAttachmentID,omitempty"`
+}
+
+// Describes a route in a transit gateway route table.
+type TransitGatewayRouteTableRoute struct {
+	AttachmentID    *string `json:"attachmentID,omitempty"`
+	DestinationCIDR *string `json:"destinationCIDR,omitempty"`
+	PrefixListID    *string `json:"prefixListID,omitempty"`
+	ResourceID      *string `json:"resourceID,omitempty"`
+	ResourceType    *string `json:"resourceType,omitempty"`
+	RouteOrigin     *string `json:"routeOrigin,omitempty"`
+	State           *string `json:"state,omitempty"`
 }
 
 // Describes a VPC attachment.
@@ -4033,6 +4543,11 @@ type UserData struct {
 }
 
 // Describes a security group and Amazon Web Services account ID pair.
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
 type UserIDGroupPair struct {
 	Description            *string `json:"description,omitempty"`
 	GroupID                *string `json:"groupID,omitempty"`
@@ -4084,6 +4599,12 @@ type VPCCIDRBlockState struct {
 	StatusMessage *string `json:"statusMessage,omitempty"`
 }
 
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
 // Describes whether a VPC is enabled for ClassicLink.
 type VPCClassicLink struct {
 	ClassicLinkEnabled *bool   `json:"classicLinkEnabled,omitempty"`
@@ -4096,6 +4617,7 @@ type VPCEndpointConnection struct {
 	CreationTimestamp       *metav1.Time `json:"creationTimestamp,omitempty"`
 	DNSEntries              []*DNSEntry  `json:"dnsEntries,omitempty"`
 	GatewayLoadBalancerARNs []*string    `json:"gatewayLoadBalancerARNs,omitempty"`
+	IPAddressType           *string      `json:"ipAddressType,omitempty"`
 	NetworkLoadBalancerARNs []*string    `json:"networkLoadBalancerARNs,omitempty"`
 	ServiceID               *string      `json:"serviceID,omitempty"`
 	VPCEndpointID           *string      `json:"vpcEndpointID,omitempty"`
@@ -4105,9 +4627,12 @@ type VPCEndpointConnection struct {
 
 // Describes a VPC endpoint.
 type VPCEndpoint_SDK struct {
-	CreationTimestamp *metav1.Time               `json:"creationTimestamp,omitempty"`
-	DNSEntries        []*DNSEntry                `json:"dnsEntries,omitempty"`
-	Groups            []*SecurityGroupIdentifier `json:"groups,omitempty"`
+	CreationTimestamp *metav1.Time `json:"creationTimestamp,omitempty"`
+	DNSEntries        []*DNSEntry  `json:"dnsEntries,omitempty"`
+	// Describes the DNS options for an endpoint.
+	DNSOptions    *DNSOptions                `json:"dnsOptions,omitempty"`
+	Groups        []*SecurityGroupIdentifier `json:"groups,omitempty"`
+	IPAddressType *string                    `json:"ipAddressType,omitempty"`
 	// The last error that occurred for a VPC endpoint.
 	LastError           *LastError `json:"lastError,omitempty"`
 	NetworkInterfaceIDs []*string  `json:"networkInterfaceIDs,omitempty"`
@@ -4142,6 +4667,12 @@ type VPCPeeringConnection struct {
 	VPCPeeringConnectionID *string      `json:"vpcPeeringConnectionID,omitempty"`
 }
 
+//
+// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+// in the Amazon Elastic Compute Cloud User Guide.
+//
 // Describes the VPC peering connection options.
 type VPCPeeringConnectionOptionsDescription struct {
 	AllowDNSResolutionFromRemoteVPC            *bool `json:"allowDNSResolutionFromRemoteVPC,omitempty"`
@@ -4201,12 +4732,14 @@ type VPNConnectionDeviceType struct {
 
 // Describes VPN connection options.
 type VPNConnectionOptions struct {
-	EnableAcceleration    *bool   `json:"enableAcceleration,omitempty"`
-	LocalIPv4NetworkCIDR  *string `json:"localIPv4NetworkCIDR,omitempty"`
-	LocalIPv6NetworkCIDR  *string `json:"localIPv6NetworkCIDR,omitempty"`
-	RemoteIPv4NetworkCIDR *string `json:"remoteIPv4NetworkCIDR,omitempty"`
-	RemoteIPv6NetworkCIDR *string `json:"remoteIPv6NetworkCIDR,omitempty"`
-	StaticRoutesOnly      *bool   `json:"staticRoutesOnly,omitempty"`
+	EnableAcceleration                  *bool   `json:"enableAcceleration,omitempty"`
+	LocalIPv4NetworkCIDR                *string `json:"localIPv4NetworkCIDR,omitempty"`
+	LocalIPv6NetworkCIDR                *string `json:"localIPv6NetworkCIDR,omitempty"`
+	OutsideIPAddressType                *string `json:"outsideIPAddressType,omitempty"`
+	RemoteIPv4NetworkCIDR               *string `json:"remoteIPv4NetworkCIDR,omitempty"`
+	RemoteIPv6NetworkCIDR               *string `json:"remoteIPv6NetworkCIDR,omitempty"`
+	StaticRoutesOnly                    *bool   `json:"staticRoutesOnly,omitempty"`
+	TransportTransitGatewayAttachmentID *string `json:"transportTransitGatewayAttachmentID,omitempty"`
 }
 
 // Describes VPN connection options.
@@ -4214,6 +4747,7 @@ type VPNConnectionOptionsSpecification struct {
 	EnableAcceleration    *bool   `json:"enableAcceleration,omitempty"`
 	LocalIPv4NetworkCIDR  *string `json:"localIPv4NetworkCIDR,omitempty"`
 	LocalIPv6NetworkCIDR  *string `json:"localIPv6NetworkCIDR,omitempty"`
+	OutsideIPAddressType  *string `json:"outsideIPAddressType,omitempty"`
 	RemoteIPv4NetworkCIDR *string `json:"remoteIPv4NetworkCIDR,omitempty"`
 	RemoteIPv6NetworkCIDR *string `json:"remoteIPv6NetworkCIDR,omitempty"`
 	StaticRoutesOnly      *bool   `json:"staticRoutesOnly,omitempty"`

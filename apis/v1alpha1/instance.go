@@ -34,7 +34,7 @@ type InstanceSpec struct {
 	// to open, which enables it to run in any open Capacity Reservation that has
 	// matching attributes (instance type, platform, Availability Zone).
 	CapacityReservationSpecification *CapacityReservationSpecification `json:"capacityReservationSpecification,omitempty"`
-	// The CPU options for the instance. For more information, see Optimizing CPU
+	// The CPU options for the instance. For more information, see Optimize CPU
 	// options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html)
 	// in the Amazon EC2 User Guide.
 	CPUOptions *CPUOptionsRequest `json:"cpuOptions,omitempty"`
@@ -44,10 +44,13 @@ type InstanceSpec struct {
 	// For more information, see Burstable performance instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances.html)
 	// in the Amazon EC2 User Guide.
 	//
-	// Default: standard (T2 instances) or unlimited (T3/T3a instances)
+	// Default: standard (T2 instances) or unlimited (T3/T3a/T4g instances)
 	//
 	// For T3 instances with host tenancy, only standard is supported.
 	CreditSpecification *CreditSpecificationRequest `json:"creditSpecification,omitempty"`
+	// Indicates whether an instance is enabled for stop protection. For more information,
+	// see Stop protection (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html#Using_StopProtection).
+	DisableAPIStop *bool `json:"disableAPIStop,omitempty"`
 	// If you set this parameter to true, you can't terminate the instance using
 	// the Amazon EC2 console, CLI, or API; otherwise, you can. To change this attribute
 	// after launch, use ModifyInstanceAttribute (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifyInstanceAttribute.html).
@@ -144,6 +147,8 @@ type InstanceSpec struct {
 	LaunchTemplate *LaunchTemplateSpecification `json:"launchTemplate,omitempty"`
 	// The license configurations.
 	LicenseSpecifications []*LicenseConfigurationRequest `json:"licenseSpecifications,omitempty"`
+	// The maintenance and recovery options for the instance.
+	MaintenanceOptions *InstanceMaintenanceOptionsRequest `json:"maintenanceOptions,omitempty"`
 	// The maximum number of instances to launch. If you specify more instances
 	// than Amazon EC2 can launch in the target Availability Zone, Amazon EC2 launches
 	// the largest possible number of instances above MinCount.
@@ -173,6 +178,9 @@ type InstanceSpec struct {
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
 	// The placement for the instance.
 	Placement *Placement `json:"placement,omitempty"`
+	// The options for the instance hostname. The default values are inherited from
+	// the subnet.
+	PrivateDNSNameOptions *PrivateDNSNameOptionsRequest `json:"privateDNSNameOptions,omitempty"`
 	// [EC2-VPC] The primary IPv4 address. You must specify a value from the IPv4
 	// address range of the subnet.
 	//
@@ -216,12 +224,12 @@ type InstanceSpec struct {
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
 	Tags []*Tag `json:"tags,omitempty"`
-	// The user data to make available to the instance. For more information, see
-	// Running commands on your Linux instance at launch (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
-	// (Linux) and Adding User Data (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-instance-metadata.html#instancedata-add-user-data)
-	// (Windows). If you are using a command line tool, base64-encoding is performed
-	// for you, and you can load the text from a file. Otherwise, you must provide
-	// base64-encoded text. User data is limited to 16 KB.
+	// The user data script to make available to the instance. For more information,
+	// see Run commands on your Linux instance at launch (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
+	// and Run commands on your Windows instance at launch (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-windows-user-data.html).
+	// If you are using a command line tool, base64-encoding is performed for you,
+	// and you can load the text from a file. Otherwise, you must provide base64-encoded
+	// text. User data is limited to 16 KB.
 	UserData *string `json:"userData,omitempty"`
 }
 
@@ -271,6 +279,9 @@ type InstanceStatus struct {
 	// Indicates whether this is a Spot Instance or a Scheduled Instance.
 	// +kubebuilder:validation:Optional
 	InstanceLifecycle *string `json:"instanceLifecycle,omitempty"`
+	// The IPv6 address assigned to the instance.
+	// +kubebuilder:validation:Optional
+	IPv6Address *string `json:"ipv6Address,omitempty"`
 	// The time the instance was launched.
 	// +kubebuilder:validation:Optional
 	LaunchTime *metav1.Time `json:"launchTime,omitempty"`
@@ -339,6 +350,11 @@ type InstanceStatus struct {
 	// The reason for the most recent state transition. This might be an empty string.
 	// +kubebuilder:validation:Optional
 	StateTransitionReason *string `json:"stateTransitionReason,omitempty"`
+	// If the instance is configured for NitroTPM support, the value is v2.0. For
+	// more information, see NitroTPM (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/nitrotpm.html)
+	// in the Amazon EC2 User Guide.
+	// +kubebuilder:validation:Optional
+	TPMSupport *string `json:"tpmSupport,omitempty"`
 	// The usage operation value for the instance. For more information, see AMI
 	// billing information fields (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/billing-info-fields.html)
 	// in the Amazon EC2 User Guide.

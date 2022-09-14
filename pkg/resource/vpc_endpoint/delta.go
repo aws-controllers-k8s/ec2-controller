@@ -41,6 +41,24 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions, b.ko.Spec.DNSOptions) {
+		delta.Add("Spec.DNSOptions", a.ko.Spec.DNSOptions, b.ko.Spec.DNSOptions)
+	} else if a.ko.Spec.DNSOptions != nil && b.ko.Spec.DNSOptions != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions.DNSRecordIPType, b.ko.Spec.DNSOptions.DNSRecordIPType) {
+			delta.Add("Spec.DNSOptions.DNSRecordIPType", a.ko.Spec.DNSOptions.DNSRecordIPType, b.ko.Spec.DNSOptions.DNSRecordIPType)
+		} else if a.ko.Spec.DNSOptions.DNSRecordIPType != nil && b.ko.Spec.DNSOptions.DNSRecordIPType != nil {
+			if *a.ko.Spec.DNSOptions.DNSRecordIPType != *b.ko.Spec.DNSOptions.DNSRecordIPType {
+				delta.Add("Spec.DNSOptions.DNSRecordIPType", a.ko.Spec.DNSOptions.DNSRecordIPType, b.ko.Spec.DNSOptions.DNSRecordIPType)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType) {
+		delta.Add("Spec.IPAddressType", a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType)
+	} else if a.ko.Spec.IPAddressType != nil && b.ko.Spec.IPAddressType != nil {
+		if *a.ko.Spec.IPAddressType != *b.ko.Spec.IPAddressType {
+			delta.Add("Spec.IPAddressType", a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument) {
 		delta.Add("Spec.PolicyDocument", a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument)
 	} else if a.ko.Spec.PolicyDocument != nil && b.ko.Spec.PolicyDocument != nil {

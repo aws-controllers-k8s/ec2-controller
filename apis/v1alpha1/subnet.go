@@ -43,11 +43,16 @@ type SubnetSpec struct {
 	// The IPv4 network range for the subnet, in CIDR notation. For example, 10.0.0.0/24.
 	// We modify the specified CIDR block to its canonical form; for example, if
 	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
-	// +kubebuilder:validation:Required
-	CIDRBlock *string `json:"cidrBlock"`
+	//
+	// This parameter is not supported for an IPv6 only subnet.
+	CIDRBlock *string `json:"cidrBlock,omitempty"`
 	// The IPv6 network range for the subnet, in CIDR notation. The subnet size
 	// must use a /64 prefix length.
+	//
+	// This parameter is required for an IPv6 only subnet.
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
+	// Indicates whether to create an IPv6 only subnet.
+	IPv6Native *bool `json:"ipv6Native,omitempty"`
 	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
 	// ARN, you must also specify the Availability Zone of the Outpost subnet.
 	OutpostARN     *string                                    `json:"outpostARN,omitempty"`
@@ -90,6 +95,15 @@ type SubnetStatus struct {
 	// Indicates whether this is the default subnet for the Availability Zone.
 	// +kubebuilder:validation:Optional
 	DefaultForAZ *bool `json:"defaultForAZ,omitempty"`
+	// Indicates whether DNS queries made to the Amazon-provided DNS Resolver in
+	// this subnet should return synthetic IPv6 addresses for IPv4-only destinations.
+	// +kubebuilder:validation:Optional
+	EnableDNS64 *bool `json:"enableDNS64,omitempty"`
+	// Indicates the device position for local network interfaces in this subnet.
+	// For example, 1 indicates local network interfaces in this subnet are the
+	// secondary network interface (eth1).
+	// +kubebuilder:validation:Optional
+	EnableLniAtDeviceIndex *int64 `json:"enableLniAtDeviceIndex,omitempty"`
 	// Information about the IPv6 CIDR blocks associated with the subnet.
 	// +kubebuilder:validation:Optional
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
@@ -105,6 +119,10 @@ type SubnetStatus struct {
 	// The ID of the Amazon Web Services account that owns the subnet.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
+	// The type of hostnames to assign to instances in the subnet at launch. An
+	// instance hostname is based on the IPv4 address or ID of the instance.
+	// +kubebuilder:validation:Optional
+	PrivateDNSNameOptionsOnLaunch *PrivateDNSNameOptionsOnLaunch `json:"privateDNSNameOptionsOnLaunch,omitempty"`
 	// The current state of the subnet.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`

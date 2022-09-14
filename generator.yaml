@@ -65,6 +65,9 @@ ignore:
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
+    - Ipam
+    - IpamPool
+    - IpamScope
     - KeyPair
     - LaunchTemplateVersion
     - LaunchTemplate
@@ -74,10 +77,12 @@ ignore:
     #- NatGateway
     - NetworkAclEntry
     - NetworkAcl
+    - NetworkInsightsAccessScope
     - NetworkInsightsPath
     - NetworkInterfacePermission
     - NetworkInterface
     - PlacementGroup
+    - PublicIpv4Pool
     - ReplaceRootVolumeTask
     - ReservedInstancesListing
     - RestoreImageTask
@@ -97,9 +102,11 @@ ignore:
     - TransitGatewayConnect
     - TransitGatewayMulticastDomain
     - TransitGatewayPeeringAttachment
+    - TransitGatewayPolicyTable
     - TransitGatewayPrefixListReference
     - TransitGatewayRouteTable
     - TransitGatewayRoute
+    - TransitGatewayRouteTableAnnouncement
     - TransitGatewayVpcAttachment
     #- TransitGateway
     - Volume

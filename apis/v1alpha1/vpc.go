@@ -46,6 +46,15 @@ type VPCSpec struct {
 	//
 	// Default: default
 	InstanceTenancy *string `json:"instanceTenancy,omitempty"`
+	// The ID of an IPv4 IPAM pool you want to use for allocating this VPC's CIDR.
+	// For more information, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
+	// in the Amazon VPC IPAM User Guide.
+	IPv4IPAMPoolID *string `json:"ipv4IPAMPoolID,omitempty"`
+	// The netmask length of the IPv4 CIDR you want to allocate to this VPC from
+	// an Amazon VPC IP Address Manager (IPAM) pool. For more information about
+	// IPAM, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
+	// in the Amazon VPC IPAM User Guide.
+	IPv4NetmaskLength *int64 `json:"ipv4NetmaskLength,omitempty"`
 	// The IPv6 CIDR block from the IPv6 address pool. You must also specify Ipv6Pool
 	// in the request.
 	//
@@ -56,6 +65,19 @@ type VPCSpec struct {
 	//
 	// You must set AmazonProvidedIpv6CidrBlock to true to use this parameter.
 	IPv6CIDRBlockNetworkBorderGroup *string `json:"ipv6CIDRBlockNetworkBorderGroup,omitempty"`
+	// The ID of an IPv6 IPAM pool which will be used to allocate this VPC an IPv6
+	// CIDR. IPAM is a VPC feature that you can use to automate your IP address
+	// management workflows including assigning, tracking, troubleshooting, and
+	// auditing IP addresses across Amazon Web Services Regions and accounts throughout
+	// your Amazon Web Services Organization. For more information, see What is
+	// IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
+	// in the Amazon VPC IPAM User Guide.
+	IPv6IPAMPoolID *string `json:"ipv6IPAMPoolID,omitempty"`
+	// The netmask length of the IPv6 CIDR you want to allocate to this VPC from
+	// an Amazon VPC IP Address Manager (IPAM) pool. For more information about
+	// IPAM, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
+	// in the Amazon VPC IPAM User Guide.
+	IPv6NetmaskLength *int64 `json:"ipv6NetmaskLength,omitempty"`
 	// The ID of an IPv6 address pool from which to allocate the IPv6 CIDR block.
 	IPv6Pool *string `json:"ipv6Pool,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag

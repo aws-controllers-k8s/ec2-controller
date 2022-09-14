@@ -69,6 +69,13 @@ func newResourceDelta(
 			delta.Add("Spec.IPv6CIDRBlock", a.ko.Spec.IPv6CIDRBlock, b.ko.Spec.IPv6CIDRBlock)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv6Native, b.ko.Spec.IPv6Native) {
+		delta.Add("Spec.IPv6Native", a.ko.Spec.IPv6Native, b.ko.Spec.IPv6Native)
+	} else if a.ko.Spec.IPv6Native != nil && b.ko.Spec.IPv6Native != nil {
+		if *a.ko.Spec.IPv6Native != *b.ko.Spec.IPv6Native {
+			delta.Add("Spec.IPv6Native", a.ko.Spec.IPv6Native, b.ko.Spec.IPv6Native)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.OutpostARN, b.ko.Spec.OutpostARN) {
 		delta.Add("Spec.OutpostARN", a.ko.Spec.OutpostARN, b.ko.Spec.OutpostARN)
 	} else if a.ko.Spec.OutpostARN != nil && b.ko.Spec.OutpostARN != nil {

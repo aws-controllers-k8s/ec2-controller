@@ -109,42 +109,56 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.DNSEntries = nil
 		}
-		if elem.Groups != nil {
-			f2 := []*svcapitypes.SecurityGroupIdentifier{}
-			for _, f2iter := range elem.Groups {
-				f2elem := &svcapitypes.SecurityGroupIdentifier{}
-				if f2iter.GroupId != nil {
-					f2elem.GroupID = f2iter.GroupId
-				}
-				if f2iter.GroupName != nil {
-					f2elem.GroupName = f2iter.GroupName
-				}
-				f2 = append(f2, f2elem)
+		if elem.DnsOptions != nil {
+			f2 := &svcapitypes.DNSOptionsSpecification{}
+			if elem.DnsOptions.DnsRecordIpType != nil {
+				f2.DNSRecordIPType = elem.DnsOptions.DnsRecordIpType
 			}
-			ko.Status.Groups = f2
+			ko.Spec.DNSOptions = f2
+		} else {
+			ko.Spec.DNSOptions = nil
+		}
+		if elem.Groups != nil {
+			f3 := []*svcapitypes.SecurityGroupIdentifier{}
+			for _, f3iter := range elem.Groups {
+				f3elem := &svcapitypes.SecurityGroupIdentifier{}
+				if f3iter.GroupId != nil {
+					f3elem.GroupID = f3iter.GroupId
+				}
+				if f3iter.GroupName != nil {
+					f3elem.GroupName = f3iter.GroupName
+				}
+				f3 = append(f3, f3elem)
+			}
+			ko.Status.Groups = f3
 		} else {
 			ko.Status.Groups = nil
 		}
+		if elem.IpAddressType != nil {
+			ko.Spec.IPAddressType = elem.IpAddressType
+		} else {
+			ko.Spec.IPAddressType = nil
+		}
 		if elem.LastError != nil {
-			f3 := &svcapitypes.LastError{}
+			f5 := &svcapitypes.LastError{}
 			if elem.LastError.Code != nil {
-				f3.Code = elem.LastError.Code
+				f5.Code = elem.LastError.Code
 			}
 			if elem.LastError.Message != nil {
-				f3.Message = elem.LastError.Message
+				f5.Message = elem.LastError.Message
 			}
-			ko.Status.LastError = f3
+			ko.Status.LastError = f5
 		} else {
 			ko.Status.LastError = nil
 		}
 		if elem.NetworkInterfaceIds != nil {
-			f4 := []*string{}
-			for _, f4iter := range elem.NetworkInterfaceIds {
-				var f4elem string
-				f4elem = *f4iter
-				f4 = append(f4, &f4elem)
+			f6 := []*string{}
+			for _, f6iter := range elem.NetworkInterfaceIds {
+				var f6elem string
+				f6elem = *f6iter
+				f6 = append(f6, &f6elem)
 			}
-			ko.Status.NetworkInterfaceIDs = f4
+			ko.Status.NetworkInterfaceIDs = f6
 		} else {
 			ko.Status.NetworkInterfaceIDs = nil
 		}
@@ -169,13 +183,13 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.RequesterManaged = nil
 		}
 		if elem.RouteTableIds != nil {
-			f9 := []*string{}
-			for _, f9iter := range elem.RouteTableIds {
-				var f9elem string
-				f9elem = *f9iter
-				f9 = append(f9, &f9elem)
+			f11 := []*string{}
+			for _, f11iter := range elem.RouteTableIds {
+				var f11elem string
+				f11elem = *f11iter
+				f11 = append(f11, &f11elem)
 			}
-			ko.Spec.RouteTableIDs = f9
+			ko.Spec.RouteTableIDs = f11
 		} else {
 			ko.Spec.RouteTableIDs = nil
 		}
@@ -190,29 +204,29 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.State = nil
 		}
 		if elem.SubnetIds != nil {
-			f12 := []*string{}
-			for _, f12iter := range elem.SubnetIds {
-				var f12elem string
-				f12elem = *f12iter
-				f12 = append(f12, &f12elem)
+			f14 := []*string{}
+			for _, f14iter := range elem.SubnetIds {
+				var f14elem string
+				f14elem = *f14iter
+				f14 = append(f14, &f14elem)
 			}
-			ko.Spec.SubnetIDs = f12
+			ko.Spec.SubnetIDs = f14
 		} else {
 			ko.Spec.SubnetIDs = nil
 		}
 		if elem.Tags != nil {
-			f13 := []*svcapitypes.Tag{}
-			for _, f13iter := range elem.Tags {
-				f13elem := &svcapitypes.Tag{}
-				if f13iter.Key != nil {
-					f13elem.Key = f13iter.Key
+			f15 := []*svcapitypes.Tag{}
+			for _, f15iter := range elem.Tags {
+				f15elem := &svcapitypes.Tag{}
+				if f15iter.Key != nil {
+					f15elem.Key = f15iter.Key
 				}
-				if f13iter.Value != nil {
-					f13elem.Value = f13iter.Value
+				if f15iter.Value != nil {
+					f15elem.Value = f15iter.Value
 				}
-				f13 = append(f13, f13elem)
+				f15 = append(f15, f15elem)
 			}
-			ko.Spec.Tags = f13
+			ko.Spec.Tags = f15
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -318,42 +332,56 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.DNSEntries = nil
 	}
-	if resp.VpcEndpoint.Groups != nil {
-		f2 := []*svcapitypes.SecurityGroupIdentifier{}
-		for _, f2iter := range resp.VpcEndpoint.Groups {
-			f2elem := &svcapitypes.SecurityGroupIdentifier{}
-			if f2iter.GroupId != nil {
-				f2elem.GroupID = f2iter.GroupId
-			}
-			if f2iter.GroupName != nil {
-				f2elem.GroupName = f2iter.GroupName
-			}
-			f2 = append(f2, f2elem)
+	if resp.VpcEndpoint.DnsOptions != nil {
+		f2 := &svcapitypes.DNSOptionsSpecification{}
+		if resp.VpcEndpoint.DnsOptions.DnsRecordIpType != nil {
+			f2.DNSRecordIPType = resp.VpcEndpoint.DnsOptions.DnsRecordIpType
 		}
-		ko.Status.Groups = f2
+		ko.Spec.DNSOptions = f2
+	} else {
+		ko.Spec.DNSOptions = nil
+	}
+	if resp.VpcEndpoint.Groups != nil {
+		f3 := []*svcapitypes.SecurityGroupIdentifier{}
+		for _, f3iter := range resp.VpcEndpoint.Groups {
+			f3elem := &svcapitypes.SecurityGroupIdentifier{}
+			if f3iter.GroupId != nil {
+				f3elem.GroupID = f3iter.GroupId
+			}
+			if f3iter.GroupName != nil {
+				f3elem.GroupName = f3iter.GroupName
+			}
+			f3 = append(f3, f3elem)
+		}
+		ko.Status.Groups = f3
 	} else {
 		ko.Status.Groups = nil
 	}
+	if resp.VpcEndpoint.IpAddressType != nil {
+		ko.Spec.IPAddressType = resp.VpcEndpoint.IpAddressType
+	} else {
+		ko.Spec.IPAddressType = nil
+	}
 	if resp.VpcEndpoint.LastError != nil {
-		f3 := &svcapitypes.LastError{}
+		f5 := &svcapitypes.LastError{}
 		if resp.VpcEndpoint.LastError.Code != nil {
-			f3.Code = resp.VpcEndpoint.LastError.Code
+			f5.Code = resp.VpcEndpoint.LastError.Code
 		}
 		if resp.VpcEndpoint.LastError.Message != nil {
-			f3.Message = resp.VpcEndpoint.LastError.Message
+			f5.Message = resp.VpcEndpoint.LastError.Message
 		}
-		ko.Status.LastError = f3
+		ko.Status.LastError = f5
 	} else {
 		ko.Status.LastError = nil
 	}
 	if resp.VpcEndpoint.NetworkInterfaceIds != nil {
-		f4 := []*string{}
-		for _, f4iter := range resp.VpcEndpoint.NetworkInterfaceIds {
-			var f4elem string
-			f4elem = *f4iter
-			f4 = append(f4, &f4elem)
+		f6 := []*string{}
+		for _, f6iter := range resp.VpcEndpoint.NetworkInterfaceIds {
+			var f6elem string
+			f6elem = *f6iter
+			f6 = append(f6, &f6elem)
 		}
-		ko.Status.NetworkInterfaceIDs = f4
+		ko.Status.NetworkInterfaceIDs = f6
 	} else {
 		ko.Status.NetworkInterfaceIDs = nil
 	}
@@ -378,13 +406,13 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.RequesterManaged = nil
 	}
 	if resp.VpcEndpoint.RouteTableIds != nil {
-		f9 := []*string{}
-		for _, f9iter := range resp.VpcEndpoint.RouteTableIds {
-			var f9elem string
-			f9elem = *f9iter
-			f9 = append(f9, &f9elem)
+		f11 := []*string{}
+		for _, f11iter := range resp.VpcEndpoint.RouteTableIds {
+			var f11elem string
+			f11elem = *f11iter
+			f11 = append(f11, &f11elem)
 		}
-		ko.Spec.RouteTableIDs = f9
+		ko.Spec.RouteTableIDs = f11
 	} else {
 		ko.Spec.RouteTableIDs = nil
 	}
@@ -399,29 +427,29 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.State = nil
 	}
 	if resp.VpcEndpoint.SubnetIds != nil {
-		f12 := []*string{}
-		for _, f12iter := range resp.VpcEndpoint.SubnetIds {
-			var f12elem string
-			f12elem = *f12iter
-			f12 = append(f12, &f12elem)
+		f14 := []*string{}
+		for _, f14iter := range resp.VpcEndpoint.SubnetIds {
+			var f14elem string
+			f14elem = *f14iter
+			f14 = append(f14, &f14elem)
 		}
-		ko.Spec.SubnetIDs = f12
+		ko.Spec.SubnetIDs = f14
 	} else {
 		ko.Spec.SubnetIDs = nil
 	}
 	if resp.VpcEndpoint.Tags != nil {
-		f13 := []*svcapitypes.Tag{}
-		for _, f13iter := range resp.VpcEndpoint.Tags {
-			f13elem := &svcapitypes.Tag{}
-			if f13iter.Key != nil {
-				f13elem.Key = f13iter.Key
+		f15 := []*svcapitypes.Tag{}
+		for _, f15iter := range resp.VpcEndpoint.Tags {
+			f15elem := &svcapitypes.Tag{}
+			if f15iter.Key != nil {
+				f15elem.Key = f15iter.Key
 			}
-			if f13iter.Value != nil {
-				f13elem.Value = f13iter.Value
+			if f15iter.Value != nil {
+				f15elem.Value = f15iter.Value
 			}
-			f13 = append(f13, f13elem)
+			f15 = append(f15, f15elem)
 		}
-		ko.Spec.Tags = f13
+		ko.Spec.Tags = f15
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -453,6 +481,16 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateVpcEndpointInput, error) {
 	res := &svcsdk.CreateVpcEndpointInput{}
 
+	if r.ko.Spec.DNSOptions != nil {
+		f0 := &svcsdk.DnsOptionsSpecification{}
+		if r.ko.Spec.DNSOptions.DNSRecordIPType != nil {
+			f0.SetDnsRecordIpType(*r.ko.Spec.DNSOptions.DNSRecordIPType)
+		}
+		res.SetDnsOptions(f0)
+	}
+	if r.ko.Spec.IPAddressType != nil {
+		res.SetIpAddressType(*r.ko.Spec.IPAddressType)
+	}
 	if r.ko.Spec.PolicyDocument != nil {
 		res.SetPolicyDocument(*r.ko.Spec.PolicyDocument)
 	}
@@ -460,34 +498,34 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetPrivateDnsEnabled(*r.ko.Spec.PrivateDNSEnabled)
 	}
 	if r.ko.Spec.RouteTableIDs != nil {
-		f2 := []*string{}
-		for _, f2iter := range r.ko.Spec.RouteTableIDs {
-			var f2elem string
-			f2elem = *f2iter
-			f2 = append(f2, &f2elem)
+		f4 := []*string{}
+		for _, f4iter := range r.ko.Spec.RouteTableIDs {
+			var f4elem string
+			f4elem = *f4iter
+			f4 = append(f4, &f4elem)
 		}
-		res.SetRouteTableIds(f2)
+		res.SetRouteTableIds(f4)
 	}
 	if r.ko.Spec.SecurityGroupIDs != nil {
-		f3 := []*string{}
-		for _, f3iter := range r.ko.Spec.SecurityGroupIDs {
-			var f3elem string
-			f3elem = *f3iter
-			f3 = append(f3, &f3elem)
+		f5 := []*string{}
+		for _, f5iter := range r.ko.Spec.SecurityGroupIDs {
+			var f5elem string
+			f5elem = *f5iter
+			f5 = append(f5, &f5elem)
 		}
-		res.SetSecurityGroupIds(f3)
+		res.SetSecurityGroupIds(f5)
 	}
 	if r.ko.Spec.ServiceName != nil {
 		res.SetServiceName(*r.ko.Spec.ServiceName)
 	}
 	if r.ko.Spec.SubnetIDs != nil {
-		f5 := []*string{}
-		for _, f5iter := range r.ko.Spec.SubnetIDs {
-			var f5elem string
-			f5elem = *f5iter
-			f5 = append(f5, &f5elem)
+		f7 := []*string{}
+		for _, f7iter := range r.ko.Spec.SubnetIDs {
+			var f7elem string
+			f7elem = *f7iter
+			f7 = append(f7, &f7elem)
 		}
-		res.SetSubnetIds(f5)
+		res.SetSubnetIds(f7)
 	}
 	if r.ko.Spec.VPCEndpointType != nil {
 		res.SetVpcEndpointType(*r.ko.Spec.VPCEndpointType)
