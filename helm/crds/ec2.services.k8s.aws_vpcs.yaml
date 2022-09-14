@@ -61,7 +61,7 @@ spec:
                   Important: The host value cannot be used with this parameter. Use
                   the default or dedicated values only. \n Default: default"
                 type: string
-              ipv4IPamPoolID:
+              ipv4IPAMPoolID:
                 description: The ID of an IPv4 IPAM pool you want to use for allocating
                   this VPC's CIDR. For more information, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
                   in the Amazon VPC IPAM User Guide.
@@ -84,7 +84,7 @@ spec:
                   location. \n You must set AmazonProvidedIpv6CidrBlock to true to
                   use this parameter."
                 type: string
-              ipv6IPamPoolID:
+              ipv6IPAMPoolID:
                 description: The ID of an IPv6 IPAM pool which will be used to allocate
                   this VPC an IPv6 CIDR. IPAM is a VPC feature that you can use to
                   automate your IP address management workflows including assigning,

@@ -354,7 +354,7 @@ type InstanceStatus struct {
 	// more information, see NitroTPM (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/nitrotpm.html)
 	// in the Amazon EC2 User Guide.
 	// +kubebuilder:validation:Optional
-	TpmSupport *string `json:"tpmSupport,omitempty"`
+	TPMSupport *string `json:"tpmSupport,omitempty"`
 	// The usage operation value for the instance. For more information, see AMI
 	// billing information fields (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/billing-info-fields.html)
 	// in the Amazon EC2 User Guide.

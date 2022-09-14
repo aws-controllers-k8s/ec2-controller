@@ -49,7 +49,7 @@ type VPCSpec struct {
 	// The ID of an IPv4 IPAM pool you want to use for allocating this VPC's CIDR.
 	// For more information, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
 	// in the Amazon VPC IPAM User Guide.
-	IPv4IPamPoolID *string `json:"ipv4IPamPoolID,omitempty"`
+	IPv4IPAMPoolID *string `json:"ipv4IPAMPoolID,omitempty"`
 	// The netmask length of the IPv4 CIDR you want to allocate to this VPC from
 	// an Amazon VPC IP Address Manager (IPAM) pool. For more information about
 	// IPAM, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
@@ -72,7 +72,7 @@ type VPCSpec struct {
 	// your Amazon Web Services Organization. For more information, see What is
 	// IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
 	// in the Amazon VPC IPAM User Guide.
-	IPv6IPamPoolID *string `json:"ipv6IPamPoolID,omitempty"`
+	IPv6IPAMPoolID *string `json:"ipv6IPAMPoolID,omitempty"`
 	// The netmask length of the IPv6 CIDR you want to allocate to this VPC from
 	// an Amazon VPC IP Address Manager (IPAM) pool. For more information about
 	// IPAM, see What is IPAM? (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html)
