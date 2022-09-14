@@ -33,9 +33,10 @@ ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 5
 
 @pytest.fixture
-def simple_vpc_endpoint():
+def simple_vpc_endpoint(request):
     test_resource_values = REPLACEMENT_VALUES.copy()
     resource_name = random_suffix_name("vpc-endpoint-test", 24)
     test_vpc = get_bootstrap_resources().SharedTestVPC
@@ -44,6 +45,14 @@ def simple_vpc_endpoint():
     test_resource_values["VPC_ENDPOINT_NAME"] = resource_name
     test_resource_values["SERVICE_NAME"] = ENDPOINT_SERVICE_NAME
     test_resource_values["VPC_ID"] = vpc_id
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'tag_key' in data:
+            test_resource_values["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            test_resource_values["TAG_VALUE"] = data["tag_value"]
 
     # Load VPC Endpoint CR
     resource_data = load_ec2_resource(
@@ -93,6 +102,72 @@ class TestVpcEndpoint:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check VPC Endpoint no longer exists in AWS
+        ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
+    
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_vpc_endpoint):
+        (ref, cr) = simple_vpc_endpoint
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["vpcEndpointID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check vpcEndpoint exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_endpoint(resource_id)
+        
+        # Check tags exist for vpcEndpoint resource
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the vpcEndpoint, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are updated for vpcEndpoint resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the vpcEndpoint resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check vpcEndpoint no longer exists in AWS
         ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
 
     def test_terminal_condition_malformed_vpc(self):
