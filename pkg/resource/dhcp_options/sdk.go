@@ -299,8 +299,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// TODO(jaypipes): Figure this out...
-	return nil, ackerr.NotImplemented
+	return rm.customUpdateDHCPOptions(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -450,4 +449,18 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	default:
 		return false
 	}
+}
+
+func (rm *resourceManager) newTag(
+	c svcapitypes.Tag,
+) *svcsdk.Tag {
+	res := &svcsdk.Tag{}
+	if c.Key != nil {
+		res.SetKey(*c.Key)
+	}
+	if c.Value != nil {
+		res.SetValue(*c.Value)
+	}
+
+	return res
 }
