@@ -54,7 +54,119 @@ func (rm *resourceManager) customUpdateSubnet(
 		}
 	}
 
+	// These fields must be edited one at a time
+	if delta.DifferentAt("Spec.AssignIPv6AddressOnCreation") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "AssignIPv6AddressOnCreation"); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.CustomerOwnedIPv4Pool") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "CustomerOwnedIPv4Pool"); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.EnableDNS64") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "EnableDNS64"); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.EnableResourceNameDNSAAAARecord") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "EnableResourceNameDNSAAAARecord"); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.EnableResourceNameDNSARecord") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "EnableResourceNameDNSARecord"); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.HostnameType") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "HostnameType"); err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.MapPublicIPOnLaunch") {
+		if err = rm.updateSubnetAttribute(ctx, desired, "MapPublicIPOnLaunch"); err != nil {
+			return nil, err
+		}
+	}
+
+	// call sdkFind to return the resource's latest state
+	// because Spec/Status values can be impacted by sdkUpdate
+	updated, err = rm.sdkFind(ctx, desired)
+	if err != nil {
+		return nil, err
+	}
+
 	return updated, nil
+}
+
+// updateSubnetAttribute creates a request based on
+// deltaFieldName and calls ModifySubnetAttribute API
+// Note, this API can only edit one field at a time
+func (rm *resourceManager) updateSubnetAttribute(
+	ctx context.Context,
+	r *resource,
+	deltaFieldName string,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateSubnetAttributes")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.ModifySubnetAttributeInput{
+		SubnetId: r.ko.Status.SubnetID,
+	}
+
+	defaultAttrValue := svcsdk.AttributeBooleanValue{}
+	defaultAttrValue.SetValue(false)
+	switch deltaFieldName {
+	case "AssignIPv6AddressOnCreation":
+		input.SetAssignIpv6AddressOnCreation(&defaultAttrValue)
+		if r.ko.Spec.AssignIPv6AddressOnCreation != nil {
+			input.AssignIpv6AddressOnCreation.Value = r.ko.Spec.AssignIPv6AddressOnCreation
+		}
+	case "CustomerOwnedIPv4Pool":
+		input.SetMapCustomerOwnedIpOnLaunch(&defaultAttrValue)
+		if r.ko.Spec.CustomerOwnedIPv4Pool != nil {
+			input.MapCustomerOwnedIpOnLaunch.SetValue(true)
+			input.CustomerOwnedIpv4Pool = r.ko.Spec.CustomerOwnedIPv4Pool
+		}
+	case "EnableDNS64":
+		input.SetEnableDns64(&defaultAttrValue)
+		if r.ko.Spec.EnableDNS64 != nil {
+			input.EnableDns64.Value = r.ko.Spec.EnableDNS64
+		}
+	case "EnableResourceNameDNSAAAARecord":
+		input.SetEnableResourceNameDnsAAAARecordOnLaunch(&defaultAttrValue)
+		if r.ko.Spec.EnableResourceNameDNSAAAARecord != nil {
+			input.EnableResourceNameDnsAAAARecordOnLaunch.Value = r.ko.Spec.EnableResourceNameDNSAAAARecord
+		}
+	case "EnableResourceNameDNSARecord":
+		input.SetEnableResourceNameDnsARecordOnLaunch(&defaultAttrValue)
+		if r.ko.Spec.EnableResourceNameDNSARecord != nil {
+			input.EnableResourceNameDnsARecordOnLaunch.Value = r.ko.Spec.EnableResourceNameDNSARecord
+		}
+	case "HostnameType":
+		input.SetPrivateDnsHostnameTypeOnLaunch("ip-name")
+		if r.ko.Spec.HostnameType != nil {
+			input.PrivateDnsHostnameTypeOnLaunch = r.ko.Spec.HostnameType
+		}
+	case "MapPublicIPOnLaunch":
+		input.SetMapPublicIpOnLaunch(&defaultAttrValue)
+		if r.ko.Spec.MapPublicIPOnLaunch != nil {
+			input.MapPublicIpOnLaunch.Value = r.ko.Spec.MapPublicIPOnLaunch
+		}
+	}
+
+	_, err = rm.sdkapi.ModifySubnetAttributeWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "ModifySubnetAttribute", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (rm *resourceManager) createRouteTableAssociations(
