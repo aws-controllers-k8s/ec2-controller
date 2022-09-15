@@ -299,7 +299,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	return rm.customUpdateDhcpOptions(ctx, desired, latest, delta)
+	return rm.customUpdateDHCPOptions(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API

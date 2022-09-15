@@ -27,6 +27,7 @@ RESOURCE_PLURAL = "elasticipaddresses"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 5
 
 
 def get_address(ec2_client, allocation_id: str) -> dict:
@@ -64,6 +65,10 @@ def simple_elastic_ip_address(request):
             replacements["ADDRESS"] = data['address']
         if 'public_ipv4_pool' in data:
             replacements["PUBLIC_IPV4_POOL"] = data['public_ipv4_pool']
+        if 'tag_key' in data:
+            replacements["TAG_KEY"] = data['tag_key']
+        if 'tag_value' in data:
+            replacements["TAG_VALUE"] = data['tag_value']
 
     # Load ElasticIPAddress CR
     resource_data = load_ec2_resource(
@@ -135,3 +140,70 @@ class TestElasticIPAddress:
         # An error occurred (InvalidParameterCombination) when calling the AllocateAddress operation:
         # The parameter PublicIpv4Pool cannot be used with the parameter Address
         assert expected_msg in terminal_condition['message']
+    
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_elastic_ip_address):
+        (ref, cr) = simple_elastic_ip_address
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["allocationID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check Address exists
+        exists = address_exists(ec2_client, resource_id)
+        assert exists
+        
+        # Check tags exist for elasticipaddress resource
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the elasticipaddress, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are updated for elasticipaddress resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the elasticipaddress resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Address doesn't exists
+        exists = address_exists(ec2_client, resource_id)
+        assert not exists

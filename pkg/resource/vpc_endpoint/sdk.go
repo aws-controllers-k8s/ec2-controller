@@ -545,7 +545,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	return rm.customUpdateVpcEndpoint(ctx, desired, latest, delta)
+	return rm.customUpdateVPCEndpoint(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API

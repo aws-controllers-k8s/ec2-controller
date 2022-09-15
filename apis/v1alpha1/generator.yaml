@@ -186,7 +186,7 @@ resources:
       sdk_file_end:
         template_path: hooks/dhcp_options/sdk_file_end.go.tpl
     update_operation:
-      custom_method_name: customUpdateDhcpOptions
+      custom_method_name: customUpdateDHCPOptions
   Instance:
     fields:
       HibernationOptions:
@@ -236,6 +236,10 @@ resources:
         template_path: hooks/elastic_ip_address/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/elastic_ip_address/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateElasticIP
   InternetGateway:
     fields:
       Tags:
@@ -502,5 +506,5 @@ resources:
       sdk_file_end:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
-      custom_method_name: customUpdateVpcEndpoint
+      custom_method_name: customUpdateVPCEndpoint
     

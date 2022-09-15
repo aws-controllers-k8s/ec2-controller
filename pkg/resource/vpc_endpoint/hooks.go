@@ -35,14 +35,14 @@ func addIDToDeleteRequest(r *resource,
 	return nil
 }
 
-func (rm *resourceManager) customUpdateVpcEndpoint(
+func (rm *resourceManager) customUpdateVPCEndpoint(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.customUpdateVpcEndpoint")
+	exit := rlog.Trace("rm.customUpdateVPCEndpoint")
 	defer exit(err)
 
 	// Merge in the information we read from the API call above to the copy of
@@ -78,7 +78,7 @@ func (rm *resourceManager) syncTags(
 	)
 
 	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from vpcEndpoint resource", "tags", toDelete)
+		rlog.Debug("removing tags from VPCEndpoint resource", "tags", toDelete)
 		_, err = rm.sdkapi.DeleteTagsWithContext(
 			ctx,
 			&svcsdk.DeleteTagsInput{
@@ -94,7 +94,7 @@ func (rm *resourceManager) syncTags(
 	}
 
 	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to vpcEndpoint resource", "tags", toAdd)
+		rlog.Debug("adding tags to VPCEndpoint resource", "tags", toAdd)
 		_, err = rm.sdkapi.CreateTagsWithContext(
 			ctx,
 			&svcsdk.CreateTagsInput{

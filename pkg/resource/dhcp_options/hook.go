@@ -22,14 +22,14 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-func (rm *resourceManager) customUpdateDhcpOptions(
+func (rm *resourceManager) customUpdateDHCPOptions(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.customUpdateDhcpOptions")
+	exit := rlog.Trace("rm.customUpdateDHCPOptions")
 	defer exit(err)
 
 	// Merge in the information we read from the API call above to the copy of
@@ -65,7 +65,7 @@ func (rm *resourceManager) syncTags(
 	)
 
 	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from DhcpOptions resource", "tags", toDelete)
+		rlog.Debug("removing tags from DHCPOptions resource", "tags", toDelete)
 		_, err = rm.sdkapi.DeleteTagsWithContext(
 			ctx,
 			&svcsdk.DeleteTagsInput{
@@ -81,7 +81,7 @@ func (rm *resourceManager) syncTags(
 	}
 
 	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to DhcpOptions resource", "tags", toAdd)
+		rlog.Debug("adding tags to DHCPOptions resource", "tags", toAdd)
 		_, err = rm.sdkapi.CreateTagsWithContext(
 			ctx,
 			&svcsdk.CreateTagsInput{
