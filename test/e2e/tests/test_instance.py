@@ -34,6 +34,7 @@ INSTANCE_TAG_VAL = "ack-controller"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 5
 TIMEOUT_SECONDS = 300
 
 def get_instance(ec2_client, instance_id: str) -> dict:
@@ -158,6 +159,73 @@ class TestInstance:
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
         assert deleted is True
+
+        # Reservation still exists, but instance will commence termination
+        # State needs to be 'terminated' in order to remove the dependency on the shared subnet
+        # for successful test cleanup
+        wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
+    
+    def test_crud_tags(self, ec2_client, instance):
+        (ref, cr) = instance
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["instanceID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check Instance exists
+        instance = get_instance(ec2_client, resource_id)
+        assert instance is not None
+        
+        # Check tags exist for Instance resource
+        assert resource["spec"]["tags"][0]["key"] == INSTANCE_TAG_KEY
+        assert resource["spec"]["tags"][0]["value"] == INSTANCE_TAG_VAL
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the Instance, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are updated for Instance resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the Instance resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Reservation still exists, but instance will commence termination
         # State needs to be 'terminated' in order to remove the dependency on the shared subnet
