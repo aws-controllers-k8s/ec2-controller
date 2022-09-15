@@ -11,3 +11,6 @@ spec:
       values:
         - $DHCP_VAL_2_1
         - $DHCP_VAL_2_2
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

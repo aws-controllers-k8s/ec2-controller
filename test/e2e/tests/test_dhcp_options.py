@@ -29,6 +29,7 @@ RESOURCE_PLURAL = "dhcpoptions"
 DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 5
 
 @pytest.fixture
 def simple_dhcp_options(request):
@@ -47,6 +48,10 @@ def simple_dhcp_options(request):
         data = marker.args[0]
         if 'dhcp_key_1' in data:
             replacements["DHCP_KEY_1"] = data['dhcp_key_1']
+        if 'tag_key' in data:
+            replacements["TAG_KEY"] = data['tag_key']
+        if 'tag_value' in data:
+            replacements["TAG_VALUE"] = data['tag_value']
 
 
     # Load DHCP Options CR
@@ -113,3 +118,69 @@ class TestDhcpOptions:
         # Value (InvalidValue) for parameter value is invalid.
         # Unknown DHCP option
         assert expected_msg in terminal_condition['message']
+    
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_dhcp_options):
+        (ref, cr) = simple_dhcp_options
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["dhcpOptionsID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check dhcpOptions exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_dhcp_options(resource_id)
+        
+        # Check tags exist for dhcpOptions resource
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the dhcpOptions, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are updated for dhcpOptions resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the dhcpOptions resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check dhcpOptions no longer exists in AWS
+        ec2_validator.assert_dhcp_options(resource_id, exists=False)
