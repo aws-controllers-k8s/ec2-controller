@@ -2,4 +2,7 @@ apiVersion: ec2.services.k8s.aws/v1alpha1
 kind: TransitGateway
 metadata:
   name: $TGW_NAME
-spec: {}
+spec:
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
