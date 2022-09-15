@@ -683,7 +683,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch awsErr.Code() {
-	case "InvalidParameterValue":
+	case "InvalidParameterValue",
+		"InvalidCustomerOwnedIpv4PoolID.Malformed":
 		return true
 	default:
 		return false
