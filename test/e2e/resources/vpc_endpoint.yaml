@@ -5,3 +5,6 @@ metadata:
 spec:
   serviceName: $SERVICE_NAME
   vpcID: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
