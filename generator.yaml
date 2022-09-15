@@ -410,6 +410,20 @@ resources:
       custom_method_name: customUpdateSecurityGroup
   Subnet:
     fields:
+      AssignIpv6AddressOnCreation:
+        type: bool
+      CustomerOwnedIpv4Pool:
+        type: string
+      EnableDns64:
+        type: bool
+      EnableResourceNameDnsARecord:
+        type: bool
+      EnableResourceNameDnsAAAARecord:
+        type: bool
+      HostnameType:
+        type: string
+      MapPublicIpOnLaunch:
+        type: bool
       RouteTables:
         custom_field:
           list_of: String

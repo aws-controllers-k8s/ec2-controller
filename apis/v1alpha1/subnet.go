@@ -24,6 +24,7 @@ import (
 //
 // Describes a subnet.
 type SubnetSpec struct {
+	AssignIPv6AddressOnCreation *bool `json:"assignIPv6AddressOnCreation,omitempty"`
 	// The Availability Zone or Local Zone for the subnet.
 	//
 	// Default: Amazon Web Services selects one for you. If you create more than
@@ -46,6 +47,16 @@ type SubnetSpec struct {
 	//
 	// This parameter is not supported for an IPv6 only subnet.
 	CIDRBlock *string `json:"cidrBlock,omitempty"`
+
+	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
+
+	EnableDNS64 *bool `json:"enableDNS64,omitempty"`
+
+	EnableResourceNameDNSAAAARecord *bool `json:"enableResourceNameDNSAAAARecord,omitempty"`
+
+	EnableResourceNameDNSARecord *bool `json:"enableResourceNameDNSARecord,omitempty"`
+
+	HostnameType *string `json:"hostnameType,omitempty"`
 	// The IPv6 network range for the subnet, in CIDR notation. The subnet size
 	// must use a /64 prefix length.
 	//
@@ -53,6 +64,8 @@ type SubnetSpec struct {
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
 	// Indicates whether to create an IPv6 only subnet.
 	IPv6Native *bool `json:"ipv6Native,omitempty"`
+
+	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
 	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
 	// ARN, you must also specify the Availability Zone of the Outpost subnet.
 	OutpostARN     *string                                    `json:"outpostARN,omitempty"`
@@ -81,24 +94,13 @@ type SubnetStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// Indicates whether a network interface created in this subnet (including a
-	// network interface created by RunInstances) receives an IPv6 address.
-	// +kubebuilder:validation:Optional
-	AssignIPv6AddressOnCreation *bool `json:"assignIPv6AddressOnCreation,omitempty"`
 	// The number of unused private IPv4 addresses in the subnet. The IPv4 addresses
 	// for any stopped instances are considered unavailable.
 	// +kubebuilder:validation:Optional
 	AvailableIPAddressCount *int64 `json:"availableIPAddressCount,omitempty"`
-	// The customer-owned IPv4 address pool associated with the subnet.
-	// +kubebuilder:validation:Optional
-	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
 	// Indicates whether this is the default subnet for the Availability Zone.
 	// +kubebuilder:validation:Optional
 	DefaultForAZ *bool `json:"defaultForAZ,omitempty"`
-	// Indicates whether DNS queries made to the Amazon-provided DNS Resolver in
-	// this subnet should return synthetic IPv6 addresses for IPv4-only destinations.
-	// +kubebuilder:validation:Optional
-	EnableDNS64 *bool `json:"enableDNS64,omitempty"`
 	// Indicates the device position for local network interfaces in this subnet.
 	// For example, 1 indicates local network interfaces in this subnet are the
 	// secondary network interface (eth1).
@@ -112,10 +114,6 @@ type SubnetStatus struct {
 	// address.
 	// +kubebuilder:validation:Optional
 	MapCustomerOwnedIPOnLaunch *bool `json:"mapCustomerOwnedIPOnLaunch,omitempty"`
-	// Indicates whether instances launched in this subnet receive a public IPv4
-	// address.
-	// +kubebuilder:validation:Optional
-	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
 	// The ID of the Amazon Web Services account that owns the subnet.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`

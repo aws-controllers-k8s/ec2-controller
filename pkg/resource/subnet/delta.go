@@ -41,6 +41,13 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation) {
+		delta.Add("Spec.AssignIPv6AddressOnCreation", a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation)
+	} else if a.ko.Spec.AssignIPv6AddressOnCreation != nil && b.ko.Spec.AssignIPv6AddressOnCreation != nil {
+		if *a.ko.Spec.AssignIPv6AddressOnCreation != *b.ko.Spec.AssignIPv6AddressOnCreation {
+			delta.Add("Spec.AssignIPv6AddressOnCreation", a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AvailabilityZone, b.ko.Spec.AvailabilityZone) {
 		delta.Add("Spec.AvailabilityZone", a.ko.Spec.AvailabilityZone, b.ko.Spec.AvailabilityZone)
 	} else if a.ko.Spec.AvailabilityZone != nil && b.ko.Spec.AvailabilityZone != nil {
@@ -62,6 +69,41 @@ func newResourceDelta(
 			delta.Add("Spec.CIDRBlock", a.ko.Spec.CIDRBlock, b.ko.Spec.CIDRBlock)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.CustomerOwnedIPv4Pool, b.ko.Spec.CustomerOwnedIPv4Pool) {
+		delta.Add("Spec.CustomerOwnedIPv4Pool", a.ko.Spec.CustomerOwnedIPv4Pool, b.ko.Spec.CustomerOwnedIPv4Pool)
+	} else if a.ko.Spec.CustomerOwnedIPv4Pool != nil && b.ko.Spec.CustomerOwnedIPv4Pool != nil {
+		if *a.ko.Spec.CustomerOwnedIPv4Pool != *b.ko.Spec.CustomerOwnedIPv4Pool {
+			delta.Add("Spec.CustomerOwnedIPv4Pool", a.ko.Spec.CustomerOwnedIPv4Pool, b.ko.Spec.CustomerOwnedIPv4Pool)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EnableDNS64, b.ko.Spec.EnableDNS64) {
+		delta.Add("Spec.EnableDNS64", a.ko.Spec.EnableDNS64, b.ko.Spec.EnableDNS64)
+	} else if a.ko.Spec.EnableDNS64 != nil && b.ko.Spec.EnableDNS64 != nil {
+		if *a.ko.Spec.EnableDNS64 != *b.ko.Spec.EnableDNS64 {
+			delta.Add("Spec.EnableDNS64", a.ko.Spec.EnableDNS64, b.ko.Spec.EnableDNS64)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EnableResourceNameDNSAAAARecord, b.ko.Spec.EnableResourceNameDNSAAAARecord) {
+		delta.Add("Spec.EnableResourceNameDNSAAAARecord", a.ko.Spec.EnableResourceNameDNSAAAARecord, b.ko.Spec.EnableResourceNameDNSAAAARecord)
+	} else if a.ko.Spec.EnableResourceNameDNSAAAARecord != nil && b.ko.Spec.EnableResourceNameDNSAAAARecord != nil {
+		if *a.ko.Spec.EnableResourceNameDNSAAAARecord != *b.ko.Spec.EnableResourceNameDNSAAAARecord {
+			delta.Add("Spec.EnableResourceNameDNSAAAARecord", a.ko.Spec.EnableResourceNameDNSAAAARecord, b.ko.Spec.EnableResourceNameDNSAAAARecord)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EnableResourceNameDNSARecord, b.ko.Spec.EnableResourceNameDNSARecord) {
+		delta.Add("Spec.EnableResourceNameDNSARecord", a.ko.Spec.EnableResourceNameDNSARecord, b.ko.Spec.EnableResourceNameDNSARecord)
+	} else if a.ko.Spec.EnableResourceNameDNSARecord != nil && b.ko.Spec.EnableResourceNameDNSARecord != nil {
+		if *a.ko.Spec.EnableResourceNameDNSARecord != *b.ko.Spec.EnableResourceNameDNSARecord {
+			delta.Add("Spec.EnableResourceNameDNSARecord", a.ko.Spec.EnableResourceNameDNSARecord, b.ko.Spec.EnableResourceNameDNSARecord)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.HostnameType, b.ko.Spec.HostnameType) {
+		delta.Add("Spec.HostnameType", a.ko.Spec.HostnameType, b.ko.Spec.HostnameType)
+	} else if a.ko.Spec.HostnameType != nil && b.ko.Spec.HostnameType != nil {
+		if *a.ko.Spec.HostnameType != *b.ko.Spec.HostnameType {
+			delta.Add("Spec.HostnameType", a.ko.Spec.HostnameType, b.ko.Spec.HostnameType)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPv6CIDRBlock, b.ko.Spec.IPv6CIDRBlock) {
 		delta.Add("Spec.IPv6CIDRBlock", a.ko.Spec.IPv6CIDRBlock, b.ko.Spec.IPv6CIDRBlock)
 	} else if a.ko.Spec.IPv6CIDRBlock != nil && b.ko.Spec.IPv6CIDRBlock != nil {
@@ -74,6 +116,13 @@ func newResourceDelta(
 	} else if a.ko.Spec.IPv6Native != nil && b.ko.Spec.IPv6Native != nil {
 		if *a.ko.Spec.IPv6Native != *b.ko.Spec.IPv6Native {
 			delta.Add("Spec.IPv6Native", a.ko.Spec.IPv6Native, b.ko.Spec.IPv6Native)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.MapPublicIPOnLaunch, b.ko.Spec.MapPublicIPOnLaunch) {
+		delta.Add("Spec.MapPublicIPOnLaunch", a.ko.Spec.MapPublicIPOnLaunch, b.ko.Spec.MapPublicIPOnLaunch)
+	} else if a.ko.Spec.MapPublicIPOnLaunch != nil && b.ko.Spec.MapPublicIPOnLaunch != nil {
+		if *a.ko.Spec.MapPublicIPOnLaunch != *b.ko.Spec.MapPublicIPOnLaunch {
+			delta.Add("Spec.MapPublicIPOnLaunch", a.ko.Spec.MapPublicIPOnLaunch, b.ko.Spec.MapPublicIPOnLaunch)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.OutpostARN, b.ko.Spec.OutpostARN) {
