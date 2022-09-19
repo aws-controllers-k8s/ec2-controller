@@ -30,9 +30,10 @@ RESOURCE_PLURAL = "routetables"
 DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 10
 
 @pytest.fixture
-def simple_route_table():
+def simple_route_table(request):
     replacements = REPLACEMENT_VALUES.copy()
     resource_name = random_suffix_name("route-table-test", 24)
     test_vpc = get_bootstrap_resources().SharedTestVPC
@@ -44,6 +45,14 @@ def simple_route_table():
     replacements["VPC_ID"] = vpc_id
     replacements["IGW_ID"] = igw_id
     replacements["DEST_CIDR_BLOCK"] = test_cidr_block
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'tag_key' in data:
+            replacements["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            replacements["TAG_VALUE"] = data["tag_value"]
 
     # Load RouteTable CR
     resource_data = load_ec2_resource(
@@ -136,6 +145,69 @@ class TestRouteTable:
         ec2_validator.assert_route(resource_id, igw_id, "CreateRoute", exists=False)
 
         # Delete Route Table
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Route Table no longer exists in AWS
+        ec2_validator.assert_route_table(resource_id, exists=False)
+    
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_route_table):
+        (ref, cr) = simple_route_table
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["routeTableID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check Route Table exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_route_table(resource_id)
+        
+        # Check tags exist for Route Table resource
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the Route Table, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Assert tags are updated for Route Table resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the Route Table resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 

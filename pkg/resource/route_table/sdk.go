@@ -755,6 +755,20 @@ func (rm *resourceManager) newCreateRouteInput(
 	return res
 }
 
+func (rm *resourceManager) newTag(
+	c svcapitypes.Tag,
+) *svcsdk.Tag {
+	res := &svcsdk.Tag{}
+	if c.Key != nil {
+		res.SetKey(*c.Key)
+	}
+	if c.Value != nil {
+		res.SetValue(*c.Value)
+	}
+
+	return res
+}
+
 func (rm *resourceManager) newDeleteRouteInput(
 	c svcapitypes.CreateRouteInput,
 ) *svcsdk.DeleteRouteInput {
