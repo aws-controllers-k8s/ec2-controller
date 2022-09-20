@@ -30,6 +30,30 @@ func (rm *resourceManager) new{{ $memberRefName }}(
 	return res
 }
 
+{{/* Helper method for tag support */}}
+{{- range $specFieldName, $specField := $CRD.Config.Resources.RouteTable.Fields }}
+{{- if $specField.From }}
+{{- $operationName := $specField.From.Operation }}
+{{- $operation := (index $SDKAPI.API.Operations $operationName) -}}
+{{- range $rtRefName, $rtMemberRefs := $operation.InputRef.Shape.MemberRefs -}}
+{{- if eq $rtRefName "Tags" }}
+{{- $rtRef := $rtMemberRefs.Shape.MemberRef }}
+{{- $rtRefName = "Tag" }}
+
+func (rm *resourceManager) new{{ $rtRefName }}(
+	    c svcapitypes.{{ $rtRefName }},
+) *svcsdk.{{ $rtRefName }} {
+	res := &svcsdk.{{ $rtRefName }}{}
+{{ GoCodeSetSDKForStruct $CRD "" "res" $rtRef "" "c" 1 }}
+	return res
+}
+
+{{- end }}
+
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{- end }}
 {{- end }}
 {{- end }}

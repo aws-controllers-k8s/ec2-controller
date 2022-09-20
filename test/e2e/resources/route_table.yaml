@@ -7,3 +7,6 @@ spec:
     - destinationCIDRBlock: $DEST_CIDR_BLOCK
       gatewayID: $IGW_ID
   vpcID: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
