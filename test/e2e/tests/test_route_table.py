@@ -32,6 +32,17 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 10
 
+def contains_tag(resource, tag):
+    try:
+        tag_key, tag_val = tag.popitem()
+        for t in resource["spec"]["tags"]:
+            if t["key"] == tag_key and t["value"] == tag_val:
+                return True
+    except:
+        pass
+
+    return False
+
 @pytest.fixture
 def simple_route_table(request):
     replacements = REPLACEMENT_VALUES.copy()
@@ -167,17 +178,17 @@ class TestRouteTable:
         ec2_validator.assert_route_table(resource_id)
         
         # Check tags exist for Route Table resource
-        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
-        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+        assert contains_tag(resource, {"initialtagkey": "initialtagvalue"})
 
-        # New pair of tags
-        new_tags = [
-                {
+        # Fetch all tags including ACK tags applied by default
+        new_tags = resource['spec']['tags']
+
+        # New tag
+        new_tag = {
                     "key": "updatedtagkey",
                     "value": "updatedtagvalue",
-                }
-               
-            ]
+         }
+        new_tags.append(new_tag)      
 
         # Patch the Route Table, updating the tags with new pair
         updates = {
@@ -192,20 +203,23 @@ class TestRouteTable:
         
         # Assert tags are updated for Route Table resource
         resource = k8s.get_resource(ref)
-        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
-        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"})
 
+        new_tags = []
         # Patch the Route Table resource, deleting the tags
         updates = {
-                "spec": {"tags": []},
+                "spec": {"tags": new_tags},
         }
 
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
         # Assert tags are deleted
         resource = k8s.get_resource(ref)
-        assert len(resource['spec']['tags']) == 0
+        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"}) is False
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)

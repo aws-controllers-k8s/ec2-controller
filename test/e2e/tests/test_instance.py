@@ -88,6 +88,17 @@ def get_ami_id(ec2_client):
     except Exception as e:
         logging.debug(e)
 
+def contains_tag(resource, tag):
+    try:
+        tag_key, tag_val = tag.popitem()
+        for t in resource["spec"]["tags"]:
+            if t["key"] == tag_key and t["value"] == tag_val:
+                return True
+    except:
+        pass
+
+    return False
+
 
 @pytest.fixture
 def instance(ec2_client):
@@ -178,17 +189,17 @@ class TestInstance:
         assert instance is not None
         
         # Check tags exist for Instance resource
-        assert resource["spec"]["tags"][0]["key"] == INSTANCE_TAG_KEY
-        assert resource["spec"]["tags"][0]["value"] == INSTANCE_TAG_VAL
+        assert contains_tag(resource, {INSTANCE_TAG_KEY: INSTANCE_TAG_VAL})
+
+        # Fetch all tags including ACK tags applied by default
+        new_tags = resource['spec']['tags']
 
         # New pair of tags
-        new_tags = [
-                {
+        new_tag = {
                     "key": "updatedtagkey",
                     "value": "updatedtagvalue",
-                }
-               
-            ]
+        }
+        new_tags.append(new_tag)
 
         # Patch the Instance, updating the tags with new pair
         updates = {
@@ -203,12 +214,12 @@ class TestInstance:
         
         # Assert tags are updated for Instance resource
         resource = k8s.get_resource(ref)
-        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
-        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"})
 
+        new_tags = []
         # Patch the Instance resource, deleting the tags
         updates = {
-                "spec": {"tags": []},
+                "spec": {"tags": new_tags},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -219,7 +230,7 @@ class TestInstance:
         
         # Assert tags are deleted
         resource = k8s.get_resource(ref)
-        assert len(resource['spec']['tags']) == 0
+        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"}) is False
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
