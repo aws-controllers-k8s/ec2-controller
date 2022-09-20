@@ -29,6 +29,7 @@ RESOURCE_PLURAL = "natgateways"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
+MODIFY_WAIT_AFTER_SECONDS = 10
 
 @pytest.fixture
 def standard_elastic_address():
@@ -69,7 +70,7 @@ def standard_elastic_address():
         pass
 
 @pytest.fixture
-def simple_nat_gateway(standard_elastic_address):
+def simple_nat_gateway(standard_elastic_address, request):
     test_resource_values = REPLACEMENT_VALUES.copy()
     resource_name = random_suffix_name("nat-gateway-test", 24)
     test_vpc = get_bootstrap_resources().SharedTestVPC
@@ -80,6 +81,14 @@ def simple_nat_gateway(standard_elastic_address):
     test_resource_values["NAT_GATEWAY_NAME"] = resource_name
     test_resource_values["SUBNET_ID"] = subnet_id
     test_resource_values["ALLOCATION_ID"] = eip["status"]["allocationID"]
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'tag_key' in data:
+            test_resource_values["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            test_resource_values["TAG_VALUE"] = data["tag_value"]
 
     # Load NAT Gateway CR
     resource_data = load_ec2_resource(
@@ -133,6 +142,67 @@ class TestNATGateway:
 
         # Check NAT Gateway no longer exists in AWS
         ec2_validator.assert_nat_gateway(resource_id, exists=False)
+    
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_nat_gateway):
+        (ref, cr) = simple_nat_gateway
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["natGatewayID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check natGateway exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_nat_gateway(resource_id)
+        
+        # Check tags exist for natGateway resource
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # New pair of tags
+        new_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+               
+            ]
+
+        # Patch the natGateway, updating the tags with new pair
+        updates = {
+            "spec": {"tags": new_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        
+        # Assert tags are updated for natGateway resource
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the natGateway resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        
+        # Assert tags are deleted
+        resource = k8s.get_resource(ref)
+        assert len(resource['spec']['tags']) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check natGateway no longer exists in AWS
+        ec2_validator.assert_nat_gateway(resource_id, exists=False)
+
 
     def test_terminal_condition_invalid_subnet(self, standard_elastic_address):
         test_resource_values = REPLACEMENT_VALUES.copy()
