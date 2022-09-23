@@ -410,6 +410,12 @@ resources:
       custom_method_name: customUpdateSecurityGroup
   Subnet:
     fields:
+      # code-generator infers fields into
+      # Status based on whether or not the fields
+      # can be edited in the Create input shape.
+      # However, these fields can now be edited after
+      # after implementing custom hook code; therefore,
+      # relocate fields from Status to Spec.
       AssignIpv6AddressOnCreation:
         type: bool
       CustomerOwnedIpv4Pool:
