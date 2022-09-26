@@ -453,7 +453,7 @@ resources:
       custom_method_name: customUpdateTransitGateway
   Vpc:
     update_operation:
-      custom_method_name: customUpdate
+      custom_method_name: customUpdateVPC
     exceptions:
       errors:
         404:

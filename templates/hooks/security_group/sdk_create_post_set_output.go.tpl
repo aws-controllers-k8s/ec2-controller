@@ -15,4 +15,7 @@
 	} else {
 		ko.Spec.EgressRules = append(ko.Spec.EgressRules, rm.defaultEgressRule())
 	}
-	rm.addRulesToStatus(ko, ctx)
+	created, err = rm.sdkFindRules(ctx, &resource{ko})
+	if err != nil {
+		ko.Status.Rules = created.ko.Status.Rules
+	}

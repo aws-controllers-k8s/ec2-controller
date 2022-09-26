@@ -125,7 +125,10 @@ func (rm *resourceManager) sdkFind(
 
 	if found {
 		rm.addRulesToSpec(ko, resp.SecurityGroups[0])
-		rm.addRulesToStatus(ko, ctx)
+		latest, err = rm.sdkFindRules(ctx, &resource{ko})
+		if err != nil {
+			ko.Status.Rules = latest.ko.Status.Rules
+		}
 	}
 
 	return &resource{ko}, nil
@@ -226,7 +229,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.EgressRules = append(ko.Spec.EgressRules, rm.defaultEgressRule())
 	}
-	rm.addRulesToStatus(ko, ctx)
+	created, err = rm.sdkFindRules(ctx, &resource{ko})
+	if err != nil {
+		ko.Status.Rules = created.ko.Status.Rules
+	}
+
 	return &resource{ko}, nil
 }
 
