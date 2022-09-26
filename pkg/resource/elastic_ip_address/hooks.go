@@ -32,9 +32,12 @@ func (rm *resourceManager) customUpdateElasticIP(
 	exit := rlog.Trace("rm.customUpdateElasticIP")
 	defer exit(err)
 
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
@@ -42,8 +45,7 @@ func (rm *resourceManager) customUpdateElasticIP(
 		}
 	}
 
-	rm.setStatusDefaults(ko)
-	return &resource{ko}, nil
+	return updated, nil
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
