@@ -21,6 +21,15 @@ class EC2Validator:
     def __init__(self, ec2_client):
         self.ec2_client = ec2_client
 
+    def get_dhcp_options(self, dhcp_options_id: str):
+        try:
+            aws_res = self.ec2_client.describe_dhcp_options(DhcpOptionsIds=[dhcp_options_id])
+            if len(aws_res["DhcpOptions"]) > 0:
+                return aws_res["DhcpOptions"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
     def assert_dhcp_options(self, dhcp_options_id: str, exists=True):
         res_found = False
         try:
@@ -41,6 +50,15 @@ class EC2Validator:
 
     def assert_internet_gateway(self, igw_id: str, exists=True):
         assert (self.get_internet_gateway(igw_id) is not None) == exists
+
+    def get_nat_gateway(self, ngw_id: str):
+        try:
+            aws_res = self.ec2_client.describe_nat_gateways(NatGatewayIds=[ngw_id])
+            if len(aws_res["NatGateways"]) > 0:
+                return aws_res["NatGateways"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
 
     def assert_nat_gateway(self, ngw_id: str, exists=True):
         res_found = False
@@ -116,6 +134,15 @@ class EC2Validator:
     def assert_subnet(self, subnet_id: str, exists=True):
         assert (self.get_subnet(subnet_id) is not None) == exists
 
+    def get_transit_gateway(self, tgw_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_transit_gateways(TransitGatewayIds=[tgw_id])
+            if len(aws_res["TransitGateways"]) > 0:
+                return aws_res["TransitGateways"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
     def assert_transit_gateway(self, tgw_id: str, exists=True):
         res_found = False
         try:
@@ -145,6 +172,15 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
+
+    def get_vpc_endpoint(self, vpc_endpoint_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_vpc_endpoints(VpcEndpointIds=[vpc_endpoint_id])
+            if len(aws_res["VpcEndpoints"]) > 0:
+                return aws_res["VpcEndpoints"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
 
     def assert_vpc_endpoint(self, vpc_endpoint_id: str, exists=True):
         res_found = False

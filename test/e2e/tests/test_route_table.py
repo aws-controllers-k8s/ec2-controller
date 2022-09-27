@@ -18,6 +18,7 @@ import pytest
 import time
 import logging
 
+from acktest import tags
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
@@ -31,17 +32,6 @@ DEFAULT_WAIT_AFTER_SECONDS = 5
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 10
-
-def contains_tag(resource, tag):
-    try:
-        tag_key, tag_val = tag.popitem()
-        for t in resource["spec"]["tags"]:
-            if t["key"] == tag_key and t["value"] == tag_val:
-                return True
-    except:
-        pass
-
-    return False
 
 @pytest.fixture
 def simple_route_table(request):
@@ -177,22 +167,35 @@ class TestRouteTable:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_route_table(resource_id)
         
-        # Check tags exist for Route Table resource
-        assert contains_tag(resource, {"initialtagkey": "initialtagvalue"})
+        # Check system and user tags exist for route table resource
+        route_table = ec2_validator.get_route_table(resource_id)
+        user_tags = {
+            "initialtagkey": "initialtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=route_table["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=user_tags,
+            actual=route_table["Tags"],
+        )
+        
+        # Only user tags should be present in Spec
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
 
-        # Fetch all tags including ACK tags applied by default
-        new_tags = resource['spec']['tags']
-
-        # New tag
-        new_tag = {
+        # Update tags
+        update_tags = [
+                {
                     "key": "updatedtagkey",
                     "value": "updatedtagvalue",
-         }
-        new_tags.append(new_tag)      
+                }
+            ]    
 
         # Patch the Route Table, updating the tags with new pair
         updates = {
-            "spec": {"tags": new_tags},
+            "spec": {"tags": update_tags},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -200,15 +203,29 @@ class TestRouteTable:
 
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        
-        # Assert tags are updated for Route Table resource
-        resource = k8s.get_resource(ref)
-        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"})
 
-        new_tags = []
+        # Check for updated user tags; system tags should persist
+        route_table = ec2_validator.get_route_table(resource_id)
+        updated_tags = {
+            "updatedtagkey": "updatedtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=route_table["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=updated_tags,
+            actual=route_table["Tags"],
+        )
+               
+        # Only user tags should be present in Spec
+        resource = k8s.get_resource(ref)
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
         # Patch the Route Table resource, deleting the tags
         updates = {
-                "spec": {"tags": new_tags},
+                "spec": {"tags": []},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -217,9 +234,19 @@ class TestRouteTable:
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
-        # Assert tags are deleted
+        # Check for removed user tags; system tags should persist
+        route_table = ec2_validator.get_route_table(resource_id)
+        tags.assert_ack_system_tags(
+            tags=route_table["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=[],
+            actual=route_table["Tags"],
+        )
+        
+        # Check user tags are removed from Spec
         resource = k8s.get_resource(ref)
-        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"}) is False
+        assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
