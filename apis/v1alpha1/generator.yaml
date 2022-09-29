@@ -205,6 +205,10 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/instance/sdk_create_post_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/instance/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/instance/sdk_read_many_post_set_output.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/instance/sdk_delete_post_build_request.go.tpl
       sdk_file_end:

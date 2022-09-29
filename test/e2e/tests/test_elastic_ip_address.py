@@ -18,6 +18,7 @@ import pytest
 import time
 import logging
 
+from acktest import tags
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
@@ -153,13 +154,27 @@ class TestElasticIPAddress:
         # Check Address exists
         exists = address_exists(ec2_client, resource_id)
         assert exists
-        
-        # Check tags exist for elasticipaddress resource
+
+         # Check system and user tags exist for elasticIP resource
+        elastic_ip = get_address(ec2_client, resource_id)
+        user_tags = {
+            "initialtagkey": "initialtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=elastic_ip["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=user_tags,
+            actual=elastic_ip["Tags"],
+        )
+
+        # Only user tags should be present in Spec
+        assert len(resource["spec"]["tags"]) == 1
         assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
         assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
 
-        # New pair of tags
-        new_tags = [
+        # Update tags
+        update_tags = [
                 {
                     "key": "updatedtagkey",
                     "value": "updatedtagvalue",
@@ -169,7 +184,7 @@ class TestElasticIPAddress:
 
         # Patch the elasticipaddress, updating the tags with new pair
         updates = {
-            "spec": {"tags": new_tags},
+            "spec": {"tags": update_tags},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -177,9 +192,23 @@ class TestElasticIPAddress:
 
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        
-        # Assert tags are updated for elasticipaddress resource
+
+        # Check for updated user tags; system tags should persist
+        elastic_ip = get_address(ec2_client, resource_id)
+        updated_tags = {
+            "updatedtagkey": "updatedtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=elastic_ip["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=updated_tags,
+            actual=elastic_ip["Tags"],
+        )
+               
+        # Only user tags should be present in Spec
         resource = k8s.get_resource(ref)
+        assert len(resource["spec"]["tags"]) == 1
         assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
         assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
 
@@ -194,9 +223,19 @@ class TestElasticIPAddress:
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
-        # Assert tags are deleted
+        # Check for removed user tags; system tags should persist
+        elastic_ip = get_address(ec2_client, resource_id)
+        tags.assert_ack_system_tags(
+            tags=elastic_ip["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=[],
+            actual=elastic_ip["Tags"],
+        )
+        
+        # Check user tags are removed from Spec
         resource = k8s.get_resource(ref)
-        assert len(resource['spec']['tags']) == 0
+        assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)

@@ -19,6 +19,7 @@ import pytest
 import time
 import logging
 
+from acktest import tags
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
@@ -87,17 +88,6 @@ def get_ami_id(ec2_client):
                     return image['ImageId']
     except Exception as e:
         logging.debug(e)
-
-def contains_tag(resource, tag):
-    try:
-        tag_key, tag_val = tag.popitem()
-        for t in resource["spec"]["tags"]:
-            if t["key"] == tag_key and t["value"] == tag_val:
-                return True
-    except:
-        pass
-
-    return False
 
 
 @pytest.fixture
@@ -188,22 +178,34 @@ class TestInstance:
         instance = get_instance(ec2_client, resource_id)
         assert instance is not None
         
-        # Check tags exist for Instance resource
-        assert contains_tag(resource, {INSTANCE_TAG_KEY: INSTANCE_TAG_VAL})
+        # Check system and user tags exist for instance resource
+        user_tags = {
+            INSTANCE_TAG_KEY: INSTANCE_TAG_VAL
+        }
+        tags.assert_ack_system_tags(
+            tags=instance["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=user_tags,
+            actual=instance["Tags"],
+        )
+        
+        # Only user tags should be present in Spec
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == INSTANCE_TAG_KEY
+        assert resource["spec"]["tags"][0]["value"] == INSTANCE_TAG_VAL
 
-        # Fetch all tags including ACK tags applied by default
-        new_tags = resource['spec']['tags']
-
-        # New pair of tags
-        new_tag = {
+        # Update tags
+        update_tags = [
+                {
                     "key": "updatedtagkey",
                     "value": "updatedtagvalue",
-        }
-        new_tags.append(new_tag)
+                }
+            ]
 
         # Patch the Instance, updating the tags with new pair
         updates = {
-            "spec": {"tags": new_tags},
+            "spec": {"tags": update_tags},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -212,14 +214,28 @@ class TestInstance:
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
-        # Assert tags are updated for Instance resource
+        # Check for updated user tags; system tags should persist
+        instance = get_instance(ec2_client, resource_id)
+        updated_tags = {
+            "updatedtagkey": "updatedtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=instance["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=updated_tags,
+            actual=instance["Tags"],
+        )
+               
+        # Only user tags should be present in Spec
         resource = k8s.get_resource(ref)
-        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"})
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
 
-        new_tags = []
         # Patch the Instance resource, deleting the tags
         updates = {
-                "spec": {"tags": new_tags},
+                "spec": {"tags": []},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -228,9 +244,19 @@ class TestInstance:
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
-        # Assert tags are deleted
+        # Check for removed user tags; system tags should persist
+        instance = get_instance(ec2_client, resource_id)
+        tags.assert_ack_system_tags(
+            tags=instance["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=[],
+            actual=instance["Tags"],
+        )
+        
+        # Check user tags are removed from Spec
         resource = k8s.get_resource(ref)
-        assert contains_tag(resource, {"updatedtagkey": "updatedtagvalue"}) is False
+        assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
