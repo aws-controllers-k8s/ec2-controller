@@ -1,9 +1,11 @@
-	
-    if found {
+	if found {
         rm.addRulesToSpec(ko, resp.SecurityGroups[0])
-        latest, err = rm.sdkFindRules(ctx, &resource{ko})
-		if err != nil {
-			ko.Status.Rules = latest.ko.Status.Rules
-		}
+    	
+        // A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
+	    // is made to refresh Status.Rules
+	    if rules, err := rm.getRules(ctx, &resource{ko}); err != nil {
+		    return nil, err
+	    } else {
+		    ko.Status.Rules = rules
+	    }
     }
-    

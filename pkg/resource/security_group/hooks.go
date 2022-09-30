@@ -52,18 +52,16 @@ func (rm *resourceManager) addRulesToSpec(
 	}
 }
 
-// sdkFindRules calls DescribeSecurityGroupRules
-// and uses response data to populate a Security Group's
+// getRules calls DescribeSecurityGroupRules
+// and returns the  response data to populate a Security Group's
 // Status.Rules
-func (rm *resourceManager) sdkFindRules(
+func (rm *resourceManager) getRules(
 	ctx context.Context,
 	res *resource,
-) (latest *resource, err error) {
+) (rules []*svcapitypes.SecurityGroupRule, err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.sdkFindRules")
+	exit := rlog.Trace("rm.getRules")
 	defer exit(err)
-
-	latest = res
 
 	groupIDFilter := "group-id"
 	input := &svcsdk.DescribeSecurityGroupRulesInput{
@@ -74,7 +72,7 @@ func (rm *resourceManager) sdkFindRules(
 			},
 		},
 	}
-	rulesForResource := []*svcapitypes.SecurityGroupRule{}
+
 	for {
 		resp, err := rm.sdkapi.DescribeSecurityGroupRulesWithContext(ctx, input)
 		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
@@ -82,7 +80,7 @@ func (rm *resourceManager) sdkFindRules(
 			break
 		}
 		for _, sgRule := range resp.SecurityGroupRules {
-			rulesForResource = append(rulesForResource, rm.setResourceSecurityGroupRule(sgRule))
+			rules = append(rules, rm.setResourceSecurityGroupRule(sgRule))
 		}
 		if resp.NextToken == nil || *resp.NextToken == "" {
 			break
@@ -93,8 +91,7 @@ func (rm *resourceManager) sdkFindRules(
 		return nil, err
 	}
 
-	latest.ko.Status.Rules = rulesForResource
-	return latest, nil
+	return rules, nil
 }
 
 func (rm *resourceManager) requiredFieldsMissingForSGRule(
@@ -432,8 +429,10 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 		// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
 		// is made to refresh Status.Rules with the recently-updated
 		// data from the above `sync` call
-		if updated, err = rm.sdkFindRules(ctx, desired); err != nil {
+		if rules, err := rm.getRules(ctx, desired); err != nil {
 			return nil, err
+		} else {
+			updated.ko.Status.Rules = rules
 		}
 	}
 
