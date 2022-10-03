@@ -191,6 +191,8 @@ resources:
     fields:
       HibernationOptions:
         late_initialize: {}
+      BlockDeviceMappings:
+        late_initialize: {}
       MaxCount:
         is_required: false
       MinCount:
