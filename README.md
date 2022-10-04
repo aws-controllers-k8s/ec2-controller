@@ -32,9 +32,15 @@ The latest images and Helm Charts can be found in their respective ECR Public re
 apiVersion: ec2.services.k8s.aws/v1alpha1
 kind: VPC
 metadata:
-  name: My-ACK-Resource
+  name: $VPC_NAME
 spec:
-  cidrBlock: 172.31.0.0/16
+  cidrBlocks: 
+  - $CIDR_BLOCK
+  enableDNSSupport: $ENABLE_DNS_SUPPORT
+  enableDNSHostnames: $ENABLE_DNS_HOSTNAMES
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
 ```
 
 * Create a VPC: `kubectl apply -f vpc.yaml`
