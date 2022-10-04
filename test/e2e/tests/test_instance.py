@@ -135,7 +135,7 @@ def instance(ec2_client):
 @service_marker
 @pytest.mark.canary
 class TestInstance:
-    def test_create_delete(self, ec2_client, instance):
+    def test_create_delete_instance(self, ec2_client, instance):
         (ref, cr) = instance
         resource_id = cr["status"]["instanceID"]
 
@@ -147,6 +147,11 @@ class TestInstance:
         
         # Give time for instance to come up
         wait_for_instance_or_die(ec2_client, resource_id, 'running', TIMEOUT_SECONDS)
+
+        # Ensure server-side state is propogated to the resource
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        instance_cr = k8s.get_resource(ref)
+        assert instance_cr["status"]["state"]["name"] == "running"
 
         # Validate instance tags
         instance_tags = instance["Tags"]

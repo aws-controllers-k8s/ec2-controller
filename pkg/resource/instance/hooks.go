@@ -16,6 +16,7 @@ package instance
 import (
 	"context"
 	"errors"
+	"strings"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -179,4 +180,12 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.SetTags(instanceTags)
 	}
 	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+}
+
+// inTransitoryState returns true if the Instance
+// resource is in a temporary, non-permanent state
+func inTransitoryState(r *resource) bool {
+	return strings.EqualFold(*r.ko.Status.State.Name, "pending") ||
+		strings.EqualFold(*r.ko.Status.State.Name, "shutting-down") ||
+		strings.EqualFold(*r.ko.Status.State.Name, "stopping")
 }

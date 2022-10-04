@@ -51,7 +51,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=instances,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=instances/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"HibernationOptions"}
+var lateInitializeFieldNames = []string{"BlockDeviceMappings", "HibernationOptions"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -249,6 +249,9 @@ func (rm *resourceManager) incompleteLateInitialization(
 	res acktypes.AWSResource,
 ) bool {
 	ko := rm.concreteResource(res).ko.DeepCopy()
+	if ko.Spec.BlockDeviceMappings == nil {
+		return true
+	}
 	if ko.Spec.HibernationOptions == nil {
 		return true
 	}
@@ -263,6 +266,9 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 ) acktypes.AWSResource {
 	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.BlockDeviceMappings != nil && latestKo.Spec.BlockDeviceMappings == nil {
+		latestKo.Spec.BlockDeviceMappings = observedKo.Spec.BlockDeviceMappings
+	}
 	if observedKo.Spec.HibernationOptions != nil && latestKo.Spec.HibernationOptions == nil {
 		latestKo.Spec.HibernationOptions = observedKo.Spec.HibernationOptions
 	}
