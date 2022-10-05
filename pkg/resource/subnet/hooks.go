@@ -64,6 +64,16 @@ func (rm *resourceManager) customUpdateSubnet(
 		if err = rm.updateSubnetAttribute(ctx, desired, "CustomerOwnedIPv4Pool"); err != nil {
 			return nil, err
 		}
+		// Spec/Status fields may need updating as a result of modifying another field;
+		// However, a call to sdkFind is unneccessary because only a small subset of fields
+		// need updating AND their values are known (logically should be desired.Spec values, if no errors)
+		boolp := false
+		if desired.ko.Spec.CustomerOwnedIPv4Pool != nil {
+			boolp = true
+			updated.ko.Status.MapCustomerOwnedIPOnLaunch = &boolp
+		} else {
+			updated.ko.Status.MapCustomerOwnedIPOnLaunch = &boolp
+		}
 	}
 	if delta.DifferentAt("Spec.EnableDNS64") {
 		if err = rm.updateSubnetAttribute(ctx, desired, "EnableDNS64"); err != nil {
@@ -74,28 +84,24 @@ func (rm *resourceManager) customUpdateSubnet(
 		if err = rm.updateSubnetAttribute(ctx, desired, "EnableResourceNameDNSAAAARecord"); err != nil {
 			return nil, err
 		}
+		updated.ko.Status.PrivateDNSNameOptionsOnLaunch.EnableResourceNameDNSAAAARecord = desired.ko.Spec.EnableResourceNameDNSAAAARecord
 	}
 	if delta.DifferentAt("Spec.EnableResourceNameDNSARecord") {
 		if err = rm.updateSubnetAttribute(ctx, desired, "EnableResourceNameDNSARecord"); err != nil {
 			return nil, err
 		}
+		updated.ko.Status.PrivateDNSNameOptionsOnLaunch.EnableResourceNameDNSARecord = desired.ko.Spec.EnableResourceNameDNSARecord
 	}
 	if delta.DifferentAt("Spec.HostnameType") {
 		if err = rm.updateSubnetAttribute(ctx, desired, "HostnameType"); err != nil {
 			return nil, err
 		}
+		updated.ko.Status.PrivateDNSNameOptionsOnLaunch.HostnameType = desired.ko.Spec.HostnameType
 	}
 	if delta.DifferentAt("Spec.MapPublicIPOnLaunch") {
 		if err = rm.updateSubnetAttribute(ctx, desired, "MapPublicIPOnLaunch"); err != nil {
 			return nil, err
 		}
-	}
-
-	// call sdkFind to return the resource's latest state
-	// because Spec/Status values can be impacted by sdkUpdate
-	updated, err = rm.sdkFind(ctx, desired)
-	if err != nil {
-		return nil, err
 	}
 
 	return updated, nil

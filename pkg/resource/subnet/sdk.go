@@ -129,9 +129,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.EnableDNS64 = nil
 		}
 		if elem.EnableLniAtDeviceIndex != nil {
-			ko.Status.EnableLniAtDeviceIndex = elem.EnableLniAtDeviceIndex
+			ko.Status.EnableLNIAtDeviceIndex = elem.EnableLniAtDeviceIndex
 		} else {
-			ko.Status.EnableLniAtDeviceIndex = nil
+			ko.Status.EnableLNIAtDeviceIndex = nil
 		}
 		if elem.Ipv6CidrBlockAssociationSet != nil {
 			f9 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
@@ -365,9 +365,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.EnableDNS64 = nil
 	}
 	if resp.Subnet.EnableLniAtDeviceIndex != nil {
-		ko.Status.EnableLniAtDeviceIndex = resp.Subnet.EnableLniAtDeviceIndex
+		ko.Status.EnableLNIAtDeviceIndex = resp.Subnet.EnableLniAtDeviceIndex
 	} else {
-		ko.Status.EnableLniAtDeviceIndex = nil
+		ko.Status.EnableLNIAtDeviceIndex = nil
 	}
 	if resp.Subnet.Ipv6CidrBlockAssociationSet != nil {
 		f9 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}

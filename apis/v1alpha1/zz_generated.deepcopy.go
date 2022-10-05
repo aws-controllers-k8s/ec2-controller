@@ -18358,8 +18358,8 @@ func (in *SubnetStatus) DeepCopyInto(out *SubnetStatus) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.EnableLniAtDeviceIndex != nil {
-		in, out := &in.EnableLniAtDeviceIndex, &out.EnableLniAtDeviceIndex
+	if in.EnableLNIAtDeviceIndex != nil {
+		in, out := &in.EnableLNIAtDeviceIndex, &out.EnableLNIAtDeviceIndex
 		*out = new(int64)
 		**out = **in
 	}
@@ -18454,8 +18454,8 @@ func (in *Subnet_SDK) DeepCopyInto(out *Subnet_SDK) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.EnableLniAtDeviceIndex != nil {
-		in, out := &in.EnableLniAtDeviceIndex, &out.EnableLniAtDeviceIndex
+	if in.EnableLNIAtDeviceIndex != nil {
+		in, out := &in.EnableLNIAtDeviceIndex, &out.EnableLNIAtDeviceIndex
 		*out = new(int64)
 		**out = **in
 	}

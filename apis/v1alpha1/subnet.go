@@ -105,7 +105,7 @@ type SubnetStatus struct {
 	// For example, 1 indicates local network interfaces in this subnet are the
 	// secondary network interface (eth1).
 	// +kubebuilder:validation:Optional
-	EnableLniAtDeviceIndex *int64 `json:"enableLniAtDeviceIndex,omitempty"`
+	EnableLNIAtDeviceIndex *int64 `json:"enableLNIAtDeviceIndex,omitempty"`
 	// Information about the IPv6 CIDR blocks associated with the subnet.
 	// +kubebuilder:validation:Optional
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
