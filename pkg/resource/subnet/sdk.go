@@ -89,9 +89,9 @@ func (rm *resourceManager) sdkFind(
 	found := false
 	for _, elem := range resp.Subnets {
 		if elem.AssignIpv6AddressOnCreation != nil {
-			ko.Status.AssignIPv6AddressOnCreation = elem.AssignIpv6AddressOnCreation
+			ko.Spec.AssignIPv6AddressOnCreation = elem.AssignIpv6AddressOnCreation
 		} else {
-			ko.Status.AssignIPv6AddressOnCreation = nil
+			ko.Spec.AssignIPv6AddressOnCreation = nil
 		}
 		if elem.AvailabilityZone != nil {
 			ko.Spec.AvailabilityZone = elem.AvailabilityZone
@@ -114,9 +114,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.CIDRBlock = nil
 		}
 		if elem.CustomerOwnedIpv4Pool != nil {
-			ko.Status.CustomerOwnedIPv4Pool = elem.CustomerOwnedIpv4Pool
+			ko.Spec.CustomerOwnedIPv4Pool = elem.CustomerOwnedIpv4Pool
 		} else {
-			ko.Status.CustomerOwnedIPv4Pool = nil
+			ko.Spec.CustomerOwnedIPv4Pool = nil
 		}
 		if elem.DefaultForAz != nil {
 			ko.Status.DefaultForAZ = elem.DefaultForAz
@@ -124,14 +124,14 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.DefaultForAZ = nil
 		}
 		if elem.EnableDns64 != nil {
-			ko.Status.EnableDNS64 = elem.EnableDns64
+			ko.Spec.EnableDNS64 = elem.EnableDns64
 		} else {
-			ko.Status.EnableDNS64 = nil
+			ko.Spec.EnableDNS64 = nil
 		}
 		if elem.EnableLniAtDeviceIndex != nil {
-			ko.Status.EnableLniAtDeviceIndex = elem.EnableLniAtDeviceIndex
+			ko.Status.EnableLNIAtDeviceIndex = elem.EnableLniAtDeviceIndex
 		} else {
-			ko.Status.EnableLniAtDeviceIndex = nil
+			ko.Status.EnableLNIAtDeviceIndex = nil
 		}
 		if elem.Ipv6CidrBlockAssociationSet != nil {
 			f9 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
@@ -170,9 +170,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.MapCustomerOwnedIPOnLaunch = nil
 		}
 		if elem.MapPublicIpOnLaunch != nil {
-			ko.Status.MapPublicIPOnLaunch = elem.MapPublicIpOnLaunch
+			ko.Spec.MapPublicIPOnLaunch = elem.MapPublicIpOnLaunch
 		} else {
-			ko.Status.MapPublicIPOnLaunch = nil
+			ko.Spec.MapPublicIPOnLaunch = nil
 		}
 		if elem.OutpostArn != nil {
 			ko.Spec.OutpostARN = elem.OutpostArn
@@ -245,6 +245,18 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	if ko.Status.PrivateDNSNameOptionsOnLaunch != nil {
+		if ko.Status.PrivateDNSNameOptionsOnLaunch.EnableResourceNameDNSARecord != nil {
+			ko.Spec.EnableResourceNameDNSARecord = ko.Status.PrivateDNSNameOptionsOnLaunch.EnableResourceNameDNSARecord
+		}
+		if ko.Status.PrivateDNSNameOptionsOnLaunch.EnableResourceNameDNSAAAARecord != nil {
+			ko.Spec.EnableResourceNameDNSAAAARecord = ko.Status.PrivateDNSNameOptionsOnLaunch.EnableResourceNameDNSAAAARecord
+		}
+		if ko.Status.PrivateDNSNameOptionsOnLaunch.HostnameType != nil {
+			ko.Spec.HostnameType = ko.Status.PrivateDNSNameOptionsOnLaunch.HostnameType
+		}
+	}
+
 	assocs, err := rm.getRouteTableAssociations(ctx, &resource{ko})
 	if err != nil {
 		return nil, err
@@ -313,9 +325,9 @@ func (rm *resourceManager) sdkCreate(
 	ko := desired.ko.DeepCopy()
 
 	if resp.Subnet.AssignIpv6AddressOnCreation != nil {
-		ko.Status.AssignIPv6AddressOnCreation = resp.Subnet.AssignIpv6AddressOnCreation
+		ko.Spec.AssignIPv6AddressOnCreation = resp.Subnet.AssignIpv6AddressOnCreation
 	} else {
-		ko.Status.AssignIPv6AddressOnCreation = nil
+		ko.Spec.AssignIPv6AddressOnCreation = nil
 	}
 	if resp.Subnet.AvailabilityZone != nil {
 		ko.Spec.AvailabilityZone = resp.Subnet.AvailabilityZone
@@ -338,9 +350,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.CIDRBlock = nil
 	}
 	if resp.Subnet.CustomerOwnedIpv4Pool != nil {
-		ko.Status.CustomerOwnedIPv4Pool = resp.Subnet.CustomerOwnedIpv4Pool
+		ko.Spec.CustomerOwnedIPv4Pool = resp.Subnet.CustomerOwnedIpv4Pool
 	} else {
-		ko.Status.CustomerOwnedIPv4Pool = nil
+		ko.Spec.CustomerOwnedIPv4Pool = nil
 	}
 	if resp.Subnet.DefaultForAz != nil {
 		ko.Status.DefaultForAZ = resp.Subnet.DefaultForAz
@@ -348,14 +360,14 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.DefaultForAZ = nil
 	}
 	if resp.Subnet.EnableDns64 != nil {
-		ko.Status.EnableDNS64 = resp.Subnet.EnableDns64
+		ko.Spec.EnableDNS64 = resp.Subnet.EnableDns64
 	} else {
-		ko.Status.EnableDNS64 = nil
+		ko.Spec.EnableDNS64 = nil
 	}
 	if resp.Subnet.EnableLniAtDeviceIndex != nil {
-		ko.Status.EnableLniAtDeviceIndex = resp.Subnet.EnableLniAtDeviceIndex
+		ko.Status.EnableLNIAtDeviceIndex = resp.Subnet.EnableLniAtDeviceIndex
 	} else {
-		ko.Status.EnableLniAtDeviceIndex = nil
+		ko.Status.EnableLNIAtDeviceIndex = nil
 	}
 	if resp.Subnet.Ipv6CidrBlockAssociationSet != nil {
 		f9 := []*svcapitypes.SubnetIPv6CIDRBlockAssociation{}
@@ -394,9 +406,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.MapCustomerOwnedIPOnLaunch = nil
 	}
 	if resp.Subnet.MapPublicIpOnLaunch != nil {
-		ko.Status.MapPublicIPOnLaunch = resp.Subnet.MapPublicIpOnLaunch
+		ko.Spec.MapPublicIPOnLaunch = resp.Subnet.MapPublicIpOnLaunch
 	} else {
-		ko.Status.MapPublicIPOnLaunch = nil
+		ko.Spec.MapPublicIPOnLaunch = nil
 	}
 	if resp.Subnet.OutpostArn != nil {
 		ko.Spec.OutpostARN = resp.Subnet.OutpostArn
@@ -463,6 +475,22 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	// use desired resource data for fields that cannot be provided
+	// in the create request, but are present in the create response;
+	// otherwise, server-side data will incorrectly be treated as "desired"
+	if desired.ko.Spec.AssignIPv6AddressOnCreation != nil {
+		ko.Spec.AssignIPv6AddressOnCreation = desired.ko.Spec.AssignIPv6AddressOnCreation
+	}
+	if desired.ko.Spec.CustomerOwnedIPv4Pool != nil {
+		ko.Spec.CustomerOwnedIPv4Pool = desired.ko.Spec.CustomerOwnedIPv4Pool
+	}
+	if desired.ko.Spec.EnableDNS64 != nil {
+		ko.Spec.EnableDNS64 = desired.ko.Spec.EnableDNS64
+	}
+	if desired.ko.Spec.MapPublicIPOnLaunch != nil {
+		ko.Spec.MapPublicIPOnLaunch = desired.ko.Spec.MapPublicIPOnLaunch
+	}
+
 	if err = rm.createRouteTableAssociations(ctx, &resource{ko}); err != nil {
 		return nil, err
 	}
@@ -655,7 +683,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch awsErr.Code() {
-	case "InvalidParameterValue":
+	case "InvalidParameterValue",
+		"InvalidCustomerOwnedIpv4PoolID.Malformed":
 		return true
 	default:
 		return false

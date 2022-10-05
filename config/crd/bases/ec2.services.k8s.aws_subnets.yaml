@@ -36,6 +36,8 @@ spec:
             description: "SubnetSpec defines the desired state of Subnet. \n Describes
               a subnet."
             properties:
+              assignIPv6AddressOnCreation:
+                type: boolean
               availabilityZone:
                 description: "The Availability Zone or Local Zone for the subnet.
                   \n Default: Amazon Web Services selects one for you. If you create
@@ -58,6 +60,16 @@ spec:
                   we modify it to 100.68.0.0/18. \n This parameter is not supported
                   for an IPv6 only subnet."
                 type: string
+              customerOwnedIPv4Pool:
+                type: string
+              enableDNS64:
+                type: boolean
+              enableResourceNameDNSAAAARecord:
+                type: boolean
+              enableResourceNameDNSARecord:
+                type: boolean
+              hostnameType:
+                type: string
               ipv6CIDRBlock:
                 description: "The IPv6 network range for the subnet, in CIDR notation.
                   The subnet size must use a /64 prefix length. \n This parameter
@@ -65,6 +77,8 @@ spec:
                 type: string
               ipv6Native:
                 description: Indicates whether to create an IPv6 only subnet.
+                type: boolean
+              mapPublicIPOnLaunch:
                 type: boolean
               outpostARN:
                 description: The Amazon Resource Name (ARN) of the Outpost. If you
@@ -152,11 +166,6 @@ spec:
                 - ownerAccountID
                 - region
                 type: object
-              assignIPv6AddressOnCreation:
-                description: Indicates whether a network interface created in this
-                  subnet (including a network interface created by RunInstances) receives
-                  an IPv6 address.
-                type: boolean
               availableIPAddressCount:
                 description: The number of unused private IPv4 addresses in the subnet.
                   The IPv4 addresses for any stopped instances are considered unavailable.
@@ -195,20 +204,11 @@ spec:
                   - type
                   type: object
                 type: array
-              customerOwnedIPv4Pool:
-                description: The customer-owned IPv4 address pool associated with
-                  the subnet.
-                type: string
               defaultForAZ:
                 description: Indicates whether this is the default subnet for the
                   Availability Zone.
                 type: boolean
-              enableDNS64:
-                description: Indicates whether DNS queries made to the Amazon-provided
-                  DNS Resolver in this subnet should return synthetic IPv6 addresses
-                  for IPv4-only destinations.
-                type: boolean
-              enableLniAtDeviceIndex:
+              enableLNIAtDeviceIndex:
                 description: Indicates the device position for local network interfaces
                   in this subnet. For example, 1 indicates local network interfaces
                   in this subnet are the secondary network interface (eth1).
@@ -239,10 +239,6 @@ spec:
                 description: Indicates whether a network interface created in this
                   subnet (including a network interface created by RunInstances) receives
                   a customer-owned IPv4 address.
-                type: boolean
-              mapPublicIPOnLaunch:
-                description: Indicates whether instances launched in this subnet receive
-                  a public IPv4 address.
                 type: boolean
               ownerID:
                 description: The ID of the Amazon Web Services account that owns the

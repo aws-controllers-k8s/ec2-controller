@@ -34,6 +34,18 @@ CREATE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
+
+def contains_tag(resource, tag):
+    try:
+        tag_key, tag_val = tag.popitem()
+        for t in resource["spec"]["tags"]:
+            if t["key"] == tag_key and t["value"] == tag_val:
+                return True
+    except:
+        pass
+    
+    return False
+
 def create_default_route_table(cidr_block: str):
     replacements = REPLACEMENT_VALUES.copy()
     resource_name = random_suffix_name("subnet-route-table", 24)
@@ -88,7 +100,7 @@ def default_route_tables():
 @service_marker
 @pytest.mark.canary
 class TestSubnet:
-    def test_create_delete(self, ec2_client):
+    def test_crud(self, ec2_client):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-test", 24)
         test_vpc = get_bootstrap_resources().SharedTestVPC
@@ -128,6 +140,25 @@ class TestSubnet:
         # Check Subnet exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_subnet(resource_id)
+
+        # Check Subnet data
+        subnet = ec2_validator.get_subnet(resource_id)
+        assert subnet['VpcId'] == vpc_id
+        assert subnet['CidrBlock'] == "10.0.255.0/24"
+        # MapPublicIpOnLaunch default value
+        assert subnet['MapPublicIpOnLaunch'] == False
+
+        # Patch the subnet
+        updates = {
+            "spec": {"mapPublicIPOnLaunch": True},
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        subnet = ec2_validator.get_subnet(resource_id)
+        assert subnet['MapPublicIpOnLaunch'] == True
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
@@ -237,8 +268,9 @@ class TestSubnet:
         assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
 
         # Patch the subnet resource, deleting the tags
+        new_tags = []
         updates = {
-                "spec": {"tags": []},
+                "spec": {"tags": new_tags},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -270,7 +302,7 @@ class TestSubnet:
         # Check Subnet no longer exists in AWS
         ec2_validator.assert_subnet(resource_id, exists=False)
 
-    def test_route_table_assocations(self, ec2_client, default_route_tables):
+    def test_route_table_associations(self, ec2_client, default_route_tables):
         test_resource_values = REPLACEMENT_VALUES.copy()
         resource_name = random_suffix_name("subnet-test", 24)
         test_vpc = get_bootstrap_resources().SharedTestVPC

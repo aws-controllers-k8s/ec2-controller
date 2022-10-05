@@ -3999,7 +3999,7 @@ type Subnet_SDK struct {
 	CustomerOwnedIPv4Pool       *string                           `json:"customerOwnedIPv4Pool,omitempty"`
 	DefaultForAZ                *bool                             `json:"defaultForAZ,omitempty"`
 	EnableDNS64                 *bool                             `json:"enableDNS64,omitempty"`
-	EnableLniAtDeviceIndex      *int64                            `json:"enableLniAtDeviceIndex,omitempty"`
+	EnableLNIAtDeviceIndex      *int64                            `json:"enableLNIAtDeviceIndex,omitempty"`
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
 	IPv6Native                  *bool                             `json:"ipv6Native,omitempty"`
 	MapCustomerOwnedIPOnLaunch  *bool                             `json:"mapCustomerOwnedIPOnLaunch,omitempty"`
