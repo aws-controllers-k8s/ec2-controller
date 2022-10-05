@@ -52,15 +52,15 @@ func (rm *resourceManager) addRulesToSpec(
 	}
 }
 
-// addRulesToStatus updates a resource's Status Rules
-// by calling DescribeSecurityGroupRules and using data
-// from the response
-func (rm *resourceManager) addRulesToStatus(
-	ko *svcapitypes.SecurityGroup,
+// getRules calls DescribeSecurityGroupRules
+// and returns the  response data to populate a Security Group's
+// Status.Rules
+func (rm *resourceManager) getRules(
 	ctx context.Context,
-) (err error) {
+	res *resource,
+) (rules []*svcapitypes.SecurityGroupRule, err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.addRulesToStatus")
+	exit := rlog.Trace("rm.getRules")
 	defer exit(err)
 
 	groupIDFilter := "group-id"
@@ -68,11 +68,11 @@ func (rm *resourceManager) addRulesToStatus(
 		Filters: []*svcsdk.Filter{
 			{
 				Name:   &groupIDFilter,
-				Values: []*string{ko.Status.ID},
+				Values: []*string{res.ko.Status.ID},
 			},
 		},
 	}
-	rulesForResource := []*svcapitypes.SecurityGroupRule{}
+
 	for {
 		resp, err := rm.sdkapi.DescribeSecurityGroupRulesWithContext(ctx, input)
 		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
@@ -80,7 +80,7 @@ func (rm *resourceManager) addRulesToStatus(
 			break
 		}
 		for _, sgRule := range resp.SecurityGroupRules {
-			rulesForResource = append(rulesForResource, rm.setResourceSecurityGroupRule(sgRule))
+			rules = append(rules, rm.setResourceSecurityGroupRule(sgRule))
 		}
 		if resp.NextToken == nil || *resp.NextToken == "" {
 			break
@@ -88,11 +88,10 @@ func (rm *resourceManager) addRulesToStatus(
 		input.SetNextToken(*resp.NextToken)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	ko.Status.Rules = rulesForResource
-	return nil
+	return rules, nil
 }
 
 func (rm *resourceManager) requiredFieldsMissingForSGRule(
@@ -151,9 +150,6 @@ func (rm *resourceManager) syncSGRules(
 		return err
 	}
 	if err = rm.createSecurityGroupRules(ctx, desired, toAddIngress, toAddEgress); err != nil {
-		return err
-	}
-	if err = rm.addRulesToStatus(desired.ko, ctx); err != nil {
 		return err
 	}
 
@@ -418,12 +414,25 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateSecurityGroup")
 	defer exit(err)
-	ko := desired.ko.DeepCopy()
-	rm.setStatusDefaults(ko)
+
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.IngressRules") || delta.DifferentAt("Spec.EgressRules") {
 		if err := rm.syncSGRules(ctx, desired, latest); err != nil {
 			return nil, err
+		}
+		// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
+		// is made to refresh Status.Rules with the recently-updated
+		// data from the above `sync` call
+		if rules, err := rm.getRules(ctx, desired); err != nil {
+			return nil, err
+		} else {
+			updated.ko.Status.Rules = rules
 		}
 	}
 
@@ -433,7 +442,7 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 		}
 	}
 
-	return desired, nil
+	return updated, nil
 }
 
 // defaultEgressRule returns the egress rule that

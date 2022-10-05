@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package nat_gateway
+package elastic_ip_address
 
 import (
 	"context"
@@ -22,19 +22,22 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-func (rm *resourceManager) customUpdateNATGateway(
+func (rm *resourceManager) customUpdateElasticIP(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.customUpdateNATGateway")
+	exit := rlog.Trace("rm.customUpdateElasticIP")
 	defer exit(err)
 
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
@@ -42,8 +45,7 @@ func (rm *resourceManager) customUpdateNATGateway(
 		}
 	}
 
-	rm.setStatusDefaults(ko)
-	return &resource{ko}, nil
+	return updated, nil
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
@@ -58,14 +60,14 @@ func (rm *resourceManager) syncTags(
 		exit(err)
 	}(err)
 
-	resourceId := []*string{latest.ko.Status.NATGatewayID}
+	resourceId := []*string{latest.ko.Status.AllocationID}
 
 	toAdd, toDelete := computeTagsDelta(
 		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 	)
 
 	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from NATGateway resource", "tags", toDelete)
+		rlog.Debug("removing tags from elasticip resource", "tags", toDelete)
 		_, err = rm.sdkapi.DeleteTagsWithContext(
 			ctx,
 			&svcsdk.DeleteTagsInput{
@@ -81,7 +83,7 @@ func (rm *resourceManager) syncTags(
 	}
 
 	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to NATGateway resource", "tags", toAdd)
+		rlog.Debug("adding tags to elasticip resource", "tags", toAdd)
 		_, err = rm.sdkapi.CreateTagsWithContext(
 			ctx,
 			&svcsdk.CreateTagsInput{
@@ -146,10 +148,10 @@ func computeTagsDelta(
 }
 
 // updateTagSpecificationsInCreateRequest adds
-// Tags defined in the Spec to CreateNatGatewayInput.TagSpecification
-// and ensures the ResourceType is always set to 'natgateway'
+// Tags defined in the Spec to AllocateAddressInput.TagSpecification
+// and ensures the ResourceType is always set to 'elastic-ip'
 func updateTagSpecificationsInCreateRequest(r *resource,
-	input *svcsdk.CreateNatGatewayInput) {
+	input *svcsdk.AllocateAddressInput) {
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -162,7 +164,7 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("natgateway")
+		desiredTagSpecs.SetResourceType("elastic-ip")
 		desiredTagSpecs.SetTags(requestedTags)
 	}
 	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}

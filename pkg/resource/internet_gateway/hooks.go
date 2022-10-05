@@ -34,8 +34,12 @@ func (rm *resourceManager) customUpdateInternetGateway(
 		exit(err)
 	}(err)
 
-	ko := desired.ko.DeepCopy()
-	rm.setStatusDefaults(ko)
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.VPC") {
 		if latest.ko.Spec.VPC != nil {
@@ -56,7 +60,7 @@ func (rm *resourceManager) customUpdateInternetGateway(
 		}
 	}
 
-	return &resource{ko}, nil
+	return updated, nil
 }
 
 // getAttachedVPC will attempt to find the VPCID for any VPC that the

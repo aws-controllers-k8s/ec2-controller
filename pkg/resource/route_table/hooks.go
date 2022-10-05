@@ -191,11 +191,21 @@ func (rm *resourceManager) customUpdateRouteTable(
 	exit := rlog.Trace("rm.customUpdateRouteTable")
 	defer exit(err)
 
-	ko := desired.ko.DeepCopy()
-	rm.setStatusDefaults(ko)
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.Routes") {
 		if err := rm.syncRoutes(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+		// A ReadOne call is made to refresh Status.RouteStatuses
+		// with the recently-updated data from the above `sync` call
+		updated, err = rm.sdkFind(ctx, desired)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -206,12 +216,7 @@ func (rm *resourceManager) customUpdateRouteTable(
 		}
 	}
 
-	latest, err = rm.sdkFind(ctx, latest)
-	if err != nil {
-		return nil, err
-	}
-
-	return latest, nil
+	return updated, nil
 }
 
 func (rm *resourceManager) requiredFieldsMissingForCreateRoute(

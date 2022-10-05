@@ -35,8 +35,12 @@ func (rm *resourceManager) customUpdateSubnet(
 		exit(err)
 	}(err)
 
-	ko := desired.ko.DeepCopy()
-	rm.setStatusDefaults(ko)
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.RouteTables") {
 		if err = rm.updateRouteTableAssociations(ctx, desired, latest, delta); err != nil {
@@ -50,7 +54,7 @@ func (rm *resourceManager) customUpdateSubnet(
 		}
 	}
 
-	return &resource{ko}, nil
+	return updated, nil
 }
 
 func (rm *resourceManager) createRouteTableAssociations(

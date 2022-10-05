@@ -235,7 +235,7 @@ func (rm *resourceManager) createAttributes(
 	return nil
 }
 
-func (rm *resourceManager) customUpdate(
+func (rm *resourceManager) customUpdateVPC(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
@@ -245,9 +245,12 @@ func (rm *resourceManager) customUpdate(
 	exit := rlog.Trace("rm.customUpdateVPC")
 	defer exit(err)
 
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
+	// Default `updated` to `desired` because it is likely
+	// EC2 `modify` APIs do NOT return output, only errors.
+	// If the `modify` calls (i.e. `sync`) do NOT return
+	// an error, then the update was successful and desired.Spec
+	// (now updated.Spec) reflects the latest resource state.
+	updated = desired
 
 	if delta.DifferentAt("Spec.CIDRBlocks") {
 		if err := rm.syncCIDRBlocks(ctx, desired, latest); err != nil {
@@ -273,8 +276,7 @@ func (rm *resourceManager) customUpdate(
 		}
 	}
 
-	rm.setStatusDefaults(ko)
-	return &resource{ko}, nil
+	return updated, nil
 }
 
 // applyPrimaryCIDRBlockInCreateRequest populates

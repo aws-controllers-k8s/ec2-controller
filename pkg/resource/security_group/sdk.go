@@ -122,12 +122,17 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-
 	if found {
 		rm.addRulesToSpec(ko, resp.SecurityGroups[0])
-		rm.addRulesToStatus(ko, ctx)
-	}
 
+		// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
+		// is made to refresh Status.Rules
+		if rules, err := rm.getRules(ctx, &resource{ko}); err != nil {
+			return nil, err
+		} else {
+			ko.Status.Rules = rules
+		}
+	}
 	return &resource{ko}, nil
 }
 
@@ -216,6 +221,16 @@ func (rm *resourceManager) sdkCreate(
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
 		return nil, err
 	}
+
+	// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
+	// is made to refresh Status.Rules with the recently-updated
+	// data from the above `sync` call
+	if rules, err := rm.getRules(ctx, &resource{ko}); err != nil {
+		return nil, err
+	} else {
+		ko.Status.Rules = rules
+	}
+
 	// if user defines any egress rule, then remove the default
 	// egress rule; otherwise, add default rule Spec to align with
 	// resource's server-side state (i.e. Status.Rules)
@@ -226,7 +241,7 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.EgressRules = append(ko.Spec.EgressRules, rm.defaultEgressRule())
 	}
-	rm.addRulesToStatus(ko, ctx)
+
 	return &resource{ko}, nil
 }
 
