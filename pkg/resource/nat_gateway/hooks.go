@@ -152,6 +152,7 @@ func computeTagsDelta(
 // and ensures the ResourceType is always set to 'natgateway'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateNatGatewayInput) {
+	input.TagSpecifications = nil
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -166,6 +167,6 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 		desiredTagSpecs.SetResourceType("natgateway")
 		desiredTagSpecs.SetTags(requestedTags)
+		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
-	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }

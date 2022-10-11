@@ -165,6 +165,7 @@ func computeTagsDelta(
 // and ensures the ResourceType is always set to 'vpc-endpoint'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcEndpointInput) {
+	input.TagSpecifications = nil
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -179,6 +180,6 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 		desiredTagSpecs.SetResourceType("vpc-endpoint")
 		desiredTagSpecs.SetTags(requestedTags)
+		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
-	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }

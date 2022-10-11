@@ -165,6 +165,7 @@ func computeTagsDelta(
 // and ensures the ResourceType is always set to 'instance'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.RunInstancesInput) {
+	input.TagSpecifications = nil
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		instanceTags := []*svcsdk.Tag{}
@@ -179,6 +180,6 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 		desiredTagSpecs.SetResourceType("instance")
 		desiredTagSpecs.SetTags(instanceTags)
+		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
-	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }

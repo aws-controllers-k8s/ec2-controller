@@ -393,6 +393,7 @@ func computeTagsDelta(
 // and ensures the ResourceType is always set to 'vpc'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcInput) {
+	input.TagSpecifications = nil
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -407,6 +408,6 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 		desiredTagSpecs.SetResourceType("vpc")
 		desiredTagSpecs.SetTags(requestedTags)
+		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
-	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }

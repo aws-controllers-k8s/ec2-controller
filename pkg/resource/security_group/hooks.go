@@ -260,6 +260,7 @@ func computeTagsDelta(
 // and ensures the ResourceType is always set to 'security-group'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateSecurityGroupInput) {
+	input.TagSpecifications = nil
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -274,8 +275,8 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 		desiredTagSpecs.SetResourceType("security-group")
 		desiredTagSpecs.SetTags(requestedTags)
+		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
-	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }
 
 // createSecurityGroupRules takes a list of ingress and egress
