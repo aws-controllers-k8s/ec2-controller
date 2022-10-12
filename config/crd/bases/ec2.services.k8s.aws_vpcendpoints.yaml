@@ -15,7 +15,14 @@ spec:
     singular: vpcendpoint
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.vpcEndpointID
+      name: ID
+      type: string
+    - jsonPath: .status.state
+      name: state
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: VPCEndpoint is the Schema for the VPCEndpoints API

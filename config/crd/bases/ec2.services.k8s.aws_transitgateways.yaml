@@ -15,7 +15,14 @@ spec:
     singular: transitgateway
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.transitGatewayID
+      name: ID
+      type: string
+    - jsonPath: .status.state
+      name: state
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: TransitGateway is the Schema for the TransitGateways API

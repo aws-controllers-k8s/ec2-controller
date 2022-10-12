@@ -176,6 +176,10 @@ resources:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+      DhcpOptionsID:
+        print:
+          path: Status.dhcpOptionsID
+          name: ID
       Tags:
         from:
           operation: CreateTags
@@ -500,6 +504,14 @@ resources:
         from:
           operation: CreateTags
           path: Tags
+      State:
+        print:
+          path: Status.state
+          name: state
+      TransitGatewayID:
+        print:
+          path: Status.transitGatewayID
+          name: ID
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/transit_gateway/sdk_create_post_build_request.go.tpl
@@ -570,10 +582,18 @@ resources:
         references:
           resource: SecurityGroup
           path: Status.ID
+      State:
+        print:
+          path: Status.state
+          name: state
       SubnetIds:
         references:
           resource: Subnet
           path: Status.SubnetID
+      VpcEndpointID:
+        print:
+          path: Status.vpcEndpointID
+          name: ID
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed
