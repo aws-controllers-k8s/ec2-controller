@@ -17,7 +17,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.natGatewayID
-      name: NatGatewayID
+      name: ID
       type: string
     - jsonPath: .status.state
       name: state

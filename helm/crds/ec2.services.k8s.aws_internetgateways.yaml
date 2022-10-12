@@ -17,7 +17,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.internetGatewayID
-      name: InternetGatewayID
+      name: ID
       type: string
     name: v1alpha1
     schema:

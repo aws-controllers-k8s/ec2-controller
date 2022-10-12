@@ -17,7 +17,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.vpcID
-      name: VpcID
+      name: ID
       type: string
     - jsonPath: .status.state
       name: state

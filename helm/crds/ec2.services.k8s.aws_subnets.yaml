@@ -17,7 +17,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.subnetID
-      name: SubnetID
+      name: ID
       type: string
     - jsonPath: .status.state
       name: state
