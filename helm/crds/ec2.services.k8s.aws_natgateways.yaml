@@ -15,7 +15,14 @@ spec:
     singular: natgateway
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.natGatewayID
+      name: NatGatewayID
+      type: string
+    - jsonPath: .status.state
+      name: state
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: NATGateway is the Schema for the NATGateways API

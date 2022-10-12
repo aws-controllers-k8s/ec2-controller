@@ -15,7 +15,14 @@ spec:
     singular: vpc
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.vpcID
+      name: VpcID
+      type: string
+    - jsonPath: .status.state
+      name: state
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: VPC is the Schema for the VPCS API

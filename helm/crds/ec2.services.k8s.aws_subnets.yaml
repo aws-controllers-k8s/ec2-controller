@@ -15,7 +15,14 @@ spec:
     singular: subnet
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.subnetID
+      name: SubnetID
+      type: string
+    - jsonPath: .status.state
+      name: state
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Subnet is the Schema for the Subnets API

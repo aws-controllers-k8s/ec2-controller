@@ -261,6 +261,10 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      InternetGatewayID:
+        print:
+          path: Status.internetGatewayID
+          name: ID
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/internet_gateway/sdk_create_post_build_request.go.tpl
@@ -289,6 +293,14 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+      NatGatewayID:
+        print:
+          path: Status.natGatewayID
+          name: ID
+      State:
+        print:
+          path: Status.state
+          name: state
       Tags:
         from:
           operation: CreateTags
@@ -320,6 +332,14 @@ resources:
       Routes:
         custom_field:
           list_of: CreateRouteInput
+      RouteTableID:
+        print:
+          path: Status.RouteTableID
+          name: ID
+      State:
+        print:
+          path: Status.state
+          name: state
       Tags:
         from:
           operation: CreateTags
@@ -436,6 +456,14 @@ resources:
         references:
           resource: RouteTable
           path: Status.RouteTableID
+      State:
+        print:
+          path: Status.state
+          name: state
+      SubnetId:
+        print:
+          path: Status.subnetID
+          name: ID
       Tags:
         from:
           operation: CreateTags
@@ -494,10 +522,18 @@ resources:
         from:
           operation: ModifyVpcAttribute
           path: EnableDnsHostnames.Value
+      State:
+        print:
+          path: Status.state
+          name: state
       Tags:
         from:
           operation: CreateTags
           path: Tags
+      VpcID:
+        print:
+          path: Status.vpcID
+          name: ID
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/vpc/sdk_create_post_build_request.go.tpl
