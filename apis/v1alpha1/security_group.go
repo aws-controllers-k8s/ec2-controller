@@ -79,6 +79,7 @@ type SecurityGroupStatus struct {
 // SecurityGroup is the Schema for the SecurityGroups API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.id`
 type SecurityGroup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

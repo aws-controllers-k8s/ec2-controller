@@ -191,6 +191,10 @@ resources:
     fields:
       HibernationOptions:
         late_initialize: {}
+      InstanceID:
+        print:
+          path: Status.instanceID
+          name: ID
       MaxCount:
         is_required: false
       MinCount:
@@ -382,6 +386,9 @@ resources:
       # support EC2-VPC only
       Id:
         is_primary_key: true
+        print:
+          path: Status.id
+          name: ID
       IngressRules:
         custom_field:
           list_of: IpPermission
