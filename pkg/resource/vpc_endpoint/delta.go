@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions, b.ko.Spec.DNSOptions) {
 		delta.Add("Spec.DNSOptions", a.ko.Spec.DNSOptions, b.ko.Spec.DNSOptions)

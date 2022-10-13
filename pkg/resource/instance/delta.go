@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if !reflect.DeepEqual(a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings) {
 		delta.Add("Spec.BlockDeviceMappings", a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings)

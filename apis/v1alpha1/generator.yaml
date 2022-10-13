@@ -185,6 +185,8 @@ resources:
           operation: CreateTags
           path: Tags
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/dhcp_options/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -211,6 +213,8 @@ resources:
           operation: CreateTags
           path: Tags
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/instance/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -244,6 +248,8 @@ resources:
       match_fields:
       - AllocationId
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_create_post_build_request.go.tpl
       sdk_delete_post_build_request:
@@ -274,6 +280,8 @@ resources:
           path: Status.internetGatewayID
           name: ID
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/internet_gateway/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -319,6 +327,8 @@ resources:
         in:
         - available
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -374,7 +384,7 @@ resources:
           path: Status.VPCEndpointID
     hooks:
       delta_pre_compare:
-        code: customPreCompare(a, b)
+        code: customPreCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/route_table/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -429,6 +439,8 @@ resources:
             GroupIds: Ids
             GroupNames: Names
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -488,6 +500,8 @@ resources:
         - InvalidParameterValue
         - InvalidCustomerOwnedIpv4PoolID.Malformed
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/subnet/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -513,6 +527,8 @@ resources:
           path: Status.transitGatewayID
           name: ID
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/transit_gateway/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -554,6 +570,8 @@ resources:
           path: Status.vpcID
           name: ID
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -599,6 +617,8 @@ resources:
         - InvalidVpcId.Malformed
         - InvalidServiceName
     hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_create_post_build_request.go.tpl
       sdk_delete_post_build_request:
