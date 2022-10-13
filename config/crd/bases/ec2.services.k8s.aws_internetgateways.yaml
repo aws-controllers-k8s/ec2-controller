@@ -15,7 +15,11 @@ spec:
     singular: internetgateway
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.internetGatewayID
+      name: ID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: InternetGateway is the Schema for the InternetGateways API

@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AllocationID, b.ko.Spec.AllocationID) {
 		delta.Add("Spec.AllocationID", a.ko.Spec.AllocationID, b.ko.Spec.AllocationID)

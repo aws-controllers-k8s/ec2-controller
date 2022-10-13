@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation) {
 		delta.Add("Spec.AssignIPv6AddressOnCreation", a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation)
