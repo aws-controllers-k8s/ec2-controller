@@ -64,6 +64,8 @@ type TransitGatewayStatus struct {
 // TransitGateway is the Schema for the TransitGateways API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.transitGatewayID`
+// +kubebuilder:printcolumn:name="state",type=string,priority=0,JSONPath=`.status.state`
 type TransitGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

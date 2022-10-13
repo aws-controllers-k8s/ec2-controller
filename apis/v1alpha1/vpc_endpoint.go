@@ -122,6 +122,8 @@ type VPCEndpointStatus struct {
 // VPCEndpoint is the Schema for the VPCEndpoints API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.vpcEndpointID`
+// +kubebuilder:printcolumn:name="state",type=string,priority=0,JSONPath=`.status.state`
 type VPCEndpoint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

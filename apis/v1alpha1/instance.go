@@ -374,6 +374,7 @@ type InstanceStatus struct {
 // Instance is the Schema for the Instances API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.instanceID`
 type Instance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

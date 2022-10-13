@@ -15,7 +15,11 @@ spec:
     singular: instance
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.instanceID
+      name: ID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Instance is the Schema for the Instances API

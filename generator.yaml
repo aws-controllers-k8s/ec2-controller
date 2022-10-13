@@ -176,6 +176,10 @@ resources:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+      DhcpOptionsID:
+        print:
+          path: Status.dhcpOptionsID
+          name: ID
       Tags:
         from:
           operation: CreateTags
@@ -191,6 +195,10 @@ resources:
     fields:
       HibernationOptions:
         late_initialize: {}
+      InstanceID:
+        print:
+          path: Status.instanceID
+          name: ID
       MaxCount:
         is_required: false
       MinCount:
@@ -261,6 +269,10 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      InternetGatewayID:
+        print:
+          path: Status.internetGatewayID
+          name: ID
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/internet_gateway/sdk_create_post_build_request.go.tpl
@@ -289,6 +301,14 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+      NatGatewayID:
+        print:
+          path: Status.natGatewayID
+          name: ID
+      State:
+        print:
+          path: Status.state
+          name: state
       Tags:
         from:
           operation: CreateTags
@@ -320,6 +340,14 @@ resources:
       Routes:
         custom_field:
           list_of: CreateRouteInput
+      RouteTableID:
+        print:
+          path: Status.RouteTableID
+          name: ID
+      State:
+        print:
+          path: Status.state
+          name: state
       Tags:
         from:
           operation: CreateTags
@@ -362,6 +390,9 @@ resources:
       # support EC2-VPC only
       Id:
         is_primary_key: true
+        print:
+          path: Status.id
+          name: ID
       IngressRules:
         custom_field:
           list_of: IpPermission
@@ -436,6 +467,14 @@ resources:
         references:
           resource: RouteTable
           path: Status.RouteTableID
+      State:
+        print:
+          path: Status.state
+          name: state
+      SubnetId:
+        print:
+          path: Status.subnetID
+          name: ID
       Tags:
         from:
           operation: CreateTags
@@ -465,6 +504,14 @@ resources:
         from:
           operation: CreateTags
           path: Tags
+      State:
+        print:
+          path: Status.state
+          name: state
+      TransitGatewayID:
+        print:
+          path: Status.transitGatewayID
+          name: ID
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/transit_gateway/sdk_create_post_build_request.go.tpl
@@ -494,10 +541,18 @@ resources:
         from:
           operation: ModifyVpcAttribute
           path: EnableDnsHostnames.Value
+      State:
+        print:
+          path: Status.state
+          name: state
       Tags:
         from:
           operation: CreateTags
           path: Tags
+      VpcID:
+        print:
+          path: Status.vpcID
+          name: ID
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/vpc/sdk_create_post_build_request.go.tpl
@@ -527,10 +582,18 @@ resources:
         references:
           resource: SecurityGroup
           path: Status.ID
+      State:
+        print:
+          path: Status.state
+          name: state
       SubnetIds:
         references:
           resource: Subnet
           path: Status.SubnetID
+      VpcEndpointID:
+        print:
+          path: Status.vpcEndpointID
+          name: ID
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed

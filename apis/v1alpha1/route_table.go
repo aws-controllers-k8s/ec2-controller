@@ -67,6 +67,7 @@ type RouteTableStatus struct {
 // RouteTable is the Schema for the RouteTables API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.routeTableID`
 type RouteTable struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

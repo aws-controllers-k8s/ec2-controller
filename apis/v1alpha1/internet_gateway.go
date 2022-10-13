@@ -60,6 +60,7 @@ type InternetGatewayStatus struct {
 // InternetGateway is the Schema for the InternetGateways API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.internetGatewayID`
 type InternetGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

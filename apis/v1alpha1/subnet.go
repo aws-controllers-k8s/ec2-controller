@@ -132,6 +132,8 @@ type SubnetStatus struct {
 // Subnet is the Schema for the Subnets API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.subnetID`
+// +kubebuilder:printcolumn:name="state",type=string,priority=0,JSONPath=`.status.state`
 type Subnet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

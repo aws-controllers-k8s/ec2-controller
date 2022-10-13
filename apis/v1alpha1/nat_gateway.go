@@ -127,6 +127,8 @@ type NATGatewayStatus struct {
 // NATGateway is the Schema for the NATGateways API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.natGatewayID`
+// +kubebuilder:printcolumn:name="state",type=string,priority=0,JSONPath=`.status.state`
 type NATGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

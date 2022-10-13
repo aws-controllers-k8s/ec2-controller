@@ -15,7 +15,11 @@ spec:
     singular: routetable
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.routeTableID
+      name: ID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: RouteTable is the Schema for the RouteTables API
