@@ -260,6 +260,7 @@ func computeTagsDelta(
 // and ensures the ResourceType is always set to 'security-group'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateSecurityGroupInput) {
+	input.TagSpecifications = nil
 	desiredTagSpecs := svcsdk.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
 		requestedTags := []*svcsdk.Tag{}
@@ -274,8 +275,8 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		}
 		desiredTagSpecs.SetResourceType("security-group")
 		desiredTagSpecs.SetTags(requestedTags)
+		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
-	input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 }
 
 // createSecurityGroupRules takes a list of ingress and egress
@@ -443,6 +444,23 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	}
 
 	return updated, nil
+}
+
+// compareTags is a custom comparison function for comparing lists of Tag
+// structs where the order of the structs in the list is not important.
+func compareTags(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	} else if len(a.ko.Spec.Tags) > 0 {
+		addedOrUpdated, removed := computeTagsDelta(a.ko.Spec.Tags, b.ko.Spec.Tags)
+		if len(addedOrUpdated) != 0 || len(removed) != 0 {
+			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+		}
+	}
 }
 
 // defaultEgressRule returns the egress rule that

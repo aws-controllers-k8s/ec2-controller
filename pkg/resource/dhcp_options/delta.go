@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if !reflect.DeepEqual(a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations) {
 		delta.Add("Spec.DHCPConfigurations", a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations)
