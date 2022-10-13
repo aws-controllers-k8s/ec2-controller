@@ -8,8 +8,6 @@ Kubernetes Github project.
 
 [ack-issues]: https://github.com/aws-controllers-k8s/community/issues
 
-❗❗ ACK EC2-Controller is released in the [*PREVIEW* Phase](https://aws-controllers-k8s.github.io/community/docs/community/releases/#preview) and is still in development. **Not recommended for production use.** ❗❗
-
 ## Install the Controller
 
 Start with the [Install an ACK Controller](https://aws-controllers-k8s.github.io/community/docs/user-docs/install/) section to install the controller into a cluster and setup necessary IAM Permissions.
