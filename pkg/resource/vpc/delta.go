@@ -122,9 +122,6 @@ func newResourceDelta(
 			delta.Add("Spec.IPv6Pool", a.ko.Spec.IPv6Pool, b.ko.Spec.IPv6Pool)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	}
 
 	return delta
 }
