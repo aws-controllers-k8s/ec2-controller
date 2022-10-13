@@ -58,6 +58,9 @@ def standard_elastic_address():
     # buy us some time in case we try to mount it too early.
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
+    # Check resource synced successfully
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
     assert cr is not None
     assert k8s.get_resource_exists(ref)
 
@@ -66,6 +69,7 @@ def standard_elastic_address():
     # Try to delete, if doesn't already exist
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
         assert deleted
     except:
         pass
@@ -106,9 +110,12 @@ def simple_nat_gateway(standard_elastic_address, request):
     k8s.create_custom_resource(ref, resource_data)
     cr = k8s.wait_resource_consumed_by_controller(ref)
 
-    # ElasticIP are not usable immediately after they are created, so this will
+    # NAT Gateways are not usable immediately after they are created, so this will
     # buy us some time in case we try to mount it too early.
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    # Check resource synced successfully
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
     assert cr is not None
     assert k8s.get_resource_exists(ref)
@@ -118,6 +125,7 @@ def simple_nat_gateway(standard_elastic_address, request):
     # Try to delete, if doesn't already exist
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
         assert deleted
     except:
         pass
