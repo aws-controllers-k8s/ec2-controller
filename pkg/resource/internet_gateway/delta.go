@@ -42,9 +42,6 @@ func newResourceDelta(
 	}
 	compareTags(delta, a, b)
 
-	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPC, b.ko.Spec.VPC) {
 		delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
 	} else if a.ko.Spec.VPC != nil && b.ko.Spec.VPC != nil {
