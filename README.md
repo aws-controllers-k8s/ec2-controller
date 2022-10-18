@@ -23,7 +23,7 @@ The latest images and Helm Charts can be found in their respective ECR Public re
 
 ## Create/Delete an ACK Resource
 
-* Navigate to [test resources]() for a list of resource `yaml` templates
+* Navigate to [test resources](https://github.com/aws-controllers-k8s/ec2-controller/tree/main/test/e2e/resources) for a list of resource `yaml` templates
 * Copy the file to the local terminal and substitute `$` values. Ex: [vpc.yaml](https://github.com/aws-controllers-k8s/ec2-controller/blob/main/test/e2e/resources/vpc.yaml)
 
 ```
