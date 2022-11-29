@@ -25,12 +25,12 @@ import (
 // Describes a set of DHCP options.
 type DHCPOptionsSpec struct {
 	// A DHCP configuration option.
-	// +kubebuilder:validation:Required
+	 // +kubebuilder:validation:Required
 	DHCPConfigurations []*NewDHCPConfiguration `json:"dhcpConfigurations"`
 	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+	 Tags []*Tag `json:"tags,omitempty"` 
 }
 
 // DHCPOptionsStatus defines the observed state of DHCPOptions
@@ -61,8 +61,8 @@ type DHCPOptionsStatus struct {
 type DHCPOptions struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              DHCPOptionsSpec   `json:"spec,omitempty"`
-	Status            DHCPOptionsStatus `json:"status,omitempty"`
+	Spec   DHCPOptionsSpec   `json:"spec,omitempty"`
+	Status DHCPOptionsStatus `json:"status,omitempty"`
 }
 
 // DHCPOptionsList contains a list of DHCPOptions
@@ -70,7 +70,7 @@ type DHCPOptions struct {
 type DHCPOptionsList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []DHCPOptions `json:"items"`
+	Items []DHCPOptions `json:"items"`
 }
 
 func init() {
