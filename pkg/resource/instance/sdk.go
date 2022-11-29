@@ -595,9 +595,9 @@ func (rm *resourceManager) sdkFind(
 				ko.Spec.Tags = nil
 			}
 			if elem.TpmSupport != nil {
-				ko.Status.TPMSupport = elem.TpmSupport
+				ko.Status.TpmSupport = elem.TpmSupport
 			} else {
-				ko.Status.TPMSupport = nil
+				ko.Status.TpmSupport = nil
 			}
 			if elem.UsageOperation != nil {
 				ko.Status.UsageOperation = elem.UsageOperation
@@ -1203,9 +1203,9 @@ func (rm *resourceManager) sdkCreate(
 			ko.Spec.Tags = nil
 		}
 		if elem.TpmSupport != nil {
-			ko.Status.TPMSupport = elem.TpmSupport
+			ko.Status.TpmSupport = elem.TpmSupport
 		} else {
-			ko.Status.TPMSupport = nil
+			ko.Status.TpmSupport = nil
 		}
 		if elem.UsageOperation != nil {
 			ko.Status.UsageOperation = elem.UsageOperation

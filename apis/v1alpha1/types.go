@@ -84,7 +84,7 @@ type ActiveInstance struct {
 //
 // For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
 // in the Amazon VPC IPAM User Guide.
-type AddIPAMOperatingRegion struct {
+type AddIPamOperatingRegion struct {
 	RegionName *string `json:"regionName,omitempty"`
 }
 
@@ -454,7 +454,6 @@ type ClassicLinkDNSSupport struct {
 	VPCID                   *string `json:"vpcID,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -1387,128 +1386,6 @@ type IKEVersionsRequestListValue struct {
 	Value *string `json:"value,omitempty"`
 }
 
-// IPAM is a VPC feature that you can use to automate your IP address management
-// workflows including assigning, tracking, troubleshooting, and auditing IP
-// addresses across Amazon Web Services Regions and accounts throughout your
-// Amazon Web Services Organization. For more information, see What is IPAM?
-// (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html) in the
-// Amazon VPC IPAM User Guide.
-type IPAM struct {
-	Description *string `json:"description,omitempty"`
-	IPAMRegion  *string `json:"ipamRegion,omitempty"`
-	OwnerID     *string `json:"ownerID,omitempty"`
-	ScopeCount  *int64  `json:"scopeCount,omitempty"`
-	Tags        []*Tag  `json:"tags,omitempty"`
-}
-
-// The historical record of a CIDR within an IPAM scope. For more information,
-// see View the history of IP addresses (https://docs.aws.amazon.com/vpc/latest/ipam/view-history-cidr-ipam.html)
-// in the Amazon VPC IPAM User Guide.
-type IPAMAddressHistoryRecord struct {
-	ResourceCIDR     *string      `json:"resourceCIDR,omitempty"`
-	ResourceID       *string      `json:"resourceID,omitempty"`
-	ResourceName     *string      `json:"resourceName,omitempty"`
-	ResourceOwnerID  *string      `json:"resourceOwnerID,omitempty"`
-	ResourceRegion   *string      `json:"resourceRegion,omitempty"`
-	SampledEndTime   *metav1.Time `json:"sampledEndTime,omitempty"`
-	SampledStartTime *metav1.Time `json:"sampledStartTime,omitempty"`
-	VPCID            *string      `json:"vpcID,omitempty"`
-}
-
-// A signed document that proves that you are authorized to bring the specified
-// IP address range to Amazon using BYOIP.
-type IPAMCIDRAuthorizationContext struct {
-	Message   *string `json:"message,omitempty"`
-	Signature *string `json:"signature,omitempty"`
-}
-
-// The operating Regions for an IPAM. Operating Regions are Amazon Web Services
-// Regions where the IPAM is allowed to manage IP address CIDRs. IPAM only discovers
-// and monitors resources in the Amazon Web Services Regions you select as operating
-// Regions.
-//
-// For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
-// in the Amazon VPC IPAM User Guide.
-type IPAMOperatingRegion struct {
-	RegionName *string `json:"regionName,omitempty"`
-}
-
-// In IPAM, a pool is a collection of contiguous IP addresses CIDRs. Pools enable
-// you to organize your IP addresses according to your routing and security
-// needs. For example, if you have separate routing and security needs for development
-// and production applications, you can create a pool for each.
-type IPAMPool struct {
-	AutoImport           *bool   `json:"autoImport,omitempty"`
-	Description          *string `json:"description,omitempty"`
-	IPAMPoolID           *string `json:"ipamPoolID,omitempty"`
-	IPAMRegion           *string `json:"ipamRegion,omitempty"`
-	Locale               *string `json:"locale,omitempty"`
-	OwnerID              *string `json:"ownerID,omitempty"`
-	PoolDepth            *int64  `json:"poolDepth,omitempty"`
-	PubliclyAdvertisable *bool   `json:"publiclyAdvertisable,omitempty"`
-	SourceIPAMPoolID     *string `json:"sourceIPAMPoolID,omitempty"`
-	StateMessage         *string `json:"stateMessage,omitempty"`
-	Tags                 []*Tag  `json:"tags,omitempty"`
-}
-
-// In IPAM, an allocation is a CIDR assignment from an IPAM pool to another
-// resource or IPAM pool.
-type IPAMPoolAllocation struct {
-	CIDR           *string `json:"cidr,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	ResourceID     *string `json:"resourceID,omitempty"`
-	ResourceOwner  *string `json:"resourceOwner,omitempty"`
-	ResourceRegion *string `json:"resourceRegion,omitempty"`
-}
-
-// A CIDR provisioned to an IPAM pool.
-type IPAMPoolCIDR struct {
-	CIDR *string `json:"cidr,omitempty"`
-}
-
-// Details related to why an IPAM pool CIDR failed to be provisioned.
-type IPAMPoolCIDRFailureReason struct {
-	Message *string `json:"message,omitempty"`
-}
-
-// The CIDR for an IPAM resource.
-type IPAMResourceCIDR struct {
-	IPAMPoolID      *string `json:"ipamPoolID,omitempty"`
-	ResourceCIDR    *string `json:"resourceCIDR,omitempty"`
-	ResourceID      *string `json:"resourceID,omitempty"`
-	ResourceName    *string `json:"resourceName,omitempty"`
-	ResourceOwnerID *string `json:"resourceOwnerID,omitempty"`
-	ResourceRegion  *string `json:"resourceRegion,omitempty"`
-	VPCID           *string `json:"vpcID,omitempty"`
-}
-
-// The key/value combination of a tag assigned to the resource. Use the tag
-// key in the filter name and the tag value as the filter value. For example,
-// to find all resources that have a tag with the key Owner and the value TeamA,
-// specify tag:Owner for the filter name and TeamA for the filter value.
-type IPAMResourceTag struct {
-	Key   *string `json:"key,omitempty"`
-	Value *string `json:"value,omitempty"`
-}
-
-// In IPAM, a scope is the highest-level container within IPAM. An IPAM contains
-// two default scopes. Each scope represents the IP space for a single network.
-// The private scope is intended for all private IP address space. The public
-// scope is intended for all public IP address space. Scopes enable you to reuse
-// IP addresses across multiple unconnected networks without causing IP address
-// overlap or conflict.
-//
-// For more information, see How IPAM works (https://docs.aws.amazon.com/vpc/latest/ipam/how-it-works-ipam.html)
-// in the Amazon VPC IPAM User Guide.
-type IPAMScope struct {
-	Description *string `json:"description,omitempty"`
-	IPAMRegion  *string `json:"ipamRegion,omitempty"`
-	IsDefault   *bool   `json:"isDefault,omitempty"`
-	OwnerID     *string `json:"ownerID,omitempty"`
-	PoolCount   *int64  `json:"poolCount,omitempty"`
-	Tags        []*Tag  `json:"tags,omitempty"`
-}
-
 // Describes a set of permissions for a security group rule.
 type IPPermission struct {
 	FromPort         *int64             `json:"fromPort,omitempty"`
@@ -1524,6 +1401,128 @@ type IPPermission struct {
 type IPRange struct {
 	CIDRIP      *string `json:"cidrIP,omitempty"`
 	Description *string `json:"description,omitempty"`
+}
+
+// IPAM is a VPC feature that you can use to automate your IP address management
+// workflows including assigning, tracking, troubleshooting, and auditing IP
+// addresses across Amazon Web Services Regions and accounts throughout your
+// Amazon Web Services Organization. For more information, see What is IPAM?
+// (https://docs.aws.amazon.com/vpc/latest/ipam/what-is-it-ipam.html) in the
+// Amazon VPC IPAM User Guide.
+type IPam struct {
+	Description *string `json:"description,omitempty"`
+	IPamRegion  *string `json:"ipamRegion,omitempty"`
+	OwnerID     *string `json:"ownerID,omitempty"`
+	ScopeCount  *int64  `json:"scopeCount,omitempty"`
+	Tags        []*Tag  `json:"tags,omitempty"`
+}
+
+// The historical record of a CIDR within an IPAM scope. For more information,
+// see View the history of IP addresses (https://docs.aws.amazon.com/vpc/latest/ipam/view-history-cidr-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type IPamAddressHistoryRecord struct {
+	ResourceCIDR     *string      `json:"resourceCIDR,omitempty"`
+	ResourceID       *string      `json:"resourceID,omitempty"`
+	ResourceName     *string      `json:"resourceName,omitempty"`
+	ResourceOwnerID  *string      `json:"resourceOwnerID,omitempty"`
+	ResourceRegion   *string      `json:"resourceRegion,omitempty"`
+	SampledEndTime   *metav1.Time `json:"sampledEndTime,omitempty"`
+	SampledStartTime *metav1.Time `json:"sampledStartTime,omitempty"`
+	VPCID            *string      `json:"vpcID,omitempty"`
+}
+
+// A signed document that proves that you are authorized to bring the specified
+// IP address range to Amazon using BYOIP.
+type IPamCIDRAuthorizationContext struct {
+	Message   *string `json:"message,omitempty"`
+	Signature *string `json:"signature,omitempty"`
+}
+
+// The operating Regions for an IPAM. Operating Regions are Amazon Web Services
+// Regions where the IPAM is allowed to manage IP address CIDRs. IPAM only discovers
+// and monitors resources in the Amazon Web Services Regions you select as operating
+// Regions.
+//
+// For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type IPamOperatingRegion struct {
+	RegionName *string `json:"regionName,omitempty"`
+}
+
+// In IPAM, a pool is a collection of contiguous IP addresses CIDRs. Pools enable
+// you to organize your IP addresses according to your routing and security
+// needs. For example, if you have separate routing and security needs for development
+// and production applications, you can create a pool for each.
+type IPamPool struct {
+	AutoImport           *bool   `json:"autoImport,omitempty"`
+	Description          *string `json:"description,omitempty"`
+	IPamPoolID           *string `json:"ipamPoolID,omitempty"`
+	IPamRegion           *string `json:"ipamRegion,omitempty"`
+	Locale               *string `json:"locale,omitempty"`
+	OwnerID              *string `json:"ownerID,omitempty"`
+	PoolDepth            *int64  `json:"poolDepth,omitempty"`
+	PubliclyAdvertisable *bool   `json:"publiclyAdvertisable,omitempty"`
+	SourceIPamPoolID     *string `json:"sourceIPamPoolID,omitempty"`
+	StateMessage         *string `json:"stateMessage,omitempty"`
+	Tags                 []*Tag  `json:"tags,omitempty"`
+}
+
+// In IPAM, an allocation is a CIDR assignment from an IPAM pool to another
+// resource or IPAM pool.
+type IPamPoolAllocation struct {
+	CIDR           *string `json:"cidr,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	ResourceID     *string `json:"resourceID,omitempty"`
+	ResourceOwner  *string `json:"resourceOwner,omitempty"`
+	ResourceRegion *string `json:"resourceRegion,omitempty"`
+}
+
+// A CIDR provisioned to an IPAM pool.
+type IPamPoolCIDR struct {
+	CIDR *string `json:"cidr,omitempty"`
+}
+
+// Details related to why an IPAM pool CIDR failed to be provisioned.
+type IPamPoolCIDRFailureReason struct {
+	Message *string `json:"message,omitempty"`
+}
+
+// The CIDR for an IPAM resource.
+type IPamResourceCIDR struct {
+	IPamPoolID      *string `json:"ipamPoolID,omitempty"`
+	ResourceCIDR    *string `json:"resourceCIDR,omitempty"`
+	ResourceID      *string `json:"resourceID,omitempty"`
+	ResourceName    *string `json:"resourceName,omitempty"`
+	ResourceOwnerID *string `json:"resourceOwnerID,omitempty"`
+	ResourceRegion  *string `json:"resourceRegion,omitempty"`
+	VPCID           *string `json:"vpcID,omitempty"`
+}
+
+// The key/value combination of a tag assigned to the resource. Use the tag
+// key in the filter name and the tag value as the filter value. For example,
+// to find all resources that have a tag with the key Owner and the value TeamA,
+// specify tag:Owner for the filter name and TeamA for the filter value.
+type IPamResourceTag struct {
+	Key   *string `json:"key,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
+// In IPAM, a scope is the highest-level container within IPAM. An IPAM contains
+// two default scopes. Each scope represents the IP space for a single network.
+// The private scope is intended for all private IP address space. The public
+// scope is intended for all public IP address space. Scopes enable you to reuse
+// IP addresses across multiple unconnected networks without causing IP address
+// overlap or conflict.
+//
+// For more information, see How IPAM works (https://docs.aws.amazon.com/vpc/latest/ipam/how-it-works-ipam.html)
+// in the Amazon VPC IPAM User Guide.
+type IPamScope struct {
+	Description *string `json:"description,omitempty"`
+	IPamRegion  *string `json:"ipamRegion,omitempty"`
+	IsDefault   *bool   `json:"isDefault,omitempty"`
+	OwnerID     *string `json:"ownerID,omitempty"`
+	PoolCount   *int64  `json:"poolCount,omitempty"`
+	Tags        []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes an IPv4 prefix.
@@ -2096,7 +2095,7 @@ type Instance_SDK struct {
 	StateTransitionReason    *string      `json:"stateTransitionReason,omitempty"`
 	SubnetID                 *string      `json:"subnetID,omitempty"`
 	Tags                     []*Tag       `json:"tags,omitempty"`
-	TPMSupport               *string      `json:"tpmSupport,omitempty"`
+	TpmSupport               *string      `json:"tpmSupport,omitempty"`
 	UsageOperation           *string      `json:"usageOperation,omitempty"`
 	UsageOperationUpdateTime *metav1.Time `json:"usageOperationUpdateTime,omitempty"`
 	VirtualizationType       *string      `json:"virtualizationType,omitempty"`
@@ -2860,7 +2859,6 @@ type PeeringAttachmentStatus struct {
 	Message *string `json:"message,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -2873,7 +2871,6 @@ type PeeringConnectionOptions struct {
 	AllowEgressFromLocalVPCToRemoteClassicLink *bool `json:"allowEgressFromLocalVPCToRemoteClassicLink,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -3170,7 +3167,7 @@ type RegisterInstanceTagAttributeRequest struct {
 //
 // For more information about operating Regions, see Create an IPAM (https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html)
 // in the Amazon VPC IPAM User Guide
-type RemoveIPAMOperatingRegion struct {
+type RemoveIPamOperatingRegion struct {
 	RegionName *string `json:"regionName,omitempty"`
 }
 
@@ -3188,7 +3185,7 @@ type ReplaceRootVolumeTask struct {
 }
 
 // A tag on an IPAM resource.
-type RequestIPAMResourceTag struct {
+type RequestIPamResourceTag struct {
 	Key   *string `json:"key,omitempty"`
 	Value *string `json:"value,omitempty"`
 }
@@ -3611,13 +3608,13 @@ type SecurityGroupRuleDescription struct {
 // You must specify exactly one of the following parameters, based on the rule
 // type:
 //
-//    * CidrIpv4
+//   - CidrIpv4
 //
-//    * CidrIpv6
+//   - CidrIpv6
 //
-//    * PrefixListId
+//   - PrefixListId
 //
-//    * ReferencedGroupId
+//   - ReferencedGroupId
 //
 // When you modify a rule, you cannot change the rule type. For example, if
 // the rule uses an IPv4 address range, you must use CidrIpv4 to specify a new
@@ -3999,7 +3996,7 @@ type Subnet_SDK struct {
 	CustomerOwnedIPv4Pool       *string                           `json:"customerOwnedIPv4Pool,omitempty"`
 	DefaultForAZ                *bool                             `json:"defaultForAZ,omitempty"`
 	EnableDNS64                 *bool                             `json:"enableDNS64,omitempty"`
-	EnableLNIAtDeviceIndex      *int64                            `json:"enableLNIAtDeviceIndex,omitempty"`
+	EnableLniAtDeviceIndex      *int64                            `json:"enableLniAtDeviceIndex,omitempty"`
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
 	IPv6Native                  *bool                             `json:"ipv6Native,omitempty"`
 	MapCustomerOwnedIPOnLaunch  *bool                             `json:"mapCustomerOwnedIPOnLaunch,omitempty"`
@@ -4468,7 +4465,6 @@ type TransitGateway_SDK struct {
 	TransitGatewayID  *string                `json:"transitGatewayID,omitempty"`
 }
 
-//
 // Currently available in limited preview only. If you are interested in using
 // this feature, contact your account manager.
 //
@@ -4599,7 +4595,6 @@ type VPCCIDRBlockState struct {
 	StatusMessage *string `json:"statusMessage,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -4667,7 +4662,6 @@ type VPCPeeringConnection struct {
 	VPCPeeringConnectionID *string      `json:"vpcPeeringConnectionID,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)

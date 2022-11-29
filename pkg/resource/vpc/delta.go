@@ -73,11 +73,11 @@ func newResourceDelta(
 			delta.Add("Spec.InstanceTenancy", a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.IPv4IPAMPoolID, b.ko.Spec.IPv4IPAMPoolID) {
-		delta.Add("Spec.IPv4IPAMPoolID", a.ko.Spec.IPv4IPAMPoolID, b.ko.Spec.IPv4IPAMPoolID)
-	} else if a.ko.Spec.IPv4IPAMPoolID != nil && b.ko.Spec.IPv4IPAMPoolID != nil {
-		if *a.ko.Spec.IPv4IPAMPoolID != *b.ko.Spec.IPv4IPAMPoolID {
-			delta.Add("Spec.IPv4IPAMPoolID", a.ko.Spec.IPv4IPAMPoolID, b.ko.Spec.IPv4IPAMPoolID)
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv4IPamPoolID, b.ko.Spec.IPv4IPamPoolID) {
+		delta.Add("Spec.IPv4IPamPoolID", a.ko.Spec.IPv4IPamPoolID, b.ko.Spec.IPv4IPamPoolID)
+	} else if a.ko.Spec.IPv4IPamPoolID != nil && b.ko.Spec.IPv4IPamPoolID != nil {
+		if *a.ko.Spec.IPv4IPamPoolID != *b.ko.Spec.IPv4IPamPoolID {
+			delta.Add("Spec.IPv4IPamPoolID", a.ko.Spec.IPv4IPamPoolID, b.ko.Spec.IPv4IPamPoolID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPv4NetmaskLength, b.ko.Spec.IPv4NetmaskLength) {
@@ -101,11 +101,11 @@ func newResourceDelta(
 			delta.Add("Spec.IPv6CIDRBlockNetworkBorderGroup", a.ko.Spec.IPv6CIDRBlockNetworkBorderGroup, b.ko.Spec.IPv6CIDRBlockNetworkBorderGroup)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.IPv6IPAMPoolID, b.ko.Spec.IPv6IPAMPoolID) {
-		delta.Add("Spec.IPv6IPAMPoolID", a.ko.Spec.IPv6IPAMPoolID, b.ko.Spec.IPv6IPAMPoolID)
-	} else if a.ko.Spec.IPv6IPAMPoolID != nil && b.ko.Spec.IPv6IPAMPoolID != nil {
-		if *a.ko.Spec.IPv6IPAMPoolID != *b.ko.Spec.IPv6IPAMPoolID {
-			delta.Add("Spec.IPv6IPAMPoolID", a.ko.Spec.IPv6IPAMPoolID, b.ko.Spec.IPv6IPAMPoolID)
+	if ackcompare.HasNilDifference(a.ko.Spec.IPv6IPamPoolID, b.ko.Spec.IPv6IPamPoolID) {
+		delta.Add("Spec.IPv6IPamPoolID", a.ko.Spec.IPv6IPamPoolID, b.ko.Spec.IPv6IPamPoolID)
+	} else if a.ko.Spec.IPv6IPamPoolID != nil && b.ko.Spec.IPv6IPamPoolID != nil {
+		if *a.ko.Spec.IPv6IPamPoolID != *b.ko.Spec.IPv6IPamPoolID {
+			delta.Add("Spec.IPv6IPamPoolID", a.ko.Spec.IPv6IPamPoolID, b.ko.Spec.IPv6IPamPoolID)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPv6NetmaskLength, b.ko.Spec.IPv6NetmaskLength) {

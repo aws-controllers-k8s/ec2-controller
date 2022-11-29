@@ -7,6 +7,14 @@ ignore:
     - AllocateAddressInput.TagSpecifications
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
+    - CreateFlowLogsInput.ResourceIds
+    - CreateFlowLogsInput.ResourceType
+    - CreateFlowLogsInput.TagSpecifications
+    - CreateFlowLogsInput.DeliverLogsPermissionARN
+    - CreateFlowLogsInput.DeliverLogsPermissionArn
+    - DescribeFlowLogsInput.FlowLogIds
+    - DescribeFlowLogsInput.DryRun
+    - CreateFlowLogsOutput.FlowLogIds
     - CreateInternetGatewayInput.DryRun
     - CreateInternetGatewayInput.TagSpecifications
     - CreateNatGatewayInput.ClientToken
@@ -600,6 +608,10 @@ resources:
         template_path: hooks/vpc/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/vpc/sdk_file_end.go.tpl
+  CreateFlowLogs:
+    operation_type:
+    - Create
+    resource_name: FlowLogs
   VpcEndpoint:
     fields:
       PolicyDocument:
