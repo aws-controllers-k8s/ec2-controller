@@ -396,8 +396,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.InstanceTenancy != nil {
 		res.SetInstanceTenancy(*r.ko.Spec.InstanceTenancy)
 	}
-	if r.ko.Spec.IPv4IPamPoolID != nil {
-		res.SetIpv4IpamPoolId(*r.ko.Spec.IPv4IPamPoolID)
+	if r.ko.Spec.IPv4IPAMPoolID != nil {
+		res.SetIpv4IpamPoolId(*r.ko.Spec.IPv4IPAMPoolID)
 	}
 	if r.ko.Spec.IPv4NetmaskLength != nil {
 		res.SetIpv4NetmaskLength(*r.ko.Spec.IPv4NetmaskLength)
@@ -408,8 +408,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.IPv6CIDRBlockNetworkBorderGroup != nil {
 		res.SetIpv6CidrBlockNetworkBorderGroup(*r.ko.Spec.IPv6CIDRBlockNetworkBorderGroup)
 	}
-	if r.ko.Spec.IPv6IPamPoolID != nil {
-		res.SetIpv6IpamPoolId(*r.ko.Spec.IPv6IPamPoolID)
+	if r.ko.Spec.IPv6IPAMPoolID != nil {
+		res.SetIpv6IpamPoolId(*r.ko.Spec.IPv6IPAMPoolID)
 	}
 	if r.ko.Spec.IPv6NetmaskLength != nil {
 		res.SetIpv6NetmaskLength(*r.ko.Spec.IPv6NetmaskLength)

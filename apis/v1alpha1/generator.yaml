@@ -9,7 +9,7 @@ ignore:
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.ResourceIds
     - CreateFlowLogsInput.ResourceType
-    # - CreateFlowLogsInput.TagSpecifications
+    - CreateFlowLogsInput.TagSpecifications
     - CreateFlowLogsInput.DeliverLogsPermissionARN
     - CreateFlowLogsInput.DeliverLogsPermissionArn
     - DescribeFlowLogsInput.FlowLogIds
@@ -148,7 +148,7 @@ operations:
   CreateFlowLogs:
     operation_type:
     - Create
-    resource_name: FlowLogs
+    resource_name: FlowLog
   DeleteVpcEndpoints:
     operation_type:
       - Delete
@@ -612,6 +612,15 @@ resources:
         template_path: hooks/vpc/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/vpc/sdk_file_end.go.tpl
+  FlowLog:
+    fields:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        is_primary_key: true
+        compare:
+          is_ignored: True
   VpcEndpoint:
     fields:
       PolicyDocument:

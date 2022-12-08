@@ -25,12 +25,12 @@ import (
 // Describes an internet gateway.
 type InternetGatewaySpec struct {
 	// The tags. The value parameter is required, but if you don't want the tag
-// to have a value, specify the parameter with no value, and we set the value
-// to an empty string.
-	 Tags []*Tag `json:"tags,omitempty"` 
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
-	 VPC *string `json:"vpc,omitempty"` 
-	 VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"` 
+	VPC    *string                                  `json:"vpc,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // InternetGatewayStatus defines the observed state of InternetGateway
@@ -64,8 +64,8 @@ type InternetGatewayStatus struct {
 type InternetGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec   InternetGatewaySpec   `json:"spec,omitempty"`
-	Status InternetGatewayStatus `json:"status,omitempty"`
+	Spec              InternetGatewaySpec   `json:"spec,omitempty"`
+	Status            InternetGatewayStatus `json:"status,omitempty"`
 }
 
 // InternetGatewayList contains a list of InternetGateway
@@ -73,7 +73,7 @@ type InternetGateway struct {
 type InternetGatewayList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items []InternetGateway `json:"items"`
+	Items           []InternetGateway `json:"items"`
 }
 
 func init() {

@@ -20,8 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// FlowLogsSpec defines the desired state of FlowLogs.
-type FlowLogsSpec struct {
+// FlowLogSpec defines the desired state of FlowLog.
+//
+// Describes a flow log.
+type FlowLogSpec struct {
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency
 	// of the request. For more information, see How to ensure idempotency (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Run_Instance_Idempotency.html).
 	ClientToken *string `json:"clientToken,omitempty"`
@@ -83,13 +85,17 @@ type FlowLogsSpec struct {
 	//
 	// Default: 600
 	MaxAggregationInterval *int64 `json:"maxAggregationInterval,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The type of traffic to log. You can log traffic that the resource accepts
 	// or rejects, or all traffic.
 	TrafficType *string `json:"trafficType,omitempty"`
 }
 
-// FlowLogsStatus defines the observed state of FlowLogs
-type FlowLogsStatus struct {
+// FlowLogStatus defines the observed state of FlowLog
+type FlowLogStatus struct {
 	// All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
 	// that is used to contain resource sync state, account ownership,
 	// constructed ARN for the resource
@@ -106,24 +112,24 @@ type FlowLogsStatus struct {
 	Unsuccessful []*UnsuccessfulItem `json:"unsuccessful,omitempty"`
 }
 
-// FlowLogs is the Schema for the FlowLogs API
+// FlowLog is the Schema for the FlowLogs API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-type FlowLogs struct {
+type FlowLog struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              FlowLogsSpec   `json:"spec,omitempty"`
-	Status            FlowLogsStatus `json:"status,omitempty"`
+	Spec              FlowLogSpec   `json:"spec,omitempty"`
+	Status            FlowLogStatus `json:"status,omitempty"`
 }
 
-// FlowLogsList contains a list of FlowLogs
+// FlowLogList contains a list of FlowLog
 // +kubebuilder:object:root=true
-type FlowLogsList struct {
+type FlowLogList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []FlowLogs `json:"items"`
+	Items           []FlowLog `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&FlowLogs{}, &FlowLogsList{})
+	SchemeBuilder.Register(&FlowLog{}, &FlowLogList{})
 }
