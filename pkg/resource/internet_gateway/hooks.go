@@ -39,7 +39,7 @@ func (rm *resourceManager) customUpdateInternetGateway(
 	// If the `modify` calls (i.e. `sync`) do NOT return
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
-	updated = desired
+	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.VPC") {
 		if latest.ko.Spec.VPC != nil {

@@ -40,7 +40,7 @@ func (rm *resourceManager) customUpdateSubnet(
 	// If the `modify` calls (i.e. `sync`) do NOT return
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
-	updated = desired
+	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.RouteTables") {
 		if err = rm.updateRouteTableAssociations(ctx, desired, latest, delta); err != nil {

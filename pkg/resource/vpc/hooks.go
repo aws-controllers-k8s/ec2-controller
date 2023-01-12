@@ -250,7 +250,7 @@ func (rm *resourceManager) customUpdateVPC(
 	// If the `modify` calls (i.e. `sync`) do NOT return
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
-	updated = desired
+	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.CIDRBlocks") {
 		if err := rm.syncCIDRBlocks(ctx, desired, latest); err != nil {
