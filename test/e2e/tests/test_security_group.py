@@ -35,7 +35,7 @@ MODIFY_WAIT_AFTER_SECONDS = 5
 
 @pytest.fixture
 def simple_security_group(request):
-    resource_name = random_suffix_name("security-group-tes", 24)
+    resource_name = random_suffix_name("security-group-test", 24)
     resource_file = "security_group"
     test_vpc = get_bootstrap_resources().SharedTestVPC
 
