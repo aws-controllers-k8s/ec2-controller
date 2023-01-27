@@ -463,18 +463,6 @@ func compareTags(
 	}
 }
 
-// defaultEgressRule returns the egress rule that
-// is created and associated with a security group by default
-func (rm *resourceManager) defaultEgressRule() *svcapitypes.IPPermission {
-	defaultRule := &svcapitypes.IPPermission{
-		IPRanges:   []*svcapitypes.IPRange{{CIDRIP: toStrPtr("0.0.0.0/0")}},
-		FromPort:   toInt64Ptr(-1),
-		IPProtocol: toStrPtr("-1"),
-		ToPort:     toInt64Ptr(-1),
-	}
-	return defaultRule
-}
-
 // containsRule returns true if security group rule
 // is found in the rule collection (all fields must match);
 // otherwise, return false.
