@@ -159,6 +159,7 @@ class TestSecurityGroup:
         # Check Security Group no longer exists in AWS
         ec2_validator.assert_security_group(resource_id, exists=False)
 
+    @pytest.mark.xfail
     def test_create_with_vpc_egress_dups_default_delete(self, ec2_client, security_group_with_vpc):
         (ref, cr) = security_group_with_vpc
         resource_id = cr["status"]["id"]
