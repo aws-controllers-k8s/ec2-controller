@@ -84,6 +84,61 @@ def simple_security_group(request):
     except:
         pass
 
+@pytest.fixture
+def security_group_with_vpc(request, simple_vpc):
+    (_, vpc_cr) = simple_vpc
+    vpc_id = vpc_cr["status"]["vpcID"]
+
+    assert vpc_id is not None
+
+    resource_name = random_suffix_name("security-group-vpc", 24)
+    resource_file = "security_group"
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["SECURITY_GROUP_NAME"] = resource_name
+    replacements["VPC_ID"] = vpc_id
+    replacements["SECURITY_GROUP_DESCRIPTION"] = "TestSecurityGroup"
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'resource_file' in data:
+            resource_file = data['resource_file']
+            replacements.update(data)
+        if 'tag_key' in data:
+            replacements["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            replacements["TAG_VALUE"] = data["tag_value"]
+
+    # Load Security Group CR
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestSecurityGroup:
@@ -102,6 +157,75 @@ class TestSecurityGroup:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check Security Group no longer exists in AWS
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    @pytest.mark.xfail
+    def test_create_with_vpc_egress_dups_default_delete(self, ec2_client, security_group_with_vpc):
+        (ref, cr) = security_group_with_vpc
+        resource_id = cr["status"]["id"]
+
+        # Check resource is late initialized successfully (sets default egress rule)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check Security Group exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_security_group(resource_id)
+
+        # Hook code should update Spec rules using data from ReadOne resp
+        assert len(cr["spec"]["egressRules"]) == 1
+
+        # Check default egress rule present
+        # default egress rule will be present iff user has NOT specified their own egress rules
+        assert len(cr["status"]["rules"]) == 1
+        sg_group = ec2_validator.get_security_group(resource_id)
+        egress_rules = sg_group["IpPermissionsEgress"]
+        assert len(egress_rules) == 1
+        logging.debug(f"Default Egress rule: {str(egress_rules[0])}")
+
+        # Check default egress rule data
+        assert egress_rules[0]["IpProtocol"] == "-1"
+        assert egress_rules[0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
+
+        # Add a new Egress rule that "duplicates" the default via patch
+        new_egress_rule = {
+                        "ipProtocol": "-1",
+                        "ipRanges": [{
+                            "cidrIP": "0.0.0.0/0",
+                            "description": "Allow traffic from all IPs - test"
+                        }]
+        }
+        patch = {"spec": {"egressRules":[new_egress_rule]}}
+        _ = k8s.patch_custom_resource(ref, patch)
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check resource gets into synced state
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # assert patched state
+        cr = k8s.get_resource(ref)
+        assert len(cr["status"]["rules"]) == 1
+
+        # Check egress rule exists
+        sg_group = ec2_validator.get_security_group(resource_id)
+        assert len(sg_group["IpPermissions"]) == 0
+        assert len(sg_group["IpPermissionsEgress"]) == 1
+
+        # Check egress rule data (i.e. ensure default egress rule removed)
+        assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
+        assert len(sg_group["IpPermissionsEgress"][0]["IpRanges"]) == 1
+        ip_range = sg_group["IpPermissionsEgress"][0]["IpRanges"][0]
+        assert ip_range["CidrIp"] == "0.0.0.0/0"
+        assert ip_range["Description"] == "Allow traffic from all IPs - test"
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Security Group no longer exists in AWS
+        # Deleting Security Group will also delete rules
         ec2_validator.assert_security_group(resource_id, exists=False)
 
     @pytest.mark.resource_data({
