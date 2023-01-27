@@ -202,8 +202,11 @@ class TestSecurityGroup:
         # Check resource gets into synced state
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        # Check egress rule exists
+        # assert patched state
+        cr = k8s.get_resource(ref)
         assert len(cr["status"]["rules"]) == 1
+
+        # Check egress rule exists
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 0
         assert len(sg_group["IpPermissionsEgress"]) == 1
