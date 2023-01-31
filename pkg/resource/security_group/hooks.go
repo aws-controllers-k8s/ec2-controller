@@ -20,6 +20,7 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	awserr "github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -353,6 +354,12 @@ func (rm *resourceManager) deleteDefaultSecurityGroupRule(
 	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, req)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidPermission.NotFound":
+				return
+			}
+		}
 		return err
 	}
 
