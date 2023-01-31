@@ -454,7 +454,6 @@ type ClassicLinkDNSSupport struct {
 	VPCID                   *string `json:"vpcID,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -2860,7 +2859,6 @@ type PeeringAttachmentStatus struct {
 	Message *string `json:"message,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -2873,7 +2871,6 @@ type PeeringConnectionOptions struct {
 	AllowEgressFromLocalVPCToRemoteClassicLink *bool `json:"allowEgressFromLocalVPCToRemoteClassicLink,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -3611,13 +3608,13 @@ type SecurityGroupRuleDescription struct {
 // You must specify exactly one of the following parameters, based on the rule
 // type:
 //
-//    * CidrIpv4
+//   - CidrIpv4
 //
-//    * CidrIpv6
+//   - CidrIpv6
 //
-//    * PrefixListId
+//   - PrefixListId
 //
-//    * ReferencedGroupId
+//   - ReferencedGroupId
 //
 // When you modify a rule, you cannot change the rule type. For example, if
 // the rule uses an IPv4 address range, you must use CidrIpv4 to specify a new
@@ -3999,7 +3996,7 @@ type Subnet_SDK struct {
 	CustomerOwnedIPv4Pool       *string                           `json:"customerOwnedIPv4Pool,omitempty"`
 	DefaultForAZ                *bool                             `json:"defaultForAZ,omitempty"`
 	EnableDNS64                 *bool                             `json:"enableDNS64,omitempty"`
-	EnableLNIAtDeviceIndex      *int64                            `json:"enableLNIAtDeviceIndex,omitempty"`
+	EnableLniAtDeviceIndex      *int64                            `json:"enableLniAtDeviceIndex,omitempty"`
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
 	IPv6Native                  *bool                             `json:"ipv6Native,omitempty"`
 	MapCustomerOwnedIPOnLaunch  *bool                             `json:"mapCustomerOwnedIPOnLaunch,omitempty"`
@@ -4468,7 +4465,6 @@ type TransitGateway_SDK struct {
 	TransitGatewayID  *string                `json:"transitGatewayID,omitempty"`
 }
 
-//
 // Currently available in limited preview only. If you are interested in using
 // this feature, contact your account manager.
 //
@@ -4599,7 +4595,6 @@ type VPCCIDRBlockState struct {
 	StatusMessage *string `json:"statusMessage,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -4667,7 +4662,6 @@ type VPCPeeringConnection struct {
 	VPCPeeringConnectionID *string      `json:"vpcPeeringConnectionID,omitempty"`
 }
 
-//
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)

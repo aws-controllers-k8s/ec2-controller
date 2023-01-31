@@ -24,6 +24,7 @@ import (
 //
 // Describes an instance.
 type InstanceSpec struct {
+
 	// The block device mapping, which defines the EBS volumes and instance store
 	// volumes to attach to the instance at launch. For more information, see Block
 	// device mappings (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-device-mapping-concepts.html)

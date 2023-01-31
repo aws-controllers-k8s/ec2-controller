@@ -46,32 +46,25 @@ type SubnetSpec struct {
 	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
 	//
 	// This parameter is not supported for an IPv6 only subnet.
-	CIDRBlock *string `json:"cidrBlock,omitempty"`
-
-	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
-
-	EnableDNS64 *bool `json:"enableDNS64,omitempty"`
-
-	EnableResourceNameDNSAAAARecord *bool `json:"enableResourceNameDNSAAAARecord,omitempty"`
-
-	EnableResourceNameDNSARecord *bool `json:"enableResourceNameDNSARecord,omitempty"`
-
-	HostnameType *string `json:"hostnameType,omitempty"`
+	CIDRBlock                       *string `json:"cidrBlock,omitempty"`
+	CustomerOwnedIPv4Pool           *string `json:"customerOwnedIPv4Pool,omitempty"`
+	EnableDNS64                     *bool   `json:"enableDNS64,omitempty"`
+	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
+	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
+	HostnameType                    *string `json:"hostnameType,omitempty"`
 	// The IPv6 network range for the subnet, in CIDR notation. The subnet size
 	// must use a /64 prefix length.
 	//
 	// This parameter is required for an IPv6 only subnet.
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
 	// Indicates whether to create an IPv6 only subnet.
-	IPv6Native *bool `json:"ipv6Native,omitempty"`
-
+	IPv6Native          *bool `json:"ipv6Native,omitempty"`
 	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
 	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
 	// ARN, you must also specify the Availability Zone of the Outpost subnet.
 	OutpostARN     *string                                    `json:"outpostARN,omitempty"`
 	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
-
-	RouteTables []*string `json:"routeTables,omitempty"`
+	RouteTables    []*string                                  `json:"routeTables,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
@@ -105,7 +98,7 @@ type SubnetStatus struct {
 	// For example, 1 indicates local network interfaces in this subnet are the
 	// secondary network interface (eth1).
 	// +kubebuilder:validation:Optional
-	EnableLNIAtDeviceIndex *int64 `json:"enableLNIAtDeviceIndex,omitempty"`
+	EnableLniAtDeviceIndex *int64 `json:"enableLniAtDeviceIndex,omitempty"`
 	// Information about the IPv6 CIDR blocks associated with the subnet.
 	// +kubebuilder:validation:Optional
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`

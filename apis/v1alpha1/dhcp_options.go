@@ -24,6 +24,7 @@ import (
 //
 // Describes a set of DHCP options.
 type DHCPOptionsSpec struct {
+
 	// A DHCP configuration option.
 	// +kubebuilder:validation:Required
 	DHCPConfigurations []*NewDHCPConfiguration `json:"dhcpConfigurations"`

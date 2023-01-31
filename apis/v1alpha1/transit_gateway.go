@@ -24,6 +24,7 @@ import (
 //
 // Describes a transit gateway.
 type TransitGatewaySpec struct {
+
 	// A description of the transit gateway.
 	Description *string `json:"description,omitempty"`
 	// The transit gateway options.

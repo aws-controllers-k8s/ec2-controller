@@ -151,62 +151,50 @@ func resolveReferenceForRoutes_GatewayID(
 	if ko.Spec.Routes == nil {
 		return nil
 	}
-
-	if len(ko.Spec.Routes) > 0 {
-		for _, elem := range ko.Spec.Routes {
-			arrw := elem.GatewayRef
-
-			if arrw == nil || arrw.From == nil {
-				continue
-			}
-
-			arr := arrw.From
-			if arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name:      *arr.Name,
-			}
-			obj := svcapitypes.InternetGateway{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
-				return err
-			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
-				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
-				}
-			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"InternetGateway",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"InternetGateway",
-					namespace, *arr.Name)
-			}
-			if obj.Status.InternetGatewayID == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"InternetGateway",
-					namespace, *arr.Name,
-					"Status.InternetGatewayID")
-			}
-			referencedValue := string(*obj.Status.InternetGatewayID)
-			elem.GatewayID = &referencedValue
+	if ko.Spec.Routes.GatewayRef != nil &&
+		ko.Spec.Routes.GatewayRef.From != nil {
+		arr := ko.Spec.Routes.GatewayRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
 		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.InternetGateway{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"InternetGateway",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"InternetGateway",
+				namespace, *arr.Name)
+		}
+		if obj.Status.InternetGatewayID == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"InternetGateway",
+				namespace, *arr.Name,
+				"Status.InternetGatewayID")
+		}
+		referencedValue := string(*obj.Status.InternetGatewayID)
+		ko.Spec.Routes.GatewayID = &referencedValue
 	}
 	return nil
 }
@@ -223,62 +211,50 @@ func resolveReferenceForRoutes_NATGatewayID(
 	if ko.Spec.Routes == nil {
 		return nil
 	}
-
-	if len(ko.Spec.Routes) > 0 {
-		for _, elem := range ko.Spec.Routes {
-			arrw := elem.NATGatewayRef
-
-			if arrw == nil || arrw.From == nil {
-				continue
-			}
-
-			arr := arrw.From
-			if arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name:      *arr.Name,
-			}
-			obj := svcapitypes.NATGateway{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
-				return err
-			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
-				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
-				}
-			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"NATGateway",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"NATGateway",
-					namespace, *arr.Name)
-			}
-			if obj.Status.NATGatewayID == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"NATGateway",
-					namespace, *arr.Name,
-					"Status.NATGatewayID")
-			}
-			referencedValue := string(*obj.Status.NATGatewayID)
-			elem.NATGatewayID = &referencedValue
+	if ko.Spec.Routes.NATGatewayRef != nil &&
+		ko.Spec.Routes.NATGatewayRef.From != nil {
+		arr := ko.Spec.Routes.NATGatewayRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
 		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.NATGateway{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"NATGateway",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"NATGateway",
+				namespace, *arr.Name)
+		}
+		if obj.Status.NATGatewayID == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"NATGateway",
+				namespace, *arr.Name,
+				"Status.NATGatewayID")
+		}
+		referencedValue := string(*obj.Status.NATGatewayID)
+		ko.Spec.Routes.NATGatewayID = &referencedValue
 	}
 	return nil
 }
@@ -295,62 +271,50 @@ func resolveReferenceForRoutes_TransitGatewayID(
 	if ko.Spec.Routes == nil {
 		return nil
 	}
-
-	if len(ko.Spec.Routes) > 0 {
-		for _, elem := range ko.Spec.Routes {
-			arrw := elem.TransitGatewayRef
-
-			if arrw == nil || arrw.From == nil {
-				continue
-			}
-
-			arr := arrw.From
-			if arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name:      *arr.Name,
-			}
-			obj := svcapitypes.TransitGateway{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
-				return err
-			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
-				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
-				}
-			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"TransitGateway",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"TransitGateway",
-					namespace, *arr.Name)
-			}
-			if obj.Status.TransitGatewayID == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"TransitGateway",
-					namespace, *arr.Name,
-					"Status.TransitGatewayID")
-			}
-			referencedValue := string(*obj.Status.TransitGatewayID)
-			elem.TransitGatewayID = &referencedValue
+	if ko.Spec.Routes.TransitGatewayRef != nil &&
+		ko.Spec.Routes.TransitGatewayRef.From != nil {
+		arr := ko.Spec.Routes.TransitGatewayRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
 		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.TransitGateway{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"TransitGateway",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"TransitGateway",
+				namespace, *arr.Name)
+		}
+		if obj.Status.TransitGatewayID == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"TransitGateway",
+				namespace, *arr.Name,
+				"Status.TransitGatewayID")
+		}
+		referencedValue := string(*obj.Status.TransitGatewayID)
+		ko.Spec.Routes.TransitGatewayID = &referencedValue
 	}
 	return nil
 }
@@ -367,62 +331,50 @@ func resolveReferenceForRoutes_VPCEndpointID(
 	if ko.Spec.Routes == nil {
 		return nil
 	}
-
-	if len(ko.Spec.Routes) > 0 {
-		for _, elem := range ko.Spec.Routes {
-			arrw := elem.VPCEndpointRef
-
-			if arrw == nil || arrw.From == nil {
-				continue
-			}
-
-			arr := arrw.From
-			if arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name:      *arr.Name,
-			}
-			obj := svcapitypes.VPCEndpoint{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
-				return err
-			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
-				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
-				}
-			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"VPCEndpoint",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"VPCEndpoint",
-					namespace, *arr.Name)
-			}
-			if obj.Status.VPCEndpointID == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"VPCEndpoint",
-					namespace, *arr.Name,
-					"Status.VPCEndpointID")
-			}
-			referencedValue := string(*obj.Status.VPCEndpointID)
-			elem.VPCEndpointID = &referencedValue
+	if ko.Spec.Routes.VPCEndpointRef != nil &&
+		ko.Spec.Routes.VPCEndpointRef.From != nil {
+		arr := ko.Spec.Routes.VPCEndpointRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
 		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name:      *arr.Name,
+		}
+		obj := svcapitypes.VPCEndpoint{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"VPCEndpoint",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"VPCEndpoint",
+				namespace, *arr.Name)
+		}
+		if obj.Status.VPCEndpointID == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"VPCEndpoint",
+				namespace, *arr.Name,
+				"Status.VPCEndpointID")
+		}
+		referencedValue := string(*obj.Status.VPCEndpointID)
+		ko.Spec.Routes.VPCEndpointID = &referencedValue
 	}
 	return nil
 }
