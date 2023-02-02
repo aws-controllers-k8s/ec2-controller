@@ -22,6 +22,7 @@ import (
 
 // ElasticIPAddressSpec defines the desired state of ElasticIPAddress.
 type ElasticIPAddressSpec struct {
+
 	// [EC2-VPC] The Elastic IP address to recover or an IPv4 address from an address
 	// pool.
 	Address *string `json:"address,omitempty"`
