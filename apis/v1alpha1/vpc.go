@@ -24,11 +24,11 @@ import (
 //
 // Describes a VPC.
 type VPCSpec struct {
+
 	// Requests an Amazon-provided IPv6 CIDR block with a /56 prefix length for
 	// the VPC. You cannot specify the range of IP addresses, or the size of the
 	// CIDR block.
 	AmazonProvidedIPv6CIDRBlock *bool `json:"amazonProvidedIPv6CIDRBlock,omitempty"`
-
 	// +kubebuilder:validation:Required
 	CIDRBlocks []*string `json:"cidrBlocks"`
 	// The attribute value. The valid values are true or false.

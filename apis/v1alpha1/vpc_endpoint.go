@@ -24,6 +24,7 @@ import (
 //
 // Describes a VPC endpoint.
 type VPCEndpointSpec struct {
+
 	// The DNS options for the endpoint.
 	DNSOptions *DNSOptionsSpecification `json:"dnsOptions,omitempty"`
 	// The IP address type for the endpoint.

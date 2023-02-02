@@ -24,6 +24,7 @@ import (
 //
 // Describes a NAT gateway.
 type NATGatewaySpec struct {
+
 	// [Public NAT gateways only] The allocation ID of an Elastic IP address to
 	// associate with the NAT gateway. You cannot specify an Elastic IP address
 	// with a private NAT gateway. If the Elastic IP address is associated with

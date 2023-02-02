@@ -24,6 +24,7 @@ import (
 //
 // Describes a security group.
 type SecurityGroupSpec struct {
+
 	// A description for the security group. This is informational only.
 	//
 	// Constraints: Up to 255 characters in length
@@ -32,10 +33,8 @@ type SecurityGroupSpec struct {
 	//
 	// Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
 	// +kubebuilder:validation:Required
-	Description *string `json:"description"`
-
-	EgressRules []*IPPermission `json:"egressRules,omitempty"`
-
+	Description  *string         `json:"description"`
+	EgressRules  []*IPPermission `json:"egressRules,omitempty"`
 	IngressRules []*IPPermission `json:"ingressRules,omitempty"`
 	// The name of the security group.
 	//

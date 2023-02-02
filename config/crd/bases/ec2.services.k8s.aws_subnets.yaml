@@ -215,7 +215,7 @@ spec:
                 description: Indicates whether this is the default subnet for the
                   Availability Zone.
                 type: boolean
-              enableLNIAtDeviceIndex:
+              enableLniAtDeviceIndex:
                 description: Indicates the device position for local network interfaces
                   in this subnet. For example, 1 indicates local network interfaces
                   in this subnet are the secondary network interface (eth1).
