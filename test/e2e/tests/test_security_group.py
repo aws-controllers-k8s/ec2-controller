@@ -35,7 +35,7 @@ MODIFY_WAIT_AFTER_SECONDS = 5
 
 @pytest.fixture
 def simple_security_group(request):
-    resource_name = random_suffix_name("security-group-tes", 24)
+    resource_name = random_suffix_name("security-group-test", 24)
     resource_file = "security_group"
     test_vpc = get_bootstrap_resources().SharedTestVPC
 
@@ -159,7 +159,6 @@ class TestSecurityGroup:
         # Check Security Group no longer exists in AWS
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    @pytest.mark.xfail
     def test_create_with_vpc_egress_dups_default_delete(self, ec2_client, security_group_with_vpc):
         (ref, cr) = security_group_with_vpc
         resource_id = cr["status"]["id"]

@@ -20,6 +20,7 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	awserr "github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -353,6 +354,12 @@ func (rm *resourceManager) deleteDefaultSecurityGroupRule(
 	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, req)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidPermission.NotFound":
+				return
+			}
+		}
 		return err
 	}
 
@@ -461,18 +468,6 @@ func compareTags(
 			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 		}
 	}
-}
-
-// defaultEgressRule returns the egress rule that
-// is created and associated with a security group by default
-func (rm *resourceManager) defaultEgressRule() *svcapitypes.IPPermission {
-	defaultRule := &svcapitypes.IPPermission{
-		IPRanges:   []*svcapitypes.IPRange{{CIDRIP: toStrPtr("0.0.0.0/0")}},
-		FromPort:   toInt64Ptr(-1),
-		IPProtocol: toStrPtr("-1"),
-		ToPort:     toInt64Ptr(-1),
-	}
-	return defaultRule
 }
 
 // containsRule returns true if security group rule
