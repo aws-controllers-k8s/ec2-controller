@@ -78,10 +78,10 @@ spec:
                 type: array
               routeTableRefs:
                 items:
-                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
                     *AWSResourceReference type to provide more user friendly syntax
-                    for references using ''from'' field Ex: APIIDRef: from: name:
-                    my-api'
+                    for references using 'from' field Ex: APIIDRef: \n from: name:
+                    my-api"
                   properties:
                     from:
                       description: AWSResourceReference provides all the values necessary
@@ -100,10 +100,10 @@ spec:
                 type: array
               securityGroupRefs:
                 items:
-                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
                     *AWSResourceReference type to provide more user friendly syntax
-                    for references using ''from'' field Ex: APIIDRef: from: name:
-                    my-api'
+                    for references using 'from' field Ex: APIIDRef: \n from: name:
+                    my-api"
                   properties:
                     from:
                       description: AWSResourceReference provides all the values necessary
@@ -129,10 +129,10 @@ spec:
                 type: array
               subnetRefs:
                 items:
-                  description: 'AWSResourceReferenceWrapper provides a wrapper around
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
                     *AWSResourceReference type to provide more user friendly syntax
-                    for references using ''from'' field Ex: APIIDRef: from: name:
-                    my-api'
+                    for references using 'from' field Ex: APIIDRef: \n from: name:
+                    my-api"
                   properties:
                     from:
                       description: AWSResourceReference provides all the values necessary
@@ -163,9 +163,9 @@ spec:
                 description: The ID of the VPC in which the endpoint will be used.
                 type: string
               vpcRef:
-                description: 'AWSResourceReferenceWrapper provides a wrapper around
+                description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference type to provide more user friendly syntax
-                  for references using ''from'' field Ex: APIIDRef: from: name: my-api'
+                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
                 properties:
                   from:
                     description: AWSResourceReference provides all the values necessary
