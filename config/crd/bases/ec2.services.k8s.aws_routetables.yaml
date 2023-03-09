@@ -57,66 +57,18 @@ spec:
                       type: string
                     gatewayID:
                       type: string
-                    gatewayRef:
-                      description: Reference field for GatewayID
-                      properties:
-                        from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
-                          properties:
-                            name:
-                              type: string
-                          type: object
-                      type: object
                     instanceID:
                       type: string
                     localGatewayID:
                       type: string
                     natGatewayID:
                       type: string
-                    natGatewayRef:
-                      description: Reference field for NATGatewayID
-                      properties:
-                        from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
-                          properties:
-                            name:
-                              type: string
-                          type: object
-                      type: object
                     networkInterfaceID:
                       type: string
                     transitGatewayID:
                       type: string
-                    transitGatewayRef:
-                      description: Reference field for TransitGatewayID
-                      properties:
-                        from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
-                          properties:
-                            name:
-                              type: string
-                          type: object
-                      type: object
                     vpcEndpointID:
                       type: string
-                    vpcEndpointRef:
-                      description: Reference field for VPCEndpointID
-                      properties:
-                        from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
-                          properties:
-                            name:
-                              type: string
-                          type: object
-                      type: object
                     vpcPeeringConnectionID:
                       type: string
                   type: object

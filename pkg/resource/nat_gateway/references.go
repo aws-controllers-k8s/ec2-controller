@@ -94,50 +94,68 @@ func resolveReferenceForAllocationID(
 	namespace string,
 	ko *svcapitypes.NATGateway,
 ) error {
-	if ko.Spec.AllocationRef != nil &&
-		ko.Spec.AllocationRef.From != nil {
+	if ko.Spec.AllocationRef != nil && ko.Spec.AllocationRef.From != nil {
 		arr := ko.Spec.AllocationRef.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty")
+			return fmt.Errorf("provided resource reference is nil or empty: AllocationRef")
 		}
-		namespacedName := types.NamespacedName{
-			Namespace: namespace,
-			Name:      *arr.Name,
-		}
-		obj := svcapitypes.ElasticIPAddress{}
-		err := apiReader.Get(ctx, namespacedName, &obj)
-		if err != nil {
+		obj := &svcapitypes.ElasticIPAddress{}
+		if err := getReferencedResourceState_ElasticIPAddress(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
-		var refResourceSynced, refResourceTerminal bool
-		for _, cond := range obj.Status.Conditions {
-			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceSynced = true
-			}
-			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceTerminal = true
-			}
+		ko.Spec.AllocationID = (*string)(obj.Status.AllocationID)
+	}
+
+	return nil
+}
+
+// getReferencedResourceState_ElasticIPAddress looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_ElasticIPAddress(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.ElasticIPAddress,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceSynced, refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
 		}
-		if refResourceTerminal {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
 			return ackerr.ResourceReferenceTerminalFor(
 				"ElasticIPAddress",
-				namespace, *arr.Name)
+				namespace, name)
 		}
-		if !refResourceSynced {
-			return ackerr.ResourceReferenceNotSyncedFor(
-				"ElasticIPAddress",
-				namespace, *arr.Name)
-		}
-		if obj.Status.AllocationID == nil {
-			return ackerr.ResourceReferenceMissingTargetFieldFor(
-				"ElasticIPAddress",
-				namespace, *arr.Name,
-				"Status.AllocationID")
-		}
-		referencedValue := string(*obj.Status.AllocationID)
-		ko.Spec.AllocationID = &referencedValue
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"ElasticIPAddress",
+			namespace, name)
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"ElasticIPAddress",
+			namespace, name)
+	}
+	if obj.Status.AllocationID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"ElasticIPAddress",
+			namespace, name,
+			"Status.AllocationID")
 	}
 	return nil
 }
@@ -151,50 +169,68 @@ func resolveReferenceForSubnetID(
 	namespace string,
 	ko *svcapitypes.NATGateway,
 ) error {
-	if ko.Spec.SubnetRef != nil &&
-		ko.Spec.SubnetRef.From != nil {
+	if ko.Spec.SubnetRef != nil && ko.Spec.SubnetRef.From != nil {
 		arr := ko.Spec.SubnetRef.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty")
+			return fmt.Errorf("provided resource reference is nil or empty: SubnetRef")
 		}
-		namespacedName := types.NamespacedName{
-			Namespace: namespace,
-			Name:      *arr.Name,
-		}
-		obj := svcapitypes.Subnet{}
-		err := apiReader.Get(ctx, namespacedName, &obj)
-		if err != nil {
+		obj := &svcapitypes.Subnet{}
+		if err := getReferencedResourceState_Subnet(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
-		var refResourceSynced, refResourceTerminal bool
-		for _, cond := range obj.Status.Conditions {
-			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceSynced = true
-			}
-			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceTerminal = true
-			}
+		ko.Spec.SubnetID = (*string)(obj.Status.SubnetID)
+	}
+
+	return nil
+}
+
+// getReferencedResourceState_Subnet looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Subnet(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.Subnet,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceSynced, refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
 		}
-		if refResourceTerminal {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
 			return ackerr.ResourceReferenceTerminalFor(
 				"Subnet",
-				namespace, *arr.Name)
+				namespace, name)
 		}
-		if !refResourceSynced {
-			return ackerr.ResourceReferenceNotSyncedFor(
-				"Subnet",
-				namespace, *arr.Name)
-		}
-		if obj.Status.SubnetID == nil {
-			return ackerr.ResourceReferenceMissingTargetFieldFor(
-				"Subnet",
-				namespace, *arr.Name,
-				"Status.SubnetID")
-		}
-		referencedValue := string(*obj.Status.SubnetID)
-		ko.Spec.SubnetID = &referencedValue
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Subnet",
+			namespace, name)
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Subnet",
+			namespace, name)
+	}
+	if obj.Status.SubnetID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Subnet",
+			namespace, name,
+			"Status.SubnetID")
 	}
 	return nil
 }

@@ -659,21 +659,13 @@ type CreateRouteInput struct {
 	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
 	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
 	GatewayID                   *string `json:"gatewayID,omitempty"`
-	// Reference field for GatewayID
-	GatewayRef     *ackv1alpha1.AWSResourceReferenceWrapper `json:"gatewayRef,omitempty"`
-	InstanceID     *string                                  `json:"instanceID,omitempty"`
-	LocalGatewayID *string                                  `json:"localGatewayID,omitempty"`
-	NATGatewayID   *string                                  `json:"natGatewayID,omitempty"`
-	// Reference field for NATGatewayID
-	NATGatewayRef      *ackv1alpha1.AWSResourceReferenceWrapper `json:"natGatewayRef,omitempty"`
-	NetworkInterfaceID *string                                  `json:"networkInterfaceID,omitempty"`
-	TransitGatewayID   *string                                  `json:"transitGatewayID,omitempty"`
-	// Reference field for TransitGatewayID
-	TransitGatewayRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"transitGatewayRef,omitempty"`
-	VPCEndpointID     *string                                  `json:"vpcEndpointID,omitempty"`
-	// Reference field for VPCEndpointID
-	VPCEndpointRef         *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcEndpointRef,omitempty"`
-	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	InstanceID                  *string `json:"instanceID,omitempty"`
+	LocalGatewayID              *string `json:"localGatewayID,omitempty"`
+	NATGatewayID                *string `json:"natGatewayID,omitempty"`
+	NetworkInterfaceID          *string `json:"networkInterfaceID,omitempty"`
+	TransitGatewayID            *string `json:"transitGatewayID,omitempty"`
+	VPCEndpointID               *string `json:"vpcEndpointID,omitempty"`
+	VPCPeeringConnectionID      *string `json:"vpcPeeringConnectionID,omitempty"`
 }
 
 // Describes the options for a VPC attachment.
@@ -3044,6 +3036,7 @@ type PrivateDNSDetails struct {
 // Information about the private DNS name for the service endpoint.
 type PrivateDNSNameConfiguration struct {
 	Name  *string `json:"name,omitempty"`
+	State *string `json:"state,omitempty"`
 	Type  *string `json:"type_,omitempty"`
 	Value *string `json:"value,omitempty"`
 }
@@ -3655,24 +3648,39 @@ type ServiceConfiguration struct {
 	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
 	ManagesVPCEndpoints     *bool     `json:"managesVPCEndpoints,omitempty"`
 	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
+	PayerResponsibility     *string   `json:"payerResponsibility,omitempty"`
 	PrivateDNSName          *string   `json:"privateDNSName,omitempty"`
-	ServiceID               *string   `json:"serviceID,omitempty"`
-	ServiceName             *string   `json:"serviceName,omitempty"`
-	Tags                    []*Tag    `json:"tags,omitempty"`
+	// Information about the private DNS name for the service endpoint.
+	PrivateDNSNameConfiguration *PrivateDNSNameConfiguration `json:"privateDNSNameConfiguration,omitempty"`
+	ServiceID                   *string                      `json:"serviceID,omitempty"`
+	ServiceName                 *string                      `json:"serviceName,omitempty"`
+	ServiceState                *string                      `json:"serviceState,omitempty"`
+	ServiceType                 []*ServiceTypeDetail         `json:"serviceType,omitempty"`
+	SupportedIPAddressTypes     []*string                    `json:"supportedIPAddressTypes,omitempty"`
+	Tags                        []*Tag                       `json:"tags,omitempty"`
 }
 
 // Describes a VPC endpoint service.
 type ServiceDetail struct {
-	AcceptanceRequired         *bool     `json:"acceptanceRequired,omitempty"`
-	AvailabilityZones          []*string `json:"availabilityZones,omitempty"`
-	BaseEndpointDNSNames       []*string `json:"baseEndpointDNSNames,omitempty"`
-	ManagesVPCEndpoints        *bool     `json:"managesVPCEndpoints,omitempty"`
-	Owner                      *string   `json:"owner,omitempty"`
-	PrivateDNSName             *string   `json:"privateDNSName,omitempty"`
-	ServiceID                  *string   `json:"serviceID,omitempty"`
-	ServiceName                *string   `json:"serviceName,omitempty"`
-	Tags                       []*Tag    `json:"tags,omitempty"`
-	VPCEndpointPolicySupported *bool     `json:"vpcEndpointPolicySupported,omitempty"`
+	AcceptanceRequired              *bool                `json:"acceptanceRequired,omitempty"`
+	AvailabilityZones               []*string            `json:"availabilityZones,omitempty"`
+	BaseEndpointDNSNames            []*string            `json:"baseEndpointDNSNames,omitempty"`
+	ManagesVPCEndpoints             *bool                `json:"managesVPCEndpoints,omitempty"`
+	Owner                           *string              `json:"owner,omitempty"`
+	PayerResponsibility             *string              `json:"payerResponsibility,omitempty"`
+	PrivateDNSName                  *string              `json:"privateDNSName,omitempty"`
+	PrivateDNSNameVerificationState *string              `json:"privateDNSNameVerificationState,omitempty"`
+	ServiceID                       *string              `json:"serviceID,omitempty"`
+	ServiceName                     *string              `json:"serviceName,omitempty"`
+	ServiceType                     []*ServiceTypeDetail `json:"serviceType,omitempty"`
+	SupportedIPAddressTypes         []*string            `json:"supportedIPAddressTypes,omitempty"`
+	Tags                            []*Tag               `json:"tags,omitempty"`
+	VPCEndpointPolicySupported      *bool                `json:"vpcEndpointPolicySupported,omitempty"`
+}
+
+// Describes the type of service for a VPC endpoint.
+type ServiceTypeDetail struct {
+	ServiceType *string `json:"serviceType,omitempty"`
 }
 
 // Describes the time period for a Scheduled Instance to start its first schedule.

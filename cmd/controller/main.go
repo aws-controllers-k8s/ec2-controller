@@ -45,6 +45,7 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/transit_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint_service_configuration"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/version"
 )

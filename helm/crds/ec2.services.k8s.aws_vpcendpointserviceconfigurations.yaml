@@ -5,24 +5,28 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: routetables.ec2.services.k8s.aws
+  name: vpcendpointserviceconfigurations.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
   names:
-    kind: RouteTable
-    listKind: RouteTableList
-    plural: routetables
-    singular: routetable
+    kind: VPCEndpointServiceConfiguration
+    listKind: VPCEndpointServiceConfigurationList
+    plural: vpcendpointserviceconfigurations
+    singular: vpcendpointserviceconfiguration
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.routeTableID
-      name: ID
+    - jsonPath: .status.serviceID
+      name: ServiceID
+      type: string
+    - jsonPath: .status.serviceState
+      name: ServiceState
       type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: RouteTable is the Schema for the RouteTables API
+        description: VPCEndpointServiceConfiguration is the Schema for the VPCEndpointServiceConfigurations
+          API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,41 +41,34 @@ spec:
           metadata:
             type: object
           spec:
-            description: "RouteTableSpec defines the desired state of RouteTable.
-              \n Describes a route table."
+            description: VpcEndpointServiceConfigurationSpec defines the desired state
+              of VpcEndpointServiceConfiguration.
             properties:
-              routes:
+              acceptanceRequired:
+                description: Indicates whether requests from service consumers to
+                  create an endpoint to your service must be accepted manually.
+                type: boolean
+              gatewayLoadBalancerARNs:
+                description: The Amazon Resource Names (ARNs) of one or more Gateway
+                  Load Balancers.
                 items:
-                  properties:
-                    carrierGatewayID:
-                      type: string
-                    coreNetworkARN:
-                      type: string
-                    destinationCIDRBlock:
-                      type: string
-                    destinationIPv6CIDRBlock:
-                      type: string
-                    destinationPrefixListID:
-                      type: string
-                    egressOnlyInternetGatewayID:
-                      type: string
-                    gatewayID:
-                      type: string
-                    instanceID:
-                      type: string
-                    localGatewayID:
-                      type: string
-                    natGatewayID:
-                      type: string
-                    networkInterfaceID:
-                      type: string
-                    transitGatewayID:
-                      type: string
-                    vpcEndpointID:
-                      type: string
-                    vpcPeeringConnectionID:
-                      type: string
-                  type: object
+                  type: string
+                type: array
+              networkLoadBalancerARNs:
+                description: The Amazon Resource Names (ARNs) of one or more Network
+                  Load Balancers for your service.
+                items:
+                  type: string
+                type: array
+              privateDNSName:
+                description: (Interface endpoint configuration) The private DNS name
+                  to assign to the VPC endpoint service.
+                type: string
+              supportedIPAddressTypes:
+                description: The supported IP address types. The possible values are
+                  ipv4 and ipv6.
+                items:
+                  type: string
                 type: array
               tags:
                 description: The tags. The value parameter is required, but if you
@@ -86,25 +83,10 @@ spec:
                       type: string
                   type: object
                 type: array
-              vpcID:
-                description: The ID of the VPC.
-                type: string
-              vpcRef:
-                description: "AWSResourceReferenceWrapper provides a wrapper around
-                  *AWSResourceReference type to provide more user friendly syntax
-                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
-                properties:
-                  from:
-                    description: AWSResourceReference provides all the values necessary
-                      to reference another k8s resource for finding the identifier(Id/ARN/Name)
-                    properties:
-                      name:
-                        type: string
-                    type: object
-                type: object
             type: object
           status:
-            description: RouteTableStatus defines the observed state of RouteTable
+            description: VPCEndpointServiceConfigurationStatus defines the observed
+              state of VPCEndpointServiceConfiguration
             properties:
               ackResourceMetadata:
                 description: All CRs managed by ACK have a common `Status.ACKResourceMetadata`
@@ -134,33 +116,15 @@ spec:
                 - ownerAccountID
                 - region
                 type: object
-              associations:
-                description: The associations between the route table and one or more
-                  subnets or a gateway.
+              availabilityZones:
+                description: The Availability Zones in which the service is available.
                 items:
-                  description: Describes an association between a route table and
-                    a subnet or gateway.
-                  properties:
-                    associationState:
-                      description: Describes the state of an association between a
-                        route table and a subnet or gateway.
-                      properties:
-                        state:
-                          type: string
-                        statusMessage:
-                          type: string
-                      type: object
-                    gatewayID:
-                      type: string
-                    main:
-                      type: boolean
-                    routeTableAssociationID:
-                      type: string
-                    routeTableID:
-                      type: string
-                    subnetID:
-                      type: string
-                  type: object
+                  type: string
+                type: array
+              baseEndpointDNSNames:
+                description: The DNS names for the service.
+                items:
+                  type: string
                 type: array
               conditions:
                 description: All CRS managed by ACK have a common `Status.Conditions`
@@ -195,61 +159,45 @@ spec:
                   - type
                   type: object
                 type: array
-              ownerID:
-                description: The ID of the Amazon Web Services account that owns the
-                  route table.
+              managesVPCEndpoints:
+                description: Indicates whether the service manages its VPC endpoints.
+                  Management of the service VPC endpoints using the VPC endpoint API
+                  is restricted.
+                type: boolean
+              payerResponsibility:
+                description: The payer responsibility.
                 type: string
-              propagatingVGWs:
-                description: Any virtual private gateway (VGW) propagating routes.
+              privateDNSNameConfiguration:
+                description: Information about the endpoint service private DNS name
+                  configuration.
+                properties:
+                  name:
+                    type: string
+                  state:
+                    type: string
+                  type_:
+                    type: string
+                  value:
+                    type: string
+                type: object
+              serviceID:
+                description: The ID of the service.
+                type: string
+              serviceName:
+                description: The name of the service.
+                type: string
+              serviceState:
+                description: The service state.
+                type: string
+              serviceType:
+                description: The type of service.
                 items:
-                  description: Describes a virtual private gateway propagating route.
+                  description: Describes the type of service for a VPC endpoint.
                   properties:
-                    gatewayID:
+                    serviceType:
                       type: string
                   type: object
                 type: array
-              routeStatuses:
-                description: The routes in the route table.
-                items:
-                  description: Describes a route in a route table.
-                  properties:
-                    carrierGatewayID:
-                      type: string
-                    coreNetworkARN:
-                      type: string
-                    destinationCIDRBlock:
-                      type: string
-                    destinationIPv6CIDRBlock:
-                      type: string
-                    destinationPrefixListID:
-                      type: string
-                    egressOnlyInternetGatewayID:
-                      type: string
-                    gatewayID:
-                      type: string
-                    instanceID:
-                      type: string
-                    instanceOwnerID:
-                      type: string
-                    localGatewayID:
-                      type: string
-                    natGatewayID:
-                      type: string
-                    networkInterfaceID:
-                      type: string
-                    origin:
-                      type: string
-                    state:
-                      type: string
-                    transitGatewayID:
-                      type: string
-                    vpcPeeringConnectionID:
-                      type: string
-                  type: object
-                type: array
-              routeTableID:
-                description: The ID of the route table.
-                type: string
             type: object
         type: object
     served: true

@@ -29,6 +29,9 @@ ignore:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
+    - CreateVpcEndpointServiceConfigurationInput.ClientToken
+    - CreateVpcEndpointServiceConfigurationInput.DryRun
+    - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
@@ -111,7 +114,7 @@ ignore:
     #- TransitGateway
     - Volume
     - VpcEndpointConnectionNotification
-    - VpcEndpointServiceConfiguration
+    #- VpcEndpointServiceConfiguration
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
@@ -141,6 +144,12 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  CreateVpcEndpointServiceConfiguration:
+    output_wrapper_field_path: ServiceConfiguration
+  DeleteVpcEndpointServiceConfigurations:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpointServiceConfiguration
   RunInstances:
     #ouput shape: Reservation
     output_wrapper_field_path: Instances
@@ -378,22 +387,22 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
-      Routes.GatewayId:
-        references:
-          resource: InternetGateway
-          path: Status.InternetGatewayID
-      Routes.NatGatewayId:
-        references:
-          resource: NATGateway
-          path: Status.NATGatewayID
-      Routes.TransitGatewayId:
-        references:
-          resource: TransitGateway
-          path: Status.TransitGatewayID
-      Routes.VpcEndpointId:
-        references:
-          resource: VPCEndpoint
-          path: Status.VPCEndpointID
+#      Routes.GatewayId:
+#        references:
+#          resource: InternetGateway
+#          path: Status.InternetGatewayID
+#      Routes.NatGatewayId:
+#        references:
+#          resource: NATGateway
+#          path: Status.NATGatewayID
+#      Routes.TransitGatewayId:
+#        references:
+#          resource: TransitGateway
+#          path: Status.TransitGatewayID
+#      Routes.VpcEndpointId:
+#        references:
+#          resource: VPCEndpoint
+#          path: Status.VPCEndpointID
     hooks:
       delta_pre_compare:
         code: customPreCompare(delta, a, b)
@@ -466,6 +475,37 @@ resources:
         template_path: hooks/security_group/sdk_read_many_post_set_output.go.tpl
     update_operation:
       custom_method_name: customUpdateSecurityGroup
+  VpcEndpointServiceConfiguration:
+    fields:
+      ServiceID:
+        is_primary_key: true
+        is_read_only: true
+        print:
+          path: Status.serviceID
+          name: ServiceID
+      ServiceState:
+        is_read_only: true
+        print:
+          path: Status.serviceState
+          name: ServiceState
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: true
+    synced:
+      when:
+      - path: Status.ServiceState
+        in:
+        - available
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      sdk_delete_post_build_request:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
   Subnet:
     fields:
       # code-generator infers fields into

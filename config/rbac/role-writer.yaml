@@ -20,6 +20,7 @@ rules:
   - transitgateways
   - vpcs
   - vpcendpoints
+  - vpcendpointserviceconfigurations
   verbs:
   - create
   - delete
@@ -42,6 +43,7 @@ rules:
   - transitgateways
   - vpcs
   - vpcendpoints
+  - vpcendpointserviceconfigurations
   verbs:
   - get
   - patch
