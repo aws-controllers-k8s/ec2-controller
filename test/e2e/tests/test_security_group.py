@@ -159,33 +159,18 @@ class TestSecurityGroup:
         # Check Security Group no longer exists in AWS
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    def test_create_with_vpc_egress_dups_default_delete(self, ec2_client, security_group_with_vpc):
+    def test_create_with_vpc_add_egress_rule(self, ec2_client, security_group_with_vpc):
         (ref, cr) = security_group_with_vpc
         resource_id = cr["status"]["id"]
 
-        # Check resource is late initialized successfully (sets default egress rule)
+        # Check resource is synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check Security Group exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_security_group(resource_id)
 
-        # Hook code should update Spec rules using data from ReadOne resp
-        assert len(cr["spec"]["egressRules"]) == 1
-
-        # Check default egress rule present
-        # default egress rule will be present iff user has NOT specified their own egress rules
-        assert len(cr["status"]["rules"]) == 1
-        sg_group = ec2_validator.get_security_group(resource_id)
-        egress_rules = sg_group["IpPermissionsEgress"]
-        assert len(egress_rules) == 1
-        logging.debug(f"Default Egress rule: {str(egress_rules[0])}")
-
-        # Check default egress rule data
-        assert egress_rules[0]["IpProtocol"] == "-1"
-        assert egress_rules[0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
-
-        # Add a new Egress rule that "duplicates" the default via patch
+        # Add a new Egress rule via patch
         new_egress_rule = {
                         "ipProtocol": "-1",
                         "ipRanges": [{
@@ -210,7 +195,7 @@ class TestSecurityGroup:
         assert len(sg_group["IpPermissions"]) == 0
         assert len(sg_group["IpPermissionsEgress"]) == 1
 
-        # Check egress rule data (i.e. ensure default egress rule removed)
+        # Check egress rule data
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
         assert len(sg_group["IpPermissionsEgress"][0]["IpRanges"]) == 1
         ip_range = sg_group["IpPermissionsEgress"][0]["IpRanges"][0]
@@ -239,7 +224,7 @@ class TestSecurityGroup:
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
     
-        # Check resource is late initialized successfully (sets default egress rule)
+        # Check resource is synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check Security Group exists in AWS
@@ -248,18 +233,11 @@ class TestSecurityGroup:
 
         # Hook code should update Spec rules using data from ReadOne resp
         assert len(cr["spec"]["ingressRules"]) == 1
-        assert len(cr["spec"]["egressRules"]) == 1
 
-        # Check ingress rule added and default egress rule present
-        # default egress rule will be present iff user has NOT specified their own egress rules
-        assert len(cr["status"]["rules"]) == 2
+        # Check ingress rule added
+        assert len(cr["status"]["rules"]) == 1
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
-        assert len(sg_group["IpPermissionsEgress"]) == 1
-
-        # Check default egress rule data
-        assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "-1"
-        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["CidrIp"] == "0.0.0.0/0"
 
         # Add Egress rule via patch
         new_egress_rule = {
@@ -269,7 +247,7 @@ class TestSecurityGroup:
                         "ipRanges": [
                             {
                                 "cidrIP": "172.31.0.0/16",
-                                "description": "test egress update"
+                                "description": "test egress"
                             }
                         ]
         }
@@ -282,16 +260,15 @@ class TestSecurityGroup:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check ingress and egress rules exist
-        assert len(cr["status"]["rules"]) == 2
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 1
         
-        # Check egress rule data (i.e. ensure default egress rule removed)
+        # Check egress rule data
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
         assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 25
         assert sg_group["IpPermissionsEgress"][0]["ToPort"] == 25
-        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"] == "test egress update"
+        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"] == "test egress"
 
         # Remove Ingress rule
         patch = {"spec": {"ingressRules":[]}}

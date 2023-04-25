@@ -3,11 +3,9 @@
 		return nil, ackerr.NotFound
 	}
 
-	// if user defines any egress rule, then remove the default egress rule
-	if len(desired.ko.Spec.EgressRules) > 0 {
-		if err = rm.deleteDefaultSecurityGroupRule(ctx, &resource{ko}); err != nil {
-			return nil, err
-		}
+	// Delete the default egress rule
+	if err = rm.deleteDefaultSecurityGroupRule(ctx, &resource{ko}); err != nil {
+		return nil, err
 	}
 
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
