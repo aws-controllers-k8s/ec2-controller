@@ -419,7 +419,6 @@ resources:
         custom_field:
           list_of: IpPermission
       EgressRules:
-        late_initialize: {}
         custom_field:
           list_of: IpPermission
       Rules:
