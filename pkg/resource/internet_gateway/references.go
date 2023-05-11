@@ -24,111 +24,135 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
 
+// ClearResolvedReferences removes any reference values that were made
+// concrete in the spec. It returns a copy of the input AWSResource which
+// contains the original *Ref values, but none of their respective concrete
+// values.
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
+	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if ko.Spec.VPCRef != nil {
+		ko.Spec.VPC = nil
+	}
+
+	return &resource{ko}
+}
+
 // ResolveReferences finds if there are any Reference field(s) present
-// inside AWSResource passed in the parameter and attempts to resolve
-// those reference field(s) into target field(s).
-// It returns an AWSResource with resolved reference(s), and an error if the
-// passed AWSResource's reference field(s) cannot be resolved.
-// This method also adds/updates the ConditionTypeReferencesResolved for the
-// AWSResource.
+// inside AWSResource passed in the parameter and attempts to resolve those
+// reference field(s) into their respective target field(s). It returns a
+// copy of the input AWSResource with resolved reference(s), a boolean which
+// is set to true if the resource contains any references (regardless of if
+// they are resolved successfully) and an error if the passed AWSResource's
+// reference field(s) could not be resolved.
 func (rm *resourceManager) ResolveReferences(
 	ctx context.Context,
 	apiReader client.Reader,
 	res acktypes.AWSResource,
-) (acktypes.AWSResource, error) {
+) (acktypes.AWSResource, bool, error) {
 	namespace := res.MetaObject().GetNamespace()
-	ko := rm.concreteResource(res).ko.DeepCopy()
+	ko := rm.concreteResource(res).ko
+
+	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if err == nil {
-		err = resolveReferenceForVPC(ctx, apiReader, namespace, ko)
+	if fieldHasReferences, err := rm.resolveReferenceForVPC(ctx, apiReader, namespace, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	// If there was an error while resolving any reference, reset all the
-	// resolved values so that they do not get persisted inside etcd
-	if err != nil {
-		ko = rm.concreteResource(res).ko.DeepCopy()
-	}
-	if hasNonNilReferences(ko) {
-		return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
-	}
-	return &resource{ko}, err
+	return &resource{ko}, resourceHasReferences, err
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.InternetGateway) error {
+
 	if ko.Spec.VPCRef != nil && ko.Spec.VPC != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPC", "VPCRef")
 	}
 	return nil
 }
 
-// hasNonNilReferences returns true if resource contains a reference to another
-// resource
-func hasNonNilReferences(ko *svcapitypes.InternetGateway) bool {
-	return false || (ko.Spec.VPCRef != nil)
-}
-
 // resolveReferenceForVPC reads the resource referenced
 // from VPCRef field and sets the VPC
-// from referenced resource
-func resolveReferenceForVPC(
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForVPC(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
 	ko *svcapitypes.InternetGateway,
-) error {
-	if ko.Spec.VPCRef != nil &&
-		ko.Spec.VPCRef.From != nil {
+) (hasReferences bool, err error) {
+	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
+		hasReferences = true
 		arr := ko.Spec.VPCRef.From
-		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty")
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
 		}
-		namespacedName := types.NamespacedName{
-			Namespace: namespace,
-			Name:      *arr.Name,
+		obj := &svcapitypes.VPC{}
+		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
 		}
-		obj := svcapitypes.VPC{}
-		err := apiReader.Get(ctx, namespacedName, &obj)
-		if err != nil {
-			return err
+		ko.Spec.VPC = (*string)(obj.Status.VPCID)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_VPC looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_VPC(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.VPC,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceSynced, refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
 		}
-		var refResourceSynced, refResourceTerminal bool
-		for _, cond := range obj.Status.Conditions {
-			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceSynced = true
-			}
-			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceTerminal = true
-			}
-		}
-		if refResourceTerminal {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
 			return ackerr.ResourceReferenceTerminalFor(
 				"VPC",
-				namespace, *arr.Name)
+				namespace, name)
 		}
-		if !refResourceSynced {
-			return ackerr.ResourceReferenceNotSyncedFor(
-				"VPC",
-				namespace, *arr.Name)
-		}
-		if obj.Status.VPCID == nil {
-			return ackerr.ResourceReferenceMissingTargetFieldFor(
-				"VPC",
-				namespace, *arr.Name,
-				"Status.VPCID")
-		}
-		referencedValue := string(*obj.Status.VPCID)
-		ko.Spec.VPC = &referencedValue
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"VPC",
+			namespace, name)
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"VPC",
+			namespace, name)
+	}
+	if obj.Status.VPCID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"VPC",
+			namespace, name,
+			"Status.VPCID")
 	}
 	return nil
 }
