@@ -1,0 +1,13 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: FlowLog
+metadata:
+  name: $FLOWLOG_NAME 
+spec:
+  resourceID: $RESOURCE_ID
+  resourceType: $RESOURCE_TYPE 
+  logDestinationType: $LOG_DESTINATION_TYPE
+  logDestination: $LOG_DESTINATION 
+  trafficType: $TRAFFIC_TYPE 
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

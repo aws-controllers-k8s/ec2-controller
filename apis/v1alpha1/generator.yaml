@@ -7,6 +7,11 @@ ignore:
     - AllocateAddressInput.TagSpecifications
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
+    - CreateFlowLogsInput.DryRun
+    - CreateFlowLogsInput.ClientToken
+    - CreateFlowLogsInput.TagSpecifications
+    - CreateFlowLogsInput.ResourceIds
+    - CreateFlowLogsOutput.FlowLogIds
     - CreateInternetGatewayInput.DryRun
     - CreateInternetGatewayInput.TagSpecifications
     - CreateNatGatewayInput.ClientToken
@@ -141,6 +146,14 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  CreateFlowLogs:
+    operation_type:
+    - Create
+    resource_name: FlowLog
+  DeleteFlowLogs:
+    operation_type:
+    - Delete 
+    resource_name: FlowLog
   RunInstances:
     #ouput shape: Reservation
     output_wrapper_field_path: Instances
@@ -268,6 +281,42 @@ resources:
         template_path: hooks/elastic_ip_address/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateElasticIP
+  FlowLog:
+    exceptions:
+      terminal_codes:
+      - InvalidParameter
+      - InvalidParameterValue
+    fields:
+      ResourceID:
+        type: string
+        is_required: true
+      FlowLogID:
+        type: string
+        is_read_only: true
+        is_primary_key: true
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      sdk_create_post_build_request:
+        template_path: hooks/flow_log/sdk_create_post_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/flow_log/sdk_create_post_set_output.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/flow_log/sdk_delete_post_build_request.go.tpl
+      sdk_read_many_pre_build_request:
+        template_path: hooks/flow_log/sdk_read_many_pre_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/flow_log/sdk_read_many_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/flow_log/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateFlowLog
   InternetGateway:
     fields:
       Tags:

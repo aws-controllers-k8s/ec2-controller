@@ -817,14 +817,16 @@ type DescribeFleetsInstances struct {
 
 // Describes the destination options for a flow log.
 type DestinationOptionsRequest struct {
-	HiveCompatiblePartitions *bool `json:"hiveCompatiblePartitions,omitempty"`
-	PerHourPartition         *bool `json:"perHourPartition,omitempty"`
+	FileFormat               *string `json:"fileFormat,omitempty"`
+	HiveCompatiblePartitions *bool   `json:"hiveCompatiblePartitions,omitempty"`
+	PerHourPartition         *bool   `json:"perHourPartition,omitempty"`
 }
 
 // Describes the destination options for a flow log.
 type DestinationOptionsResponse struct {
-	HiveCompatiblePartitions *bool `json:"hiveCompatiblePartitions,omitempty"`
-	PerHourPartition         *bool `json:"perHourPartition,omitempty"`
+	FileFormat               *string `json:"fileFormat,omitempty"`
+	HiveCompatiblePartitions *bool   `json:"hiveCompatiblePartitions,omitempty"`
+	PerHourPartition         *bool   `json:"perHourPartition,omitempty"`
 }
 
 // Describes an Active Directory.
@@ -1244,19 +1246,23 @@ type FleetSpotCapacityRebalanceRequest struct {
 }
 
 // Describes a flow log.
-type FlowLog struct {
+type FlowLog_SDK struct {
 	CreationTime             *metav1.Time `json:"creationTime,omitempty"`
 	DeliverLogsErrorMessage  *string      `json:"deliverLogsErrorMessage,omitempty"`
 	DeliverLogsPermissionARN *string      `json:"deliverLogsPermissionARN,omitempty"`
 	DeliverLogsStatus        *string      `json:"deliverLogsStatus,omitempty"`
-	FlowLogID                *string      `json:"flowLogID,omitempty"`
-	FlowLogStatus            *string      `json:"flowLogStatus,omitempty"`
-	LogDestination           *string      `json:"logDestination,omitempty"`
-	LogFormat                *string      `json:"logFormat,omitempty"`
-	LogGroupName             *string      `json:"logGroupName,omitempty"`
-	MaxAggregationInterval   *int64       `json:"maxAggregationInterval,omitempty"`
-	ResourceID               *string      `json:"resourceID,omitempty"`
-	Tags                     []*Tag       `json:"tags,omitempty"`
+	// Describes the destination options for a flow log.
+	DestinationOptions     *DestinationOptionsResponse `json:"destinationOptions,omitempty"`
+	FlowLogID              *string                     `json:"flowLogID,omitempty"`
+	FlowLogStatus          *string                     `json:"flowLogStatus,omitempty"`
+	LogDestination         *string                     `json:"logDestination,omitempty"`
+	LogDestinationType     *string                     `json:"logDestinationType,omitempty"`
+	LogFormat              *string                     `json:"logFormat,omitempty"`
+	LogGroupName           *string                     `json:"logGroupName,omitempty"`
+	MaxAggregationInterval *int64                      `json:"maxAggregationInterval,omitempty"`
+	ResourceID             *string                     `json:"resourceID,omitempty"`
+	Tags                   []*Tag                      `json:"tags,omitempty"`
+	TrafficType            *string                     `json:"trafficType,omitempty"`
 }
 
 // Describes a security group.

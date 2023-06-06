@@ -1,0 +1,1 @@
+	input.SetFlowLogIds([]*string{r.ko.Status.FlowLogID})

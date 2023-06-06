@@ -17,6 +17,7 @@ import logging
 
 from acktest.bootstrapping import Resources, BootstrapFailureException
 from acktest.bootstrapping.vpc import VPC
+from acktest.bootstrapping.s3 import Bucket
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import BootstrapResources
 
@@ -24,7 +25,10 @@ def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
 
     resources = BootstrapResources(
-        SharedTestVPC=VPC(name_prefix="e2e-test-vpc", num_public_subnet=1, num_private_subnet=0)
+        SharedTestVPC=VPC(name_prefix="e2e-test-vpc", num_public_subnet=1, num_private_subnet=0),
+        FlowLogsBucket=Bucket(
+            "ack-ec2-controller-flow-log-tests",
+        ),
     )
 
     try:
