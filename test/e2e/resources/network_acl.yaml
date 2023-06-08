@@ -1,0 +1,9 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: NetworkACL
+metadata:
+  name: $NETWORK_ACL_NAME
+spec:
+  vpcID: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

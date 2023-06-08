@@ -73,6 +73,24 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def get_network_acl(self, network_acl_id: str):
+        try:
+            aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
+            if len(aws_res["NetworkAcls"]) > 0:
+                return aws_res["NetworkAcls"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def assert_network_acl(self, network_acl_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
+            res_found = len(aws_res["NetworkAcls"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
     def assert_route(self, route_table_id: str, gateway_id: str, origin: str, exists=True):
         res_found = False
         try:

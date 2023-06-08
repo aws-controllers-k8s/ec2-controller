@@ -17,6 +17,8 @@ ignore:
     - CreateNatGatewayInput.ClientToken
     - CreateNatGatewayInput.DryRun
     - CreateNatGatewayInput.TagSpecifications
+    - CreateNetworkAclInput.DryRun
+    - CreateNetworkAclInput.TagSpecifications
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
@@ -81,7 +83,7 @@ ignore:
     - ManagedPrefixList
     #- NatGateway
     - NetworkAclEntry
-    - NetworkAcl
+    #- NetworkAcl
     - NetworkInsightsAccessScope
     - NetworkInsightsPath
     - NetworkInterfacePermission
@@ -180,6 +182,14 @@ operations:
     operation_type:
       - Delete
     resource_name: Instance
+  CreateNetworkAcl:
+    operation_type:
+    - Create
+    resource_name: NetworkAcl
+  DeleteNetworkAcl:
+    operation_type:
+    - Delete
+    resource_name: NetworkAcl
 resources:
   DhcpOptions:
     exceptions:
@@ -394,6 +404,29 @@ resources:
         template_path: hooks/nat_gateway/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateNATGateway
+  NetworkAcl:
+    exceptions:
+      errors:
+        404:
+          code: InvalidVpcID.NotFound
+    fields:
+      networkAclId:
+        is_primary_key: true
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      sdk_create_post_build_request:
+        template_path: hooks/network_acl/sdk_create_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/network_acl/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateNetworkAcl
   RouteTable:
     fields:
       # RouteStatuses as Route to ensure
