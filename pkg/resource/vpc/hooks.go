@@ -428,3 +428,48 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
 }
+
+func (rm *resourceManager) attachSecondaryCidrBlocks(ctx context.Context, desired *resource,
+	resp *svcsdk.CreateVpcOutput, ko *svcapitypes.VPC) (err error) {
+	cidrblockassociationset := []*svcapitypes.VPCCIDRBlockAssociation{}
+	if len(desired.ko.Spec.CIDRBlocks) > 1 {
+		for _, cidr := range desired.ko.Spec.CIDRBlocks[1:] {
+			input := &svcsdk.AssociateVpcCidrBlockInput{
+				VpcId:     resp.Vpc.VpcId,
+				CidrBlock: cidr,
+			}
+			var res *svcsdk.AssociateVpcCidrBlockOutput
+			cidrblockassociation := &svcapitypes.VPCCIDRBlockAssociation{}
+			res, err := rm.sdkapi.AssociateVpcCidrBlockWithContext(ctx, input)
+			// rlog.Debug("adding Secondary CIDR to VPC resource", "cidrs", cidr)
+			rm.metrics.RecordAPICall("UPDATE", "AssociateVpcCidrBlock", err)
+			if err != nil {
+				return err
+			}
+
+			if res.CidrBlockAssociation != nil {
+				if res.CidrBlockAssociation.AssociationId != nil {
+					cidrblockassociation.AssociationID = res.CidrBlockAssociation.AssociationId
+				}
+				if res.CidrBlockAssociation.CidrBlock != nil {
+					cidrblockassociation.CIDRBlock = res.CidrBlockAssociation.CidrBlock
+				}
+				if res.CidrBlockAssociation.CidrBlockState != nil {
+					cidrblockstate := &svcapitypes.VPCCIDRBlockState{}
+					if res.CidrBlockAssociation.CidrBlockState.State != nil {
+						cidrblockstate.State = res.CidrBlockAssociation.CidrBlockState.State
+					}
+					if res.CidrBlockAssociation.CidrBlockState.StatusMessage != nil {
+						cidrblockstate.StatusMessage = res.CidrBlockAssociation.CidrBlockState.StatusMessage
+					}
+				}
+				cidrblockassociationset = append(cidrblockassociationset, cidrblockassociation)
+			}
+		}
+
+	}
+	if cidrblockassociationset != nil {
+		ko.Status.CIDRBlockAssociationSet = append(ko.Status.CIDRBlockAssociationSet, cidrblockassociationset...)
+	}
+	return nil
+}
