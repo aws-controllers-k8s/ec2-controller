@@ -1,0 +1,13 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPC
+metadata:
+  name: $VPC_NAME
+spec:
+  cidrBlocks: 
+  - $PRIMARY_CIDR_BLOCK
+  - $SECONDARY_CIDR_BLOCK
+  enableDNSSupport: $ENABLE_DNS_SUPPORT
+  enableDNSHostnames: $ENABLE_DNS_HOSTNAMES
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
