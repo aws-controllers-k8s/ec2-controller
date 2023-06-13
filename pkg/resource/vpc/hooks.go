@@ -18,6 +18,7 @@ import (
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -148,7 +149,7 @@ func computeStringPDifference(a, b []*string) (aNotB, bNotA []*string) {
 		}
 	}
 	for _, elemB := range b {
-		if _, found := mapOfB[*elemB]; !found {
+		if _, found := mapOfA[*elemB]; !found {
 			bNotA = append(bNotA, elemB)
 		}
 	}
@@ -255,6 +256,50 @@ func (rm *resourceManager) customUpdateVPC(
 	if delta.DifferentAt("Spec.CIDRBlocks") {
 		if err := rm.syncCIDRBlocks(ctx, desired, latest); err != nil {
 			return nil, err
+		}
+	}
+
+	// CidrBlockAssociationSet needs to be updated in the Status
+
+	input, err := rm.newListRequestPayload(updated)
+	if err != nil {
+		return nil, err
+	}
+	var resp *svcsdk.DescribeVpcsOutput
+	resp, err = rm.sdkapi.DescribeVpcsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcs", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "InvalidVpcID.NotFound" {
+			return nil, ackerr.NotFound
+		}
+		return nil, err
+	}
+	for _, elem := range resp.Vpcs {
+		if elem.CidrBlockAssociationSet != nil {
+			f0 := []*svcapitypes.VPCCIDRBlockAssociation{}
+			for _, f0iter := range elem.CidrBlockAssociationSet {
+				f0elem := &svcapitypes.VPCCIDRBlockAssociation{}
+				if f0iter.AssociationId != nil {
+					f0elem.AssociationID = f0iter.AssociationId
+				}
+				if f0iter.CidrBlock != nil {
+					f0elem.CIDRBlock = f0iter.CidrBlock
+				}
+				if f0iter.CidrBlockState != nil {
+					f0elemf2 := &svcapitypes.VPCCIDRBlockState{}
+					if f0iter.CidrBlockState.State != nil {
+						f0elemf2.State = f0iter.CidrBlockState.State
+					}
+					if f0iter.CidrBlockState.StatusMessage != nil {
+						f0elemf2.StatusMessage = f0iter.CidrBlockState.StatusMessage
+					}
+					f0elem.CIDRBlockState = f0elemf2
+				}
+				f0 = append(f0, f0elem)
+			}
+			updated.ko.Status.CIDRBlockAssociationSet = f0
+		} else {
+			updated.ko.Status.CIDRBlockAssociationSet = nil
 		}
 	}
 

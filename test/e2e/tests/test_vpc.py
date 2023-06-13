@@ -314,3 +314,65 @@ class TestVpc:
 
         # Check VPC no longer exists in AWS
         ec2_validator.assert_vpc(resource_id, exists=False)
+
+    def test_vpc_updation_multiple_cidr(self,ec2_client):
+        resource_name = random_suffix_name("vpc-ack-multicidr", 24)
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["VPC_NAME"] = resource_name
+        replacements["PRIMARY_CIDR_BLOCK"] = PRIMARY_CIDR_DEFAULT
+        replacements["SECONDARY_CIDR_BLOCK"] = "10.2.0.0/16"
+        replacements["ENABLE_DNS_SUPPORT"] = "False"
+        replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+
+        # Load VPC CR
+        resource_data = load_ec2_resource(
+            "vpc_multicidr",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+
+        resource_id = cr["status"]["vpcID"]
+
+        # Check VPC exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc(resource_id)
+
+        # Validate CIDR Block
+        vpc = ec2_validator.get_vpc(resource_id)
+        assert len(vpc['CidrBlockAssociationSet']) == 2
+        assert vpc['CidrBlockAssociationSet'][0]['CidrBlock'] == PRIMARY_CIDR_DEFAULT
+        assert vpc['CidrBlockAssociationSet'][1]['CidrBlock'] == "10.2.0.0/16"
+
+
+        # Remove SECONDARY_CIDR_BLOCK
+        updates = {
+            "spec": {"cidrBlocks": PRIMARY_CIDR_DEFAULT}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Re-Validate CIDR Blocks State
+        vpc = ec2_validator.get_vpc(resource_id)
+        assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState'] == "associated"
+        assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState'] == "disassociated"
+
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC no longer exists in AWS
+        ec2_validator.assert_vpc(resource_id, exists=False)
