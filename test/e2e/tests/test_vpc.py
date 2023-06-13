@@ -357,7 +357,7 @@ class TestVpc:
 
         # Remove SECONDARY_CIDR_BLOCK
         updates = {
-            "spec": {"cidrBlocks": PRIMARY_CIDR_DEFAULT}
+            "spec": {"cidrBlocks": [PRIMARY_CIDR_DEFAULT]}
         }
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
