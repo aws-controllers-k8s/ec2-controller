@@ -364,8 +364,8 @@ class TestVpc:
 
         # Re-Validate CIDR Blocks State
         vpc = ec2_validator.get_vpc(resource_id)
-        assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState'] == "associated"
-        assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState'] == "disassociated"
+        assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState']['State'] == "associated"
+        assert vpc['CidrBlockAssociationSet'][1]['CidrBlockState']['State'] == "disassociated"
 
 
         # Delete k8s resource
