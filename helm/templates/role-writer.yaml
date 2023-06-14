@@ -13,6 +13,8 @@ rules:
 
   - elasticipaddresses
 
+  - flowlogs
+
   - instances
 
   - internetgateways
@@ -44,6 +46,7 @@ rules:
   resources:
   - dhcpoptions
   - elasticipaddresses
+  - flowlogs
   - instances
   - internetgateways
   - natgateways
