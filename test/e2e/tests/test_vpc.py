@@ -46,7 +46,6 @@ def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
 
 @service_marker
 @pytest.mark.canary
-@pytest.mark.ntest
 class TestVpc:
     def test_crud(self, ec2_client, simple_vpc):
         (ref, cr) = simple_vpc
