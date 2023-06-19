@@ -362,16 +362,10 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-
-
 	if rm.requiredFieldsMissingForCreateNetworkAcl(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
-	fmt.Println("Point1")
-	fmt.Println("entries",desired.ko.Spec.Entries)
-
 	if len(desired.ko.Spec.Entries) > 0 {
-		fmt.Println("Point2")
 		//desired rules are overwritten by NetworkACL's default rules
 		ko.Spec.Entries = append(ko.Spec.Entries, desired.ko.Spec.Entries...)
 		if err := rm.createRules(ctx, &resource{ko}); err != nil {
@@ -385,7 +379,6 @@ func (rm *resourceManager) sdkCreate(
 		// then assign desired tags to maintain tag order
 		ko.Spec.Tags = desired.ko.Spec.Tags
 	}
-
 	return &resource{ko}, nil
 }
 
@@ -559,102 +552,80 @@ func compareNetworkACLEntry(
 ) *ackcompare.Delta {
 	delta := ackcompare.NewDelta()
 	if ackcompare.HasNilDifference(a.CIDRBlock, b.CIDRBlock) {
-		delta.Add("Mydiff:NetworkACLEntry.CIDRBlock", a.CIDRBlock, b.CIDRBlock)
-		fmt.Println("CIDRBlockNull")
+		delta.Add("NetworkACLEntry.CIDRBlock", a.CIDRBlock, b.CIDRBlock)
 	} else if a.CIDRBlock != nil && b.CIDRBlock != nil {
 		if *a.CIDRBlock != *b.CIDRBlock {
-			fmt.Println("Mydiff:CIDRBlock:",a.CIDRBlock,b.CIDRBlock)
 			delta.Add("NetworkACLEntry.CIDRBlock", a.CIDRBlock, b.CIDRBlock)
 		}
 	}
 	if ackcompare.HasNilDifference(a.Egress, b.Egress) {
 		delta.Add("NetworkACLEntry.Egress", a.Egress, b.Egress)
-		fmt.Println("Mydiff:NetworkACLEntryNull")
 	} else if a.Egress != nil && b.Egress != nil {
 		if *a.Egress != *b.Egress {
-			fmt.Println("Mydiff:Egress:",a.Egress,b.Egress)
 			delta.Add("NetworkACLEntry.Egress", a.Egress, b.Egress)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ICMPTypeCode, b.ICMPTypeCode) {
 		delta.Add("NetworkACLEntry.ICMPTypeCode", a.ICMPTypeCode, b.ICMPTypeCode)
-		fmt.Println("Mydiff:ICMPTypeCodeNull")
 	} else if a.ICMPTypeCode != nil && b.ICMPTypeCode != nil {
 		if ackcompare.HasNilDifference(a.ICMPTypeCode.Code, b.ICMPTypeCode.Code) {
 			delta.Add("NetworkACLEntry.ICMPTypeCode.Code", a.ICMPTypeCode.Code, b.ICMPTypeCode.Code)
-			fmt.Println("Mydiff:ICMPTypeCodeCodeNull")
 		} else if a.ICMPTypeCode.Code != nil && b.ICMPTypeCode.Code != nil {
 			if *a.ICMPTypeCode.Code != *b.ICMPTypeCode.Code {
-				fmt.Println("Mydiff:ICMPTypeCodeCode",*a.ICMPTypeCode.Code,*b.ICMPTypeCode.Code)
 				delta.Add("NetworkACLEntry.ICMPTypeCode.Code", a.ICMPTypeCode.Code, b.ICMPTypeCode.Code)
 			}
 		}
 		if ackcompare.HasNilDifference(a.ICMPTypeCode.Type, b.ICMPTypeCode.Type) {
 			delta.Add("NetworkACLEntry.ICMPTypeCode.Type", a.ICMPTypeCode.Type, b.ICMPTypeCode.Type)
-			fmt.Println("Mydiff:ICMPTypeTypeNull")
 		} else if a.ICMPTypeCode.Type != nil && b.ICMPTypeCode.Type != nil {
 			if *a.ICMPTypeCode.Type != *b.ICMPTypeCode.Type {
-				fmt.Println("Mydiff:ICMPTypeType",*a.ICMPTypeCode.Type,*b.ICMPTypeCode.Type)
 				delta.Add("NetworkACLEntry.ICMPTypeCode.Type", a.ICMPTypeCode.Type, b.ICMPTypeCode.Type)
 			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.IPv6CIDRBlock, b.IPv6CIDRBlock) {
 		delta.Add("NetworkACLEntry.IPv6CIDRBlock", a.IPv6CIDRBlock, b.IPv6CIDRBlock)
-		fmt.Println("Mydiff:IPv6CIDRBlockNull")
 	} else if a.IPv6CIDRBlock != nil && b.IPv6CIDRBlock != nil {
 		if *a.IPv6CIDRBlock != *b.IPv6CIDRBlock {
-			fmt.Println("Mydiff:IPv6CIDRBlock",*a.IPv6CIDRBlock,*b.IPv6CIDRBlock)
 			delta.Add("NetworkACLEntry.IPv6CIDRBlock", a.IPv6CIDRBlock, b.IPv6CIDRBlock)
 		}
 	}
 	if ackcompare.HasNilDifference(a.PortRange, b.PortRange) {
 		delta.Add("NetworkACLEntry.PortRange", a.PortRange, b.PortRange)
-		fmt.Println("Mydiff:PortRangeNull")
 	} else if a.PortRange != nil && b.PortRange != nil {
 		if ackcompare.HasNilDifference(a.PortRange.From, b.PortRange.From) {
-			fmt.Println("Mydiff:PortRangeFromNull")
 			delta.Add("NetworkACLEntry.PortRange.From", a.PortRange.From, b.PortRange.From)
 		} else if a.PortRange.From != nil && b.PortRange.From != nil {
 			if *a.PortRange.From != *b.PortRange.From {
-				fmt.Println("Mydiff:PortRangeFrom",*a.PortRange.From ,*b.PortRange.From)
 				delta.Add("NetworkACLEntry.PortRange.From", a.PortRange.From, b.PortRange.From)
 			}
 		}
 		if ackcompare.HasNilDifference(a.PortRange.To, b.PortRange.To) {
 			delta.Add("NetworkACLEntry.PortRange.To", a.PortRange.To, b.PortRange.To)
-			fmt.Println("Mydiff:PortRangeToNull")
 		} else if a.PortRange.To != nil && b.PortRange.To != nil {
 			if *a.PortRange.To != *b.PortRange.To {
-				fmt.Println("Mydiff:PortRangeTo",*a.PortRange.To,*b.PortRange.To)
 				delta.Add("NetworkACLEntry.PortRange.To", a.PortRange.To, b.PortRange.To)
 			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.Protocol, b.Protocol) {
 		delta.Add("NetworkACLEntry.Protocol", a.Protocol, b.Protocol)
-		fmt.Println("Mydiff:ProtocolNull")
 	} else if a.Protocol != nil && b.Protocol != nil {
 		if *a.Protocol != *b.Protocol {
-			fmt.Println("Mydiff:Protocol",*a.Protocol,*b.Protocol)
 			delta.Add("NetworkACLEntry.Protocol", a.Protocol, b.Protocol)
 		}
 	}
 	if ackcompare.HasNilDifference(a.RuleAction, b.RuleAction) {
 		delta.Add("NetworkACLEntry.RuleAction", a.RuleAction, b.RuleAction)
-		fmt.Println("Mydiff:RuleActionNull")
 	} else if a.RuleAction != nil && b.RuleAction != nil {
-		if !strings.EqualFold(*a.RuleAction, *b.RuleAction) {
-			fmt.Println("Mydiff:RuleAction",*a.RuleAction ,*b.RuleAction)
+		if *a.RuleAction != *b.RuleAction {
 			delta.Add("NetworkACLEntry.RuleAction", a.RuleAction, b.RuleAction)
 		}
 	}
 	if ackcompare.HasNilDifference(a.RuleNumber, b.RuleNumber) {
 		delta.Add("NetworkACLEntry.RuleNumber", a.RuleNumber, b.RuleNumber)
-		fmt.Println("Mydiff:RuleNumberNull")
 	} else if a.RuleNumber != nil && b.RuleNumber != nil {
 		if *a.RuleNumber != *b.RuleNumber {
-			fmt.Println("Mydiff:RuleNumber",*a.RuleNumber,*b.RuleNumber)
 			delta.Add("NetworkACLEntry.RuleNumber", a.RuleNumber, b.RuleNumber)
 		}
 	}
@@ -675,56 +646,3 @@ func (rm *resourceManager) newTag(
 
 	return res
 }
-
-// func (rm *resourceManager) newCreateNetworkAclEntryInput(
-// 	c svcapitypes.NetworkACLEntry,
-// ) *svcsdk.CreateNetworkAclEntryInput {
-// 	res := &svcsdk.CreateNetworkAclEntryInput{}
-
-// 	if c.CIDRBlock != nil {
-// 		res.SetCidrBlock(*c.CIDRBlock)
-// 	}
-// 	if c.DryRun != nil {
-// 		res.SetDryRun(*c.DryRun)
-// 	}
-// 	if c.Egress != nil {
-// 		res.SetEgress(*c.Egress)
-// 	}
-// 	if c.ICMPTypeCode != nil {
-// 		resf3 := &svcsdk.IcmpTypeCode{}
-// 		if c.ICMPTypeCode.Code != nil {
-// 			resf3.SetCode(*c.ICMPTypeCode.Code)
-// 		}
-// 		if c.ICMPTypeCode.Type != nil {
-// 			resf3.SetType(*c.ICMPTypeCode.Type)
-// 		}
-// 		res.SetIcmpTypeCode(resf3)
-// 	}
-// 	if c.IPv6CIDRBlock != nil {
-// 		res.SetIpv6CidrBlock(*c.IPv6CIDRBlock)
-// 	}
-// 	if c.NetworkACLID != nil {
-// 		res.SetNetworkAclId(*c.NetworkACLID)
-// 	}
-// 	if c.PortRange != nil {
-// 		resf6 := &svcsdk.PortRange{}
-// 		if c.PortRange.From != nil {
-// 			resf6.SetFrom(*c.PortRange.From)
-// 		}
-// 		if c.PortRange.To != nil {
-// 			resf6.SetTo(*c.PortRange.To)
-// 		}
-// 		res.SetPortRange(resf6)
-// 	}
-// 	if c.Protocol != nil {
-// 		res.SetProtocol(*c.Protocol)
-// 	}
-// 	if c.RuleAction != nil {
-// 		res.SetRuleAction(*c.RuleAction)
-// 	}
-// 	if c.RuleNumber != nil {
-// 		res.SetRuleNumber(*c.RuleNumber)
-// 	}
-
-// 	return res
-// }

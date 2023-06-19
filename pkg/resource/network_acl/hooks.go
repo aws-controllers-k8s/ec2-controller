@@ -19,7 +19,6 @@ import (
 	//ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"context"
 	"errors"
-	"fmt"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -46,9 +45,6 @@ func (rm *resourceManager) syncTags(
 	toAdd, toDelete := computeTagsDelta(
 		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 	)
-
-	fmt.Println("toaddtags", toAdd)
-	fmt.Println("toremovetags", toDelete)
 
 	if len(toDelete) > 0 {
 		rlog.Debug("removing tags from NetworkACL resource", "tags", toDelete)
@@ -137,8 +133,6 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 		if err := rm.syncRules(ctx, desired, latest); err != nil {
 			return nil, err
 		}
-		// A ReadOne call is made to refresh
-		// with the recently-updated data from the above `sync` call
 		updated, err = rm.sdkFind(ctx, desired)
 		if err != nil {
 			return nil, err
@@ -146,10 +140,10 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 	}
 
 	if delta.DifferentAt("Spec.Tags") {
-		fmt.Println("DifferentAtTag")
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
 		}
+		updated.ko.Spec.Tags = desired.ko.Spec.Tags
 	}
 
 	return updated, nil
@@ -165,7 +159,6 @@ func (rm *resourceManager) createRules(
 	ctx context.Context,
 	r *resource,
 ) error {
-	fmt.Println("Point3")
 	if err := rm.syncRules(ctx, r, nil); err != nil {
 		return err
 	}
@@ -183,14 +176,12 @@ func (rm *resourceManager) syncRules(
 	toAdd := []*svcapitypes.NetworkACLEntry{}
 	toDelete := []*svcapitypes.NetworkACLEntry{}
 	toUpdate := []*svcapitypes.NetworkACLEntry{}
-	fmt.Println("Point4")
 
 	ruleNumber := make(map[int]bool)
 
 	for _, entry := range desired.ko.Spec.Entries {
 		if value, present := ruleNumber[int(*entry.RuleNumber)]; present {
 			if value == (*entry.Egress) {
-				fmt.Println("myerr:", "multiple rules with same rule no")
 				return errors.New("multple rules with the same rule number and Egress in the desired spec")
 			}
 		} else {
@@ -202,24 +193,8 @@ func (rm *resourceManager) syncRules(
 
 		if *((*desiredEntry).RuleNumber) == int64(32767) {
 			// no-op for default route
-			fmt.Println("Inside first noop")
 			continue
 		}
-		fmt.Println("RuleNumber", (*desiredEntry).RuleNumber)
-
-		// if latestEntry := getMatchingEntry(desiredEntry, latest); latestEntry != nil {
-		// 	delta := compareNetworkACLEntry(desiredEntry, latestEntry)
-		// 	if len(delta.Differences) > 0 {
-		// 		toDelete = append(toDelete, latestEntry)
-		// 		toAdd = append(toAdd, desiredEntry)
-		// 	}
-		// } else {
-		// 	toAdd = append(toAdd, desiredEntry)
-		// }
-		// if latest != nil && containsEntryRuleNumber(latest.ko.Spec.Entries, desiredEntry) {
-		// 	toUpdate = append(toUpdate, desiredEntry)
-		// 	continue
-		// }
 
 		if latest != nil && !containsEntry(latest.ko.Spec.Entries, desiredEntry) {
 			// a desired rule is not in the latest resource; therefore, create
@@ -231,7 +206,6 @@ func (rm *resourceManager) syncRules(
 		for _, latestEntry := range latest.ko.Spec.Entries {
 			if *((*latestEntry).RuleNumber) == int64(32767) {
 				// no-op for default route
-				fmt.Println("Inside second noop")
 				continue
 			}
 			if !containsEntry(desired.ko.Spec.Entries, latestEntry) {
@@ -251,12 +225,6 @@ func (rm *resourceManager) syncRules(
 		}
 	}
 
-	// // fmt.Println("AllEntriesLatest", latest.ko.Spec.Entries)
-	// // fmt.Println("AllEntriesDesired", desired.ko.Spec.Entries)
-	fmt.Println("toAdd", toAdd)
-	fmt.Println("toDelete", toDelete)
-	fmt.Println("toUpdate", toUpdate)
-
 	for _, entry := range toAdd {
 		rlog.Debug("adding entries to nacl")
 
@@ -274,7 +242,6 @@ func (rm *resourceManager) syncRules(
 		if err = rm.deleteEntry(ctx, latest, *entry); err != nil {
 			return err
 		}
-		fmt.Println("DeleteEntry", *entry.RuleNumber)
 	}
 
 	for _, entry := range toUpdate {
@@ -282,7 +249,6 @@ func (rm *resourceManager) syncRules(
 		if err = rm.updateEntry(ctx, latest, *entry); err != nil {
 			return err
 		}
-		fmt.Println("UpdateEntry", *entry.RuleNumber)
 	}
 
 	return nil
@@ -302,60 +268,13 @@ func containsEntry(
 
 	for _, e := range entryCollection {
 		delta := compareNetworkACLEntry(e, entry)
-		fmt.Println()
+
 		if len(delta.Differences) == 0 {
 			return true
-		}
-		fmt.Println("Delta:", delta.Differences)
-		for _, d := range delta.Differences {
-			fmt.Println(d)
-
 		}
 	}
 	return false
 }
-
-// func containsEntryRuleNumber(
-// 	entryCollection []*svcapitypes.NetworkACLEntry,
-// 	entry *svcapitypes.NetworkACLEntry,
-// ) bool {
-// 	if entryCollection == nil || entry == nil {
-// 		return false
-// 	}
-// 	for _, e := range entryCollection {
-// 		if e.RuleNumber == entry.RuleNumber && e.Egress == entry.Egress {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
-// func getMatchingEntry(
-// 	entryToMatch *svcapitypes.NetworkACLEntry,
-// 	resource *resource,
-// ) *svcapitypes.NetworkACLEntry {
-
-// 	if resource == nil {
-// 		return nil
-// 	}
-// 	for _, entry := range resource.ko.Spec.Entries {
-// 		delta := compareNetworkACLEntry(entryToMatch, entry)
-// 		if len(delta.Differences) == 0 {
-// 			return entry
-// 		} else {
-
-// 			if entryToMatch.RuleNumber != nil {
-// 				if !delta.DifferentAt("NetworkACLEntry.RuleNumber") {
-// 					return entry
-// 				}
-// 			}
-
-// 		}
-// 	}
-// 	return nil
-
-// }
-
 func (rm *resourceManager) createEntry(
 	ctx context.Context,
 	r *resource,
@@ -412,7 +331,6 @@ func (rm *resourceManager) createEntry(
 	res.NetworkAclId = r.ko.Status.NetworkACLID
 	_, err = rm.sdkapi.CreateNetworkAclEntryWithContext(ctx, res)
 	rm.metrics.RecordAPICall("CREATE", "CreateNetworkAclEntry", err)
-	fmt.Println("createentry", res)
 	return err
 }
 
@@ -472,7 +390,6 @@ func (rm *resourceManager) updateEntry(
 	res.NetworkAclId = r.ko.Status.NetworkACLID
 	_, err = rm.sdkapi.ReplaceNetworkAclEntryWithContext(ctx, res)
 	rm.metrics.RecordAPICall("CREATE", "ReplaceNetworkAclEntry", err)
-	fmt.Println("updateentry", res)
 	return err
 }
 
@@ -500,7 +417,6 @@ func (rm *resourceManager) deleteEntry(
 	res.NetworkAclId = r.ko.Status.NetworkACLID
 	_, err = rm.sdkapi.DeleteNetworkAclEntryWithContext(ctx, res)
 	rm.metrics.RecordAPICall("CREATE", "CreateNetworkAclEntry", err)
-	fmt.Println("deleteentry", res)
 	return err
 }
 

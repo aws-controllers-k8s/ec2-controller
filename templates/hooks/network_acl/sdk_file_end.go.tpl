@@ -60,17 +60,3 @@ func (rm *resourceManager) new{{ $rtRefName }}(
 {{- end }}
 {{- end }}
 
-{{/* Create operation for NetworkACL entry */}}
-
-{{- $createInputRef := (index $SDKAPI.API.Operations "CreateNetworkAclEntry").InputRef }}
-{{- $createInputName := $createInputRef.ShapeName }}
-
-func (rm *resourceManager) new{{ $createInputName }}(
-	c svcapitypes.NetworkACLEntry,
-) *svcsdk.{{ $createInputName }} {
-	res := &svcsdk.{{ $createInputName }}{}
-
-{{ GoCodeSetSDKForStruct $CRD "" "res" $createInputRef "" "c" 1 }}
-
-	return res
-}
