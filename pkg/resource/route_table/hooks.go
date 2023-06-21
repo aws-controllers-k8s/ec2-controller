@@ -45,8 +45,13 @@ func (rm *resourceManager) syncRoutes(
 	defer exit(err)
 	toAdd := []*svcapitypes.CreateRouteInput{}
 	toDelete := []*svcapitypes.CreateRouteInput{}
-	latest.ko.Spec.Routes = rm.excludeAwsRoute(latest.ko.Spec.Routes)
-	desired.ko.Spec.Routes = rm.excludeAwsRoute(desired.ko.Spec.Routes)
+
+	if latest != nil {
+		latest.ko.Spec.Routes = rm.excludeAwsRoute(latest.ko.Spec.Routes)
+	}
+	if desired != nil {
+		desired.ko.Spec.Routes = rm.excludeAwsRoute(desired.ko.Spec.Routes)
+	}
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
 		if (*desiredRoute).GatewayID != nil && *desiredRoute.GatewayID == LocalRouteGateway {
@@ -325,6 +330,8 @@ func (rm *resourceManager) excludeAwsRoute(
 			if _, found := awsMpl[*route.DestinationPrefixListID]; !found {
 				ret = append(ret, route)
 			}
+		} else {
+			ret = append(ret, route)
 		}
 	}
 	return ret
