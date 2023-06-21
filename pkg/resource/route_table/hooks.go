@@ -15,6 +15,7 @@ package route_table
 
 import (
 	"context"
+	"strings"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -44,6 +45,8 @@ func (rm *resourceManager) syncRoutes(
 	defer exit(err)
 	toAdd := []*svcapitypes.CreateRouteInput{}
 	toDelete := []*svcapitypes.CreateRouteInput{}
+	latest.ko.Spec.Routes = rm.excludeAwsRoute(latest.ko.Spec.Routes)
+	desired.ko.Spec.Routes = rm.excludeAwsRoute(desired.ko.Spec.Routes)
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
 		if (*desiredRoute).GatewayID != nil && *desiredRoute.GatewayID == LocalRouteGateway {
@@ -287,6 +290,43 @@ func removeLocalRoute(
 		}
 	}
 
+	return ret
+}
+
+func (rm *resourceManager) excludeAwsRoute(
+	routes []*svcapitypes.CreateRouteInput,
+) (ret []*svcapitypes.CreateRouteInput) {
+	ret = make([]*svcapitypes.CreateRouteInput, 0)
+	var prefixListIds []*string
+
+	// Preparing a list of prefixIds from all the DestinationPrefixListIDs in Routes
+	// This is to prevent multiple AWS API calls of DescribeManagedPrefixLists
+
+	for _, route := range routes {
+		if route.DestinationPrefixListID != nil {
+			prefixListIds = append(prefixListIds, route.DestinationPrefixListID)
+		}
+	}
+
+	var resp *svcsdk.DescribeManagedPrefixListsOutput
+	awsMpl := map[string]struct{}{}
+	input := &svcsdk.DescribeManagedPrefixListsInput{}
+	input.PrefixListIds = prefixListIds
+	resp, _ = rm.sdkapi.DescribeManagedPrefixLists(input)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeManagedPrefixLists", nil)
+
+	for _, mpl := range resp.PrefixLists {
+		if strings.EqualFold(*mpl.OwnerId, "AWS") {
+			awsMpl[*mpl.PrefixListId] = struct{}{}
+		}
+	}
+	for _, route := range routes {
+		if route.DestinationPrefixListID != nil {
+			if _, found := awsMpl[*route.DestinationPrefixListID]; !found {
+				ret = append(ret, route)
+			}
+		}
+	}
 	return ret
 }
 
