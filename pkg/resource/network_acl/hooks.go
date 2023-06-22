@@ -14,9 +14,6 @@
 package network_acl
 
 import (
-	//svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
-	//ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
-	//ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"context"
 	"errors"
 
@@ -28,11 +25,9 @@ import (
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
 func (rm *resourceManager) syncTags(
-
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncTags")
@@ -215,7 +210,7 @@ func (rm *resourceManager) syncRules(
 		}
 	}
 
-	// // Checking latest for entries which has the same rule number as the entry in toAdd
+	// Checking latest for entries which has the same rule number as the entry in toAdd
 	for index, entry := range toAdd {
 		for _, latestEntry := range latest.ko.Spec.Entries {
 			if *(entry.RuleNumber) == *(latestEntry.RuleNumber) && *(entry.Egress) == *(latestEntry.Egress) {

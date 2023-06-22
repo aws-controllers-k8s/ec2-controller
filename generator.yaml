@@ -519,7 +519,6 @@ resources:
         template_path: hooks/security_group/sdk_read_many_post_set_output.go.tpl
     update_operation:
       custom_method_name: customUpdateSecurityGroup
-
   NetworkAcl:
     fields:
       # support EC2-VPC only
@@ -556,9 +555,6 @@ resources:
         template_path: hooks/network_acl/sdk_create_post_set_output.go.tpl
     update_operation:
       custom_method_name: customUpdateNetworkAcl
-
-
-
   Subnet:
     fields:
       # code-generator infers fields into
