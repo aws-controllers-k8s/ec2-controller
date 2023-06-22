@@ -523,7 +523,6 @@ resources:
     fields:
       # support EC2-VPC only
       Id:
-        #is_primary_key: true
         print:
           path: Status.networkACLID
           name: ID
