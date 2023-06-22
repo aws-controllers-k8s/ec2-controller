@@ -23,6 +23,8 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
+var defaultRuleNumber = 32767
+
 // syncTags used to keep tags in sync by calling Create and Delete API's
 func (rm *resourceManager) syncTags(
 	ctx context.Context,
@@ -152,8 +154,10 @@ func (rm *resourceManager) createRules(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if err := rm.syncRules(ctx, r, nil); err != nil {
-		return err
+	if r.ko.Spec.Entries != nil {
+		if err := rm.syncRules(ctx, r, nil); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -184,7 +188,7 @@ func (rm *resourceManager) syncRules(
 
 	for _, desiredEntry := range desired.ko.Spec.Entries {
 
-		if *((*desiredEntry).RuleNumber) == int64(32767) {
+		if *((*desiredEntry).RuleNumber) == int64(defaultRuleNumber) {
 			// no-op for default route
 			continue
 		}
@@ -197,7 +201,7 @@ func (rm *resourceManager) syncRules(
 
 	if latest != nil {
 		for _, latestEntry := range latest.ko.Spec.Entries {
-			if *((*latestEntry).RuleNumber) == int64(32767) {
+			if *((*latestEntry).RuleNumber) == int64(defaultRuleNumber) {
 				// no-op for default route
 				continue
 			}
