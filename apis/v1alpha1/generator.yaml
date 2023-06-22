@@ -17,7 +17,6 @@ ignore:
     - CreateNatGatewayInput.ClientToken
     - CreateNatGatewayInput.DryRun
     - CreateNatGatewayInput.TagSpecifications
-    - CreateNetworkAclInput.ClientToken
     - CreateNetworkAclInput.DryRun
     - CreateNetworkAclInput.TagSpecifications
     - CreateRouteInput.DryRun
