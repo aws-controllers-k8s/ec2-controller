@@ -42,7 +42,6 @@ func (rm *resourceManager) syncTags(
 	)
 
 	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from NetworkACL resource", "tags", toDelete)
 		_, err = rm.sdkapi.DeleteTagsWithContext(
 			ctx,
 			&svcsdk.DeleteTagsInput{
@@ -58,7 +57,6 @@ func (rm *resourceManager) syncTags(
 	}
 
 	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to NetworkACL resource", "tags", toAdd)
 		_, err = rm.sdkapi.CreateTagsWithContext(
 			ctx,
 			&svcsdk.CreateTagsInput{
@@ -221,8 +219,6 @@ func (rm *resourceManager) syncRules(
 	}
 
 	for _, entry := range toAdd {
-		rlog.Debug("adding entries to nacl")
-
 		if entry == nil {
 			continue
 		}
@@ -233,14 +229,12 @@ func (rm *resourceManager) syncRules(
 	}
 
 	for _, entry := range toDelete {
-		rlog.Debug("deleting entries from nacl")
 		if err = rm.deleteEntry(ctx, latest, *entry); err != nil {
 			return err
 		}
 	}
 
 	for _, entry := range toUpdate {
-		rlog.Debug("Updating entries in nacl")
 		if err = rm.updateEntry(ctx, latest, *entry); err != nil {
 			return err
 		}
