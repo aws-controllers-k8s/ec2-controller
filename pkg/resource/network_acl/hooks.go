@@ -39,9 +39,13 @@ func (rm *resourceManager) syncTags(
 
 	resourceId := []*string{latest.ko.Status.NetworkACLID}
 
-	toAdd, toDelete := computeTagsDelta(
-		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
-	)
+	desiredTags := ToACKTags(desired.ko.Spec.Tags)
+	latestTags := ToACKTags(latest.ko.Spec.Tags)
+
+	added, _, removed := ackcompare.GetTagsDifference(latestTags, desiredTags)
+
+	toAdd := FromACKTags(added)
+	toDelete := FromACKTags(removed)
 
 	if len(toDelete) > 0 {
 		_, err = rm.sdkapi.DeleteTagsWithContext(

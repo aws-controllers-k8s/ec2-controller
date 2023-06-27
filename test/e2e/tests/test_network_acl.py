@@ -95,7 +95,6 @@ def simple_network_acl(request):
 
 @service_marker
 @pytest.mark.canary
-@pytest.mark.test_network_acl
 class TestNetworkACLs:
     def test_create_delete(self, ec2_client, simple_network_acl):
         (ref, cr) = simple_network_acl
