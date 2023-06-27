@@ -85,6 +85,18 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def assert_entry(self, network_acl_id: str, rule_number: int, egress: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
+            entries = aws_res["NetworkAcls"][0]["Entries"]
+            for entry in entries:
+                if entry["RuleNumber"] == rule_number and entry["Egress"] == egress:
+                    res_found = True
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
     def get_route_table(self, route_table_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_route_tables(RouteTableIds=[route_table_id])
@@ -93,9 +105,21 @@ class EC2Validator:
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
+        
+    def get_network_acl(self, network_acl_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
+            if len(aws_res["NetworkAcls"]) > 0:
+                return aws_res["NetworkAcls"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
 
     def assert_route_table(self, route_table_id: str, exists=True):
         assert (self.get_route_table(route_table_id) is not None) == exists
+
+    def assert_network_acl(self, network_acl_id: str, exists=True):
+        assert (self.get_network_acl(network_acl_id) is not None) == exists
 
     def get_route_table_association(self, route_table_id: str, subnet_id: str) -> Union[None, Dict]:
         rt = self.get_route_table(route_table_id)
