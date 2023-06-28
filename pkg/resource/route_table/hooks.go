@@ -21,6 +21,7 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/samber/lo"
 )
 
 const LocalRouteGateway = "local"
@@ -307,33 +308,41 @@ func (rm *resourceManager) excludeAwsRoute(
 	// Preparing a list of prefixIds from all the DestinationPrefixListIDs in Routes
 	// This is to prevent multiple AWS API calls of DescribeManagedPrefixLists
 
-	for _, route := range routes {
-		if route.DestinationPrefixListID != nil {
-			prefixListIds = append(prefixListIds, route.DestinationPrefixListID)
-		}
-	}
+	ret = lo.Reject(routes, func(route *svcapitypes.CreateRouteInput, index int) bool {
+		return route.DestinationPrefixListID != nil
+	})
+
+	prefix_list_routes := lo.Filter(routes, func(route *svcapitypes.CreateRouteInput, index int) bool {
+		return route.DestinationPrefixListID != nil
+	})
+
+	prefixListIds = lo.Map(prefix_list_routes, func(route *svcapitypes.CreateRouteInput, _ int) *string {
+		return route.DestinationPrefixListID
+
+	})
 
 	var resp *svcsdk.DescribeManagedPrefixListsOutput
-	awsMpl := map[string]struct{}{}
 	input := &svcsdk.DescribeManagedPrefixListsInput{}
 	input.PrefixListIds = prefixListIds
 	resp, _ = rm.sdkapi.DescribeManagedPrefixLists(input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeManagedPrefixLists", nil)
 
-	for _, mpl := range resp.PrefixLists {
+	m := lo.FilterMap(resp.PrefixLists, func(mpl *svcsdk.ManagedPrefixList, _ int) (string, bool) {
 		if strings.EqualFold(*mpl.OwnerId, "AWS") {
-			awsMpl[*mpl.PrefixListId] = struct{}{}
+			return *mpl.PrefixListId, true
 		}
-	}
-	for _, route := range routes {
-		if route.DestinationPrefixListID != nil {
-			if _, found := awsMpl[*route.DestinationPrefixListID]; !found {
-				ret = append(ret, route)
-			}
-		} else {
-			ret = append(ret, route)
+		return "", false
+	})
+
+	filtered_routes := lo.FilterMap(prefix_list_routes, func(route *svcapitypes.CreateRouteInput, _ int) (*svcapitypes.CreateRouteInput, bool) {
+		found := lo.IndexOf(m, *route.DestinationPrefixListID)
+		if found == -1 {
+			return route, true
 		}
-	}
+		return nil, false
+	})
+	ret = append(ret, filtered_routes...)
+
 	return ret
 }
 
