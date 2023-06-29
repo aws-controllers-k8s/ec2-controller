@@ -4,7 +4,7 @@ metadata:
   name: $NETWORK_ACL_NAME
 spec:
   entries:
-  - cidrBlock: $IGW_ID
+  - cidrBlock: $CIDR_BLOCK
     egress: true
     portRange:
       from: 80
