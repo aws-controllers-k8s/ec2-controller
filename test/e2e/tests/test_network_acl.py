@@ -134,7 +134,7 @@ class TestNetworkACLs:
         patch = {"spec": {"entries":[
                     {
                         "cidrBlock": updated_cidr,
-                        "egress": "true",
+                        "egress": True,
                         "portRange": {
                             "from": 1025,
                             "to": 1026
@@ -145,7 +145,7 @@ class TestNetworkACLs:
                     },
                     {
                         "cidrBlock": updated_cidr,
-                        "egress": "false",
+                        "egress": False,
                         "portRange": {
                             "from": 1025,
                             "to": 1026
@@ -181,6 +181,8 @@ class TestNetworkACLs:
         (ref, cr) = simple_network_acl
 
         resource = k8s.get_resource(ref)
+        print("mydata")
+        print(resource)
         resource_id = cr["status"]["networkACLID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -191,6 +193,7 @@ class TestNetworkACLs:
 
         # Check system and user tags exist for networkAcl resource
         network_acl = ec2_validator.get_network_acl(resource_id)
+        print(network_acl)
         user_tags = {
             "initialtagkey": "initialtagvalue"
         }
