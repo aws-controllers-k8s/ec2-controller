@@ -41,12 +41,12 @@ def network_acl_exists(ec2_client, network_acl_id: str) -> bool:
 def simple_network_acl(request):
     resource_name = random_suffix_name("network-acl-test", 24)
     resources = get_bootstrap_resources()
-    igw_id = resources.SharedTestVPC.public_subnets.route_table.internet_gateway.internet_gateway_id
+    #igw_id = resources.SharedTestVPC.public_subnets.route_table.internet_gateway.internet_gateway_id
 
     replacements = REPLACEMENT_VALUES.copy()
     replacements["NETWORK_ACL_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
-    replacements["IGW_ID"] = igw_id
+    replacements["CIDR_BLOCK"] = "192.168.1.0/24"
 
 
 
@@ -58,8 +58,8 @@ def simple_network_acl(request):
         data = marker.args[0]
         if 'vpc_id' in data:
             replacements["VPC_ID"] = data['vpc_id']
-        if 'igw_id' in data:
-            replacements["IGW_ID"] = data['igw_id']
+        if 'cidr_block' in data:
+            replacements["CIDR_BLOCK"] = data['cidr_block']
         if 'tag_key' in data:
             replacements["TAG_KEY"] = data['tag_key']
         if 'tag_value' in data:
@@ -119,8 +119,6 @@ class TestNetworkACLs:
     def test_crud_entry(self, ec2_client, simple_network_acl):
         (ref, cr) = simple_network_acl
         network_acl_id = cr["status"]["networkACLID"]
-        test_vpc = get_bootstrap_resources().SharedTestVPC
-        igw_id = test_vpc.public_subnets.route_table.internet_gateway.internet_gateway_id
 
         # Check Route Table exists in AWS
         ec2_validator = EC2Validator(ec2_client)
