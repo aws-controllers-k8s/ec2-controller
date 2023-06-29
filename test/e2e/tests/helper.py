@@ -93,7 +93,7 @@ class EC2Validator:
             print("mydata:")
             print(entries)
             for entry in entries:
-                if entry["RuleNumber"] == rule_number and entry["Egress"] == egress:
+                if entry["RuleNumber"] == rule_number and str(entry["Egress"]) == egress:
                     res_found = True
         except self.ec2_client.exceptions.ClientError:
             pass
