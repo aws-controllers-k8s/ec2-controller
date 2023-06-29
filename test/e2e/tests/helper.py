@@ -90,7 +90,8 @@ class EC2Validator:
         try:
             aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
             entries = aws_res["NetworkAcls"][0]["Entries"]
-            print("mydata:"+entries)
+            print("mydata:")
+            print(entries)
             for entry in entries:
                 if entry["RuleNumber"] == rule_number and entry["Egress"] == egress:
                     res_found = True
