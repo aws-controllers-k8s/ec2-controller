@@ -12502,14 +12502,14 @@ func (in *NetworkACLStatus) DeepCopyInto(out *NetworkACLStatus) {
 			}
 		}
 	}
+	if in.ID != nil {
+		in, out := &in.ID, &out.ID
+		*out = new(string)
+		**out = **in
+	}
 	if in.IsDefault != nil {
 		in, out := &in.IsDefault, &out.IsDefault
 		*out = new(bool)
-		**out = **in
-	}
-	if in.NetworkACLID != nil {
-		in, out := &in.NetworkACLID, &out.NetworkACLID
-		*out = new(string)
 		**out = **in
 	}
 	if in.OwnerID != nil {

@@ -48,12 +48,12 @@ type NetworkACLStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
+	// The ID of the network ACL.
+	// +kubebuilder:validation:Optional
+	ID *string `json:"id,omitempty"`
 	// Indicates whether this is the default network ACL for the VPC.
 	// +kubebuilder:validation:Optional
 	IsDefault *bool `json:"isDefault,omitempty"`
-	// The ID of the network ACL.
-	// +kubebuilder:validation:Optional
-	NetworkACLID *string `json:"networkACLID,omitempty"`
 	// The ID of the Amazon Web Services account that owns the network ACL.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
@@ -62,6 +62,7 @@ type NetworkACLStatus struct {
 // NetworkACL is the Schema for the NetworkACLS API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.id`
 type NetworkACL struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

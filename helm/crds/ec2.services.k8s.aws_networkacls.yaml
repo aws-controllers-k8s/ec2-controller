@@ -15,7 +15,11 @@ spec:
     singular: networkacl
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.id
+      name: ID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: NetworkACL is the Schema for the NetworkACLS API
@@ -182,13 +186,13 @@ spec:
                   - type
                   type: object
                 type: array
+              id:
+                description: The ID of the network ACL.
+                type: string
               isDefault:
                 description: Indicates whether this is the default network ACL for
                   the VPC.
                 type: boolean
-              networkACLID:
-                description: The ID of the network ACL.
-                type: string
               ownerID:
                 description: The ID of the Amazon Web Services account that owns the
                   network ACL.

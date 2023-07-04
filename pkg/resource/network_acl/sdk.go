@@ -160,11 +160,6 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.IsDefault = nil
 		}
-		if elem.NetworkAclId != nil {
-			ko.Status.NetworkACLID = elem.NetworkAclId
-		} else {
-			ko.Status.NetworkACLID = nil
-		}
 		if elem.OwnerId != nil {
 			ko.Status.OwnerID = elem.OwnerId
 		} else {
@@ -208,7 +203,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return r.ko.Status.NetworkACLID == nil
+	return r.ko.Status.ID == nil
 
 }
 
@@ -219,9 +214,9 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeNetworkAclsInput, error) {
 	res := &svcsdk.DescribeNetworkAclsInput{}
 
-	if r.ko.Status.NetworkACLID != nil {
+	if r.ko.Status.ID != nil {
 		f3 := []*string{}
-		f3 = append(f3, r.ko.Status.NetworkACLID)
+		f3 = append(f3, r.ko.Status.ID)
 		res.SetNetworkAclIds(f3)
 	}
 
@@ -330,9 +325,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.IsDefault = nil
 	}
 	if resp.NetworkAcl.NetworkAclId != nil {
-		ko.Status.NetworkACLID = resp.NetworkAcl.NetworkAclId
+		ko.Status.ID = resp.NetworkAcl.NetworkAclId
 	} else {
-		ko.Status.NetworkACLID = nil
+		ko.Status.ID = nil
 	}
 	if resp.NetworkAcl.OwnerId != nil {
 		ko.Status.OwnerID = resp.NetworkAcl.OwnerId
@@ -436,8 +431,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteNetworkAclInput, error) {
 	res := &svcsdk.DeleteNetworkAclInput{}
 
-	if r.ko.Status.NetworkACLID != nil {
-		res.SetNetworkAclId(*r.ko.Status.NetworkACLID)
+	if r.ko.Status.ID != nil {
+		res.SetNetworkAclId(*r.ko.Status.ID)
 	}
 
 	return res, nil

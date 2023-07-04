@@ -88,7 +88,7 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.NetworkACLID = &identifier.NameOrID
+	r.ko.Status.ID = &identifier.NameOrID
 
 	return nil
 }

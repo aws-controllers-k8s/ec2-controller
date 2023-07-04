@@ -37,7 +37,7 @@ func (rm *resourceManager) syncTags(
 		exit(err)
 	}(err)
 
-	resourceId := []*string{latest.ko.Status.NetworkACLID}
+	resourceId := []*string{latest.ko.Status.ID}
 
 	desiredTags := ToACKTags(desired.ko.Spec.Tags)
 	latestTags := ToACKTags(latest.ko.Spec.Tags)
@@ -151,7 +151,7 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 func (rm *resourceManager) requiredFieldsMissingForCreateNetworkAcl(
 	r *resource,
 ) bool {
-	return r.ko.Status.NetworkACLID == nil
+	return r.ko.Status.ID == nil
 }
 
 func (rm *resourceManager) createRules(
@@ -325,7 +325,7 @@ func (rm *resourceManager) createEntry(
 		res.SetRuleNumber(*c.RuleNumber)
 	}
 
-	res.NetworkAclId = r.ko.Status.NetworkACLID
+	res.NetworkAclId = r.ko.Status.ID
 	_, err = rm.sdkapi.CreateNetworkAclEntryWithContext(ctx, res)
 	rm.metrics.RecordAPICall("CREATE", "CreateNetworkAclEntry", err)
 	return err
@@ -384,9 +384,9 @@ func (rm *resourceManager) updateEntry(
 		res.SetRuleNumber(*c.RuleNumber)
 	}
 
-	res.NetworkAclId = r.ko.Status.NetworkACLID
+	res.NetworkAclId = r.ko.Status.ID
 	_, err = rm.sdkapi.ReplaceNetworkAclEntryWithContext(ctx, res)
-	rm.metrics.RecordAPICall("CREATE", "ReplaceNetworkAclEntry", err)
+	rm.metrics.RecordAPICall("REPLACE", "ReplaceNetworkAclEntry", err)
 	return err
 }
 
@@ -411,9 +411,9 @@ func (rm *resourceManager) deleteEntry(
 		res.SetRuleNumber(*c.RuleNumber)
 	}
 
-	res.NetworkAclId = r.ko.Status.NetworkACLID
+	res.NetworkAclId = r.ko.Status.ID
 	_, err = rm.sdkapi.DeleteNetworkAclEntryWithContext(ctx, res)
-	rm.metrics.RecordAPICall("CREATE", "CreateNetworkAclEntry", err)
+	rm.metrics.RecordAPICall("DELETE", "DeleteNetworkAclEntry", err)
 	return err
 }
 
