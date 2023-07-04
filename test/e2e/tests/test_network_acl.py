@@ -99,7 +99,7 @@ class TestNetworkACLs:
     def test_create_delete(self, ec2_client, simple_network_acl):
         (ref, cr) = simple_network_acl
         print(cr)
-        network_acl_id = cr["status"]["networkACLID"]
+        network_acl_id = cr["status"]["id"]
         print(network_acl_id)
 
         # Check Network ACL exists
@@ -118,7 +118,7 @@ class TestNetworkACLs:
 
     def test_crud_entry(self, ec2_client, simple_network_acl):
         (ref, cr) = simple_network_acl
-        network_acl_id = cr["status"]["networkACLID"]
+        network_acl_id = cr["status"]["id"]
 
         # Check Route Table exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -183,7 +183,7 @@ class TestNetworkACLs:
         resource = k8s.get_resource(ref)
         print("mydata")
         print(resource)
-        resource_id = cr["status"]["networkACLID"]
+        resource_id = cr["status"]["id"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
