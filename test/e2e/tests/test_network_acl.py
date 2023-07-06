@@ -41,17 +41,11 @@ def network_acl_exists(ec2_client, network_acl_id: str) -> bool:
 def simple_network_acl(request):
     resource_name = random_suffix_name("network-acl-test", 24)
     resources = get_bootstrap_resources()
-    #igw_id = resources.SharedTestVPC.public_subnets.route_table.internet_gateway.internet_gateway_id
 
     replacements = REPLACEMENT_VALUES.copy()
     replacements["NETWORK_ACL_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
     replacements["CIDR_BLOCK"] = "192.168.1.0/24"
-
-
-
-    #replacements["TAG_KEY"] = "Name"
-    #replacements["TAG_VALUE"] = resource_name
 
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
@@ -98,9 +92,7 @@ def simple_network_acl(request):
 class TestNetworkACLs:
     def test_create_delete(self, ec2_client, simple_network_acl):
         (ref, cr) = simple_network_acl
-        print(cr)
         network_acl_id = cr["status"]["id"]
-        print(network_acl_id)
 
         # Check Network ACL exists
         exists = network_acl_exists(ec2_client, network_acl_id)
@@ -181,8 +173,6 @@ class TestNetworkACLs:
         (ref, cr) = simple_network_acl
 
         resource = k8s.get_resource(ref)
-        print("mydata")
-        print(resource)
         resource_id = cr["status"]["id"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -193,7 +183,6 @@ class TestNetworkACLs:
 
         # Check system and user tags exist for networkAcl resource
         network_acl = ec2_validator.get_network_acl(resource_id)
-        print(network_acl)
         user_tags = {
             "initialtagkey": "initialtagvalue"
         }

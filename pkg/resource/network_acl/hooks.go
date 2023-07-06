@@ -24,7 +24,9 @@ import (
 	"github.com/samber/lo"
 )
 
-var defaultRuleNumber = 32767
+var DefaultRuleNumber = 32767
+var TypeSubnet = "SubnetID"
+var TypeNaclAssocId = "NetworkACLAssociationID"
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
 func (rm *resourceManager) syncTags(
@@ -82,9 +84,7 @@ func (rm *resourceManager) syncTags(
 
 // // sdkTags converts *svcapitypes.Tag array to a *svcsdk.Tag array
 func (rm *resourceManager) sdkTags(
-
 	tags []*svcapitypes.Tag,
-
 ) (sdktags []*svcsdk.Tag) {
 
 	for _, i := range tags {
@@ -130,7 +130,7 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.Entries") {
-		if err := rm.syncRules(ctx, desired, latest); err != nil {
+		if err := rm.syncEntries(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 		updated, err = rm.sdkFind(ctx, desired)
@@ -162,12 +162,12 @@ func (rm *resourceManager) requiredFieldsMissingForCreateNetworkAcl(
 	return r.ko.Status.ID == nil
 }
 
-func (rm *resourceManager) createRules(
+func (rm *resourceManager) createEntries(
 	ctx context.Context,
 	r *resource,
 ) error {
 	if r.ko.Spec.Entries != nil {
-		if err := rm.syncRules(ctx, r, nil); err != nil {
+		if err := rm.syncEntries(ctx, r, nil); err != nil {
 			return err
 		}
 	}
@@ -178,7 +178,7 @@ func (rm *resourceManager) createAssociation(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if r.ko.Spec.Entries != nil {
+	if r.ko.Spec.Associations != nil {
 		if err := rm.syncAssociation(ctx, r, nil); err != nil {
 			return err
 		}
@@ -202,10 +202,10 @@ func (rm *resourceManager) syncAssociation(
 	if latest != nil {
 		for _, association := range latest.ko.Spec.Associations {
 			if association.NetworkACLAssociationID != nil {
-				latest_associations[*association.NetworkACLAssociationID] = "NetworkACLAssociationID"
+				latest_associations[*association.NetworkACLAssociationID] = TypeNaclAssocId
 			}
 			if association.SubnetID != nil {
-				latest_associations[*association.SubnetID] = "SubnetID"
+				latest_associations[*association.SubnetID] = TypeSubnet
 			}
 			if association.NetworkACLAssociationID != nil && association.SubnetID != nil {
 				associationid_subnet[*association.SubnetID] = *association.NetworkACLAssociationID
@@ -215,22 +215,23 @@ func (rm *resourceManager) syncAssociation(
 	if desired != nil {
 		for _, association := range desired.ko.Spec.Associations {
 			if association.NetworkACLAssociationID != nil {
-				desired_associations[*association.NetworkACLAssociationID] = "NetworkACLAssociationID"
+				desired_associations[*association.NetworkACLAssociationID] = TypeNaclAssocId
 			}
 			if association.SubnetID != nil {
-				desired_associations[*association.SubnetID] = "SubnetID"
+				desired_associations[*association.SubnetID] = TypeSubnet
 			}
 		}
 	}
+	// Determining the associations to be added and deleted by comparing associations of latest and desired.
 	to_Add := lo.OmitByKeys(desired_associations, lo.Keys(latest_associations))
 	included_subnets := lo.PickByKeys(associationid_subnet, lo.Keys(desired_associations))
-	y := lo.OmitByKeys(latest_associations, lo.Keys(desired_associations))
-	to_Delete := lo.OmitByKeys(y, lo.Values(included_subnets))
+	associations_diff := lo.OmitByKeys(latest_associations, lo.Keys(desired_associations))
+	to_Delete := lo.OmitByKeys(associations_diff, lo.Values(included_subnets))
 
 	for rid, rtype := range to_Add {
 		input := &svcsdk.ReplaceNetworkAclAssociationInput{}
 
-		if rtype == "NetworkACLAssociationID" {
+		if rtype == TypeNaclAssocId {
 			input.AssociationId = &rid
 			input.NetworkAclId = latest.ko.Status.ID
 			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
@@ -239,23 +240,23 @@ func (rm *resourceManager) syncAssociation(
 				return err
 			}
 		}
-		if rtype == "SubnetID" {
+		if rtype == TypeSubnet {
 			dna_input := &svcsdk.DescribeNetworkAclsInput{
 				Filters: []*svcsdk.Filter{
 					{
-						Name:   toStrPtr("association.subnet-id"),
+						Name:   lo.ToPtr("association.subnet-id"),
 						Values: []*string{&rid},
 					},
 				},
 			}
 			dna_output, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, dna_input)
-			rm.metrics.RecordAPICall("DESCRIBE", "DescribeNetworkAcls", err)
+			rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 			if err != nil {
 				return err
 			}
 			input.NetworkAclId = desired.ko.Status.ID
 			if len(dna_output.NetworkAcls) != 1 {
-				return errors.New("unexpected output from describenetworkacls for the given subnet")
+				return errors.New("unexpected output from DescribeNetworkAcls for the given subnet")
 			} else {
 				for _, association := range dna_output.NetworkAcls[0].Associations {
 					if *association.SubnetId == rid {
@@ -275,27 +276,27 @@ func (rm *resourceManager) syncAssociation(
 	x := &svcsdk.DescribeNetworkAclsInput{
 		Filters: []*svcsdk.Filter{
 			{
-				Name:   toStrPtr("default"),
-				Values: []*string{toStrPtr("true")},
+				Name:   lo.ToPtr("default"),
+				Values: []*string{lo.ToPtr("true")},
 			},
 			{
-				Name:   toStrPtr("vpc-id"),
+				Name:   lo.ToPtr("vpc-id"),
 				Values: []*string{desired.ko.Spec.VPCID},
 			},
 		},
 	}
 	default_nacl, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, x)
-	rm.metrics.RecordAPICall("DESCRIBE", "DescribeNetworkAcls", err)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 	if err != nil {
 		return err
 	}
 	if default_nacl == nil {
-		return errors.New("could not determine")
+		return errors.New("could not determine default Nacl for the given VPC")
 	}
 	for rid, rtype := range to_Delete {
 		input := &svcsdk.ReplaceNetworkAclAssociationInput{}
 
-		if rtype == "NetworkACLAssociationID" {
+		if rtype == TypeNaclAssocId {
 			input.AssociationId = &rid
 			input.NetworkAclId = default_nacl.NetworkAcls[0].NetworkAclId
 			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
@@ -304,15 +305,15 @@ func (rm *resourceManager) syncAssociation(
 				return err
 			}
 		}
-		if rtype == "SubnetID" {
+		if rtype == TypeSubnet {
 			dna_input := &svcsdk.DescribeNetworkAclsInput{
 				Filters: []*svcsdk.Filter{
 					{
-						Name:   toStrPtr("network-acl-id"),
+						Name:   lo.ToPtr("network-acl-id"),
 						Values: []*string{desired.ko.Status.ID},
 					},
 					{
-						Name:   toStrPtr("association.subnet-id"),
+						Name:   lo.ToPtr("association.subnet-id"),
 						Values: []*string{&rid},
 					},
 				},
@@ -325,14 +326,14 @@ func (rm *resourceManager) syncAssociation(
 			input.NetworkAclId = default_nacl.NetworkAcls[0].NetworkAclId
 			if len(dna_output.NetworkAcls) != 1 {
 				return errors.New("unexpected output from describenetworkacls for the given subnet")
-			} else {
-				for _, association := range dna_output.NetworkAcls[0].Associations {
-					if *association.SubnetId == rid {
-						input.AssociationId = association.NetworkAclAssociationId
-						break
-					}
+			}
+			for _, association := range dna_output.NetworkAcls[0].Associations {
+				if *association.SubnetId == rid {
+					input.AssociationId = association.NetworkAclAssociationId
+					break
 				}
 			}
+
 			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
 			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
 			if err != nil {
@@ -344,17 +345,13 @@ func (rm *resourceManager) syncAssociation(
 
 }
 
-func toStrPtr(str string) *string {
-	return &str
-}
-
-func (rm *resourceManager) syncRules(
+func (rm *resourceManager) syncEntries(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncRules")
+	exit := rlog.Trace("rm.syncEntries")
 	defer exit(err)
 	toAdd := []*svcapitypes.NetworkACLEntry{}
 	toDelete := []*svcapitypes.NetworkACLEntry{}
@@ -374,7 +371,7 @@ func (rm *resourceManager) syncRules(
 
 	for _, desiredEntry := range desired.ko.Spec.Entries {
 
-		if *((*desiredEntry).RuleNumber) == int64(defaultRuleNumber) {
+		if *((*desiredEntry).RuleNumber) == int64(DefaultRuleNumber) {
 			// no-op for default route
 			continue
 		}
@@ -387,7 +384,7 @@ func (rm *resourceManager) syncRules(
 
 	if latest != nil {
 		for _, latestEntry := range latest.ko.Spec.Entries {
-			if *((*latestEntry).RuleNumber) == int64(defaultRuleNumber) {
+			if *((*latestEntry).RuleNumber) == int64(DefaultRuleNumber) {
 				// no-op for default route
 				continue
 			}
@@ -509,7 +506,7 @@ func (rm *resourceManager) createEntry(
 
 	res.NetworkAclId = r.ko.Status.ID
 	_, err = rm.sdkapi.CreateNetworkAclEntryWithContext(ctx, res)
-	rm.metrics.RecordAPICall("CREATE", "CreateNetworkAclEntry", err)
+	rm.metrics.RecordAPICall("UPDATE", "CreateNetworkAclEntry", err)
 	return err
 }
 
@@ -568,7 +565,7 @@ func (rm *resourceManager) updateEntry(
 
 	res.NetworkAclId = r.ko.Status.ID
 	_, err = rm.sdkapi.ReplaceNetworkAclEntryWithContext(ctx, res)
-	rm.metrics.RecordAPICall("REPLACE", "ReplaceNetworkAclEntry", err)
+	rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclEntry", err)
 	return err
 }
 
@@ -595,7 +592,7 @@ func (rm *resourceManager) deleteEntry(
 
 	res.NetworkAclId = r.ko.Status.ID
 	_, err = rm.sdkapi.DeleteNetworkAclEntryWithContext(ctx, res)
-	rm.metrics.RecordAPICall("DELETE", "DeleteNetworkAclEntry", err)
+	rm.metrics.RecordAPICall("UPDATE", "DeleteNetworkAclEntry", err)
 	return err
 }
 
