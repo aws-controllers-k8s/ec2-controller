@@ -46,6 +46,8 @@ def simple_network_acl(request):
     replacements["NETWORK_ACL_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
     replacements["CIDR_BLOCK"] = "192.168.1.0/24"
+    replacements["TAG_KEY"] = "initialtagkey"
+    replacements["TAG_VALUE"] = "initialtagvalue"
 
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
@@ -167,8 +169,6 @@ class TestNetworkACLs:
         # Check Network ACL no longer exists in AWS
         ec2_validator.assert_network_acl(network_acl_id, exists=False)
 
-
-    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
     def test_crud_tags(self, ec2_client, simple_network_acl):
         (ref, cr) = simple_network_acl
 
