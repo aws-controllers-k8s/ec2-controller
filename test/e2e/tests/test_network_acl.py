@@ -162,13 +162,13 @@ class TestNetworkACLs:
 
 
         test_vpc = get_bootstrap_resources().SharedTestVPC
-        test_subnet = test_vpc.private_subnets.subnet_ids[0]
+        subnet_id = test_vpc.public_subnets.subnet_ids[0]
 
 
         # Update associations
         update_associations = [
                 {
-                "subnetID": test_subnet
+                "subnetID": subnet_id
             }
             ]
 
@@ -186,7 +186,7 @@ class TestNetworkACLs:
         # assert patched state
         resource = k8s.get_resource(ref)
         # Check Association exist in AWS
-        ec2_validator.assert_association(network_acl_id, test_subnet)
+        ec2_validator.assert_association(network_acl_id, subnet_id)
 
         # Delete Network ACL 
         _, deleted = k8s.delete_custom_resource(ref)
