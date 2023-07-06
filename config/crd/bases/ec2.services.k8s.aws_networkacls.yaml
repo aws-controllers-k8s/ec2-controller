@@ -51,6 +51,18 @@ spec:
                       type: string
                     subnetID:
                       type: string
+                    subnetRef:
+                      description: Reference field for SubnetID
+                      properties:
+                        from:
+                          description: AWSResourceReference provides all the values
+                            necessary to reference another k8s resource for finding
+                            the identifier(Id/ARN/Name)
+                          properties:
+                            name:
+                              type: string
+                          type: object
+                      type: object
                   type: object
                 type: array
               entries:

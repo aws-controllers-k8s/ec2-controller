@@ -543,6 +543,10 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      Associations.SubnetID:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
     renames:
       operations:
         CreateNetworkAcl:

@@ -21,6 +21,7 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/samber/lo"
 )
 
 var defaultRuleNumber = 32767
@@ -145,6 +146,13 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 		updated.ko.Spec.Tags = desired.ko.Spec.Tags
 	}
 
+	if delta.DifferentAt("Spec.Associations") {
+		if err := rm.syncAssociation(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+		updated.ko.Spec.Associations = desired.ko.Spec.Associations
+	}
+
 	return updated, nil
 }
 
@@ -164,6 +172,180 @@ func (rm *resourceManager) createRules(
 		}
 	}
 	return nil
+}
+
+func (rm *resourceManager) createAssociation(
+	ctx context.Context,
+	r *resource,
+) error {
+	if r.ko.Spec.Entries != nil {
+		if err := rm.syncAssociation(ctx, r, nil); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (rm *resourceManager) syncAssociation(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncAssociation")
+	defer exit(err)
+
+	latest_associations := make(map[string]string)
+	desired_associations := make(map[string]string)
+	associationid_subnet := make(map[string]string)
+
+	if latest != nil {
+		for _, association := range latest.ko.Spec.Associations {
+			if association.NetworkACLAssociationID != nil {
+				latest_associations[*association.NetworkACLAssociationID] = "NetworkACLAssociationID"
+			}
+			if association.SubnetID != nil {
+				latest_associations[*association.SubnetID] = "SubnetID"
+			}
+			if association.NetworkACLAssociationID != nil && association.SubnetID != nil {
+				associationid_subnet[*association.SubnetID] = *association.NetworkACLAssociationID
+			}
+		}
+	}
+	if desired != nil {
+		for _, association := range desired.ko.Spec.Associations {
+			if association.NetworkACLAssociationID != nil {
+				desired_associations[*association.NetworkACLAssociationID] = "NetworkACLAssociationID"
+			}
+			if association.SubnetID != nil {
+				desired_associations[*association.SubnetID] = "SubnetID"
+			}
+		}
+	}
+	to_Add := lo.OmitByKeys(desired_associations, lo.Keys(latest_associations))
+	included_subnets := lo.PickByKeys(associationid_subnet, lo.Keys(desired_associations))
+	y := lo.OmitByKeys(latest_associations, lo.Keys(desired_associations))
+	to_Delete := lo.OmitByKeys(y, lo.Values(included_subnets))
+
+	for rid, rtype := range to_Add {
+		input := &svcsdk.ReplaceNetworkAclAssociationInput{}
+
+		if rtype == "NetworkACLAssociationID" {
+			input.AssociationId = &rid
+			input.NetworkAclId = latest.ko.Status.ID
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
+			if err != nil {
+				return err
+			}
+		}
+		if rtype == "SubnetID" {
+			dna_input := &svcsdk.DescribeNetworkAclsInput{
+				Filters: []*svcsdk.Filter{
+					{
+						Name:   toStrPtr("association.subnet-id"),
+						Values: []*string{&rid},
+					},
+				},
+			}
+			dna_output, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, dna_input)
+			rm.metrics.RecordAPICall("DESCRIBE", "DescribeNetworkAcls", err)
+			if err != nil {
+				return err
+			}
+			input.NetworkAclId = desired.ko.Status.ID
+			if len(dna_output.NetworkAcls) != 1 {
+				return errors.New("unexpected output from describenetworkacls for the given subnet")
+			} else {
+				for _, association := range dna_output.NetworkAcls[0].Associations {
+					if *association.SubnetId == rid {
+						input.AssociationId = association.NetworkAclAssociationId
+						break
+					}
+				}
+			}
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	x := &svcsdk.DescribeNetworkAclsInput{
+		Filters: []*svcsdk.Filter{
+			{
+				Name:   toStrPtr("default"),
+				Values: []*string{toStrPtr("true")},
+			},
+			{
+				Name:   toStrPtr("vpc-id"),
+				Values: []*string{desired.ko.Spec.VPCID},
+			},
+		},
+	}
+	default_nacl, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, x)
+	rm.metrics.RecordAPICall("DESCRIBE", "DescribeNetworkAcls", err)
+	if err != nil {
+		return err
+	}
+	if default_nacl == nil {
+		return errors.New("could not determine")
+	}
+	for rid, rtype := range to_Delete {
+		input := &svcsdk.ReplaceNetworkAclAssociationInput{}
+
+		if rtype == "NetworkACLAssociationID" {
+			input.AssociationId = &rid
+			input.NetworkAclId = default_nacl.NetworkAcls[0].NetworkAclId
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
+			if err != nil {
+				return err
+			}
+		}
+		if rtype == "SubnetID" {
+			dna_input := &svcsdk.DescribeNetworkAclsInput{
+				Filters: []*svcsdk.Filter{
+					{
+						Name:   toStrPtr("network-acl-id"),
+						Values: []*string{desired.ko.Status.ID},
+					},
+					{
+						Name:   toStrPtr("association.subnet-id"),
+						Values: []*string{&rid},
+					},
+				},
+			}
+			dna_output, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, dna_input)
+			rm.metrics.RecordAPICall("DESCRIBE", "DescribeNetworkAcls", err)
+			if err != nil {
+				return err
+			}
+			input.NetworkAclId = default_nacl.NetworkAcls[0].NetworkAclId
+			if len(dna_output.NetworkAcls) != 1 {
+				return errors.New("unexpected output from describenetworkacls for the given subnet")
+			} else {
+				for _, association := range dna_output.NetworkAcls[0].Associations {
+					if *association.SubnetId == rid {
+						input.AssociationId = association.NetworkAclAssociationId
+						break
+					}
+				}
+			}
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+
+}
+
+func toStrPtr(str string) *string {
+	return &str
 }
 
 func (rm *resourceManager) syncRules(

@@ -2663,6 +2663,8 @@ type NetworkACLAssociation struct {
 	NetworkACLAssociationID *string `json:"networkACLAssociationID,omitempty"`
 	NetworkACLID            *string `json:"networkACLID,omitempty"`
 	SubnetID                *string `json:"subnetID,omitempty"`
+	// Reference field for SubnetID
+	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 }
 
 // Describes an entry in a network ACL.
