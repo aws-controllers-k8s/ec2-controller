@@ -160,7 +160,35 @@ class TestNetworkACLs:
         ec2_validator.assert_entry(network_acl_id, 100, "True")
         ec2_validator.assert_entry(network_acl_id, 100, "False")
 
-         # Delete Network ACL 
+
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        test_subnet = test_vpc.private_subnets.subnet_ids[0]
+
+
+        # Update associations
+        update_associations = [
+                {
+                "subnetID": test_subnet
+            }
+            ]
+
+        # Patch the networkAcl, updating the tags with new pair
+        updates = {
+            "spec": {"associations": update_associations},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # assert patched state
+        resource = k8s.get_resource(ref)
+        # Check Association exist in AWS
+        ec2_validator.assert_association(network_acl_id, test_subnet)
+
+        # Delete Network ACL 
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 
@@ -225,12 +253,6 @@ class TestNetworkACLs:
             expected=updated_tags,
             actual=network_acl["Tags"],
         )
-
-        # # Only user tags should be present in Spec
-        # resource = k8s.get_resource(ref)
-        # assert len(resource["spec"]["tags"]) == 1
-        # assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
-        # assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
 
         # Patch the networkAcl resource, deleting the tags
         updates = {

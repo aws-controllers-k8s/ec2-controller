@@ -90,10 +90,20 @@ class EC2Validator:
         try:
             aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
             entries = aws_res["NetworkAcls"][0]["Entries"]
-            print("mydata:")
-            print(entries)
             for entry in entries:
                 if entry["RuleNumber"] == rule_number and str(entry["Egress"]) == egress:
+                    res_found = True
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+    
+    def assert_association(self, network_acl_id: str, subnet_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_network_acls(NetworkAclIds=[network_acl_id])
+            associations = aws_res["NetworkAcls"][0]["Associations"]
+            for association in associations:
+                if association["SubnetId"] == subnet_id:
                     res_found = True
         except self.ec2_client.exceptions.ClientError:
             pass
