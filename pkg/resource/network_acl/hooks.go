@@ -134,24 +134,22 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 		if err := rm.syncEntries(ctx, desired, latest); err != nil {
 			return nil, err
 		}
-		updated, err = rm.sdkFind(ctx, desired)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
 		}
-		updated.ko.Spec.Tags = desired.ko.Spec.Tags
 	}
 
 	if delta.DifferentAt("Spec.Associations") {
 		if err := rm.syncAssociation(ctx, desired, latest); err != nil {
 			return nil, err
 		}
-		updated.ko.Spec.Associations = desired.ko.Spec.Associations
+	}
+	updated, err = rm.sdkFind(ctx, desired)
+	if err != nil {
+		return nil, err
 	}
 
 	return updated, nil
@@ -297,10 +295,10 @@ func (rm *resourceManager) deleteOldAssociations(
 			if err != nil {
 				return err
 			}
-			input.NetworkAclId = default_nacl.NetworkAcls[0].NetworkAclId
 			if len(dna_output.NetworkAcls) != 1 {
 				return errors.New("unexpected output from describenetworkacls for the given subnet")
 			}
+			input.NetworkAclId = default_nacl.NetworkAcls[0].NetworkAclId
 			for _, association := range dna_output.NetworkAcls[0].Associations {
 				if *association.SubnetId == rid {
 					input.AssociationId = association.NetworkAclAssociationId

@@ -188,6 +188,17 @@ class TestNetworkACLs:
         # Check Association exist in AWS
         ec2_validator.assert_association(network_acl_id, subnet_id)
 
+
+        # Removing association so that nacl can be deleted
+        updates = {
+            "spec": {"associations": []},
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
         # Delete Network ACL 
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
