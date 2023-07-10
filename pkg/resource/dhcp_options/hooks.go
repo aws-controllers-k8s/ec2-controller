@@ -39,6 +39,14 @@ func (rm *resourceManager) customUpdateDHCPOptions(
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
+	if delta.DifferentAt("Spec.VPC") {
+		if desired.ko.Spec.VPC != nil {
+			if err = rm.attachToVPC(ctx, desired); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
@@ -186,4 +194,28 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.SetTags(requestedTags)
 		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
+}
+
+func (rm *resourceManager) attachToVPC(
+	ctx context.Context,
+	desired *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.attachToVPC")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.AssociateDhcpOptionsInput{
+		DhcpOptionsId: desired.ko.Status.DHCPOptionsID,
+		VpcId:         desired.ko.Spec.VPC,
+	}
+
+	_, err = rm.sdkapi.AssociateDhcpOptionsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "AssociateDhcpOptions", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

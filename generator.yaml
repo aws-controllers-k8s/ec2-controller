@@ -197,6 +197,13 @@ resources:
         print:
           path: Status.dhcpOptionsID
           name: ID
+      VPC:
+        from:
+          operation: AssociateDhcpOptions
+          path: VpcId
+        references:
+          resource: VPC
+          path: Status.VPCID
       Tags:
         from:
           operation: CreateTags

@@ -1,0 +1,18 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: DHCPOptions
+metadata:
+  name: $DHCP_OPTIONS_NAME
+spec:
+  dhcpConfigurations:
+    - key: $DHCP_KEY_1
+      values:
+        - $DHCP_VAL_1
+    - key: $DHCP_KEY_2
+      values:
+        - $DHCP_VAL_2_1
+        - $DHCP_VAL_2_2
+  vpc: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
+

@@ -47,6 +47,16 @@ func newResourceDelta(
 	if !reflect.DeepEqual(a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations) {
 		delta.Add("Spec.DHCPConfigurations", a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations)
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.VPC, b.ko.Spec.VPC) {
+		delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
+	} else if a.ko.Spec.VPC != nil && b.ko.Spec.VPC != nil {
+		if *a.ko.Spec.VPC != *b.ko.Spec.VPC {
+			delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
+		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
+	}
 
 	return delta
 }

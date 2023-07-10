@@ -23,6 +23,7 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
+from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "dhcpoptions"
@@ -222,3 +223,48 @@ class TestDhcpOptions:
 
         # Check dhcpOptions no longer exists in AWS
         ec2_validator.assert_dhcp_options(resource_id, exists=False)
+
+    def test_dhcpoptions_creation_with_vpcref(self,ec2_client):
+        resource_name = random_suffix_name("dhcpoptions-vpc-ref", 24)
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["DHCP_OPTIONS_NAME"] = resource_name
+        replacements["DHCP_KEY_1"] = "domain-name"
+        replacements["DHCP_VAL_1"] = "ack-example.com"
+        replacements["DHCP_KEY_2"] = "domain-name-servers"
+        replacements["DHCP_VAL_2_1"] = "10.2.5.1"
+        replacements["DHCP_VAL_2_2"] = "10.2.5.2"
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        replacements["VPC_ID"] = test_vpc.vpc_id
+
+        # Load VPC CR
+        resource_data = load_ec2_resource(
+            "dhcp_options_vpc_ref",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        resource_id = cr["status"]["dhcpOptionsID"]
+
+        # Check DHCP Options exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_dhcp_options(resource_id)
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check DHCP Options no longer exists in AWS
+        ec2_validator.assert_dhcp_options(resource_id, exists=False)
+
+
