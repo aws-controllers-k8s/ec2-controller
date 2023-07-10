@@ -137,11 +137,13 @@ type AlternatePathHint struct {
 
 // Describes a network access control (ACL) rule.
 type AnalysisACLRule struct {
-	CIDR       *string `json:"cidr,omitempty"`
-	Egress     *bool   `json:"egress,omitempty"`
-	Protocol   *string `json:"protocol,omitempty"`
-	RuleAction *string `json:"ruleAction,omitempty"`
-	RuleNumber *int64  `json:"ruleNumber,omitempty"`
+	CIDR   *string `json:"cidr,omitempty"`
+	Egress *bool   `json:"egress,omitempty"`
+	// Describes a range of ports.
+	PortRange  *PortRange `json:"portRange,omitempty"`
+	Protocol   *string    `json:"protocol,omitempty"`
+	RuleAction *string    `json:"ruleAction,omitempty"`
+	RuleNumber *int64     `json:"ruleNumber,omitempty"`
 }
 
 // Describes a path component.
@@ -179,11 +181,13 @@ type AnalysisRouteTableRoute struct {
 
 // Describes a security group rule.
 type AnalysisSecurityGroupRule struct {
-	CIDR            *string `json:"cidr,omitempty"`
-	Direction       *string `json:"direction,omitempty"`
-	PrefixListID    *string `json:"prefixListID,omitempty"`
-	Protocol        *string `json:"protocol,omitempty"`
-	SecurityGroupID *string `json:"securityGroupID,omitempty"`
+	CIDR      *string `json:"cidr,omitempty"`
+	Direction *string `json:"direction,omitempty"`
+	// Describes a range of ports.
+	PortRange       *PortRange `json:"portRange,omitempty"`
+	PrefixListID    *string    `json:"prefixListID,omitempty"`
+	Protocol        *string    `json:"protocol,omitempty"`
+	SecurityGroupID *string    `json:"securityGroupID,omitempty"`
 }
 
 // Describes the private IP addresses assigned to a network interface.
@@ -2654,29 +2658,38 @@ type NATGateway_SDK struct {
 	VPCID                *string               `json:"vpcID,omitempty"`
 }
 
-// Describes a network ACL.
-type NetworkACL struct {
-	IsDefault    *bool   `json:"isDefault,omitempty"`
-	NetworkACLID *string `json:"networkACLID,omitempty"`
-	OwnerID      *string `json:"ownerID,omitempty"`
-	Tags         []*Tag  `json:"tags,omitempty"`
-	VPCID        *string `json:"vpcID,omitempty"`
-}
-
 // Describes an association between a network ACL and a subnet.
 type NetworkACLAssociation struct {
 	NetworkACLAssociationID *string `json:"networkACLAssociationID,omitempty"`
 	NetworkACLID            *string `json:"networkACLID,omitempty"`
 	SubnetID                *string `json:"subnetID,omitempty"`
+	// Reference field for SubnetID
+	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 }
 
 // Describes an entry in a network ACL.
 type NetworkACLEntry struct {
-	CIDRBlock     *string `json:"cidrBlock,omitempty"`
-	Egress        *bool   `json:"egress,omitempty"`
-	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
-	Protocol      *string `json:"protocol,omitempty"`
-	RuleNumber    *int64  `json:"ruleNumber,omitempty"`
+	CIDRBlock *string `json:"cidrBlock,omitempty"`
+	Egress    *bool   `json:"egress,omitempty"`
+	// Describes the ICMP type and code.
+	ICMPTypeCode  *ICMPTypeCode `json:"icmpTypeCode,omitempty"`
+	IPv6CIDRBlock *string       `json:"ipv6CIDRBlock,omitempty"`
+	// Describes a range of ports.
+	PortRange  *PortRange `json:"portRange,omitempty"`
+	Protocol   *string    `json:"protocol,omitempty"`
+	RuleAction *string    `json:"ruleAction,omitempty"`
+	RuleNumber *int64     `json:"ruleNumber,omitempty"`
+}
+
+// Describes a network ACL.
+type NetworkACL_SDK struct {
+	Associations []*NetworkACLAssociation `json:"associations,omitempty"`
+	Entries      []*NetworkACLEntry       `json:"entries,omitempty"`
+	IsDefault    *bool                    `json:"isDefault,omitempty"`
+	NetworkACLID *string                  `json:"networkACLID,omitempty"`
+	OwnerID      *string                  `json:"ownerID,omitempty"`
+	Tags         []*Tag                   `json:"tags,omitempty"`
+	VPCID        *string                  `json:"vpcID,omitempty"`
 }
 
 // Describes a Network Access Scope.

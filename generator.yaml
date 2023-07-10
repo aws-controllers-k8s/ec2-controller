@@ -17,6 +17,8 @@ ignore:
     - CreateNatGatewayInput.ClientToken
     - CreateNatGatewayInput.DryRun
     - CreateNatGatewayInput.TagSpecifications
+    - CreateNetworkAclInput.DryRun
+    - CreateNetworkAclInput.TagSpecifications
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
@@ -81,7 +83,7 @@ ignore:
     - ManagedPrefixList
     #- NatGateway
     - NetworkAclEntry
-    - NetworkAcl
+    #- NetworkAcl
     - NetworkInsightsAccessScope
     - NetworkInsightsPath
     - NetworkInterfacePermission
@@ -140,6 +142,8 @@ operations:
     resource_name: ElasticIPAddress
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
+  CreateNetworkAcl:
+    output_wrapper_field_path: NetworkAcl
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -514,6 +518,63 @@ resources:
         template_path: hooks/security_group/sdk_read_many_post_set_output.go.tpl
     update_operation:
       custom_method_name: customUpdateSecurityGroup
+  NetworkAcl:
+    fields:
+      # support EC2-VPC only
+      Id:
+        is_primary_key: true
+        print:
+          path: Status.Id
+          name: ID
+      Associations:
+        custom_field:
+          list_of: NetworkAclAssociation
+      Entries:
+        custom_field:
+          list_of: NetworkAclEntry
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
+      VpcId:
+        is_required: true
+        references:
+          resource: VPC
+          path: Status.VPCID
+      Associations.SubnetID:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+    renames:
+      operations:
+        CreateNetworkAcl:
+          output_fields:
+            NetworkAclId: Id
+        DeleteNetworkAcl:
+          input_fields:
+            NetworkAclId: Id
+        DescribeNetworkAcls:
+          input_fields:
+            NetworkAclIds: Ids
+        CreateNetworkAclEntry:
+          input_fields:
+            NetworkAclId: Id
+        ReplaceNetworkAclEntry:
+          input_fields:
+            NetworkAclId: Id    
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      sdk_create_post_build_request:
+        template_path: hooks/network_acl/sdk_create_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/network_acl/sdk_file_end.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/network_acl/sdk_create_post_set_output.go.tpl
+    update_operation:
+      custom_method_name: customUpdateNetworkAcl
   Subnet:
     fields:
       # code-generator infers fields into

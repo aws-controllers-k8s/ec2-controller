@@ -15,6 +15,7 @@ rules:
   - instances
   - internetgateways
   - natgateways
+  - networkacls
   - routetables
   - securitygroups
   - subnets
@@ -38,6 +39,7 @@ rules:
   - instances
   - internetgateways
   - natgateways
+  - networkacls
   - routetables
   - securitygroups
   - subnets
