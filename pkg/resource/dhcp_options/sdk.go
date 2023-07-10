@@ -256,13 +256,11 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-
 	if ko.Spec.VPC != nil {
 		if err = rm.attachToVPC(ctx, &resource{ko}); err != nil {
 			return nil, err
 		}
 	}
-	
 	return &resource{ko}, nil
 }
 
