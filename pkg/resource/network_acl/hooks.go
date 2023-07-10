@@ -291,12 +291,12 @@ func (rm *resourceManager) deleteOldAssociations(
 				},
 			}
 			dnaOutput, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, dnaInput)
-			rm.metrics.RecordAPICall("DESCRIBE", "DescribeNetworkAcls", err)
+			rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 			if err != nil {
 				return err
 			}
 			if len(dnaOutput.NetworkAcls) != 1 {
-				return errors.New("unexpected output from describenetworkacls for the given subnet")
+				return errors.New("unexpected output from DescribeNetworkAcls for the given subnet")
 			}
 			input.NetworkAclId = defaultNacl.NetworkAcls[0].NetworkAclId
 			for _, association := range dnaOutput.NetworkAcls[0].Associations {
