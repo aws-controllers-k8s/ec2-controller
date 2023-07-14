@@ -1,0 +1,28 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplate
+metadata:
+  name: myfirstlaunchtemplate
+spec:
+  name: myfirstlaunchtemplate
+  launchTemplateData:
+    instanceType: t2.small
+    networkInterfaces:
+      - subnetID: subnet-064ad13968902cafa
+    securityGroupIDs:
+      - sg-0b8edfb37fcae65cc
+      - sg-06c56566d242e1b8f
+    ebsOptimized: true
+    keyName: rohitkurdukar.pem
+    monitoring:
+      enabled: true
+    blockDeviceMappings:
+      - deviceName: /dev/sda
+        ebs:
+          encrypted: True
+          volumeSize: 8
+  versionDescription: "my first template using ack"
+  
+          
+
+
+

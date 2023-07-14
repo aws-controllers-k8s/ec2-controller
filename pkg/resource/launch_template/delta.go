@@ -660,11 +660,11 @@ func newResourceDelta(
 			}
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateName, b.ko.Spec.LaunchTemplateName) {
-		delta.Add("Spec.LaunchTemplateName", a.ko.Spec.LaunchTemplateName, b.ko.Spec.LaunchTemplateName)
-	} else if a.ko.Spec.LaunchTemplateName != nil && b.ko.Spec.LaunchTemplateName != nil {
-		if *a.ko.Spec.LaunchTemplateName != *b.ko.Spec.LaunchTemplateName {
-			delta.Add("Spec.LaunchTemplateName", a.ko.Spec.LaunchTemplateName, b.ko.Spec.LaunchTemplateName)
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {

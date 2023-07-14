@@ -40,7 +40,7 @@ type LaunchTemplateSpec struct {
 	LaunchTemplateData *RequestLaunchTemplateData `json:"launchTemplateData"`
 	// A name for the launch template.
 	// +kubebuilder:validation:Required
-	LaunchTemplateName *string `json:"launchTemplateName"`
+	Name *string `json:"name"`
 	// The tags to apply to the launch template on creation. To tag the launch template,
 	// the resource type must be launch-template.
 	//
@@ -49,10 +49,6 @@ type LaunchTemplateSpec struct {
 	// data (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RequestLaunchTemplateData.html)
 	// structure.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
 	// A description for the first version of the launch template.
 	VersionDescription *string `json:"versionDescription,omitempty"`
 }
@@ -70,19 +66,32 @@ type LaunchTemplateStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// Information about the launch template.
+	// The time launch template was created.
 	// +kubebuilder:validation:Optional
-	LaunchTemplate *LaunchTemplate_SDK `json:"launchTemplate,omitempty"`
-	// If the launch template contains parameters or parameter combinations that
-	// are not valid, an error code and an error message are returned for each issue
-	// that's found.
+	CreateTime *metav1.Time `json:"createTime,omitempty"`
+	// The principal that created the launch template.
 	// +kubebuilder:validation:Optional
-	Warning *ValidationWarning `json:"warning,omitempty"`
+	CreatedBy *string `json:"createdBy,omitempty"`
+	// The version number of the default version of the launch template.
+	// +kubebuilder:validation:Optional
+	DefaultVersionNumber *int64 `json:"defaultVersionNumber,omitempty"`
+	// The version number of the latest version of the launch template.
+	// +kubebuilder:validation:Optional
+	LatestVersionNumber *int64 `json:"latestVersionNumber,omitempty"`
+	// The ID of the launch template.
+	// +kubebuilder:validation:Optional
+	LaunchTemplateID *string `json:"launchTemplateID,omitempty"`
+	// The tags for the launch template.
+	// +kubebuilder:validation:Optional
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // LaunchTemplate is the Schema for the LaunchTemplates API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="DefaultVersion",type=integer,priority=0,JSONPath=`.status.defaultVersionNumber`
+// +kubebuilder:printcolumn:name="LatestVersion",type=integer,priority=0,JSONPath=`.status.latestVersionNumber`
+// +kubebuilder:printcolumn:name="LaunchTemplateID",type=string,priority=0,JSONPath=`.status.launchTemplateID`
 type LaunchTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

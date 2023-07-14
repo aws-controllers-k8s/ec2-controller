@@ -76,7 +76,7 @@ func (rm *resourceManager) sdkFind(
 	resp, err = rm.sdkapi.DescribeLaunchTemplatesWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeLaunchTemplates", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "InvalidLaunchTemplateName.NotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -88,10 +88,30 @@ func (rm *resourceManager) sdkFind(
 
 	found := false
 	for _, elem := range resp.LaunchTemplates {
-		if elem.LaunchTemplateName != nil {
-			ko.Spec.LaunchTemplateName = elem.LaunchTemplateName
+		if elem.CreateTime != nil {
+			ko.Status.CreateTime = &metav1.Time{*elem.CreateTime}
 		} else {
-			ko.Spec.LaunchTemplateName = nil
+			ko.Status.CreateTime = nil
+		}
+		if elem.CreatedBy != nil {
+			ko.Status.CreatedBy = elem.CreatedBy
+		} else {
+			ko.Status.CreatedBy = nil
+		}
+		if elem.DefaultVersionNumber != nil {
+			ko.Status.DefaultVersionNumber = elem.DefaultVersionNumber
+		} else {
+			ko.Status.DefaultVersionNumber = nil
+		}
+		if elem.LatestVersionNumber != nil {
+			ko.Status.LatestVersionNumber = elem.LatestVersionNumber
+		} else {
+			ko.Status.LatestVersionNumber = nil
+		}
+		if elem.LaunchTemplateId != nil {
+			ko.Status.LaunchTemplateID = elem.LaunchTemplateId
+		} else {
+			ko.Status.LaunchTemplateID = nil
 		}
 		if elem.Tags != nil {
 			f6 := []*svcapitypes.Tag{}
@@ -105,9 +125,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				f6 = append(f6, f6elem)
 			}
-			ko.Spec.Tags = f6
+			ko.Status.Tags = f6
 		} else {
-			ko.Spec.Tags = nil
+			ko.Status.Tags = nil
 		}
 		found = true
 		break
@@ -126,7 +146,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return r.ko.Spec.LaunchTemplateName == nil
+	return r.ko.Status.LaunchTemplateID == nil
 
 }
 
@@ -140,10 +160,10 @@ func (rm *resourceManager) newListRequestPayload(
 	if r.ko.Spec.DryRun != nil {
 		res.SetDryRun(*r.ko.Spec.DryRun)
 	}
-	if r.ko.Spec.LaunchTemplateName != nil {
-		f3 := []*string{}
-		f3 = append(f3, r.ko.Spec.LaunchTemplateName)
-		res.SetLaunchTemplateNames(f3)
+	if r.ko.Status.LaunchTemplateID != nil {
+		f2 := []*string{}
+		f2 = append(f2, r.ko.Status.LaunchTemplateID)
+		res.SetLaunchTemplateIds(f2)
 	}
 
 	return res, nil
@@ -177,63 +197,51 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	if resp.LaunchTemplate != nil {
-		f0 := &svcapitypes.LaunchTemplate_SDK{}
-		if resp.LaunchTemplate.CreateTime != nil {
-			f0.CreateTime = &metav1.Time{*resp.LaunchTemplate.CreateTime}
-		}
-		if resp.LaunchTemplate.CreatedBy != nil {
-			f0.CreatedBy = resp.LaunchTemplate.CreatedBy
-		}
-		if resp.LaunchTemplate.DefaultVersionNumber != nil {
-			f0.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
-		}
-		if resp.LaunchTemplate.LatestVersionNumber != nil {
-			f0.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
-		}
-		if resp.LaunchTemplate.LaunchTemplateId != nil {
-			f0.LaunchTemplateID = resp.LaunchTemplate.LaunchTemplateId
-		}
-		if resp.LaunchTemplate.LaunchTemplateName != nil {
-			f0.LaunchTemplateName = resp.LaunchTemplate.LaunchTemplateName
-		}
-		if resp.LaunchTemplate.Tags != nil {
-			f0f6 := []*svcapitypes.Tag{}
-			for _, f0f6iter := range resp.LaunchTemplate.Tags {
-				f0f6elem := &svcapitypes.Tag{}
-				if f0f6iter.Key != nil {
-					f0f6elem.Key = f0f6iter.Key
-				}
-				if f0f6iter.Value != nil {
-					f0f6elem.Value = f0f6iter.Value
-				}
-				f0f6 = append(f0f6, f0f6elem)
-			}
-			f0.Tags = f0f6
-		}
-		ko.Status.LaunchTemplate = f0
+	if resp.LaunchTemplate.CreateTime != nil {
+		ko.Status.CreateTime = &metav1.Time{*resp.LaunchTemplate.CreateTime}
 	} else {
-		ko.Status.LaunchTemplate = nil
+		ko.Status.CreateTime = nil
 	}
-	if resp.Warning != nil {
-		f1 := &svcapitypes.ValidationWarning{}
-		if resp.Warning.Errors != nil {
-			f1f0 := []*svcapitypes.ValidationError{}
-			for _, f1f0iter := range resp.Warning.Errors {
-				f1f0elem := &svcapitypes.ValidationError{}
-				if f1f0iter.Code != nil {
-					f1f0elem.Code = f1f0iter.Code
-				}
-				if f1f0iter.Message != nil {
-					f1f0elem.Message = f1f0iter.Message
-				}
-				f1f0 = append(f1f0, f1f0elem)
-			}
-			f1.Errors = f1f0
-		}
-		ko.Status.Warning = f1
+	if resp.LaunchTemplate.CreatedBy != nil {
+		ko.Status.CreatedBy = resp.LaunchTemplate.CreatedBy
 	} else {
-		ko.Status.Warning = nil
+		ko.Status.CreatedBy = nil
+	}
+	if resp.LaunchTemplate.DefaultVersionNumber != nil {
+		ko.Status.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
+	} else {
+		ko.Status.DefaultVersionNumber = nil
+	}
+	if resp.LaunchTemplate.LatestVersionNumber != nil {
+		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
+	} else {
+		ko.Status.LatestVersionNumber = nil
+	}
+	if resp.LaunchTemplate.LaunchTemplateId != nil {
+		ko.Status.LaunchTemplateID = resp.LaunchTemplate.LaunchTemplateId
+	} else {
+		ko.Status.LaunchTemplateID = nil
+	}
+	if resp.LaunchTemplate.LaunchTemplateName != nil {
+		ko.Spec.Name = resp.LaunchTemplate.LaunchTemplateName
+	} else {
+		ko.Spec.Name = nil
+	}
+	if resp.LaunchTemplate.Tags != nil {
+		f6 := []*svcapitypes.Tag{}
+		for _, f6iter := range resp.LaunchTemplate.Tags {
+			f6elem := &svcapitypes.Tag{}
+			if f6iter.Key != nil {
+				f6elem.Key = f6iter.Key
+			}
+			if f6iter.Value != nil {
+				f6elem.Value = f6iter.Value
+			}
+			f6 = append(f6, f6elem)
+		}
+		ko.Status.Tags = f6
+	} else {
+		ko.Status.Tags = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -841,8 +849,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 		}
 		res.SetLaunchTemplateData(f2)
 	}
-	if r.ko.Spec.LaunchTemplateName != nil {
-		res.SetLaunchTemplateName(*r.ko.Spec.LaunchTemplateName)
+	if r.ko.Spec.Name != nil {
+		res.SetLaunchTemplateName(*r.ko.Spec.Name)
 	}
 	if r.ko.Spec.TagSpecifications != nil {
 		f4 := []*svcsdk.TagSpecification{}
@@ -905,10 +913,30 @@ func (rm *resourceManager) sdkUpdate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	if resp.LaunchTemplate.LaunchTemplateName != nil {
-		ko.Spec.LaunchTemplateName = resp.LaunchTemplate.LaunchTemplateName
+	if resp.LaunchTemplate.CreateTime != nil {
+		ko.Status.CreateTime = &metav1.Time{*resp.LaunchTemplate.CreateTime}
 	} else {
-		ko.Spec.LaunchTemplateName = nil
+		ko.Status.CreateTime = nil
+	}
+	if resp.LaunchTemplate.CreatedBy != nil {
+		ko.Status.CreatedBy = resp.LaunchTemplate.CreatedBy
+	} else {
+		ko.Status.CreatedBy = nil
+	}
+	if resp.LaunchTemplate.DefaultVersionNumber != nil {
+		ko.Status.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
+	} else {
+		ko.Status.DefaultVersionNumber = nil
+	}
+	if resp.LaunchTemplate.LatestVersionNumber != nil {
+		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
+	} else {
+		ko.Status.LatestVersionNumber = nil
+	}
+	if resp.LaunchTemplate.LaunchTemplateId != nil {
+		ko.Status.LaunchTemplateID = resp.LaunchTemplate.LaunchTemplateId
+	} else {
+		ko.Status.LaunchTemplateID = nil
 	}
 	if resp.LaunchTemplate.Tags != nil {
 		f6 := []*svcapitypes.Tag{}
@@ -922,9 +950,9 @@ func (rm *resourceManager) sdkUpdate(
 			}
 			f6 = append(f6, f6elem)
 		}
-		ko.Spec.Tags = f6
+		ko.Status.Tags = f6
 	} else {
-		ko.Spec.Tags = nil
+		ko.Status.Tags = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -946,8 +974,8 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	if r.ko.Spec.DryRun != nil {
 		res.SetDryRun(*r.ko.Spec.DryRun)
 	}
-	if r.ko.Spec.LaunchTemplateName != nil {
-		res.SetLaunchTemplateName(*r.ko.Spec.LaunchTemplateName)
+	if r.ko.Status.LaunchTemplateID != nil {
+		res.SetLaunchTemplateId(*r.ko.Status.LaunchTemplateID)
 	}
 
 	return res, nil
@@ -984,8 +1012,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	if r.ko.Spec.DryRun != nil {
 		res.SetDryRun(*r.ko.Spec.DryRun)
 	}
-	if r.ko.Spec.LaunchTemplateName != nil {
-		res.SetLaunchTemplateName(*r.ko.Spec.LaunchTemplateName)
+	if r.ko.Spec.Name != nil {
+		res.SetLaunchTemplateName(*r.ko.Spec.Name)
 	}
 
 	return res, nil
@@ -1090,6 +1118,18 @@ func (rm *resourceManager) updateConditions(
 // and if the exception indicates that it is a Terminal exception
 // 'Terminal' exception are specified in generator configuration
 func (rm *resourceManager) terminalAWSError(err error) bool {
-	// No terminal_errors specified for this resource in generator config
-	return false
+	if err == nil {
+		return false
+	}
+	awsErr, ok := ackerr.AWSError(err)
+	if !ok {
+		return false
+	}
+	switch awsErr.Code() {
+	case "InvalidParameterValue",
+		"InvalidTagSpecification":
+		return true
+	default:
+		return false
+	}
 }

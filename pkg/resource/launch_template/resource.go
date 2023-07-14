@@ -88,7 +88,7 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Spec.LaunchTemplateName = &identifier.NameOrID
+	r.ko.Status.LaunchTemplateID = &identifier.NameOrID
 
 	return nil
 }

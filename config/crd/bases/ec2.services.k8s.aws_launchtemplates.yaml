@@ -15,7 +15,17 @@ spec:
     singular: launchtemplate
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.defaultVersionNumber
+      name: DefaultVersion
+      type: integer
+    - jsonPath: .status.latestVersionNumber
+      name: LatestVersion
+      type: integer
+    - jsonPath: .status.launchTemplateID
+      name: LaunchTemplateID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: LaunchTemplate is the Schema for the LaunchTemplates API
@@ -532,7 +542,7 @@ spec:
                   userData:
                     type: string
                 type: object
-              launchTemplateName:
+              name:
                 description: A name for the launch template.
                 type: string
               tagSpecifications:
@@ -564,25 +574,12 @@ spec:
                       type: array
                   type: object
                 type: array
-              tags:
-                description: The tags. The value parameter is required, but if you
-                  don't want the tag to have a value, specify the parameter with no
-                  value, and we set the value to an empty string.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
               versionDescription:
                 description: A description for the first version of the launch template.
                 type: string
             required:
             - launchTemplateData
-            - launchTemplateName
+            - name
             type: object
           status:
             description: LaunchTemplateStatus defines the observed state of LaunchTemplate
@@ -648,54 +645,37 @@ spec:
                   - type
                   type: object
                 type: array
-              launchTemplate:
-                description: Information about the launch template.
-                properties:
-                  createTime:
-                    format: date-time
-                    type: string
-                  createdBy:
-                    type: string
-                  defaultVersionNumber:
-                    format: int64
-                    type: integer
-                  latestVersionNumber:
-                    format: int64
-                    type: integer
-                  launchTemplateID:
-                    type: string
-                  launchTemplateName:
-                    type: string
-                  tags:
-                    items:
-                      description: Describes a tag.
-                      properties:
-                        key:
-                          type: string
-                        value:
-                          type: string
-                      type: object
-                    type: array
-                type: object
-              warning:
-                description: If the launch template contains parameters or parameter
-                  combinations that are not valid, an error code and an error message
-                  are returned for each issue that's found.
-                properties:
-                  errors:
-                    items:
-                      description: The error code and error message that is returned
-                        for a parameter or parameter combination that is not valid
-                        when a new launch template or new version of a launch template
-                        is created.
-                      properties:
-                        code:
-                          type: string
-                        message:
-                          type: string
-                      type: object
-                    type: array
-                type: object
+              createTime:
+                description: The time launch template was created.
+                format: date-time
+                type: string
+              createdBy:
+                description: The principal that created the launch template.
+                type: string
+              defaultVersionNumber:
+                description: The version number of the default version of the launch
+                  template.
+                format: int64
+                type: integer
+              latestVersionNumber:
+                description: The version number of the latest version of the launch
+                  template.
+                format: int64
+                type: integer
+              launchTemplateID:
+                description: The ID of the launch template.
+                type: string
+              tags:
+                description: The tags for the launch template.
+                items:
+                  description: Describes a tag.
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
             type: object
         type: object
     served: true

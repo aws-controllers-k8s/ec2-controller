@@ -36,6 +36,7 @@ ignore:
     - CreateVpcEndpointInput.ClientToken
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
+    - DeleteLaunchTemplateInput.LaunchTemplateId
     # support EC2-VPC only
     - DeleteSecurityGroupInput.GroupName
     # support EC2-VPC only
@@ -75,7 +76,7 @@ ignore:
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
-    - LaunchTemplate
+    #- LaunchTemplate
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRoute
     - ManagedPrefixList
@@ -140,8 +141,10 @@ operations:
     resource_name: ElasticIPAddress
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
+  CreateLaunchTemplate:
+    output_wrapper_field_path: LaunchTemplate  
   CreateVpcEndpoint:
-    output_wrapper_field_path: VpcEndpoint
+    output_wrapper_field_path: VpcEndpoint 
   DeleteVpcEndpoints:
     operation_type:
       - Delete
@@ -181,6 +184,45 @@ operations:
       - Delete
     resource_name: Instance
 resources:
+  LaunchTemplate:
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateName.NotFoundException
+      terminal_codes:
+        - InvalidParameterValue
+        - InvalidTagSpecification
+    fields: 
+      LaunchTemplateID:
+        is_primary_key: true 
+        print:
+          path: Status.LaunchTemplateID
+          name: LaunchTemplateID
+      DefaultVersionNumber:
+        print:
+          path: Status.defaultVersionNumber
+          name: DefaultVersion
+      LatestVersionNumber:
+        print:
+          path: Status.latestVersionNumber
+          name: LatestVersion
+    tags:
+      ignore: true
+    renames:
+      operations:
+        CreateLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+          output_fields:
+            LaunchTemplateId: LaunchTemplateId
+        DeleteLaunchTemplate:
+          input_fields:
+            LaunchTemplateId: LaunchTemplateId
+            LaunchTemplateName: Name
+        DescribeLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name          
+    
   DhcpOptions:
     exceptions:
       terminal_codes:

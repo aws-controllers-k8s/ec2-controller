@@ -1,0 +1,9 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPC
+metadata:
+  name: vpc-tutorial-test
+spec:
+  cidrBlocks: 
+  - 10.0.0.0/16
+  enableDNSSupport: true
+  enableDNSHostnames: true
