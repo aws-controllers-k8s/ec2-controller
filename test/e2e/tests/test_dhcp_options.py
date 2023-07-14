@@ -224,6 +224,7 @@ class TestDhcpOptions:
         # Check dhcpOptions no longer exists in AWS
         ec2_validator.assert_dhcp_options(resource_id, exists=False)
 
+
     def test_dhcpoptions_creation_with_vpcref(self,ec2_client):
         resource_name = random_suffix_name("dhcpoptions-vpc-ref", 24)
         replacements = REPLACEMENT_VALUES.copy()
@@ -236,7 +237,7 @@ class TestDhcpOptions:
         test_vpc = get_bootstrap_resources().SharedTestVPC
         replacements["VPC_ID"] = test_vpc.vpc_id
 
-        # Load VPC CR
+        # Load DHCP Options CR
         resource_data = load_ec2_resource(
             "dhcp_options_vpc_ref",
             additional_replacements=replacements,
@@ -257,6 +258,9 @@ class TestDhcpOptions:
         # Check DHCP Options exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_dhcp_options(resource_id)
+
+        # Check if DHCP Options gets associated to VPC
+        ec2_validator.assert_dhcp_vpc_association(resource_id,test_vpc.vpc_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)

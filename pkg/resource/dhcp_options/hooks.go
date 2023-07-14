@@ -40,10 +40,8 @@ func (rm *resourceManager) customUpdateDHCPOptions(
 	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.VPC") {
-		if desired.ko.Spec.VPC != nil {
-			if err = rm.attachToVPC(ctx, desired); err != nil {
-				return nil, err
-			}
+		if err = rm.attachToVPC(ctx, desired); err != nil {
+			return nil, err
 		}
 	}
 
@@ -210,6 +208,11 @@ func (rm *resourceManager) attachToVPC(
 		DhcpOptionsId: desired.ko.Status.DHCPOptionsID,
 		VpcId:         desired.ko.Spec.VPC,
 	}
+	if desired.ko.Spec.VPC != nil {
+		input.SetVpcId(*desired.ko.Spec.VPC)
+	} else {
+		input.SetVpcId("default")
+	}
 
 	_, err = rm.sdkapi.AssociateDhcpOptionsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "AssociateDhcpOptions", err)
@@ -219,3 +222,34 @@ func (rm *resourceManager) attachToVPC(
 
 	return nil
 }
+
+// func (rm *resourceManager) detachFromVPC(
+// 	ctx context.Context,
+// 	latest *resource,
+// ) (err error) {
+// 	rlog := ackrtlog.FromContext(ctx)
+// 	exit := rlog.Trace("rm.detachFromVPC")
+// 	defer func(err error) {
+// 		exit(err)
+// 	}(err)
+
+// 	if latest == nil || latest.ko.Spec.VPC == nil {
+// 		return nil
+// 	}
+
+// 	input := &svcsdk.DescribeVpcsInput{}
+// 	input.SetVpcIds([]*string{latest.ko.Spec.VPC})
+// 	input.SetFilters([]*svcsdk.Filter{
+// 		{
+// 			Name:   lo.ToPtr("dhcp-options-id"),
+// 			Values: []*string{latest.ko.Status.DHCPOptionsID},
+// 		},
+// 	})
+// 	_, err = rm.sdkapi.DescribeVpcsWithContext(ctx, input)
+// 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcs", err)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
