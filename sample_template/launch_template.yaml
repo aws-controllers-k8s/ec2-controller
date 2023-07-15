@@ -6,17 +6,18 @@ spec:
   name: myfirstlaunchtemplate
   launchTemplateData:
     instanceType: t2.small
-    networkInterfaces:
+    networkInterfaces: 
       - subnetID: subnet-064ad13968902cafa
-    securityGroupIDs:
-      - sg-0b8edfb37fcae65cc
-      - sg-06c56566d242e1b8f
-    ebsOptimized: true
-    keyName: rohitkurdukar.pem
+        deviceIndex: 0
+        groups :
+          - sg-0b8edfb37fcae65cc
+          - sg-06c56566d242e1b8f
+    imageID: ami-0235832cc0b0e87b2
+    keyName: rohitkurdukar
     monitoring:
       enabled: true
     blockDeviceMappings:
-      - deviceName: /dev/sda
+      - deviceName: /dev/xvdb
         ebs:
           encrypted: True
           volumeSize: 8

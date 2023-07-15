@@ -205,7 +205,7 @@ resources:
       LatestVersionNumber:
         print:
           path: Status.latestVersionNumber
-          name: LatestVersion
+          name: LatestVersion  
     tags:
       ignore: true
     renames:
@@ -222,7 +222,6 @@ resources:
         DescribeLaunchTemplate:
           input_fields:
             LaunchTemplateName: Name          
-    
   DhcpOptions:
     exceptions:
       terminal_codes:
