@@ -12,6 +12,7 @@ spec:
         groups :
           - sg-0b8edfb37fcae65cc
           - sg-06c56566d242e1b8f
+          - sg-045da083cc21ef31a
     imageID: ami-0235832cc0b0e87b2
     keyName: rohitkurdukar
     monitoring:
@@ -21,7 +22,24 @@ spec:
         ebs:
           encrypted: True
           volumeSize: 8
+    tagSpecifications:
+      - resourceType: ecs
+        tags:
+          - key: "Created by"
+            value: "ACK"
+          - key: "Added by"
+            value: "rohit" 
   versionDescription: "my first template using ack"
+  tagSpecifications:
+    - resourceType: launch-template
+      tags:
+        - key: "Created by"
+          value: "ACK"
+        - key: "Added by"
+          value: "rohit" 
+     
+      
+           
   
           
 
