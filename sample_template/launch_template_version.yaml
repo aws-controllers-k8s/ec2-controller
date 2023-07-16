@@ -1,0 +1,11 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplateVersion
+metadata:
+  name: updatedinstancetype
+spec:
+  launchTemplateID: lt-051966b012d49f13e
+  launchTemplateData:
+    instanceType: t2.medium
+  sourceVersion: "1" 
+  
+

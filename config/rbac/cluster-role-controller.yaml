@@ -154,6 +154,26 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - launchtemplateversions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - launchtemplateversions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
   - natgateways
   verbs:
   - create

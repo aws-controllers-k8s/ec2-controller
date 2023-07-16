@@ -41,6 +41,7 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/instance"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/internet_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/launch_template"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/launch_template_version"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/nat_gateway"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/route_table"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/security_group"

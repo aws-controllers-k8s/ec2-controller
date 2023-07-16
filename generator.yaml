@@ -75,7 +75,7 @@ ignore:
     - IpamPool
     - IpamScope
     - KeyPair
-    - LaunchTemplateVersion
+    #- LaunchTemplateVersion
     #- LaunchTemplate
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRoute
@@ -142,7 +142,9 @@ operations:
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
   CreateLaunchTemplate:
-    output_wrapper_field_path: LaunchTemplate  
+    output_wrapper_field_path: LaunchTemplate 
+  CreateLaunchTemplateVersion:
+    output_wrapper_field_path: LaunchTemplateVersion   
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint 
   DeleteVpcEndpoints:
@@ -184,6 +186,31 @@ operations:
       - Delete
     resource_name: Instance
 resources:
+  LaunchTemplateVersion:
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateID.NotFoundException
+    fields: 
+      LaunchTemplateID:
+        references:
+          resource: LaunchTemplate
+          path: Status.LaunchTemplateID
+        is_primary_key: true 
+        print:
+          path: Spec.launchTemplateID
+          name: LaunchTemplateID
+      VersionNumber:
+        print:
+          path: Status.versionNumber
+          name: VersionNumber
+    hooks:
+      sdk_read_many_post_set_output:
+        template_path: hooks/launch_template_versions/sdk_read_many_post_set_output.go.tpl 
+      sdk_create_post_set_output:
+        template_path: hooks/launch_template_versions/sdk_create_post_set_output.go.tpl  
+    tags:
+      ignore: true
   LaunchTemplate:
     exceptions:
       errors:
