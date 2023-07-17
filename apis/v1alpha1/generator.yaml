@@ -198,9 +198,11 @@ resources:
           path: Status.dhcpOptionsID
           name: ID
       VPC:
-        from:
-          operation: AssociateDhcpOptions
-          path: VpcId
+        # from:
+        #   operation: AssociateDhcpOptions
+        #   path: VpcId
+        custom_field:
+          list_of: String
         references:
           resource: VPC
           path: Status.VPCID
@@ -217,6 +219,10 @@ resources:
         template_path: hooks/dhcp_options/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
         template_path: hooks/dhcp_options/sdk_create_post_set_output.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/dhcp_options/sdk_delete_pre_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/dhcp_options/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/dhcp_options/sdk_file_end.go.tpl
     update_operation:

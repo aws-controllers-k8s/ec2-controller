@@ -37,7 +37,7 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-	if ko.Spec.VPCRef != nil {
+	if len(ko.Spec.VPCRefs) > 0 {
 		ko.Spec.VPC = nil
 	}
 
@@ -74,14 +74,14 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.DHCPOptions) error {
 
-	if ko.Spec.VPCRef != nil && ko.Spec.VPC != nil {
-		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPC", "VPCRef")
+	if len(ko.Spec.VPCRefs) > 0 && len(ko.Spec.VPC) > 0 {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPC", "VPCRefs")
 	}
 	return nil
 }
 
 // resolveReferenceForVPC reads the resource referenced
-// from VPCRef field and sets the VPC
+// from VPCRefs field and sets the VPC
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
 func (rm *resourceManager) resolveReferenceForVPC(
@@ -90,17 +90,22 @@ func (rm *resourceManager) resolveReferenceForVPC(
 	namespace string,
 	ko *svcapitypes.DHCPOptions,
 ) (hasReferences bool, err error) {
-	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
-		hasReferences = true
-		arr := ko.Spec.VPCRef.From
-		if arr.Name == nil || *arr.Name == "" {
-			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
+	for _, f0iter := range ko.Spec.VPCRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRefs")
+			}
+			obj := &svcapitypes.VPC{}
+			if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			if ko.Spec.VPC == nil {
+				ko.Spec.VPC = make([]*string, 0, 1)
+			}
+			ko.Spec.VPC = append(ko.Spec.VPC, (*string)(obj.Status.VPCID))
 		}
-		obj := &svcapitypes.VPC{}
-		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return hasReferences, err
-		}
-		ko.Spec.VPC = (*string)(obj.Status.VPCID)
 	}
 
 	return hasReferences, nil

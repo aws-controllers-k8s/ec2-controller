@@ -2920,13 +2920,25 @@ func (in *DHCPOptionsSpec) DeepCopyInto(out *DHCPOptionsSpec) {
 	}
 	if in.VPC != nil {
 		in, out := &in.VPC, &out.VPC
-		*out = new(string)
-		**out = **in
+		*out = make([]*string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(string)
+				**out = **in
+			}
+		}
 	}
-	if in.VPCRef != nil {
-		in, out := &in.VPCRef, &out.VPCRef
-		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
-		(*in).DeepCopyInto(*out)
+	if in.VPCRefs != nil {
+		in, out := &in.VPCRefs, &out.VPCRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 }
 

@@ -146,6 +146,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	vpcID, err := rm.getAttachedVPC(ctx, &resource{ko})
+	if err != nil {
+		return nil, err
+	} else {
+		ko.Spec.VPC = vpcID
+	}
 	return &resource{ko}, nil
 }
 
@@ -257,7 +263,7 @@ func (rm *resourceManager) sdkCreate(
 
 	rm.setStatusDefaults(ko)
 	if ko.Spec.VPC != nil {
-		if err = rm.attachToVPC(ctx, &resource{ko}); err != nil {
+		if err = rm.syncVPCs(ctx, &resource{ko}, nil); err != nil {
 			return nil, err
 		}
 	}
@@ -317,6 +323,13 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
+	if r.ko.Spec.VPC != nil && r.ko.Status.DHCPOptionsID != nil {
+		desired := rm.concreteResource(r.DeepCopy())
+		desired.ko.Spec.VPC = nil
+		if err = rm.syncVPCs(ctx, desired, r); err != nil {
+			return nil, err
+		}
+	}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err

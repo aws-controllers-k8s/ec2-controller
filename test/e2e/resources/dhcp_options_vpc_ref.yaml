@@ -11,7 +11,8 @@ spec:
       values:
         - $DHCP_VAL_2_1
         - $DHCP_VAL_2_2
-  vpc: $VPC_ID
+  vpc:
+    - $VPC_ID
   tags:
     - key: $TAG_KEY
       value: $TAG_VALUE
