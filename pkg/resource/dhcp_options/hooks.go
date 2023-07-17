@@ -84,9 +84,6 @@ func (rm *resourceManager) syncVPCs(
 
 	toAdd, toDelete := lo.Difference(desiredVPC, latestVPC)
 
-	fmt.Println("syncVPCstoAdd:", toAdd)
-	fmt.Println("syncVPCstoDelete:", toDelete)
-
 	for _, vpc := range toAdd {
 		rm.attachToVPC(ctx, desired, vpc)
 

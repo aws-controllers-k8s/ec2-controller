@@ -146,11 +146,9 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	vpcID, err := rm.getAttachedVPC(ctx, &resource{ko})
+	ko.Spec.VPC, err = rm.getAttachedVPC(ctx, &resource{ko})
 	if err != nil {
 		return nil, err
-	} else {
-		ko.Spec.VPC = vpcID
 	}
 	return &resource{ko}, nil
 }
