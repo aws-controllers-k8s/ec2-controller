@@ -42,7 +42,6 @@ func (rm *resourceManager) customUpdateDHCPOptions(
 	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.VPC") {
-		fmt.Println("Differ at VPC")
 		if err = rm.syncVPCs(ctx, desired, latest); err != nil {
 			return nil, err
 		}
@@ -72,8 +71,10 @@ func (rm *resourceManager) syncVPCs(
 
 	latestVPC := []string{}
 	desiredVPC := []string{}
+	fmt.Println("DesiredVPC:", desired.ko.Spec.VPC)
 
 	if latest != nil {
+		fmt.Println("LatestVPC:", latest.ko.Spec.VPC)
 		for _, vpc := range latest.ko.Spec.VPC {
 			latestVPC = append(latestVPC, *vpc)
 		}
