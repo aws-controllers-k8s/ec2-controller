@@ -233,32 +233,6 @@ class TestDhcpOptions:
 
     @pytest.mark.resource_data({'create_vpc': True, 'resource_file': 'dhcp_options_vpc_ref',})
     def test_dhcpoptions_creation_with_vpcref(self,ec2_client):
-        # resource_name = random_suffix_name("dhcpoptions-vpc-ref", 24)
-        # replacements = REPLACEMENT_VALUES.copy()
-        # replacements["DHCP_OPTIONS_NAME"] = resource_name
-        # replacements["DHCP_KEY_1"] = "domain-name"
-        # replacements["DHCP_VAL_1"] = "ack-example.com"
-        # replacements["DHCP_KEY_2"] = "domain-name-servers"
-        # replacements["DHCP_VAL_2_1"] = "10.2.5.1"
-        # replacements["DHCP_VAL_2_2"] = "10.2.5.2"
-        # test_vpc = get_bootstrap_resources().SharedTestVPC
-        # replacements["VPC_ID"] = test_vpc.vpc_id
-
-        # # Load DHCP Options CR
-        # resource_data = load_ec2_resource(
-        #     "dhcp_options_vpc_ref",
-        #     additional_replacements=replacements,
-        # )
-        # logging.debug(resource_data)
-
-        # # Create k8s resource
-        # ref = k8s.CustomResourceReference(
-        #     CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        #     resource_name, namespace="default",
-        # )
-        # k8s.create_custom_resource(ref, resource_data)
-        # time.sleep(CREATE_WAIT_AFTER_SECONDS)
-        # cr = k8s.wait_resource_consumed_by_controller(ref)
         (ref, cr) = simple_dhcp_options
 
         resource_id = cr["status"]["dhcpOptionsID"]
