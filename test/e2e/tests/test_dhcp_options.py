@@ -232,7 +232,7 @@ class TestDhcpOptions:
         ec2_validator.assert_dhcp_options(resource_id, exists=False)
 
     @pytest.mark.resource_data({'create_vpc': True, 'resource_file': 'dhcp_options_vpc_ref'})
-    def test_dhcpoptions_creation_with_vpcref(self,ec2_client):
+    def test_dhcpoptions_creation_with_vpcref(self,ec2_client, simple_dhcp_options):
         (ref, cr) = simple_dhcp_options
 
         resource_id = cr["status"]["dhcpOptionsID"]
