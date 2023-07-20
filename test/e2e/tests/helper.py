@@ -39,6 +39,14 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def assert_dhcp_vpc_association(self, dhcp_options_id: str, vpc_id: str):
+        print("data:",vpc_id)
+        try:
+            vpc = self.get_vpc(vpc_id)
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert vpc["DhcpOptionsId"] == dhcp_options_id
+
     def get_internet_gateway(self, igw_id: str):
         try:
             aws_res = self.ec2_client.describe_internet_gateways(InternetGatewayIds=[igw_id])

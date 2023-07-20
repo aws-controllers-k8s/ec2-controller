@@ -31,7 +31,9 @@ type DHCPOptionsSpec struct {
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
+	Tags    []*Tag                                     `json:"tags,omitempty"`
+	VPC     []*string                                  `json:"vpc,omitempty"`
+	VPCRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRefs,omitempty"`
 }
 
 // DHCPOptionsStatus defines the observed state of DHCPOptions

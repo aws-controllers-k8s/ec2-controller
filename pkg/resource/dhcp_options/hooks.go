@@ -20,6 +20,7 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/samber/lo"
 )
 
 func (rm *resourceManager) customUpdateDHCPOptions(
@@ -39,6 +40,16 @@ func (rm *resourceManager) customUpdateDHCPOptions(
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
+	if delta.DifferentAt("Spec.VPC") {
+		if err = rm.syncVPCs(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+		updated, err = rm.sdkFind(ctx, desired)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
@@ -46,6 +57,72 @@ func (rm *resourceManager) customUpdateDHCPOptions(
 	}
 
 	return updated, nil
+}
+
+func (rm *resourceManager) syncVPCs(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncEntries")
+	defer exit(err)
+
+	latestVPC := []string{}
+	desiredVPC := []string{}
+
+	if latest != nil {
+		for _, vpc := range latest.ko.Spec.VPC {
+			latestVPC = append(latestVPC, *vpc)
+		}
+	}
+	for _, vpc := range desired.ko.Spec.VPC {
+		desiredVPC = append(desiredVPC, *vpc)
+	}
+
+	toAdd, toDelete := lo.Difference(desiredVPC, latestVPC)
+
+	for _, vpc := range toAdd {
+		rm.attachToVPC(ctx, desired, vpc)
+
+	}
+	for _, vpc := range toDelete {
+		rm.detachFromVPC(ctx, desired, vpc)
+
+	}
+	return nil
+}
+
+func (rm *resourceManager) getAttachedVPC(
+	ctx context.Context,
+	latest *resource,
+) (vpcID []*string, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getAttachedVPC")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.DescribeVpcsInput{
+		Filters: []*svcsdk.Filter{
+			{
+				Name:   lo.ToPtr("dhcp-options-id"),
+				Values: []*string{latest.ko.Status.DHCPOptionsID},
+			},
+		},
+	}
+
+	var resp *svcsdk.DescribeVpcsOutput
+	resp, err = rm.sdkapi.DescribeVpcsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcs", err)
+	if err != nil {
+		return nil, err
+	}
+	for _, vpc := range resp.Vpcs {
+		vpcID = append(vpcID, vpc.VpcId)
+	}
+
+	return vpcID, nil
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
@@ -186,4 +263,54 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.SetTags(requestedTags)
 		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
+}
+
+func (rm *resourceManager) attachToVPC(
+	ctx context.Context,
+	desired *resource,
+	vpc string,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.attachToVPC")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	if vpc == "" {
+		return nil
+	}
+	input := &svcsdk.AssociateDhcpOptionsInput{
+		DhcpOptionsId: desired.ko.Status.DHCPOptionsID,
+		VpcId:         &vpc,
+	}
+	_, err = rm.sdkapi.AssociateDhcpOptionsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "AssociateDhcpOptions", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) detachFromVPC(
+	ctx context.Context,
+	desired *resource,
+	vpc string,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.detachFromVPC")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.AssociateDhcpOptionsInput{
+		DhcpOptionsId: lo.ToPtr("default"),
+		VpcId:         &vpc,
+	}
+	_, err = rm.sdkapi.AssociateDhcpOptionsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "AssociateDhcpOptions", err)
+	if err != nil {
+		return err
+	}
+	return nil
 }
