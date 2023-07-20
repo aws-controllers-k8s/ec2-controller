@@ -40,6 +40,7 @@ class EC2Validator:
         assert res_found is exists
 
     def assert_dhcp_vpc_association(self, dhcp_options_id: str, vpc_id: str):
+        print("data:",vpc_id)
         try:
             vpc = self.get_vpc(vpc_id)
         except self.ec2_client.exceptions.ClientError:
@@ -200,7 +201,7 @@ class EC2Validator:
 
     def get_vpc(self, vpc_id: str) -> Union[None, Dict]:
         try:
-            aws_res = self.ec2_client.describe_vpcs(VpcIds=[vpc_id])
+            aws_res = self.ec2_client.describe_vpcs(VpcIds=vpc_id)
             if len(aws_res["Vpcs"]) > 0:
                 return aws_res["Vpcs"][0]
             return None
