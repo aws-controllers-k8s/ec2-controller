@@ -201,7 +201,7 @@ class EC2Validator:
 
     def get_vpc(self, vpc_id: str) -> Union[None, Dict]:
         try:
-            aws_res = self.ec2_client.describe_vpcs(VpcIds=vpc_id)
+            aws_res = self.ec2_client.describe_vpcs(VpcIds=[vpc_id])
             if len(aws_res["Vpcs"]) > 0:
                 return aws_res["Vpcs"][0]
             return None

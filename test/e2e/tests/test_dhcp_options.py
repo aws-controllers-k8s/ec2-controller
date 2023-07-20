@@ -236,7 +236,7 @@ class TestDhcpOptions:
         (ref, cr) = simple_dhcp_options
 
         resource_id = cr["status"]["dhcpOptionsID"]
-        vpc_id = cr["spec"]["vpc"]
+        vpc_id = cr["spec"]["vpc"][0]
 
         # Check DHCP Options exists in AWS
         ec2_validator = EC2Validator(ec2_client)
