@@ -578,7 +578,6 @@ spec:
                 description: A description for the first version of the launch template.
                 type: string
             required:
-            - launchTemplateData
             - name
             type: object
           status:

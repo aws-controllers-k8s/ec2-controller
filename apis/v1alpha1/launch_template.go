@@ -36,8 +36,7 @@ type LaunchTemplateSpec struct {
 	// it is UnauthorizedOperation.
 	DryRun *bool `json:"dryRun,omitempty"`
 	// The information for the launch template.
-	// +kubebuilder:validation:Required
-	LaunchTemplateData *RequestLaunchTemplateData `json:"launchTemplateData"`
+	LaunchTemplateData *RequestLaunchTemplateData `json:"launchTemplateData,omitempty"`
 	// A name for the launch template.
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`

@@ -1,0 +1,10 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplateVersion
+metadata:
+  name: updatedinstancetypesecond-nano
+spec:
+  launchTemplateRef: 
+    from:
+      name: mysecondlaunchtemplate
+  launchTemplateData:
+    instanceType: t2.nano

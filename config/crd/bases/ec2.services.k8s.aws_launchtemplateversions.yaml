@@ -15,14 +15,7 @@ spec:
     singular: launchtemplateversion
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.launchTemplateID
-      name: LaunchTemplateID
-      type: string
-    - jsonPath: .status.versionNumber
-      name: VersionNumber
-      type: integer
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: LaunchTemplateVersion is the Schema for the LaunchTemplateVersions
@@ -650,6 +643,9 @@ spec:
               defaultVersion:
                 description: Indicates whether the version is the default version.
                 type: boolean
+              launchTemplateID:
+                description: The ID of the launch template.
+                type: string
               versionNumber:
                 description: The version number.
                 format: int64

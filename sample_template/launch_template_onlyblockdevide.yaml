@@ -1,0 +1,21 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplate
+metadata:
+  name: myfirstlaunchtemplate
+spec:
+  name: myfirstlaunchtemplate
+  launchTemplateData:
+    blockDeviceMappings:
+      - deviceName: /dev/xvdb
+        ebs:
+          encrypted: True
+          volumeSize: 8
+  versionDescription: "my first template using ack"
+     
+      
+           
+  
+          
+
+
+

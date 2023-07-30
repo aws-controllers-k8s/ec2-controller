@@ -22,21 +22,7 @@ spec:
         ebs:
           encrypted: True
           volumeSize: 8
-    tagSpecifications:
-      - resourceType: ecs
-        tags:
-          - key: "Created by"
-            value: "ACK"
-          - key: "Added by"
-            value: "rohit" 
   versionDescription: "my first template using ack"
-  tagSpecifications:
-    - resourceType: launch-template
-      tags:
-        - key: "Created by"
-          value: "ACK"
-        - key: "Added by"
-          value: "rohit" 
      
       
            
