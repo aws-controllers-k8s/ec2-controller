@@ -92,6 +92,7 @@ type LaunchTemplateVersionStatus struct {
 // LaunchTemplateVersion is the Schema for the LaunchTemplateVersions API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="VersionNumber",type=integer,priority=0,JSONPath=`.status.versionNumber`
 type LaunchTemplateVersion struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

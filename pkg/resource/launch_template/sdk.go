@@ -995,6 +995,7 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
+	input.LaunchTemplateId = nil
 	var resp *svcsdk.DeleteLaunchTemplateOutput
 	_ = resp
 	resp, err = rm.sdkapi.DeleteLaunchTemplateWithContext(ctx, input)
@@ -1011,6 +1012,9 @@ func (rm *resourceManager) newDeleteRequestPayload(
 
 	if r.ko.Spec.DryRun != nil {
 		res.SetDryRun(*r.ko.Spec.DryRun)
+	}
+	if r.ko.Status.LaunchTemplateID != nil {
+		res.SetLaunchTemplateId(*r.ko.Status.LaunchTemplateID)
 	}
 	if r.ko.Spec.Name != nil {
 		res.SetLaunchTemplateName(*r.ko.Spec.Name)
@@ -1106,13 +1110,8 @@ func (rm *resourceManager) updateConditions(
 			recoverableCondition.Message = nil
 		}
 	}
-	if syncCondition == nil && onSuccess {
-		syncCondition = &ackv1alpha1.Condition{
-			Type:   ackv1alpha1.ConditionTypeResourceSynced,
-			Status: corev1.ConditionTrue,
-		}
-		ko.Status.Conditions = append(ko.Status.Conditions, syncCondition)
-	}
+	// Required to avoid the "declared but not used" error in the default case
+	_ = syncCondition
 	if terminalCondition != nil || recoverableCondition != nil || syncCondition != nil {
 		return &resource{ko}, true // updated
 	}

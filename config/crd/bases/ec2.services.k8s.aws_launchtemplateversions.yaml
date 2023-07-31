@@ -15,7 +15,11 @@ spec:
     singular: launchtemplateversion
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.versionNumber
+      name: VersionNumber
+      type: integer
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: LaunchTemplateVersion is the Schema for the LaunchTemplateVersions

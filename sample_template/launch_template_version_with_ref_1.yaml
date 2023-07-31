@@ -5,6 +5,7 @@ metadata:
 spec:
   launchTemplateRef: 
     from:
-      name: mysecondlaunchtemplate
+      name: myfirstlaunchtemplate
   launchTemplateData:
     instanceType: t2.nano
+  sourceVersion: "2"

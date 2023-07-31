@@ -756,7 +756,10 @@ type DeleteFleetError struct {
 type DeleteLaunchTemplateVersionsResponseErrorItem struct {
 	LaunchTemplateID   *string `json:"launchTemplateID,omitempty"`
 	LaunchTemplateName *string `json:"launchTemplateName,omitempty"`
-	VersionNumber      *int64  `json:"versionNumber,omitempty"`
+	// Describes the error that's returned when you cannot delete a launch template
+	// version.
+	ResponseError *ResponseError `json:"responseError,omitempty"`
+	VersionNumber *int64         `json:"versionNumber,omitempty"`
 }
 
 // Describes a launch template version that was successfully deleted.
@@ -3619,6 +3622,7 @@ type ResourceStatementRequest struct {
 // Describes the error that's returned when you cannot delete a launch template
 // version.
 type ResponseError struct {
+	Code    *string `json:"code,omitempty"`
 	Message *string `json:"message,omitempty"`
 }
 
