@@ -267,7 +267,9 @@ resources:
             LaunchTemplateName: Name
         DescribeLaunchTemplate:
           input_fields:
-            LaunchTemplateName: Name   
+            LaunchTemplateName: Name
+    reconcile: 
+      requeue_on_success_seconds: 60     
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl       

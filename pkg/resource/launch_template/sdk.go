@@ -1110,8 +1110,13 @@ func (rm *resourceManager) updateConditions(
 			recoverableCondition.Message = nil
 		}
 	}
-	// Required to avoid the "declared but not used" error in the default case
-	_ = syncCondition
+	if syncCondition == nil && onSuccess {
+		syncCondition = &ackv1alpha1.Condition{
+			Type:   ackv1alpha1.ConditionTypeResourceSynced,
+			Status: corev1.ConditionTrue,
+		}
+		ko.Status.Conditions = append(ko.Status.Conditions, syncCondition)
+	}
 	if terminalCondition != nil || recoverableCondition != nil || syncCondition != nil {
 		return &resource{ko}, true // updated
 	}
