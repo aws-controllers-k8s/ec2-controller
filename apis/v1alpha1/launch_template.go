@@ -29,14 +29,16 @@ type LaunchTemplateSpec struct {
 	// the request. For more information, see Ensuring idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
 	//
 	// Constraint: Maximum 128 ASCII characters.
-	ClientToken *string `json:"clientToken,omitempty"`
+	ClientToken          *string `json:"clientToken,omitempty"`
+	DefaultVersionNumber *int64  `json:"defaultVersionNumber,omitempty"`
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have
 	// the required permissions, the error response is DryRunOperation. Otherwise,
 	// it is UnauthorizedOperation.
 	DryRun *bool `json:"dryRun,omitempty"`
 	// The information for the launch template.
-	LaunchTemplateData *RequestLaunchTemplateData `json:"launchTemplateData,omitempty"`
+	// +kubebuilder:validation:Required
+	LaunchTemplateData *RequestLaunchTemplateData `json:"launchTemplateData"`
 	// A name for the launch template.
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
@@ -71,9 +73,6 @@ type LaunchTemplateStatus struct {
 	// The principal that created the launch template.
 	// +kubebuilder:validation:Optional
 	CreatedBy *string `json:"createdBy,omitempty"`
-	// The version number of the default version of the launch template.
-	// +kubebuilder:validation:Optional
-	DefaultVersionNumber *int64 `json:"defaultVersionNumber,omitempty"`
 	// The version number of the latest version of the launch template.
 	// +kubebuilder:validation:Optional
 	LatestVersionNumber *int64 `json:"latestVersionNumber,omitempty"`
@@ -88,7 +87,7 @@ type LaunchTemplateStatus struct {
 // LaunchTemplate is the Schema for the LaunchTemplates API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="DefaultVersion",type=integer,priority=0,JSONPath=`.status.defaultVersionNumber`
+// +kubebuilder:printcolumn:name="DefaultVersion",type=integer,priority=0,JSONPath=`.spec.defaultVersionNumber`
 // +kubebuilder:printcolumn:name="LatestVersion",type=integer,priority=0,JSONPath=`.status.latestVersionNumber`
 // +kubebuilder:printcolumn:name="LaunchTemplateID",type=string,priority=0,JSONPath=`.status.launchTemplateID`
 type LaunchTemplate struct {

@@ -11562,6 +11562,11 @@ func (in *LaunchTemplateSpec) DeepCopyInto(out *LaunchTemplateSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.DefaultVersionNumber != nil {
+		in, out := &in.DefaultVersionNumber, &out.DefaultVersionNumber
+		*out = new(int64)
+		**out = **in
+	}
 	if in.DryRun != nil {
 		in, out := &in.DryRun, &out.DryRun
 		*out = new(bool)
@@ -11739,11 +11744,6 @@ func (in *LaunchTemplateStatus) DeepCopyInto(out *LaunchTemplateStatus) {
 	if in.CreatedBy != nil {
 		in, out := &in.CreatedBy, &out.CreatedBy
 		*out = new(string)
-		**out = **in
-	}
-	if in.DefaultVersionNumber != nil {
-		in, out := &in.DefaultVersionNumber, &out.DefaultVersionNumber
-		*out = new(int64)
 		**out = **in
 	}
 	if in.LatestVersionNumber != nil {

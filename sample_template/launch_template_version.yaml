@@ -5,4 +5,4 @@ metadata:
 spec:
   launchTemplateName: myfirstlaunchtemplate
   launchTemplateData:
-    instanceType: t2.xlarge
+    instanceType: t2.4xlarge

@@ -50,6 +50,13 @@ func newResourceDelta(
 			delta.Add("Spec.ClientToken", a.ko.Spec.ClientToken, b.ko.Spec.ClientToken)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber) {
+		delta.Add("Spec.DefaultVersionNumber", a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber)
+	} else if a.ko.Spec.DefaultVersionNumber != nil && b.ko.Spec.DefaultVersionNumber != nil {
+		if *a.ko.Spec.DefaultVersionNumber != *b.ko.Spec.DefaultVersionNumber {
+			delta.Add("Spec.DefaultVersionNumber", a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.DryRun, b.ko.Spec.DryRun) {
 		delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
 	} else if a.ko.Spec.DryRun != nil && b.ko.Spec.DryRun != nil {

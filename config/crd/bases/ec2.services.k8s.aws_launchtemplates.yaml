@@ -16,7 +16,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.defaultVersionNumber
+    - jsonPath: .spec.defaultVersionNumber
       name: DefaultVersion
       type: integer
     - jsonPath: .status.latestVersionNumber
@@ -52,6 +52,9 @@ spec:
                   idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
                   \n Constraint: Maximum 128 ASCII characters."
                 type: string
+              defaultVersionNumber:
+                format: int64
+                type: integer
               dryRun:
                 description: Checks whether you have the required permissions for
                   the action, without actually making the request, and provides an
@@ -578,6 +581,7 @@ spec:
                 description: A description for the first version of the launch template.
                 type: string
             required:
+            - launchTemplateData
             - name
             type: object
           status:
@@ -651,11 +655,6 @@ spec:
               createdBy:
                 description: The principal that created the launch template.
                 type: string
-              defaultVersionNumber:
-                description: The version number of the default version of the launch
-                  template.
-                format: int64
-                type: integer
               latestVersionNumber:
                 description: The version number of the latest version of the launch
                   template.

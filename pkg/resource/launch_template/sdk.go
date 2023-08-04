@@ -99,9 +99,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.CreatedBy = nil
 		}
 		if elem.DefaultVersionNumber != nil {
-			ko.Status.DefaultVersionNumber = elem.DefaultVersionNumber
+			ko.Spec.DefaultVersionNumber = elem.DefaultVersionNumber
 		} else {
-			ko.Status.DefaultVersionNumber = nil
+			ko.Spec.DefaultVersionNumber = nil
 		}
 		if elem.LatestVersionNumber != nil {
 			ko.Status.LatestVersionNumber = elem.LatestVersionNumber
@@ -208,9 +208,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.CreatedBy = nil
 	}
 	if resp.LaunchTemplate.DefaultVersionNumber != nil {
-		ko.Status.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
+		ko.Spec.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
 	} else {
-		ko.Status.DefaultVersionNumber = nil
+		ko.Spec.DefaultVersionNumber = nil
 	}
 	if resp.LaunchTemplate.LatestVersionNumber != nil {
 		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
@@ -901,6 +901,9 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
+	if err := rm.setDefaultTemplateVersion(desired, input); err != nil {
+		return nil, err
+	}
 
 	var resp *svcsdk.ModifyLaunchTemplateOutput
 	_ = resp
@@ -924,9 +927,9 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Status.CreatedBy = nil
 	}
 	if resp.LaunchTemplate.DefaultVersionNumber != nil {
-		ko.Status.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
+		ko.Spec.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
 	} else {
-		ko.Status.DefaultVersionNumber = nil
+		ko.Spec.DefaultVersionNumber = nil
 	}
 	if resp.LaunchTemplate.LatestVersionNumber != nil {
 		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber

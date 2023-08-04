@@ -4,8 +4,9 @@ metadata:
   name: myfirstlaunchtemplate
 spec:
   name: myfirstlaunchtemplate
+  defaultVersionNumber: 2
   launchTemplateData:
-    instanceType: t2.small
+    instanceType: t3.micro
     networkInterfaces: 
       - subnetID: subnet-064ad13968902cafa
         deviceIndex: 0

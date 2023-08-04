@@ -141,14 +141,13 @@ operations:
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
   CreateLaunchTemplate:
-    output_wrapper_field_path: LaunchTemplate 
+    output_wrapper_field_path: LaunchTemplate
   CreateLaunchTemplateVersion:
     output_wrapper_field_path: LaunchTemplateVersion
   DeleteLaunchTemplateVersions:
     operation_type:
       - Delete
     resource_name: LaunchTemplateVersion
-    ##custom_implementation: customDeleteLaunchTemplateVersions
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -237,14 +236,13 @@ resources:
         - InvalidParameterValue
         - InvalidTagSpecification
     fields: 
-      LaunchTemplateData:
-        is_required: false
       LaunchTemplateID:
         is_primary_key: true 
         print:
           path: Status.LaunchTemplateID
           name: LaunchTemplateID
       DefaultVersionNumber:
+        type: int
         print:
           path: Status.defaultVersionNumber
           name: DefaultVersion
@@ -254,6 +252,8 @@ resources:
           name: LatestVersion
     tags:
       ignore: true
+    reconcile: 
+      requeue_on_success_seconds: 60
     renames:
       operations:
         CreateLaunchTemplate:
@@ -271,6 +271,8 @@ resources:
     reconcile: 
       requeue_on_success_seconds: 60     
     hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/launch_template/sdk_update_post_build_request.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl       
   DhcpOptions:
