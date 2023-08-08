@@ -38,10 +38,6 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
 	if ko.Spec.LaunchTemplateRef != nil {
-		ko.Spec.LaunchTemplateID = nil
-	}
-
-	if ko.Spec.LaunchTemplateRef != nil {
 		ko.Spec.LaunchTemplateName = nil
 	}
 
@@ -65,12 +61,6 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForLaunchTemplateID(ctx, apiReader, namespace, ko); err != nil {
-		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
-	} else {
-		resourceHasReferences = resourceHasReferences || fieldHasReferences
-	}
-
 	if fieldHasReferences, err := rm.resolveReferenceForLaunchTemplateName(ctx, apiReader, namespace, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -84,21 +74,17 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.LaunchTemplateVersion) error {
 
-	if ko.Spec.LaunchTemplateRef != nil && ko.Spec.LaunchTemplateID != nil {
-		return ackerr.ResourceReferenceAndIDNotSupportedFor("LaunchTemplateID", "LaunchTemplateRef")
-	}
-
 	if ko.Spec.LaunchTemplateRef != nil && ko.Spec.LaunchTemplateName != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("LaunchTemplateName", "LaunchTemplateRef")
 	}
 	return nil
 }
 
-// resolveReferenceForLaunchTemplateID reads the resource referenced
-// from LaunchTemplateRef field and sets the LaunchTemplateID
+// resolveReferenceForLaunchTemplateName reads the resource referenced
+// from LaunchTemplateRef field and sets the LaunchTemplateName
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
-func (rm *resourceManager) resolveReferenceForLaunchTemplateID(
+func (rm *resourceManager) resolveReferenceForLaunchTemplateName(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
@@ -114,7 +100,7 @@ func (rm *resourceManager) resolveReferenceForLaunchTemplateID(
 		if err := getReferencedResourceState_LaunchTemplate(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return hasReferences, err
 		}
-		ko.Spec.LaunchTemplateID = (*string)(obj.Status.LaunchTemplateID)
+		ko.Spec.LaunchTemplateName = (*string)(obj.Spec.Name)
 	}
 
 	return hasReferences, nil
@@ -162,37 +148,11 @@ func getReferencedResourceState_LaunchTemplate(
 			"LaunchTemplate",
 			namespace, name)
 	}
-	if obj.Status.LaunchTemplateID == nil {
+	if obj.Spec.Name == nil {
 		return ackerr.ResourceReferenceMissingTargetFieldFor(
 			"LaunchTemplate",
 			namespace, name,
-			"Status.LaunchTemplateID")
+			"Spec.Name")
 	}
 	return nil
-}
-
-// resolveReferenceForLaunchTemplateName reads the resource referenced
-// from LaunchTemplateRef field and sets the LaunchTemplateName
-// from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error
-func (rm *resourceManager) resolveReferenceForLaunchTemplateName(
-	ctx context.Context,
-	apiReader client.Reader,
-	namespace string,
-	ko *svcapitypes.LaunchTemplateVersion,
-) (hasReferences bool, err error) {
-	if ko.Spec.LaunchTemplateRef != nil && ko.Spec.LaunchTemplateRef.From != nil {
-		hasReferences = true
-		arr := ko.Spec.LaunchTemplateRef.From
-		if arr.Name == nil || *arr.Name == "" {
-			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: LaunchTemplateRef")
-		}
-		obj := &svcapitypes.LaunchTemplate{}
-		if err := getReferencedResourceState_LaunchTemplate(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return hasReferences, err
-		}
-		ko.Spec.LaunchTemplateName = (*string)(obj.Spec.Name)
-	}
-
-	return hasReferences, nil
 }

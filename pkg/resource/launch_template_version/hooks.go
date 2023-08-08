@@ -2,7 +2,6 @@ package launch_template_version
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
@@ -37,10 +36,7 @@ func (rm *resourceManager) customSdkfind(ctx context.Context,
 
 	for _, item := range resp_launch_template.LaunchTemplates {
 		latest_version := item.LatestVersionNumber
-		fmt.Println(" ======== PRINTING version number ===========")
 		if r.ko.Status.VersionNumber != nil {
-			fmt.Println(*r.ko.Status.VersionNumber)
-			fmt.Println(*latest_version)
 			version_number_str := strconv.Itoa(int(*r.ko.Status.VersionNumber))
 			input.SetVersions([]*string{&version_number_str})
 		} else {

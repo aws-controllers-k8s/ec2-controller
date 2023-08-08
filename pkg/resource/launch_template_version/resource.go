@@ -88,12 +88,8 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.LaunchTemplateID = &identifier.NameOrID
+	r.ko.Spec.LaunchTemplateID = &identifier.NameOrID
 
-	f2, f2ok := identifier.AdditionalKeys["launchTemplateID"]
-	if f2ok {
-		r.ko.Spec.LaunchTemplateID = &f2
-	}
 	f3, f3ok := identifier.AdditionalKeys["launchTemplateName"]
 	if f3ok {
 		r.ko.Spec.LaunchTemplateName = &f3

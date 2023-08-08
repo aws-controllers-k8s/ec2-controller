@@ -8,4 +8,5 @@ spec:
       name: myfirstlaunchtemplate
   launchTemplateData:
     instanceType: t2.nano
-  sourceVersion: "2"
+  sourceVersion: "1"
+  versionDescription: myfourthversion

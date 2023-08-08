@@ -200,13 +200,9 @@ resources:
     fields:
       LaunchTemplateID:
         is_read_only: true
-        is_primary_key: true 
-        references:
-          resource: LaunchTemplate
-          path: Status.LaunchTemplateID 
-        from:
-          operation: DescribeLaunchTemplates
-          path: LaunchTemplates.LaunchTemplateId
+        is_primary_key: true
+        print:
+          path: Spec.LaunchTemplateID
       LaunchTemplateName:
         references:
           resource: LaunchTemplate
@@ -217,7 +213,7 @@ resources:
       VersionNumber:
         print:
           path: Status.VersionNumber
-          name: VersionNumber    
+          name: VersionNumber 
     tags:
       ignore: true
     hooks:
@@ -226,7 +222,7 @@ resources:
       sdk_delete_post_build_request:
         template_path: hooks/launch_template_versions/sdk_delete_post_build_request.go.tpl
       sdk_create_post_build_request:
-        template_path: hooks/launch_template_versions/sdk_create_post_build_request.go.tpl   
+        template_path: hooks/launch_template_versions/sdk_create_post_build_request.go.tpl
   LaunchTemplate:
     exceptions:    
       errors:

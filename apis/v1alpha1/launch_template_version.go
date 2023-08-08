@@ -81,9 +81,6 @@ type LaunchTemplateVersionStatus struct {
 	// Indicates whether the version is the default version.
 	// +kubebuilder:validation:Optional
 	DefaultVersion *bool `json:"defaultVersion,omitempty"`
-	// The ID of the launch template.
-	// +kubebuilder:validation:Optional
-	LaunchTemplateID *string `json:"launchTemplateID,omitempty"`
 	// The version number.
 	// +kubebuilder:validation:Optional
 	VersionNumber *int64 `json:"versionNumber,omitempty"`
@@ -92,6 +89,7 @@ type LaunchTemplateVersionStatus struct {
 // LaunchTemplateVersion is the Schema for the LaunchTemplateVersions API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="LaunchTemplateID",type=string,priority=0,JSONPath=`.spec.launchTemplateID`
 // +kubebuilder:printcolumn:name="VersionNumber",type=integer,priority=0,JSONPath=`.status.versionNumber`
 type LaunchTemplateVersion struct {
 	metav1.TypeMeta   `json:",inline"`

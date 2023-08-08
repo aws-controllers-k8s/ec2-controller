@@ -4,7 +4,7 @@ metadata:
   name: myfirstlaunchtemplate
 spec:
   name: myfirstlaunchtemplate
-  defaultVersionNumber: 2
+  defaultVersionNumber: 1
   launchTemplateData:
     instanceType: t3.micro
     networkInterfaces: 

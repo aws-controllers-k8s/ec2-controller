@@ -11988,11 +11988,6 @@ func (in *LaunchTemplateVersionStatus) DeepCopyInto(out *LaunchTemplateVersionSt
 		*out = new(bool)
 		**out = **in
 	}
-	if in.LaunchTemplateID != nil {
-		in, out := &in.LaunchTemplateID, &out.LaunchTemplateID
-		*out = new(string)
-		**out = **in
-	}
 	if in.VersionNumber != nil {
 		in, out := &in.VersionNumber, &out.VersionNumber
 		*out = new(int64)
