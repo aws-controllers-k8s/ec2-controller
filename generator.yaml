@@ -76,8 +76,8 @@ ignore:
     - IpamPool
     - IpamScope
     - KeyPair
-    - LaunchTemplateVersion
-    - LaunchTemplate
+    #- LaunchTemplateVersion
+    #- LaunchTemplate
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRoute
     - ManagedPrefixList
@@ -144,6 +144,14 @@ operations:
     output_wrapper_field_path: NatGateway
   CreateNetworkAcl:
     output_wrapper_field_path: NetworkAcl
+  CreateLaunchTemplate:
+    output_wrapper_field_path: LaunchTemplate
+  CreateLaunchTemplateVersion:
+    output_wrapper_field_path: LaunchTemplateVersion
+  DeleteLaunchTemplateVersions:
+    operation_type:
+      - Delete
+    resource_name: LaunchTemplateVersion
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -185,6 +193,88 @@ operations:
       - Delete
     resource_name: Instance
 resources:
+  LaunchTemplateVersion:
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateId.VersionNotFound
+    terminal_codes:
+      - InvalidParameterValue
+      - InvalidParameterCombination 
+    fields:
+      LaunchTemplateID:
+        is_read_only: true
+        is_primary_key: true
+        print:
+          path: Spec.LaunchTemplateID
+      LaunchTemplateName:
+        references:
+          resource: LaunchTemplate
+          path: Spec.Name
+      LaunchTemplateData:
+        compare:
+          is_ignored: true
+      VersionNumber:
+        print:
+          path: Status.VersionNumber
+          name: VersionNumber 
+    tags:
+      ignore: true
+    hooks:
+      sdk_read_many_post_build_request:
+        template_path: hooks/launch_template_versions/sdk_read_many_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/launch_template_versions/sdk_delete_post_build_request.go.tpl
+      sdk_create_post_build_request:
+        template_path: hooks/launch_template_versions/sdk_create_post_build_request.go.tpl
+  LaunchTemplate:
+    exceptions:    
+      errors:
+        404:
+          code: InvalidLaunchTemplateName.NotFoundException
+      terminal_codes:
+        - InvalidParameterValue
+        - InvalidTagSpecification
+    fields: 
+      LaunchTemplateID:
+        is_primary_key: true 
+        print:
+          path: Status.LaunchTemplateID
+          name: LaunchTemplateID
+      DefaultVersionNumber:
+        type: int
+        print:
+          path: Status.defaultVersionNumber
+          name: DefaultVersion
+      LatestVersionNumber:
+        print:
+          path: Status.latestVersionNumber
+          name: LatestVersion
+    tags:
+      ignore: true
+    reconcile: 
+      requeue_on_success_seconds: 60
+    renames:
+      operations:
+        CreateLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+          output_fields:
+            LaunchTemplateId: LaunchTemplateId
+        DeleteLaunchTemplate:
+          input_fields:
+            LaunchTemplateId: LaunchTemplateId
+            LaunchTemplateName: Name
+        DescribeLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+    reconcile: 
+      requeue_on_success_seconds: 60     
+    hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/launch_template/sdk_update_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl
   DhcpOptions:
     exceptions:
       terminal_codes:
