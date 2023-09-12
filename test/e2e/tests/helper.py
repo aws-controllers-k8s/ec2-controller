@@ -93,6 +93,21 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def assert_route_table_association(self, route_table_id: str, gateway_id: str, AssociationState: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_route_tables(
+                RouteTableIds=[route_table_id]
+            )
+            associations = aws_res["RouteTables"][0]["Associations"]
+            for association in associations:
+                if (association["AssociationState"]["State"] == AssociationState and
+                    association["GatewayId"] == gateway_id):
+                    res_found = True
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
     def assert_entry(self, network_acl_id: str, rule_number: int, egress: str, exists=True):
         res_found = False
         try:

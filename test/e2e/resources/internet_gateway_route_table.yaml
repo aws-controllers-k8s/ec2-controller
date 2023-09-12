@@ -1,0 +1,9 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: RouteTable
+metadata:
+  name: $ROUTE_TABLE_NAME
+spec:
+  vpcID: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

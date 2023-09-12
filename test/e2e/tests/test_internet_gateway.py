@@ -27,6 +27,10 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 from e2e.bootstrap_resources import get_bootstrap_resources
 
+from .test_route_table import (
+    RESOURCE_PLURAL as ROUTE_TABLE_PLURAL,
+    CREATE_WAIT_AFTER_SECONDS as ROUTE_TABLE_CREATE_WAIT,
+)
 
 RESOURCE_PLURAL = "internetgateways"
 
@@ -121,6 +125,33 @@ class TestInternetGateway:
         assert igw["Attachments"][0]["VpcId"] == vpc_id
         assert igw["Attachments"][0]["State"] == "available"
 
+        rt_ref, rt_cr = simple_route_table(vpc_id)
+        rt_id = rt_cr["status"]["routeTableID"]
+
+        # Patch the IGW, adding route table association
+        updates = {
+            "spec": {"routeTables": [rt_id]},
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Verify gateway is associated with route table
+        ec2_validator.assert_route_table_association(
+            rt_id, resource_id, "associated", True
+        )
+
+        # Patch the IGW, removing the route table association
+        updates = {
+            "spec": {"routeTables": None},
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Verify gateway is disassociated with route table
+        ec2_validator.assert_route_table_association(
+            rt_id, resource_id, "disassociated", True
+        )
+
         # Patch the IGW, removing the attachment
         updates = {
             "spec": {"vpc": None},
@@ -147,7 +178,11 @@ class TestInternetGateway:
 
         # Check Internet Gateway no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)
-    
+
+        # Delete route table
+        _, deleted = k8s.delete_custom_resource(rt_ref, 2, 5)
+        assert deleted is True
+
     @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
     def test_crud_tags(self, ec2_client, simple_internet_gateway):
         (ref, cr) = simple_internet_gateway
@@ -250,3 +285,34 @@ class TestInternetGateway:
 
         # Check IGW no longer exists in AWS
         ec2_validator.assert_internet_gateway(resource_id, exists=False)
+
+def simple_route_table(vpc_id: int):
+    replacements = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("igw-route-table", 24)
+
+    replacements["ROUTE_TABLE_NAME"] = resource_name
+    replacements["VPC_ID"] = vpc_id
+
+    resource_data = load_ec2_resource(
+        "internet_gateway_route_table",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create the k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP,
+        CRD_VERSION,
+        ROUTE_TABLE_PLURAL,
+        resource_name,
+        namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    time.sleep(ROUTE_TABLE_CREATE_WAIT)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    return ref, cr

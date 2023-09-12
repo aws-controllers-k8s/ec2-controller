@@ -40,6 +40,26 @@ spec:
             description: "InternetGatewaySpec defines the desired state of InternetGateway.
               \n Describes an internet gateway."
             properties:
+              routeTableRefs:
+                items:
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference type to provide more user friendly syntax
+                    for references using 'from' field Ex: APIIDRef: \n from: name:
+                    my-api"
+                  properties:
+                    from:
+                      description: AWSResourceReference provides all the values necessary
+                        to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              routeTables:
+                items:
+                  type: string
+                type: array
               tags:
                 description: The tags. The value parameter is required, but if you
                   don't want the tag to have a value, specify the parameter with no

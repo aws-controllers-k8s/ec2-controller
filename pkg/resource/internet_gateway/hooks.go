@@ -19,6 +19,7 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	ackutils "github.com/aws-controllers-k8s/runtime/pkg/util"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -51,6 +52,12 @@ func (rm *resourceManager) customUpdateInternetGateway(
 			if err = rm.attachToVPC(ctx, desired); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	if delta.DifferentAt("Spec.RouteTables") {
+		if err = rm.updateRouteTableAssociations(ctx, desired, latest, delta); err != nil {
+			return nil, err
 		}
 	}
 
@@ -280,4 +287,185 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.SetTags(requestedTags)
 		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
+}
+
+func (rm *resourceManager) createRouteTableAssociations(
+	ctx context.Context,
+	desired *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.createRouteTableAssociations")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	if len(desired.ko.Spec.RouteTables) == 0 {
+		return nil
+	}
+
+	for _, rt := range desired.ko.Spec.RouteTables {
+		if err = rm.associateRouteTable(ctx, *rt, *desired.ko.Status.InternetGatewayID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) updateRouteTableAssociations(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+	delta *ackcompare.Delta,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateRouteTableAssociations")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	existingRTs, err := rm.getRouteTableAssociations(ctx, latest)
+	if err != nil {
+		return err
+	}
+
+	toAdd := make([]*string, 0)
+	toDelete := make([]*svcsdk.RouteTableAssociation, 0)
+
+	for _, rt := range existingRTs {
+		if !ackutils.InStringPs(*rt.RouteTableId, desired.ko.Spec.RouteTables) {
+			toDelete = append(toDelete, rt)
+		}
+	}
+
+	for _, rt := range desired.ko.Spec.RouteTables {
+		if !inAssociations(*rt, existingRTs) {
+			toAdd = append(toAdd, rt)
+		}
+	}
+
+	for _, t := range toDelete {
+		rlog.Debug("disassocationg route table from internet gateway", "route_table_id", *t.RouteTableId, "association_id", *t.RouteTableAssociationId)
+		if err = rm.disassociateRouteTable(ctx, *t.RouteTableAssociationId); err != nil {
+			return err
+		}
+	}
+	for _, rt := range toAdd {
+		rlog.Debug("associating route table with internet gateway", "route_table_id", *rt)
+		if err = rm.associateRouteTable(ctx, *rt, *latest.ko.Status.InternetGatewayID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// associateRouteTable will associate a RouteTable (using its RouteTableID) with
+// the given internet gateway (using its internet gateway ID)
+func (rm *resourceManager) associateRouteTable(
+	ctx context.Context,
+	rtID string,
+	igwID string,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.associateRouteTable")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.AssociateRouteTableInput{
+		RouteTableId: &rtID,
+		GatewayId:    &igwID,
+	}
+
+	_, err = rm.sdkapi.AssociateRouteTableWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "AssociateRouteTable", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// disassociateRouteTable will disassociate a RouteTable from a internet
+// gateway based on its association ID, which is given by the API in the
+// output of the Associate* command but can also be found in the
+// description of the route table under the list of its associations.
+func (rm *resourceManager) disassociateRouteTable(
+	ctx context.Context,
+	associationID string,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.disassociateRouteTable")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.DisassociateRouteTableInput{
+		AssociationId: &associationID,
+	}
+
+	_, err = rm.sdkapi.DisassociateRouteTableWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "DisassociateRouteTable", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getRouteTableAssociations finds all of the route tables that are associated
+// with the current internet gateway and returns a list of each of the
+// association resources.
+func (rm *resourceManager) getRouteTableAssociations(
+	ctx context.Context,
+	res *resource,
+) (rtAssociations []*svcsdk.RouteTableAssociation, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getRouteTableAssociations")
+	defer func(err error) {
+		exit(err)
+	}(err)
+
+	input := &svcsdk.DescribeRouteTablesInput{}
+
+	for {
+		resp, err := rm.sdkapi.DescribeRouteTablesWithContext(ctx, input)
+		if err != nil || resp == nil {
+			break
+		}
+
+		rm.metrics.RecordAPICall("GET", "DescribeRouteTables", err)
+		for _, rt := range resp.RouteTables {
+			// Find the association for the current internet gateway
+			for _, rtAssociation := range rt.Associations {
+				if rtAssociation.GatewayId == nil || res.ko.Status.InternetGatewayID == nil {
+					continue
+				}
+				if *rtAssociation.GatewayId == *res.ko.Status.InternetGatewayID && *rtAssociation.AssociationState.State == "associated" {
+					rtAssociations = append(rtAssociations, rtAssociation)
+					break
+				}
+			}
+		}
+		if resp.NextToken == nil || *resp.NextToken == "" {
+			break
+		}
+		input.SetNextToken(*resp.NextToken)
+	}
+	return rtAssociations, nil
+}
+
+// inAssociations returns true if a route table ID is present in the list of
+// route table assocations.
+func inAssociations(
+	rtID string,
+	assocs []*svcsdk.RouteTableAssociation,
+) bool {
+	for _, a := range assocs {
+		if *a.RouteTableId == rtID {
+			return true
+		}
+	}
+	return false
 }

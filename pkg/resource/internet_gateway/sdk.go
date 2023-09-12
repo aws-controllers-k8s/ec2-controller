@@ -144,6 +144,17 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.VPC = vpcID
 	}
+
+	assocs, err := rm.getRouteTableAssociations(ctx, &resource{ko})
+	if err != nil {
+		return nil, err
+	} else {
+		ko.Spec.RouteTables = make([]*string, len(assocs))
+		for i, assoc := range assocs {
+			ko.Spec.RouteTables[i] = assoc.RouteTableId
+		}
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -251,6 +262,11 @@ func (rm *resourceManager) sdkCreate(
 			return nil, err
 		}
 	}
+
+	if err = rm.createRouteTableAssociations(ctx, &resource{ko}); err != nil {
+		return nil, err
+	}
+
 	return &resource{ko}, nil
 }
 
