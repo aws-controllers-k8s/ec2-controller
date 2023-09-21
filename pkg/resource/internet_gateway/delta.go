@@ -44,6 +44,12 @@ func newResourceDelta(
 	}
 	compareTags(delta, a, b)
 
+	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
+		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTables, b.ko.Spec.RouteTables) {
+		delta.Add("Spec.RouteTables", a.ko.Spec.RouteTables, b.ko.Spec.RouteTables)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPC, b.ko.Spec.VPC) {
 		delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
 	} else if a.ko.Spec.VPC != nil && b.ko.Spec.VPC != nil {

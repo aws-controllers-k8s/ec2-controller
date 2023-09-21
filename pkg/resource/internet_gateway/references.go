@@ -37,6 +37,10 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
+	if len(ko.Spec.RouteTableRefs) > 0 {
+		ko.Spec.RouteTables = nil
+	}
+
 	if ko.Spec.VPCRef != nil {
 		ko.Spec.VPC = nil
 	}
@@ -61,6 +65,12 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForRouteTables(ctx, apiReader, namespace, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForVPC(ctx, apiReader, namespace, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -74,8 +84,94 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.InternetGateway) error {
 
+	if len(ko.Spec.RouteTableRefs) > 0 && len(ko.Spec.RouteTables) > 0 {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("RouteTables", "RouteTableRefs")
+	}
+
 	if ko.Spec.VPCRef != nil && ko.Spec.VPC != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPC", "VPCRef")
+	}
+	return nil
+}
+
+// resolveReferenceForRouteTables reads the resource referenced
+// from RouteTableRefs field and sets the RouteTables
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForRouteTables(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.InternetGateway,
+) (hasReferences bool, err error) {
+	for _, f0iter := range ko.Spec.RouteTableRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: RouteTableRefs")
+			}
+			obj := &svcapitypes.RouteTable{}
+			if err := getReferencedResourceState_RouteTable(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			if ko.Spec.RouteTables == nil {
+				ko.Spec.RouteTables = make([]*string, 0, 1)
+			}
+			ko.Spec.RouteTables = append(ko.Spec.RouteTables, (*string)(obj.Status.RouteTableID))
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_RouteTable looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_RouteTable(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.RouteTable,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceSynced, refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"RouteTable",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"RouteTable",
+			namespace, name)
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"RouteTable",
+			namespace, name)
+	}
+	if obj.Status.RouteTableID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"RouteTable",
+			namespace, name,
+			"Status.RouteTableID")
 	}
 	return nil
 }

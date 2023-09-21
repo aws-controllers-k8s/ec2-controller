@@ -351,6 +351,12 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      RouteTables:
+        custom_field:
+          list_of: String
+        references:
+          resource: RouteTable
+          path: Status.RouteTableID
       InternetGatewayID:
         print:
           path: Status.internetGatewayID
