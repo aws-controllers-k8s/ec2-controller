@@ -58,6 +58,8 @@ ignore:
     - SecurityGroupRule.GroupOwnerId
     - SecurityGroupRule.ReferencedGroupInfo
     - TerminateInstancesInput.DryRun
+    - CreateLaunchTemplateInput.DryRun
+    - CreateLaunchTemplateInput.ClientToken
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -86,8 +88,12 @@ ignore:
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
+<<<<<<< HEAD
     - LaunchTemplate
     - LocalGatewayRouteTable
+=======
+    #- LaunchTemplate
+>>>>>>> 63ad6f5 (added fixes as per comments)
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
@@ -159,6 +165,8 @@ operations:
     output_wrapper_field_path: NatGateway
   CreateNetworkAcl:
     output_wrapper_field_path: NetworkAcl
+  CreateLaunchTemplate:
+    output_wrapper_field_path: LaunchTemplate
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -216,6 +224,56 @@ operations:
       - Update
     resource_name: VpcPeeringConnection
 resources:
+  LaunchTemplate:
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateName.NotFoundException
+      terminal_codes:
+        - InvalidParameterValue
+        - InvalidTagSpecification
+    fields:
+      LaunchTemplateID:
+        is_primary_key: true
+        print:
+          path: Status.LaunchTemplateID
+          name: LaunchTemplateID
+      DefaultVersionNumber:
+        type: int
+        print:
+          path: Status.defaultVersionNumber
+          name: DefaultVersion
+      LatestVersionNumber:
+        print:
+          path: Status.latestVersionNumber
+          name: LatestVersion
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
+    tags:
+      ignore: true
+    renames:
+      operations:
+        CreateLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+          output_fields:
+            LaunchTemplateId: LaunchTemplateId
+        DeleteLaunchTemplate:
+          input_fields:
+            LaunchTemplateId: LaunchTemplateId
+            LaunchTemplateName: Name
+        DescribeLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+    hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/launch_template/sdk_update_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl
   DhcpOptions:
     exceptions:
       terminal_codes:

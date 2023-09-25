@@ -30,6 +30,48 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+<<<<<<< HEAD
+=======
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - internetgateways/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - launchtemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - launchtemplates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+>>>>>>> 63ad6f5 (added fixes as per comments)
   - natgateways
   - networkacls
   - routetables
