@@ -7,6 +7,7 @@ resources:
   - bases/ec2.services.k8s.aws_flowlogs.yaml
   - bases/ec2.services.k8s.aws_instances.yaml
   - bases/ec2.services.k8s.aws_internetgateways.yaml
+  - bases/ec2.services.k8s.aws_launchtemplates.yaml
   - bases/ec2.services.k8s.aws_natgateways.yaml
   - bases/ec2.services.k8s.aws_networkacls.yaml
   - bases/ec2.services.k8s.aws_routetables.yaml
