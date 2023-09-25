@@ -93,21 +93,6 @@ class EC2Validator:
             pass
         assert res_found is exists
 
-    def assert_route_table_association(self, route_table_id: str, gateway_id: str, AssociationState: str, exists=True):
-        res_found = False
-        try:
-            aws_res = self.ec2_client.describe_route_tables(
-                RouteTableIds=[route_table_id]
-            )
-            associations = aws_res["RouteTables"][0]["Associations"]
-            for association in associations:
-                if (association["AssociationState"]["State"] == AssociationState and
-                    association["GatewayId"] == gateway_id):
-                    res_found = True
-        except self.ec2_client.exceptions.ClientError:
-            pass
-        assert res_found is exists
-
     def assert_entry(self, network_acl_id: str, rule_number: int, egress: str, exists=True):
         res_found = False
         try:
@@ -250,11 +235,11 @@ class EC2Validator:
             pass
         assert res_found is exists
 
-    def get_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
+    def get_launch_template(self, launch_template_id: str) -> Union[None, Dict]:
         try:
-            aws_res = self.ec2_client.describe_vpc_endpoint_service_configurations(ServiceIds=[vpc_endpoint_service_configuration_id])
-            if len(aws_res["ServiceConfigurations"]) > 0:
-                return aws_res["ServiceConfigurations"][0]
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            if len(aws_res["LaunchTemplates"]) > 0:
+                return aws_res["LaunchTemplates"][0]
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
@@ -298,6 +283,7 @@ class EC2Validator:
         assert (res_found is exists 
                 or
                 aws_res["VpcPeeringConnections"][0]["Status"]["Code"] == "deleted")
+
         
     def get_capacity_reservation(self, capacity_reservation_id: str) -> Union[None, Dict]:
         try:
@@ -320,3 +306,13 @@ class EC2Validator:
         assert (res_found is exists 
                 or
                 aws_res["CapacityReservations"][0]["State"] == "cancelled")
+
+    def assert_launch_template(self, launch_template_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            res_found = len(aws_res["LaunchTemplates"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+

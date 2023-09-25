@@ -15,6 +15,12 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+<<<<<<< HEAD
+=======
+
+  - launchtemplates
+
+>>>>>>> 63ad6f5 (added fixes as per comments)
   - natgateways
   - networkacls
   - routetables
@@ -42,6 +48,7 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+  - launchtemplates
   - natgateways
   - networkacls
   - routetables

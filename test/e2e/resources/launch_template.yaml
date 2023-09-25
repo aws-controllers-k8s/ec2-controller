@@ -1,0 +1,14 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplate
+metadata:
+  name: $LAUNCH_TEMPLATE_NAME
+spec:
+  name: $LAUNCH_TEMPLATE_NAME
+  versionDescription: $VERSION_DESCRIPTION
+  launchTemplateData:
+    instanceType: t2.micro
+  tagSpecifications:
+    - resourceType: $RESOURCE_TYPE
+      tags:
+        - key: name
+          value: ack-launch-template
