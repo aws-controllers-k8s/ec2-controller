@@ -258,6 +258,7 @@ class EC2Validator:
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
+        
 
     def assert_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str, exists=True):
         res_found = False

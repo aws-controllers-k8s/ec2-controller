@@ -1,9 +1,10 @@
 {{ .Chart.Name }} has been installed.
-<<<<<<< HEAD
+
 This chart deploys "public.ecr.aws/aws-controllers-k8s/ec2-controller:1.3.6".
-=======
 This chart deploys "public.ecr.aws/aws-controllers-k8s/ec2-controller:0.0.0-non-release-version".
->>>>>>> 10f9d8e (added fixes as per comments)
+
+This chart deploys "public.ecr.aws/aws-controllers-k8s/ec2-controller:1.0.7".
+
 
 Check its status by running:
   kubectl --namespace {{ .Release.Namespace }} get pods -l "app.kubernetes.io/instance={{ .Release.Name }}"
