@@ -182,6 +182,7 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+	updateTagSpecificationsInCreateRequest(desired, input)
 
 	var resp *svcsdk.CreateLaunchTemplateOutput
 	_ = resp
@@ -843,31 +844,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.Name != nil {
 		res.SetLaunchTemplateName(*r.ko.Spec.Name)
 	}
-	if r.ko.Spec.TagSpecifications != nil {
-		f2 := []*svcsdk.TagSpecification{}
-		for _, f2iter := range r.ko.Spec.TagSpecifications {
-			f2elem := &svcsdk.TagSpecification{}
-			if f2iter.ResourceType != nil {
-				f2elem.SetResourceType(*f2iter.ResourceType)
-			}
-			if f2iter.Tags != nil {
-				f2elemf1 := []*svcsdk.Tag{}
-				for _, f2elemf1iter := range f2iter.Tags {
-					f2elemf1elem := &svcsdk.Tag{}
-					if f2elemf1iter.Key != nil {
-						f2elemf1elem.SetKey(*f2elemf1iter.Key)
-					}
-					if f2elemf1iter.Value != nil {
-						f2elemf1elem.SetValue(*f2elemf1iter.Value)
-					}
-					f2elemf1 = append(f2elemf1, f2elemf1elem)
-				}
-				f2elem.SetTags(f2elemf1)
-			}
-			f2 = append(f2, f2elem)
-		}
-		res.SetTagSpecifications(f2)
-	}
 	if r.ko.Spec.VersionDescription != nil {
 		res.SetVersionDescription(*r.ko.Spec.VersionDescription)
 	}
@@ -888,6 +864,11 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
+	if delta.DifferentAt("Spec.Tags") {
+		if err := rm.syncTags(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
@@ -950,6 +931,25 @@ func (rm *resourceManager) sdkUpdate(
 	}
 
 	rm.setStatusDefaults(ko)
+	if desired.ko.Spec.Tags != nil {
+		desiredTags := []*svcapitypes.Tag{}
+		for _, tagitem := range desired.ko.Spec.Tags {
+			elem := &svcapitypes.Tag{}
+			if tagitem.Key != nil {
+				elem.Key = tagitem.Key
+			}
+			if tagitem.Value != nil {
+				elem.Value = tagitem.Value
+			}
+
+			desiredTags = append(desiredTags, elem)
+		}
+		ko.Spec.Tags = desiredTags
+
+	} else {
+		ko.Spec.Tags = nil
+	}
+
 	return &resource{ko}, nil
 }
 

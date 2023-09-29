@@ -39,8 +39,7 @@ def simple_launch_template(request):
     replacements = REPLACEMENT_VALUES.copy()
     replacements["LAUNCH_TEMPLATE_NAME"] = resource_name
     replacements["VERSION_DESCRIPTION"] = "THIS IS TEST LAUNCH TEMPLATE"
-    replacements["RESOURCE_TYPE"] = "launch-template"
-   
+    
     # Load LaunchTemplate CR
     resource_data = load_ec2_resource(
         resource_file,
@@ -77,6 +76,7 @@ class TestLaunchTemplate:
         (ref, cr) = simple_launch_template
 
         resource_id = cr["status"]["launchTemplateID"]   
+       
 
         # Check LaunchTemplate exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -88,6 +88,37 @@ class TestLaunchTemplate:
         
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
+        # Update tags
+        update_tags = [
+                {
+                    "key": "newtagkey",
+                    "value": "newtagvalue",
+                }
+            ]
+
+        # Patch the launchtemplate, updating the tags with new pair
+        updates = {
+            "spec": {"tags": update_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Only user tags should be present in Spec
+        resource = k8s.get_resource(ref)
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == "newtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "newtagvalue"
+
+        # Check user and ack tags on aws 
+        launch_template = ec2_validator.get_launch_template(resource_id)
+        assert len(launch_template['Tags']) == 3
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
         assert deleted is True
@@ -96,44 +127,7 @@ class TestLaunchTemplate:
 
         # Check LaunchTemplate no longer exists in AWS
         ec2_validator.assert_launch_template(resource_id, exists=False)
-
-    def test_terminal_condition_invalid_parameter_value(self):
-        resource_name = random_suffix_name("lt-ack-fail", 24)
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["LAUNCH_TEMPLATE_NAME"] = resource_name
-        replacements["RESOURCE_TYPE"] = "volume"
     
-            
-        # Load LaunchTemplate CR
-        resource_data = load_ec2_resource(
-            "launch_template",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        expected_msg = "InvalidParameterValue: The value for the ResourceType member of the TagSpecification request parameter must be ‘launch-template’. Verify the ResourceType and try again"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidParameterValue) when calling the CreateLaunchTemplate operation:
-        # Value (dsfre) for parameter cidrBlock is invalid.
-        # This is not a valid CIDR block.
-        assert expected_msg in terminal_condition['message']
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
-        assert deleted is True
 
 
+   

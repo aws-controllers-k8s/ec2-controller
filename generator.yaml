@@ -60,6 +60,7 @@ ignore:
     - TerminateInstancesInput.DryRun
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
+    - CreateLaunchTemplateInput.TagSpecifications
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -226,7 +227,6 @@ resources:
           code: InvalidLaunchTemplateName.NotFoundException
       terminal_codes:
         - InvalidParameterValue
-        - InvalidTagSpecification
     fields:
       LaunchTemplateID:
         is_primary_key: true
@@ -246,10 +246,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
-    tags:
-      ignore: true
     renames:
       operations:
         CreateLaunchTemplate:
@@ -265,10 +261,17 @@ resources:
           input_fields:
             LaunchTemplateName: Name
     hooks:
+      sdk_create_post_build_request:
+       template_path: hooks/launch_template/sdk_create_post_build_request.go.tpl 
+      sdk_update_pre_build_request:
+        template_path: hooks/launch_template/sdk_update_pre_build_request.go.tpl
       sdk_update_post_build_request:
         template_path: hooks/launch_template/sdk_update_post_build_request.go.tpl
+      sdk_update_post_set_output:
+        template_path: hooks/launch_template/sdk_update_post_set_output.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl
+   
   DhcpOptions:
     exceptions:
       terminal_codes:

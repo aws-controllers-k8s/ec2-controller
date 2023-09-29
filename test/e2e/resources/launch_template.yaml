@@ -7,8 +7,6 @@ spec:
   versionDescription: $VERSION_DESCRIPTION
   launchTemplateData:
     instanceType: t2.micro
-  tagSpecifications:
-    - resourceType: $RESOURCE_TYPE
-      tags:
-        - key: name
-          value: ack-launch-template
+  tags:
+    - key: name
+      value: ack-launch-template

@@ -4056,23 +4056,22 @@ type SpotFleetRequestConfig struct {
 
 // Describes the configuration of a Spot Fleet request.
 type SpotFleetRequestConfigData struct {
-	ClientToken                      *string             `json:"clientToken,omitempty"`
-	Context                          *string             `json:"context,omitempty"`
-	FulfilledCapacity                *float64            `json:"fulfilledCapacity,omitempty"`
-	IAMFleetRole                     *string             `json:"iamFleetRole,omitempty"`
-	InstanceInterruptionBehavior     *string             `json:"instanceInterruptionBehavior,omitempty"`
-	InstancePoolsToUseCount          *int64              `json:"instancePoolsToUseCount,omitempty"`
-	OnDemandFulfilledCapacity        *float64            `json:"onDemandFulfilledCapacity,omitempty"`
-	OnDemandMaxTotalPrice            *string             `json:"onDemandMaxTotalPrice,omitempty"`
-	OnDemandTargetCapacity           *int64              `json:"onDemandTargetCapacity,omitempty"`
-	ReplaceUnhealthyInstances        *bool               `json:"replaceUnhealthyInstances,omitempty"`
-	SpotMaxTotalPrice                *string             `json:"spotMaxTotalPrice,omitempty"`
-	SpotPrice                        *string             `json:"spotPrice,omitempty"`
-	TagSpecifications                []*TagSpecification `json:"tagSpecifications,omitempty"`
-	TargetCapacity                   *int64              `json:"targetCapacity,omitempty"`
-	TerminateInstancesWithExpiration *bool               `json:"terminateInstancesWithExpiration,omitempty"`
-	ValidFrom                        *metav1.Time        `json:"validFrom,omitempty"`
-	ValidUntil                       *metav1.Time        `json:"validUntil,omitempty"`
+	ClientToken                      *string      `json:"clientToken,omitempty"`
+	Context                          *string      `json:"context,omitempty"`
+	FulfilledCapacity                *float64     `json:"fulfilledCapacity,omitempty"`
+	IAMFleetRole                     *string      `json:"iamFleetRole,omitempty"`
+	InstanceInterruptionBehavior     *string      `json:"instanceInterruptionBehavior,omitempty"`
+	InstancePoolsToUseCount          *int64       `json:"instancePoolsToUseCount,omitempty"`
+	OnDemandFulfilledCapacity        *float64     `json:"onDemandFulfilledCapacity,omitempty"`
+	OnDemandMaxTotalPrice            *string      `json:"onDemandMaxTotalPrice,omitempty"`
+	OnDemandTargetCapacity           *int64       `json:"onDemandTargetCapacity,omitempty"`
+	ReplaceUnhealthyInstances        *bool        `json:"replaceUnhealthyInstances,omitempty"`
+	SpotMaxTotalPrice                *string      `json:"spotMaxTotalPrice,omitempty"`
+	SpotPrice                        *string      `json:"spotPrice,omitempty"`
+	TargetCapacity                   *int64       `json:"targetCapacity,omitempty"`
+	TerminateInstancesWithExpiration *bool        `json:"terminateInstancesWithExpiration,omitempty"`
+	ValidFrom                        *metav1.Time `json:"validFrom,omitempty"`
+	ValidUntil                       *metav1.Time `json:"validUntil,omitempty"`
 }
 
 // The tags for a Spot Fleet resource.
