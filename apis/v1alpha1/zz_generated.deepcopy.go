@@ -11538,17 +11538,6 @@ func (in *LaunchTemplateSpec) DeepCopyInto(out *LaunchTemplateSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.TagSpecifications != nil {
-		in, out := &in.TagSpecifications, &out.TagSpecifications
-		*out = make([]*TagSpecification, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(TagSpecification)
-				(*in).DeepCopyInto(*out)
-			}
-		}
-	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
 		*out = make([]*Tag, len(*in))
@@ -18901,17 +18890,6 @@ func (in *SpotFleetRequestConfigData) DeepCopyInto(out *SpotFleetRequestConfigDa
 		in, out := &in.SpotPrice, &out.SpotPrice
 		*out = new(string)
 		**out = **in
-	}
-	if in.TagSpecifications != nil {
-		in, out := &in.TagSpecifications, &out.TagSpecifications
-		*out = make([]*TagSpecification, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(TagSpecification)
-				(*in).DeepCopyInto(*out)
-			}
-		}
 	}
 	if in.TargetCapacity != nil {
 		in, out := &in.TargetCapacity, &out.TargetCapacity

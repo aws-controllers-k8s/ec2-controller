@@ -88,12 +88,7 @@ ignore:
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
-<<<<<<< HEAD
-    - LaunchTemplate
-    - LocalGatewayRouteTable
-=======
     #- LaunchTemplate
->>>>>>> 63ad6f5 (added fixes as per comments)
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
