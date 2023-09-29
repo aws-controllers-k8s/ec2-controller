@@ -19,6 +19,8 @@ rules:
 
   - internetgateways
 
+  - launchtemplates
+
   - natgateways
 
   - networkacls
@@ -51,6 +53,7 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+  - launchtemplates
   - natgateways
   - networkacls
   - routetables
