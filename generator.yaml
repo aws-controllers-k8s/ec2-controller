@@ -61,6 +61,9 @@ ignore:
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
+    - CreateLaunchTemplateVersionInput.DryRun
+    - CreateLaunchTemplateVersionInput.ClientToken
+    - CreateLaunchTemplateVersionInput.TagSpecifications
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -88,7 +91,7 @@ ignore:
     - IpamResourceDiscovery
     - IpamScope
     - KeyPair
-    - LaunchTemplateVersion
+    #- LaunchTemplateVersion
     #- LaunchTemplate
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
@@ -163,6 +166,12 @@ operations:
     output_wrapper_field_path: NetworkAcl
   CreateLaunchTemplate:
     output_wrapper_field_path: LaunchTemplate
+  CreateLaunchTemplateVersion:
+    output_wrapper_field_path: LaunchTemplateVersion
+  DeleteLaunchTemplateVersions:
+    operation_type:
+      - Delete
+    resource_name: LaunchTemplateVersion
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   DeleteVpcEndpoints:
@@ -220,6 +229,33 @@ operations:
       - Update
     resource_name: VpcPeeringConnection
 resources:
+  LaunchTemplateVersion:
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateId.VersionNotFound
+    terminal_codes:
+      - InvalidParameterValue
+      - InvalidParameterCombination 
+    fields:
+      LaunchTemplateID:
+        is_read_only: true
+        is_primary_key: true
+        print:
+          path: Spec.LaunchTemplateID
+      VersionNumber:
+        print:
+          path: Status.VersionNumber
+          name: VersionNumber
+    tags:
+      ignore: true 
+    hooks:
+      sdk_read_many_post_build_request:
+        template_path: hooks/launch_template_versions/sdk_read_many_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/launch_template_versions/sdk_delete_post_build_request.go.tpl
+      sdk_create_post_build_request:
+        template_path: hooks/launch_template_versions/sdk_create_post_build_request.go.tpl
   LaunchTemplate:
     exceptions:
       errors:

@@ -71,7 +71,30 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+<<<<<<< HEAD
 >>>>>>> 63ad6f5 (added fixes as per comments)
+=======
+  - launchtemplateversions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - launchtemplateversions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+>>>>>>> 5e47eac (added launchtemplateversion feature)
   - natgateways
   - networkacls
   - routetables
