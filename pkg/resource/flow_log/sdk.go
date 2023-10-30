@@ -248,7 +248,7 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	if resp.FlowLogIds[0] != nil {
+	if len(resp.FlowLogIds) > 0 && resp.FlowLogIds[0] != nil {
 		ko.Status.FlowLogID = resp.FlowLogIds[0]
 	}
 	return &resource{ko}, nil
