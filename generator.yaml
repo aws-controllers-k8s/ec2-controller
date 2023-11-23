@@ -184,6 +184,10 @@ operations:
     operation_type:
       - Delete
     resource_name: Instance
+  ModifyVpcPeeringConnectionOptions:
+    operation_type:
+      - Update
+    resource_name: VpcPeeringConnection
 resources:
   DhcpOptions:
     exceptions:
