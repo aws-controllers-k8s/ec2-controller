@@ -24,7 +24,8 @@ import (
 //
 // Describes a VPC peering connection.
 type VPCPeeringConnectionSpec struct {
-
+	AcceptVPCPeeringRequestsFromVPCID   []*string                                  `json:"acceptVPCPeeringRequestsFromVPCID,omitempty"`
+	AcceptVPCPeeringRequestsFromVPCRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"acceptVPCPeeringRequestsFromVPCRefs,omitempty"`
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have
 	// the required permissions, the error response is DryRunOperation. Otherwise,

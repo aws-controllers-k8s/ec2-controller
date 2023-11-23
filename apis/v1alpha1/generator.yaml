@@ -790,5 +790,10 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      AcceptVpcPeeringRequestsFromVpcId:
+        type: "[]*string"
+        references:
+          resource: VPC
+          path: Status.VPCID
     tags:
       ignore: true
