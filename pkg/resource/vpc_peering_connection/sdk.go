@@ -519,6 +519,15 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, err
 	}
 
+	// Optionally include custom parameters in the 'Update' operation payload before sending
+	trueCondition := true
+	if desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC == &trueCondition {
+		input.AccepterPeeringConnectionOptions.AllowDnsResolutionFromRemoteVpc = &trueCondition
+	}
+	if desired.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC == &trueCondition {
+		input.RequesterPeeringConnectionOptions.AllowDnsResolutionFromRemoteVpc = &trueCondition
+	}
+
 	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput
 	_ = resp
 	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptionsWithContext(ctx, input)
