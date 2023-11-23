@@ -780,3 +780,10 @@ resources:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateVPCEndpoint  
+  VpcPeeringConnection:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
