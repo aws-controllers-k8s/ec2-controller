@@ -508,8 +508,106 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (*resource, error) {
-	return nil, ackerr.NewTerminalError(ackerr.NotImplemented)
+) (updated *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkUpdate")
+	defer func() {
+		exit(err)
+	}()
+	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput
+	_ = resp
+	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptionsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcPeeringConnectionOptions", err)
+	if err != nil {
+		return nil, err
+	}
+	// Merge in the information we read from the API call above to the copy of
+	// the original Kubernetes object we passed to the function
+	ko := desired.ko.DeepCopy()
+
+	if resp.AccepterPeeringConnectionOptions != nil {
+		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
+		if resp.AccepterPeeringConnectionOptions.AllowDnsResolutionFromRemoteVpc != nil {
+			f0.AllowDNSResolutionFromRemoteVPC = resp.AccepterPeeringConnectionOptions.AllowDnsResolutionFromRemoteVpc
+		}
+		if resp.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVpc != nil {
+			f0.AllowEgressFromLocalClassicLinkToRemoteVPC = resp.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVpc
+		}
+		if resp.AccepterPeeringConnectionOptions.AllowEgressFromLocalVpcToRemoteClassicLink != nil {
+			f0.AllowEgressFromLocalVPCToRemoteClassicLink = resp.AccepterPeeringConnectionOptions.AllowEgressFromLocalVpcToRemoteClassicLink
+		}
+		ko.Spec.AccepterPeeringConnectionOptions = f0
+	} else {
+		ko.Spec.AccepterPeeringConnectionOptions = nil
+	}
+	if resp.RequesterPeeringConnectionOptions != nil {
+		f1 := &svcapitypes.PeeringConnectionOptionsRequest{}
+		if resp.RequesterPeeringConnectionOptions.AllowDnsResolutionFromRemoteVpc != nil {
+			f1.AllowDNSResolutionFromRemoteVPC = resp.RequesterPeeringConnectionOptions.AllowDnsResolutionFromRemoteVpc
+		}
+		if resp.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVpc != nil {
+			f1.AllowEgressFromLocalClassicLinkToRemoteVPC = resp.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVpc
+		}
+		if resp.RequesterPeeringConnectionOptions.AllowEgressFromLocalVpcToRemoteClassicLink != nil {
+			f1.AllowEgressFromLocalVPCToRemoteClassicLink = resp.RequesterPeeringConnectionOptions.AllowEgressFromLocalVpcToRemoteClassicLink
+		}
+		ko.Spec.RequesterPeeringConnectionOptions = f1
+	} else {
+		ko.Spec.RequesterPeeringConnectionOptions = nil
+	}
+
+	rm.setStatusDefaults(ko)
+	return &resource{ko}, nil
+}
+
+// newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
+// payload of the Update API call for the resource
+func (rm *resourceManager) newUpdateRequestPayload(
+	ctx context.Context,
+	r *resource,
+	delta *ackcompare.Delta,
+) (*svcsdk.ModifyVpcPeeringConnectionOptionsInput, error) {
+	res := &svcsdk.ModifyVpcPeeringConnectionOptionsInput{}
+
+	if r.ko.Spec.AccepterPeeringConnectionOptions != nil {
+		f0 := &svcsdk.PeeringConnectionOptionsRequest{}
+		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
+			f0.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+		}
+		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
+			f0.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+		}
+		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
+			f0.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+		}
+		res.SetAccepterPeeringConnectionOptions(f0)
+	}
+	if r.ko.Spec.DryRun != nil {
+		res.SetDryRun(*r.ko.Spec.DryRun)
+	}
+	if r.ko.Spec.RequesterPeeringConnectionOptions != nil {
+		f2 := &svcsdk.PeeringConnectionOptionsRequest{}
+		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
+			f2.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+		}
+		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
+			f2.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+		}
+		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
+			f2.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+		}
+		res.SetRequesterPeeringConnectionOptions(f2)
+	}
+	if r.ko.Status.VPCPeeringConnectionID != nil {
+		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
+	}
+
+	return res, nil
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
