@@ -790,10 +790,20 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      # Allows you to specify a list of VPC IDs or VPC Refs from which
+      # incoming VPC Peering requests will be automatically accepted
       AcceptVpcPeeringRequestsFromVpcId:
         type: "[]*string"
         references:
           resource: VPC
           path: Status.VPCID
+      AccepterPeeringConnectionOptions:
+        from:
+          operation: ModifyVpcPeeringConnectionOptions
+          path: AccepterPeeringConnectionOptions
+      RequesterPeeringConnectionOptions:
+        from:
+          operation: ModifyVpcPeeringConnectionOptions
+          path: RequesterPeeringConnectionOptions
     tags:
       ignore: true

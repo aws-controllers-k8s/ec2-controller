@@ -57,6 +57,16 @@ spec:
                       type: object
                   type: object
                 type: array
+              accepterPeeringConnectionOptions:
+                description: The VPC peering connection options for the accepter VPC.
+                properties:
+                  allowDNSResolutionFromRemoteVPC:
+                    type: boolean
+                  allowEgressFromLocalClassicLinkToRemoteVPC:
+                    type: boolean
+                  allowEgressFromLocalVPCToRemoteClassicLink:
+                    type: boolean
+                type: object
               dryRun:
                 description: Checks whether you have the required permissions for
                   the action, without actually making the request, and provides an
@@ -88,6 +98,17 @@ spec:
                       name:
                         type: string
                     type: object
+                type: object
+              requesterPeeringConnectionOptions:
+                description: The VPC peering connection options for the requester
+                  VPC.
+                properties:
+                  allowDNSResolutionFromRemoteVPC:
+                    type: boolean
+                  allowEgressFromLocalClassicLinkToRemoteVPC:
+                    type: boolean
+                  allowEgressFromLocalVPCToRemoteClassicLink:
+                    type: boolean
                 type: object
               tagSpecifications:
                 description: The tags to assign to the peering connection.

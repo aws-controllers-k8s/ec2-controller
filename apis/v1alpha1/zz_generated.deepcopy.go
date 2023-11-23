@@ -22377,6 +22377,11 @@ func (in *VPCPeeringConnectionSpec) DeepCopyInto(out *VPCPeeringConnectionSpec) 
 			}
 		}
 	}
+	if in.AccepterPeeringConnectionOptions != nil {
+		in, out := &in.AccepterPeeringConnectionOptions, &out.AccepterPeeringConnectionOptions
+		*out = new(PeeringConnectionOptionsRequest)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.DryRun != nil {
 		in, out := &in.DryRun, &out.DryRun
 		*out = new(bool)
@@ -22400,6 +22405,11 @@ func (in *VPCPeeringConnectionSpec) DeepCopyInto(out *VPCPeeringConnectionSpec) 
 	if in.PeerVPCRef != nil {
 		in, out := &in.PeerVPCRef, &out.PeerVPCRef
 		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.RequesterPeeringConnectionOptions != nil {
+		in, out := &in.RequesterPeeringConnectionOptions, &out.RequesterPeeringConnectionOptions
+		*out = new(PeeringConnectionOptionsRequest)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.TagSpecifications != nil {

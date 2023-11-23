@@ -49,6 +49,31 @@ func newResourceDelta(
 	if !reflect.DeepEqual(a.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs, b.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs) {
 		delta.Add("Spec.AcceptVPCPeeringRequestsFromVPCRefs", a.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs, b.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs)
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions) {
+		delta.Add("Spec.AccepterPeeringConnectionOptions", a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions)
+	} else if a.ko.Spec.AccepterPeeringConnectionOptions != nil && b.ko.Spec.AccepterPeeringConnectionOptions != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC, b.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC) {
+			delta.Add("Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC", a.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC, b.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+		} else if a.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil && b.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
+			if *a.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != *b.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC {
+				delta.Add("Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC", a.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC, b.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC, b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC) {
+			delta.Add("Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC", a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC, b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+		} else if a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil && b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
+			if *a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != *b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC {
+				delta.Add("Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC", a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC, b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink, b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink) {
+			delta.Add("Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink", a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink, b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+		} else if a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil && b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
+			if *a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != *b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink {
+				delta.Add("Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink", a.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink, b.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.DryRun, b.ko.Spec.DryRun) {
 		delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
 	} else if a.ko.Spec.DryRun != nil && b.ko.Spec.DryRun != nil {
@@ -79,6 +104,31 @@ func newResourceDelta(
 	}
 	if !reflect.DeepEqual(a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef) {
 		delta.Add("Spec.PeerVPCRef", a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RequesterPeeringConnectionOptions, b.ko.Spec.RequesterPeeringConnectionOptions) {
+		delta.Add("Spec.RequesterPeeringConnectionOptions", a.ko.Spec.RequesterPeeringConnectionOptions, b.ko.Spec.RequesterPeeringConnectionOptions)
+	} else if a.ko.Spec.RequesterPeeringConnectionOptions != nil && b.ko.Spec.RequesterPeeringConnectionOptions != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC, b.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC) {
+			delta.Add("Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC", a.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC, b.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+		} else if a.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil && b.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
+			if *a.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != *b.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC {
+				delta.Add("Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC", a.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC, b.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC, b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC) {
+			delta.Add("Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC", a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC, b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+		} else if a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil && b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
+			if *a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != *b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC {
+				delta.Add("Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC", a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC, b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink, b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink) {
+			delta.Add("Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink", a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink, b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+		} else if a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil && b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
+			if *a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != *b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink {
+				delta.Add("Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink", a.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink, b.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+			}
+		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
 		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
