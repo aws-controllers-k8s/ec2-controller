@@ -122,7 +122,7 @@ ignore:
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
-    #- VpcPeeringConnection
+    - VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway    
@@ -780,4 +780,6 @@ resources:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateVPCEndpoint
-    
+  VpcPeeringConnection:
+    tags:
+      ignore: true    
