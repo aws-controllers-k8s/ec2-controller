@@ -26,6 +26,8 @@ import (
 type VPCPeeringConnectionSpec struct {
 	AcceptVPCPeeringRequestsFromVPCID   []*string                                  `json:"acceptVPCPeeringRequestsFromVPCID,omitempty"`
 	AcceptVPCPeeringRequestsFromVPCRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"acceptVPCPeeringRequestsFromVPCRefs,omitempty"`
+	// The VPC peering connection options for the accepter VPC.
+	AccepterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"accepterPeeringConnectionOptions,omitempty"`
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have
 	// the required permissions, the error response is DryRunOperation. Otherwise,
@@ -44,6 +46,8 @@ type VPCPeeringConnectionSpec struct {
 	// You must specify this parameter in the request.
 	PeerVPCID  *string                                  `json:"peerVPCID,omitempty"`
 	PeerVPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"peerVPCRef,omitempty"`
+	// The VPC peering connection options for the requester VPC.
+	RequesterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"requesterPeeringConnectionOptions,omitempty"`
 	// The tags to assign to the peering connection.
 	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
 	// The ID of the requester VPC. You must specify this parameter in the request.
