@@ -781,5 +781,14 @@ resources:
     update_operation:
       custom_method_name: customUpdateVPCEndpoint  
   VpcPeeringConnection:
+    fields:      
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      peerVpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
     tags:
       ignore: true

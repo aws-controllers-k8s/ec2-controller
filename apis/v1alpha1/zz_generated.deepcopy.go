@@ -22375,6 +22375,11 @@ func (in *VPCPeeringConnectionSpec) DeepCopyInto(out *VPCPeeringConnectionSpec) 
 		*out = new(string)
 		**out = **in
 	}
+	if in.PeerVPCRef != nil {
+		in, out := &in.PeerVPCRef, &out.PeerVPCRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.TagSpecifications != nil {
 		in, out := &in.TagSpecifications, &out.TagSpecifications
 		*out = make([]*TagSpecification, len(*in))
@@ -22390,6 +22395,11 @@ func (in *VPCPeeringConnectionSpec) DeepCopyInto(out *VPCPeeringConnectionSpec) 
 		in, out := &in.VPCID, &out.VPCID
 		*out = new(string)
 		**out = **in
+	}
+	if in.VPCRef != nil {
+		in, out := &in.VPCRef, &out.VPCRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

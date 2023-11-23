@@ -71,6 +71,9 @@ func newResourceDelta(
 			delta.Add("Spec.PeerVPCID", a.ko.Spec.PeerVPCID, b.ko.Spec.PeerVPCID)
 		}
 	}
+	if !reflect.DeepEqual(a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef) {
+		delta.Add("Spec.PeerVPCRef", a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef)
+	}
 	if !reflect.DeepEqual(a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications) {
 		delta.Add("Spec.TagSpecifications", a.ko.Spec.TagSpecifications, b.ko.Spec.TagSpecifications)
 	}
@@ -80,6 +83,9 @@ func newResourceDelta(
 		if *a.ko.Spec.VPCID != *b.ko.Spec.VPCID {
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 
 	return delta
