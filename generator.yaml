@@ -779,7 +779,4 @@ resources:
       sdk_file_end:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
-      custom_method_name: customUpdateVPCEndpoint
-  VpcPeeringConnection:
-    tags:
-      ignore: true    
+      custom_method_name: customUpdateVPCEndpoint  
