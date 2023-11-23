@@ -56,6 +56,19 @@ spec:
                 description: The ID of the VPC with which you are creating the VPC
                   peering connection. You must specify this parameter in the request.
                 type: string
+              peerVPCRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference type to provide more user friendly syntax
+                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
+                properties:
+                  from:
+                    description: AWSResourceReference provides all the values necessary
+                      to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                type: object
               tagSpecifications:
                 description: The tags to assign to the peering connection.
                 items:
@@ -84,6 +97,19 @@ spec:
                 description: The ID of the requester VPC. You must specify this parameter
                   in the request.
                 type: string
+              vpcRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference type to provide more user friendly syntax
+                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
+                properties:
+                  from:
+                    description: AWSResourceReference provides all the values necessary
+                      to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                type: object
             type: object
           status:
             description: VPCPeeringConnectionStatus defines the observed state of
