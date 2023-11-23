@@ -15,3 +15,4 @@ resources:
   - bases/ec2.services.k8s.aws_transitgateways.yaml
   - bases/ec2.services.k8s.aws_vpcs.yaml
   - bases/ec2.services.k8s.aws_vpcendpoints.yaml
+  - bases/ec2.services.k8s.aws_vpcpeeringconnections.yaml

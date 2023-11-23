@@ -2448,13 +2448,15 @@ type LaunchTemplateSpotMarketOptionsRequest struct {
 
 // The tags specification for the launch template.
 type LaunchTemplateTagSpecification struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	ResourceType *string `json:"resourceType,omitempty"`
+	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
 // The tags specification for the resources that are created during instance
 // launch.
 type LaunchTemplateTagSpecificationRequest struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	ResourceType *string `json:"resourceType,omitempty"`
+	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes a launch template version.
@@ -3829,25 +3831,27 @@ type SpotFleetRequestConfig struct {
 
 // Describes the configuration of a Spot Fleet request.
 type SpotFleetRequestConfigData struct {
-	ClientToken                      *string      `json:"clientToken,omitempty"`
-	Context                          *string      `json:"context,omitempty"`
-	IAMFleetRole                     *string      `json:"iamFleetRole,omitempty"`
-	InstanceInterruptionBehavior     *string      `json:"instanceInterruptionBehavior,omitempty"`
-	InstancePoolsToUseCount          *int64       `json:"instancePoolsToUseCount,omitempty"`
-	OnDemandMaxTotalPrice            *string      `json:"onDemandMaxTotalPrice,omitempty"`
-	OnDemandTargetCapacity           *int64       `json:"onDemandTargetCapacity,omitempty"`
-	ReplaceUnhealthyInstances        *bool        `json:"replaceUnhealthyInstances,omitempty"`
-	SpotMaxTotalPrice                *string      `json:"spotMaxTotalPrice,omitempty"`
-	SpotPrice                        *string      `json:"spotPrice,omitempty"`
-	TargetCapacity                   *int64       `json:"targetCapacity,omitempty"`
-	TerminateInstancesWithExpiration *bool        `json:"terminateInstancesWithExpiration,omitempty"`
-	ValidFrom                        *metav1.Time `json:"validFrom,omitempty"`
-	ValidUntil                       *metav1.Time `json:"validUntil,omitempty"`
+	ClientToken                      *string             `json:"clientToken,omitempty"`
+	Context                          *string             `json:"context,omitempty"`
+	IAMFleetRole                     *string             `json:"iamFleetRole,omitempty"`
+	InstanceInterruptionBehavior     *string             `json:"instanceInterruptionBehavior,omitempty"`
+	InstancePoolsToUseCount          *int64              `json:"instancePoolsToUseCount,omitempty"`
+	OnDemandMaxTotalPrice            *string             `json:"onDemandMaxTotalPrice,omitempty"`
+	OnDemandTargetCapacity           *int64              `json:"onDemandTargetCapacity,omitempty"`
+	ReplaceUnhealthyInstances        *bool               `json:"replaceUnhealthyInstances,omitempty"`
+	SpotMaxTotalPrice                *string             `json:"spotMaxTotalPrice,omitempty"`
+	SpotPrice                        *string             `json:"spotPrice,omitempty"`
+	TagSpecifications                []*TagSpecification `json:"tagSpecifications,omitempty"`
+	TargetCapacity                   *int64              `json:"targetCapacity,omitempty"`
+	TerminateInstancesWithExpiration *bool               `json:"terminateInstancesWithExpiration,omitempty"`
+	ValidFrom                        *metav1.Time        `json:"validFrom,omitempty"`
+	ValidUntil                       *metav1.Time        `json:"validUntil,omitempty"`
 }
 
 // The tags for a Spot Fleet resource.
 type SpotFleetTagSpecification struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	ResourceType *string `json:"resourceType,omitempty"`
+	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes a Spot Instance request.
@@ -4050,9 +4054,10 @@ type Tag struct {
 
 // Describes a tag.
 type TagDescription struct {
-	Key        *string `json:"key,omitempty"`
-	ResourceID *string `json:"resourceID,omitempty"`
-	Value      *string `json:"value,omitempty"`
+	Key          *string `json:"key,omitempty"`
+	ResourceID   *string `json:"resourceID,omitempty"`
+	ResourceType *string `json:"resourceType,omitempty"`
+	Value        *string `json:"value,omitempty"`
 }
 
 // The tags to apply to a resource when the resource is being created.
@@ -4062,7 +4067,8 @@ type TagDescription struct {
 // If you try to tag a resource type that is unsupported for the action you're
 // using, you'll get an error.
 type TagSpecification struct {
-	Tags []*Tag `json:"tags,omitempty"`
+	ResourceType *string `json:"resourceType,omitempty"`
+	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
 // The number of units to request. You can choose to set the target capacity
@@ -4674,13 +4680,6 @@ type VPCIPv6CIDRBlockAssociation struct {
 	NetworkBorderGroup *string            `json:"networkBorderGroup,omitempty"`
 }
 
-// Describes a VPC peering connection.
-type VPCPeeringConnection struct {
-	ExpirationTime         *metav1.Time `json:"expirationTime,omitempty"`
-	Tags                   []*Tag       `json:"tags,omitempty"`
-	VPCPeeringConnectionID *string      `json:"vpcPeeringConnectionID,omitempty"`
-}
-
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -4695,15 +4694,39 @@ type VPCPeeringConnectionOptionsDescription struct {
 
 // Describes the status of a VPC peering connection.
 type VPCPeeringConnectionStateReason struct {
+	Code    *string `json:"code,omitempty"`
 	Message *string `json:"message,omitempty"`
 }
 
 // Describes a VPC in a VPC peering connection.
 type VPCPeeringConnectionVPCInfo struct {
-	CIDRBlock *string `json:"cidrBlock,omitempty"`
-	OwnerID   *string `json:"ownerID,omitempty"`
-	Region    *string `json:"region,omitempty"`
-	VPCID     *string `json:"vpcID,omitempty"`
+	CIDRBlock        *string          `json:"cidrBlock,omitempty"`
+	CIDRBlockSet     []*CIDRBlock     `json:"cidrBlockSet,omitempty"`
+	IPv6CIDRBlockSet []*IPv6CIDRBlock `json:"ipv6CIDRBlockSet,omitempty"`
+	OwnerID          *string          `json:"ownerID,omitempty"`
+	//
+	// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+	// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+	// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+	// in the Amazon Elastic Compute Cloud User Guide.
+	//
+	// Describes the VPC peering connection options.
+	PeeringOptions *VPCPeeringConnectionOptionsDescription `json:"peeringOptions,omitempty"`
+	Region         *string                                 `json:"region,omitempty"`
+	VPCID          *string                                 `json:"vpcID,omitempty"`
+}
+
+// Describes a VPC peering connection.
+type VPCPeeringConnection_SDK struct {
+	// Describes a VPC in a VPC peering connection.
+	AccepterVPCInfo *VPCPeeringConnectionVPCInfo `json:"accepterVPCInfo,omitempty"`
+	ExpirationTime  *metav1.Time                 `json:"expirationTime,omitempty"`
+	// Describes a VPC in a VPC peering connection.
+	RequesterVPCInfo *VPCPeeringConnectionVPCInfo `json:"requesterVPCInfo,omitempty"`
+	// Describes the status of a VPC peering connection.
+	Status                 *VPCPeeringConnectionStateReason `json:"status,omitempty"`
+	Tags                   []*Tag                           `json:"tags,omitempty"`
+	VPCPeeringConnectionID *string                          `json:"vpcPeeringConnectionID,omitempty"`
 }
 
 // Describes a VPC.

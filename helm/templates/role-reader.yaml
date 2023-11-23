@@ -22,6 +22,7 @@ rules:
   - transitgateways
   - vpcs
   - vpcendpoints
+  - vpcpeeringconnections
   verbs:
   - get
   - list
