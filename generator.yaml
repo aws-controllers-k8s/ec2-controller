@@ -122,7 +122,7 @@ ignore:
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
-    - VpcPeeringConnection
+    #- VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway    
@@ -781,9 +781,5 @@ resources:
     update_operation:
       custom_method_name: customUpdateVPCEndpoint  
   VpcPeeringConnection:
-      Tags:
-        from:
-          operation: CreateTags
-          path: Tags
-        compare:
-          is_ignored: True
+    tags:
+      ignore: true
