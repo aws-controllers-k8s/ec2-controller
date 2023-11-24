@@ -720,6 +720,13 @@ resources:
         print:
           path: Status.vpcID
           name: ID
+      # Allows you to specify a list of VPC IDs and/or VPC Refs from which
+      # incoming VPC Peering requests will be automatically accepted
+      AcceptVpcPeeringRequestsFromVpcIds:
+        type: "[]*string"
+        references:
+          resource: VPC
+          path: Status.VPCID
     hooks:
       delta_pre_compare:
         code: compareTags(delta, a, b)

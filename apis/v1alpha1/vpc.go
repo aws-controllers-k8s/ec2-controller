@@ -24,7 +24,8 @@ import (
 //
 // Describes a VPC.
 type VPCSpec struct {
-
+	AcceptVPCPeeringRequestsFromVPCIDs  []*string                                  `json:"acceptVPCPeeringRequestsFromVPCIDs,omitempty"`
+	AcceptVPCPeeringRequestsFromVPCRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"acceptVPCPeeringRequestsFromVPCRefs,omitempty"`
 	// Requests an Amazon-provided IPv6 CIDR block with a /56 prefix length for
 	// the VPC. You cannot specify the range of IP addresses, or the size of the
 	// CIDR block.
