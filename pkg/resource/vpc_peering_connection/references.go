@@ -37,10 +37,6 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-	if len(ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs) > 0 {
-		ko.Spec.AcceptVPCPeeringRequestsFromVPCID = nil
-	}
-
 	if ko.Spec.PeerVPCRef != nil {
 		ko.Spec.PeerVPCID = nil
 	}
@@ -69,12 +65,6 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForAcceptVPCPeeringRequestsFromVPCID(ctx, apiReader, namespace, ko); err != nil {
-		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
-	} else {
-		resourceHasReferences = resourceHasReferences || fieldHasReferences
-	}
-
 	if fieldHasReferences, err := rm.resolveReferenceForPeerVPCID(ctx, apiReader, namespace, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -94,10 +84,6 @@ func (rm *resourceManager) ResolveReferences(
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.VPCPeeringConnection) error {
 
-	if len(ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs) > 0 && len(ko.Spec.AcceptVPCPeeringRequestsFromVPCID) > 0 {
-		return ackerr.ResourceReferenceAndIDNotSupportedFor("AcceptVPCPeeringRequestsFromVPCID", "AcceptVPCPeeringRequestsFromVPCRefs")
-	}
-
 	if ko.Spec.PeerVPCRef != nil && ko.Spec.PeerVPCID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("PeerVPCID", "PeerVPCRef")
 	}
@@ -108,32 +94,27 @@ func validateReferenceFields(ko *svcapitypes.VPCPeeringConnection) error {
 	return nil
 }
 
-// resolveReferenceForAcceptVPCPeeringRequestsFromVPCID reads the resource referenced
-// from AcceptVPCPeeringRequestsFromVPCRefs field and sets the AcceptVPCPeeringRequestsFromVPCID
+// resolveReferenceForPeerVPCID reads the resource referenced
+// from PeerVPCRef field and sets the PeerVPCID
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
-func (rm *resourceManager) resolveReferenceForAcceptVPCPeeringRequestsFromVPCID(
+func (rm *resourceManager) resolveReferenceForPeerVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
 	ko *svcapitypes.VPCPeeringConnection,
 ) (hasReferences bool, err error) {
-	for _, f0iter := range ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs {
-		if f0iter != nil && f0iter.From != nil {
-			hasReferences = true
-			arr := f0iter.From
-			if arr.Name == nil || *arr.Name == "" {
-				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: AcceptVPCPeeringRequestsFromVPCRefs")
-			}
-			obj := &svcapitypes.VPC{}
-			if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-				return hasReferences, err
-			}
-			if ko.Spec.AcceptVPCPeeringRequestsFromVPCID == nil {
-				ko.Spec.AcceptVPCPeeringRequestsFromVPCID = make([]*string, 0, 1)
-			}
-			ko.Spec.AcceptVPCPeeringRequestsFromVPCID = append(ko.Spec.AcceptVPCPeeringRequestsFromVPCID, (*string)(obj.Status.VPCID))
+	if ko.Spec.PeerVPCRef != nil && ko.Spec.PeerVPCRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.PeerVPCRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PeerVPCRef")
 		}
+		obj := &svcapitypes.VPC{}
+		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.PeerVPCID = (*string)(obj.Status.VPCID)
 	}
 
 	return hasReferences, nil
@@ -188,32 +169,6 @@ func getReferencedResourceState_VPC(
 			"Status.VPCID")
 	}
 	return nil
-}
-
-// resolveReferenceForPeerVPCID reads the resource referenced
-// from PeerVPCRef field and sets the PeerVPCID
-// from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error
-func (rm *resourceManager) resolveReferenceForPeerVPCID(
-	ctx context.Context,
-	apiReader client.Reader,
-	namespace string,
-	ko *svcapitypes.VPCPeeringConnection,
-) (hasReferences bool, err error) {
-	if ko.Spec.PeerVPCRef != nil && ko.Spec.PeerVPCRef.From != nil {
-		hasReferences = true
-		arr := ko.Spec.PeerVPCRef.From
-		if arr.Name == nil || *arr.Name == "" {
-			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PeerVPCRef")
-		}
-		obj := &svcapitypes.VPC{}
-		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return hasReferences, err
-		}
-		ko.Spec.PeerVPCID = (*string)(obj.Status.VPCID)
-	}
-
-	return hasReferences, nil
 }
 
 // resolveReferenceForVPCID reads the resource referenced
