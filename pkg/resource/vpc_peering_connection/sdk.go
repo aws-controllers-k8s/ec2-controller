@@ -223,9 +223,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				f4 = append(f4, f4elem)
 			}
-			ko.Status.Tags = f4
+			ko.Spec.Tags = f4
 		} else {
-			ko.Status.Tags = nil
+			ko.Spec.Tags = nil
 		}
 		if elem.VpcPeeringConnectionId != nil {
 			ko.Status.VPCPeeringConnectionID = elem.VpcPeeringConnectionId
@@ -435,9 +435,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			f4 = append(f4, f4elem)
 		}
-		ko.Status.Tags = f4
+		ko.Spec.Tags = f4
 	} else {
-		ko.Status.Tags = nil
+		ko.Spec.Tags = nil
 	}
 	if resp.VpcPeeringConnection.VpcPeeringConnectionId != nil {
 		ko.Status.VPCPeeringConnectionID = resp.VpcPeeringConnection.VpcPeeringConnectionId
@@ -468,31 +468,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.PeerVPCID != nil {
 		res.SetPeerVpcId(*r.ko.Spec.PeerVPCID)
-	}
-	if r.ko.Spec.TagSpecifications != nil {
-		f4 := []*svcsdk.TagSpecification{}
-		for _, f4iter := range r.ko.Spec.TagSpecifications {
-			f4elem := &svcsdk.TagSpecification{}
-			if f4iter.ResourceType != nil {
-				f4elem.SetResourceType(*f4iter.ResourceType)
-			}
-			if f4iter.Tags != nil {
-				f4elemf1 := []*svcsdk.Tag{}
-				for _, f4elemf1iter := range f4iter.Tags {
-					f4elemf1elem := &svcsdk.Tag{}
-					if f4elemf1iter.Key != nil {
-						f4elemf1elem.SetKey(*f4elemf1iter.Key)
-					}
-					if f4elemf1iter.Value != nil {
-						f4elemf1elem.SetValue(*f4elemf1iter.Value)
-					}
-					f4elemf1 = append(f4elemf1, f4elemf1elem)
-				}
-				f4elem.SetTags(f4elemf1)
-			}
-			f4 = append(f4, f4elem)
-		}
-		res.SetTagSpecifications(f4)
 	}
 	if r.ko.Spec.VPCID != nil {
 		res.SetVpcId(*r.ko.Spec.VPCID)

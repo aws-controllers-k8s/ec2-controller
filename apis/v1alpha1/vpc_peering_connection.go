@@ -47,8 +47,10 @@ type VPCPeeringConnectionSpec struct {
 	PeerVPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"peerVPCRef,omitempty"`
 	// The VPC peering connection options for the requester VPC.
 	RequesterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"requesterPeeringConnectionOptions,omitempty"`
-	// The tags to assign to the peering connection.
-	TagSpecifications []*TagSpecification `json:"tagSpecifications,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the requester VPC. You must specify this parameter in the request.
 	VPCID  *string                                  `json:"vpcID,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
@@ -81,9 +83,6 @@ type VPCPeeringConnectionStatus struct {
 	// The status of the VPC peering connection.
 	// +kubebuilder:validation:Optional
 	Status *VPCPeeringConnectionStateReason `json:"status,omitempty"`
-	// Any tags assigned to the resource.
-	// +kubebuilder:validation:Optional
-	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC peering connection.
 	// +kubebuilder:validation:Optional
 	VPCPeeringConnectionID *string `json:"vpcPeeringConnectionID,omitempty"`
