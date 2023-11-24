@@ -90,28 +90,17 @@ spec:
                   allowEgressFromLocalVPCToRemoteClassicLink:
                     type: boolean
                 type: object
-              tagSpecifications:
-                description: The tags to assign to the peering connection.
+              tags:
+                description: The tags. The value parameter is required, but if you
+                  don't want the tag to have a value, specify the parameter with no
+                  value, and we set the value to an empty string.
                 items:
-                  description: "The tags to apply to a resource when the resource
-                    is being created. \n The Valid Values lists all the resource types
-                    that can be tagged. However, the action you're using might not
-                    support tagging all of these resource types. If you try to tag
-                    a resource type that is unsupported for the action you're using,
-                    you'll get an error."
+                  description: Describes a tag.
                   properties:
-                    resourceType:
+                    key:
                       type: string
-                    tags:
-                      items:
-                        description: Describes a tag.
-                        properties:
-                          key:
-                            type: string
-                          value:
-                            type: string
-                        type: object
-                      type: array
+                    value:
+                      type: string
                   type: object
                 type: array
               vpcID:
@@ -296,17 +285,6 @@ spec:
                   message:
                     type: string
                 type: object
-              tags:
-                description: Any tags assigned to the resource.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
               vpcPeeringConnectionID:
                 description: The ID of the VPC peering connection.
                 type: string

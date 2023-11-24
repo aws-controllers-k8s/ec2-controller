@@ -36,6 +36,7 @@ ignore:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
+    - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
@@ -802,6 +803,12 @@ resources:
         from:
           operation: ModifyVpcPeeringConnectionOptions
           path: RequesterPeeringConnectionOptions
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
     hooks:
       sdk_update_post_build_request:
         template_path: hooks/vpc_peering_connection/sdk_update_post_build_request.go.tpl
