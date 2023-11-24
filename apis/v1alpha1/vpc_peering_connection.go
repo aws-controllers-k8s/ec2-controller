@@ -24,8 +24,7 @@ import (
 //
 // Describes a VPC peering connection.
 type VPCPeeringConnectionSpec struct {
-	AcceptVPCPeeringRequestsFromVPCID   []*string                                  `json:"acceptVPCPeeringRequestsFromVPCID,omitempty"`
-	AcceptVPCPeeringRequestsFromVPCRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"acceptVPCPeeringRequestsFromVPCRefs,omitempty"`
+
 	// The VPC peering connection options for the accepter VPC.
 	AccepterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"accepterPeeringConnectionOptions,omitempty"`
 	// Checks whether you have the required permissions for the action, without

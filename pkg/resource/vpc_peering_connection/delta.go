@@ -43,12 +43,6 @@ func newResourceDelta(
 		return delta
 	}
 
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.AcceptVPCPeeringRequestsFromVPCID, b.ko.Spec.AcceptVPCPeeringRequestsFromVPCID) {
-		delta.Add("Spec.AcceptVPCPeeringRequestsFromVPCID", a.ko.Spec.AcceptVPCPeeringRequestsFromVPCID, b.ko.Spec.AcceptVPCPeeringRequestsFromVPCID)
-	}
-	if !reflect.DeepEqual(a.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs, b.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs) {
-		delta.Add("Spec.AcceptVPCPeeringRequestsFromVPCRefs", a.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs, b.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs)
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions) {
 		delta.Add("Spec.AccepterPeeringConnectionOptions", a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions)
 	} else if a.ko.Spec.AccepterPeeringConnectionOptions != nil && b.ko.Spec.AccepterPeeringConnectionOptions != nil {
