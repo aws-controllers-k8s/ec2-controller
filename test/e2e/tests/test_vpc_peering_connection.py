@@ -11,6 +11,7 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "vpcpeeringconnections"
+VPC_RESOURCE_PLURAL = "vpcs"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
@@ -41,18 +42,40 @@ def simple_vpc_peering_connection(request):
     resource_name = random_suffix_name("vpc-peering-connection-test", 24)
     resources = get_bootstrap_resources()
 
+    # Create an additional VPC to test Peering with the Shared Test VPC
+
+    # Replacements for Test VPC
     replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_NAME"] = resource_name
+    replacements["CIDR_BLOCK"] = "10.1.0.0/16"
+    replacements["ENABLE_DNS_SUPPORT"] = "False"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+    
+    # Load VPC CR
+    vpc_resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(vpc_resource_data)
+
+    # Create k8s resource
+    vpc_ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(vpc_ref, vpc_resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    vpc_cr = k8s.wait_resource_consumed_by_controller(vpc_ref)
+    assert vpc_cr is not None
+    assert k8s.get_resource_exists(vpc_ref)
+
+    # Create the VPC Peering Connection
+
+    # Replacements for VPC Peering Connection
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
-    replacements["PEER_VPC_ID"] = resources.PeerTestVPC.vpc_id
-
-    marker = request.node.get_closest_marker("resource_data")
-    if marker is not None:
-        data = marker.args[0]
-        if 'vpc_id' in data:
-            replacements["VPC_ID"] = data['vpc_id']
-        if 'peer_vpc_id' in data:
-            replacements["PEER_VPC_ID"] = data['peer_vpc_id']
+    replacements["PEER_VPC_ID"] = vpc_cr["status"]["vpcID"]
 
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
@@ -72,19 +95,139 @@ def simple_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
+    assert cr["status"]["code"] == "active"
 
     yield (ref, cr)
 
-    # Try to delete, if doesn't already exist
-    try:
-        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
-        assert deleted
-    except:
-        pass
+    # Delete VPC Peering Connection k8s resource 
+    _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+    assert deleted is True
+
+    time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    # Delete VPC resource 
+    _, vpc_deleted = k8s.delete_custom_resource(vpc_ref, 3, 10)
+    assert vpc_deleted is True
+
+@pytest.fixture
+def ref_vpc_peering_connection(request):
+    resource_name = random_suffix_name("vpc-peering-connection-test", 24)
+    resources = get_bootstrap_resources()
+
+    # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
+
+    # Replacements for Test VPC 1
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_NAME"] = resource_name + "-1"
+    replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+    replacements["ENABLE_DNS_SUPPORT"] = "False"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+    
+    # Load VPC CR
+    vpc_1_resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(vpc_1_resource_data)
+
+    # Create k8s resource
+    vpc_1_ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(vpc_1_ref, vpc_1_resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    vpc_1_cr = k8s.wait_resource_consumed_by_controller(vpc_1_ref)
+    assert vpc_1_cr is not None
+    assert k8s.get_resource_exists(vpc_1_ref)
+
+    # Replacements for Test VPC 2
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_NAME"] = resource_name + "-2"
+    replacements["CIDR_BLOCK"] = "10.1.0.0/16"
+    replacements["ENABLE_DNS_SUPPORT"] = "False"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+    
+    # Load VPC CR
+    vpc_2_resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(vpc_2_resource_data)
+
+    # Create k8s resource
+    vpc_2_ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(vpc_2_ref, vpc_2_resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    vpc_2_cr = k8s.wait_resource_consumed_by_controller(vpc_2_ref)
+    assert vpc_2_cr is not None
+    assert k8s.get_resource_exists(vpc_2_ref)
+
+    # Create the VPC Peering Connection
+
+    # Replacements for VPC Peering Connection
+    replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
+    replacements["VPC_NAME_1"] = resource_name + "-1"
+    replacements["VPC_NAME_2"] = resource_name + "-2"
+
+    # Load VPCPeeringConnection CR
+    resource_data = load_ec2_resource(
+        "vpc_peering_connection_ref",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+    assert cr["status"]["code"] == "active"
+
+    yield (ref, cr)
+
+    # Delete VPC Peering Connection k8s resource 
+    _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+    assert deleted is True
+
+    time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    # Delete VPC resource 
+    _, vpc_deleted = k8s.delete_custom_resource(vpc_ref, 3, 10)
+    assert vpc_deleted is True
 
 @service_marker
 @pytest.mark.canary
 class TestVPCPeeringConnections:
+    def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
+        (ref, cr) = ref_vpc_peering_connection
+        vpc_peering_connection_id = cr["status"]["id"]
+
+        # Check VPC Peering Connection exists
+        exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
+        assert exists
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC Peering Connection doesn't exist
+        exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
+        assert not exists
+
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
         vpc_peering_connection_id = cr["status"]["id"]
