@@ -39,7 +39,7 @@ def vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id: str) ->
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
-    resource_name = "vpc-peering-connection-test"
+    resource_name = "simple-vpc-peering-connection-test"
     resources = get_bootstrap_resources()
 
     # Create an additional VPC to test Peering with the Shared Test VPC
@@ -112,8 +112,7 @@ def simple_vpc_peering_connection(request):
 
 @pytest.fixture
 def ref_vpc_peering_connection(request):
-    resource_name = "vpc-peering-connection-test"
-    resources = get_bootstrap_resources()
+    resource_name = "ref-vpc-peering-connection-test"
 
     # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
 
@@ -172,7 +171,7 @@ def ref_vpc_peering_connection(request):
     # Create the VPC Peering Connection
 
     # Replacements for VPC Peering Connection
-    replacements["VPC_PEERING_CONNECTION_NAME"] = "ref-" + resource_name
+    replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_NAME_1"] = resource_name + "-1"
     replacements["VPC_NAME_2"] = resource_name + "-2"
 
@@ -216,7 +215,7 @@ def ref_vpc_peering_connection(request):
 class TestVPCPeeringConnections:
     def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
         (ref, cr) = ref_vpc_peering_connection
-        vpc_peering_connection_id = cr["status"]["id"]
+        vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionId"]
 
         # Check VPC Peering Connection exists
         exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
@@ -234,7 +233,7 @@ class TestVPCPeeringConnections:
 
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
-        vpc_peering_connection_id = cr["status"]["id"]
+        vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionId"]
 
         # Check VPC Peering Connection exists
         exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
@@ -254,7 +253,7 @@ class TestVPCPeeringConnections:
         (ref, cr) = simple_vpc_peering_connection
 
         resource = k8s.get_resource(ref)
-        resource_id = cr["status"]["id"]
+        resource_id = cr["status"]["vpcPeeringConnectionId"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
