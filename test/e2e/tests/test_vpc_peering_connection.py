@@ -39,7 +39,7 @@ def vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id: str) ->
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
-    resource_name = random_suffix_name("simple-vpc-peering-connection-test", 24)
+    resource_name = random_suffix_name("simple-vpc-peering-connection-test", 40)
     resources = get_bootstrap_resources()
 
     # Create an additional VPC to test Peering with the Shared Test VPC
@@ -112,7 +112,7 @@ def simple_vpc_peering_connection(request):
 
 @pytest.fixture
 def ref_vpc_peering_connection(request):
-    resource_name = random_suffix_name("ref-vpc-peering-connection-test", 24)
+    resource_name = random_suffix_name("ref-vpc-peering-connection-test", 40)
 
     # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
 
