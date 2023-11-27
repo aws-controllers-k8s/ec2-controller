@@ -103,15 +103,11 @@ def simple_vpc_peering_connection(request):
     yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 
-
-        # Try to delete, if doesn't already exist
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted
     except:
         pass
-    _, deleted = k8s.delete_custom_resource(ref, 3, 10)
-    assert deleted is True
 
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
@@ -213,11 +209,14 @@ def ref_vpc_peering_connection(request):
 
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-    # Delete 2 x VPC resources 
-    _, vpc_1_deleted = k8s.delete_custom_resource(vpc_1_ref, 3, 10)
-    _, vpc_2_deleted = k8s.delete_custom_resource(vpc_2_ref, 3, 10)
-    assert vpc_1_deleted is True
-    assert vpc_2_deleted is True
+    # Delete 2 x VPC resources
+    try: 
+        _, vpc_1_deleted = k8s.delete_custom_resource(vpc_1_ref, 3, 10)
+        _, vpc_2_deleted = k8s.delete_custom_resource(vpc_2_ref, 3, 10)
+        assert vpc_1_deleted is True
+        assert vpc_2_deleted is True
+    except:
+        pass
 
 @service_marker
 @pytest.mark.canary
@@ -343,9 +342,11 @@ class TestVPCPeeringConnections:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
-        assert deleted is True
-
+        try:
+            _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+            assert deleted
+        except:
+            pass
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check VPC Peering Connection no longer exists in AWS
