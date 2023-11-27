@@ -76,8 +76,8 @@ def simple_vpc_peering_connection(request):
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
     replacements["PEER_VPC_ID"] = vpc_cr["status"]["vpcID"]
-    print("vpc_cr", vpc_cr)
-    print(replacements)
+    print("VPC_CR CONTENTS:", vpc_cr)
+    print("REPLACEMENT CONTENTS:", replacements)
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
         "vpc_peering_connection",
@@ -225,7 +225,6 @@ class TestVPCPeeringConnections:
     def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
         (ref, cr) = ref_vpc_peering_connection
         print("CR contents", cr)
-        print("Ref contents", ref)
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
@@ -245,7 +244,6 @@ class TestVPCPeeringConnections:
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
         print("CR contents", cr)
-        print("Ref contents", ref)
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
@@ -265,7 +263,6 @@ class TestVPCPeeringConnections:
     def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
         print("CR contents", cr)
-        print("Ref contents", ref)
         resource = k8s.get_resource(ref)
         resource_id = cr["status"]["vpcPeeringConnectionID"]
 
