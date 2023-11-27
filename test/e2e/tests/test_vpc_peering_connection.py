@@ -76,13 +76,15 @@ def simple_vpc_peering_connection(request):
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
     replacements["PEER_VPC_ID"] = vpc_cr["status"]["vpcID"]
-
+    print("vpc_cr", vpc_cr)
+    print(replacements)
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
         "vpc_peering_connection",
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
+    print(resource_data)
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
@@ -101,6 +103,13 @@ def simple_vpc_peering_connection(request):
     yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 
+
+        # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
     _, deleted = k8s.delete_custom_resource(ref, 3, 10)
     assert deleted is True
 
@@ -216,6 +225,7 @@ class TestVPCPeeringConnections:
     def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
         (ref, cr) = ref_vpc_peering_connection
         print("CR contents", cr)
+        print("Ref contents", ref)
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
@@ -235,6 +245,7 @@ class TestVPCPeeringConnections:
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
         print("CR contents", cr)
+        print("Ref contents", ref)
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
@@ -254,6 +265,7 @@ class TestVPCPeeringConnections:
     def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
         print("CR contents", cr)
+        print("Ref contents", ref)
         resource = k8s.get_resource(ref)
         resource_id = cr["status"]["vpcPeeringConnectionID"]
 
