@@ -215,7 +215,7 @@ def ref_vpc_peering_connection(request):
 class TestVPCPeeringConnections:
     def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
         (ref, cr) = ref_vpc_peering_connection
-        vpc_peering_connection_id = cr["vpcPeeringConnectionId"]
+        vpc_peering_connection_id = cr["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
         exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
@@ -233,7 +233,7 @@ class TestVPCPeeringConnections:
 
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
-        vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionId"]
+        vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
         exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
@@ -253,7 +253,7 @@ class TestVPCPeeringConnections:
         (ref, cr) = simple_vpc_peering_connection
 
         resource = k8s.get_resource(ref)
-        resource_id = cr["vpcPeeringConnectionId"]
+        resource_id = cr["vpcPeeringConnectionID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
