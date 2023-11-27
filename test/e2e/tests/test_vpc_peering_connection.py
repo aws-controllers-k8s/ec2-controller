@@ -172,7 +172,7 @@ def ref_vpc_peering_connection(request):
     # Create the VPC Peering Connection
 
     # Replacements for VPC Peering Connection
-    replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
+    replacements["VPC_PEERING_CONNECTION_NAME"] = "ref-" + resource_name
     replacements["VPC_NAME_1"] = resource_name + "-1"
     replacements["VPC_NAME_2"] = resource_name + "-2"
 
