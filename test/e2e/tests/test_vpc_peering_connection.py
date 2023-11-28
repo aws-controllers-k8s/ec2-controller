@@ -59,15 +59,13 @@ def simple_vpc_peering_connection(request):
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
     replacements["PEER_VPC_ID"] = vpc_cr["status"]["vpcID"]
-    print("VPC_CR CONTENTS:", vpc_cr)
-    print("REPLACEMENT CONTENTS:", replacements)
+
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
         "vpc_peering_connection",
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
-    print("RESOURCE_DATA:", resource_data)
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
@@ -206,12 +204,11 @@ def ref_vpc_peering_connection(request):
 class TestVPCPeeringConnections:
     def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
         (ref, cr) = ref_vpc_peering_connection
-        print("CR contents", cr)
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
         ec2_validator = EC2Validator(ec2_client)
-        ec2_validator.assert_vpc_endpoint(vpc_peering_connection_id)
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -224,12 +221,11 @@ class TestVPCPeeringConnections:
 
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
-        print("CR contents", cr)
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
         ec2_validator = EC2Validator(ec2_client)
-        ec2_validator.assert_vpc_endpoint(vpc_peering_connection_id)
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -242,7 +238,6 @@ class TestVPCPeeringConnections:
 
     def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
-        print("CR contents", cr)
         resource = k8s.get_resource(ref)
         resource_id = cr["status"]["vpcPeeringConnectionID"]
 
