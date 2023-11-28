@@ -812,5 +812,3 @@ resources:
     hooks:
       sdk_update_post_build_request:
         template_path: hooks/vpc_peering_connection/sdk_update_post_build_request.go.tpl
-    tags:
-      ignore: true
