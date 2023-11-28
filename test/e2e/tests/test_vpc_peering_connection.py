@@ -84,7 +84,7 @@ def simple_vpc_peering_connection(request):
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
-    print(resource_data)
+    print("RESOURCE_DATA:", resource_data)
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
