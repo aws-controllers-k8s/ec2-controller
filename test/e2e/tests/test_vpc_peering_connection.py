@@ -18,25 +18,6 @@ DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 DEFAULT_WAIT_AFTER_SECONDS = 5
 
-def get_vpc_peering_connection_ids(ec2_client, vpc_peering_connection_id: str) -> list:
-    vpc_peering_connection_ids = [vpc_peering_connection_id]
-    try:
-        resp = ec2_client.describe_vpc_peering_connections(
-            VpcPeeringConnectionIds=vpc_peering_connection_ids
-        )
-    except Exception as e:
-        logging.debug(e)
-        return None
-
-    vpc_peering_connections = resp['VpcPeeringConnections']
-
-    if len(vpc_peering_connections) == 0:
-        return None
-    return vpc_peering_connections
-
-def vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id: str) -> bool:
-    return get_vpc_peering_connection_ids(ec2_client, vpc_peering_connection_id) is not None
-
 @pytest.fixture
 def simple_vpc_peering_connection(request):
     resource_name = random_suffix_name("simple-vpc-peering-connection-test", 40)
@@ -229,8 +210,8 @@ class TestVPCPeeringConnections:
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
-        exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
-        assert exists
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_endpoint(vpc_peering_connection_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -238,9 +219,8 @@ class TestVPCPeeringConnections:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check VPC Peering Connection doesn't exist
-        exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
-        assert not exists
+        # Check VPC Peering Connection no longer exists in AWS
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
 
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
@@ -248,8 +228,8 @@ class TestVPCPeeringConnections:
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
-        exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
-        assert exists
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_endpoint(vpc_peering_connection_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -257,9 +237,8 @@ class TestVPCPeeringConnections:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-        # Check VPC Peering Connection doesn't exist
-        exists = vpc_peering_connection_exists(ec2_client, vpc_peering_connection_id)
-        assert not exists
+        # Check VPC Peering Connection no longer exists in AWS
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
 
     def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection

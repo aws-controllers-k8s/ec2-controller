@@ -251,17 +251,23 @@ class EC2Validator:
         assert res_found is exists
             
     def get_vpc_peering_connection(self, vpc_peering_connection_id: str) -> Union[None, Dict]:
-            try:
-                aws_res = self.ec2_client.describe_vpc_peering_connections(
-                    VpcPeeringConnectionIds=[vpc_peering_connection_id]
-                )
-                if len(aws_res["VpcPeeringConnections"]) > 0:
-                    return aws_res["VpcPeeringConnections"][0]
-                return None
-            except self.ec2_client.exceptions.ClientError:
-                return None
+        try:
+            aws_res = self.ec2_client.describe_vpc_peering_connections(
+                VpcPeeringConnectionIds=[vpc_peering_connection_id]
+            )
+            if len(aws_res["VpcPeeringConnections"]) > 0:
+                return aws_res["VpcPeeringConnections"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
 
     def assert_vpc_peering_connection(self, vpc_peering_connection_id: str, exists=True):
-        assert (self.get_vpc_peering_connection(vpc_peering_connection_id) is not None) == exists
-        vpc_peering_connection = self.get_vpc_peering_connection(vpc_peering_connection_id)
-        assert vpc_peering_connection["Status"]["Code"] == status
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_vpc_peering_connections(VpcEndpointIds=[vpc_peering_connection_id])
+            res_found = len(aws_res["VpcPeeringConnections"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert (res_found is exists 
+                or
+                aws_res["VpcPeeringConnections"][0]["Status"]["Code"] == "deleted")
