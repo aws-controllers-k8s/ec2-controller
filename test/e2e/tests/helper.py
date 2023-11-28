@@ -264,7 +264,7 @@ class EC2Validator:
     def assert_vpc_peering_connection(self, vpc_peering_connection_id: str, exists=True):
         res_found = False
         try:
-            aws_res = self.ec2_client.describe_vpc_peering_connections(VpcEndpointIds=[vpc_peering_connection_id])
+            aws_res = self.ec2_client.describe_vpc_peering_connections(VpcPeeringConnectionIds=[vpc_peering_connection_id])
             res_found = len(aws_res["VpcPeeringConnections"]) > 0
         except self.ec2_client.exceptions.ClientError:
             pass
