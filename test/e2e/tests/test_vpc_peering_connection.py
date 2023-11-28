@@ -151,12 +151,10 @@ def ref_vpc_peering_connection(request):
     assert vpc_1_cr is not None
     assert k8s.get_resource_exists(vpc_1_ref)
 
-    # Replacements for Test VPC 2
+    # Replacements for Test VPC 2 (squashes previous values used by VPC 1)
     replacements = REPLACEMENT_VALUES.copy()
     replacements["VPC_NAME"] = resource_name + "-2"
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
-    replacements["ENABLE_DNS_SUPPORT"] = "False"
-    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
     
     # Load VPC CR
     vpc_2_resource_data = load_ec2_resource(
@@ -181,8 +179,8 @@ def ref_vpc_peering_connection(request):
 
     # Replacements for VPC Peering Connection
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
-    replacements["VPC_NAME_1"] = resource_name + "-1"
-    replacements["VPC_NAME_2"] = resource_name + "-2"
+    replacements["VPC_REF_NAME"] = resource_name + "-1"
+    replacements["PEER_VPC_REF_NAME"] = resource_name + "-2"
 
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
