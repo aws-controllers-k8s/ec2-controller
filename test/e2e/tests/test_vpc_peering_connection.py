@@ -174,7 +174,6 @@ def ref_vpc_peering_connection(request):
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
-    print("RESOURCE DATA:", resource_data)
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
@@ -185,7 +184,6 @@ def ref_vpc_peering_connection(request):
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     cr = k8s.wait_resource_consumed_by_controller(ref)
-    print("CR CONTENTS:", cr)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
     # Can't uncomment this line until ACK VPCs support auto-accepting VPC Peering Requests
