@@ -3,8 +3,6 @@ kind: VPCPeeringConnection
 metadata:
   name: $VPC_PEERING_CONNECTION_NAME
 spec:
-  vpcID: ""
-  peerVPCID: ""
   vpcRef:
     name: $VPC_REF_NAME
     namespace: default
