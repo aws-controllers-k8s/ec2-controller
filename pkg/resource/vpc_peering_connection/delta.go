@@ -68,13 +68,6 @@ func newResourceDelta(
 			}
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.DryRun, b.ko.Spec.DryRun) {
-		delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
-	} else if a.ko.Spec.DryRun != nil && b.ko.Spec.DryRun != nil {
-		if *a.ko.Spec.DryRun != *b.ko.Spec.DryRun {
-			delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.PeerOwnerID, b.ko.Spec.PeerOwnerID) {
 		delta.Add("Spec.PeerOwnerID", a.ko.Spec.PeerOwnerID, b.ko.Spec.PeerOwnerID)
 	} else if a.ko.Spec.PeerOwnerID != nil && b.ko.Spec.PeerOwnerID != nil {

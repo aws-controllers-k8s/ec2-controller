@@ -22324,11 +22324,6 @@ func (in *VPCPeeringConnectionSpec) DeepCopyInto(out *VPCPeeringConnectionSpec) 
 		*out = new(PeeringConnectionOptionsRequest)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DryRun != nil {
-		in, out := &in.DryRun, &out.DryRun
-		*out = new(bool)
-		**out = **in
-	}
 	if in.PeerOwnerID != nil {
 		in, out := &in.PeerOwnerID, &out.PeerOwnerID
 		*out = new(string)

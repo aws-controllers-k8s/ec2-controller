@@ -27,11 +27,6 @@ type VPCPeeringConnectionSpec struct {
 
 	// The VPC peering connection options for the accepter VPC.
 	AccepterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"accepterPeeringConnectionOptions,omitempty"`
-	// Checks whether you have the required permissions for the action, without
-	// actually making the request, and provides an error response. If you have
-	// the required permissions, the error response is DryRunOperation. Otherwise,
-	// it is UnauthorizedOperation.
-	DryRun *bool `json:"dryRun,omitempty"`
 	// The Amazon Web Services account ID of the owner of the accepter VPC.
 	//
 	// Default: Your Amazon Web Services account ID

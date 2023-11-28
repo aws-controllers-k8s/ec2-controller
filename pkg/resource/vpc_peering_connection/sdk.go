@@ -260,9 +260,6 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeVpcPeeringConnectionsInput, error) {
 	res := &svcsdk.DescribeVpcPeeringConnectionsInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Status.VPCPeeringConnectionID != nil {
 		f4 := []*string{}
 		f4 = append(f4, r.ko.Status.VPCPeeringConnectionID)
@@ -457,9 +454,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateVpcPeeringConnectionInput, error) {
 	res := &svcsdk.CreateVpcPeeringConnectionInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Spec.PeerOwnerID != nil {
 		res.SetPeerOwnerId(*r.ko.Spec.PeerOwnerID)
 	}
@@ -583,9 +577,6 @@ func (rm *resourceManager) newUpdateRequestPayload(
 		}
 		res.SetAccepterPeeringConnectionOptions(f0)
 	}
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Spec.RequesterPeeringConnectionOptions != nil {
 		f2 := &svcsdk.PeeringConnectionOptionsRequest{}
 		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
@@ -634,9 +625,6 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteVpcPeeringConnectionInput, error) {
 	res := &svcsdk.DeleteVpcPeeringConnectionInput{}
 
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Status.VPCPeeringConnectionID != nil {
 		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
 	}
