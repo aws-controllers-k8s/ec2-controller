@@ -139,7 +139,6 @@ def ref_vpc_peering_connection(request):
     assert k8s.get_resource_exists(vpc_1_ref)
 
     # Replacements for Test VPC 2 (squashes previous values used by VPC 1)
-    replacements = REPLACEMENT_VALUES.copy()
     replacements["VPC_NAME"] = resource_name + "-2"
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
     
@@ -248,6 +247,7 @@ class TestVPCPeeringConnections:
 
     def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
         (ref, cr) = simple_vpc_peering_connection
+        
         resource = k8s.get_resource(ref)
         resource_id = cr["status"]["vpcPeeringConnectionID"]
 
