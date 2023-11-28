@@ -3,13 +3,13 @@ kind: VPCPeeringConnection
 metadata:
   name: $VPC_PEERING_CONNECTION_NAME
 spec:
-  vpcId: {}
-  peerVpcId: {}
+  vpcID: {}
+  peerVPCID: {}
   vpcRef:
-    name: $VPC_NAME_1
+    name: $VPC_REF_NAME
     namespace: default
-  peerVpcRef:
-    name: $VPC_NAME_2
+  peerVPCRef:
+    name: $PEER_VPC_REF_NAME
     namespace: default
   requesterPeeringConnectionOptions:
     allowDNSResolutionFromRemoteVPC: true
