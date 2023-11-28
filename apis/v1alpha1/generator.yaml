@@ -36,6 +36,7 @@ ignore:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
+    - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
