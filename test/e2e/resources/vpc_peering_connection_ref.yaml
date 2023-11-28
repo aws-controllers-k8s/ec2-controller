@@ -4,11 +4,11 @@ metadata:
   name: $VPC_PEERING_CONNECTION_NAME
 spec:
   vpcRef:
-    name: $VPC_REF_NAME
-    namespace: default
+    from:
+      name: $VPC_REF_NAME
   peerVPCRef:
-    name: $PEER_VPC_REF_NAME
-    namespace: default
+    from:
+      name: $PEER_VPC_REF_NAME
   requesterPeeringConnectionOptions:
     allowDNSResolutionFromRemoteVPC: true
     allowEgressFromLocalClassicLinkToRemoteVPC: true
