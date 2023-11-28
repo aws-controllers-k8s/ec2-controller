@@ -34,6 +34,14 @@ def simple_vpc_peering_connection(request):
     replacements["TAG_KEY"] = "initialtagkey"
     replacements["TAG_VALUE"] = "initialtagvalue"
     
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'tag_key' in data:
+            replacements["TAG_KEY"] = data['tag_key']
+        if 'tag_value' in data:
+            replacements["TAG_VALUE"] = data['tag_value']
+
     # Load VPC CR
     vpc_resource_data = load_ec2_resource(
         "vpc",
@@ -167,6 +175,7 @@ def ref_vpc_peering_connection(request):
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
+    print("RESOURCE DATA:", resource_data)
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
@@ -177,6 +186,7 @@ def ref_vpc_peering_connection(request):
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     cr = k8s.wait_resource_consumed_by_controller(ref)
+    print("CR CONTENTS:", cr)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
     # Can't uncomment this line until ACK VPCs support auto-accepting VPC Peering Requests
