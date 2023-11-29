@@ -285,6 +285,7 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+	updateTagSpecificationsInCreateRequest(desired, input)
 
 	var resp *svcsdk.CreateVpcPeeringConnectionOutput
 	_ = resp
@@ -483,6 +484,11 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
+	// Custom update function to for Tags
+	desired, err = rm.customUpdateVPCPeeringConnection(ctx, desired, latest, delta)
+	if err != nil {
+		return nil, err
+	}
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
@@ -733,4 +739,18 @@ func (rm *resourceManager) updateConditions(
 func (rm *resourceManager) terminalAWSError(err error) bool {
 	// No terminal_errors specified for this resource in generator config
 	return false
+}
+
+func (rm *resourceManager) newTag(
+	c svcapitypes.Tag,
+) *svcsdk.Tag {
+	res := &svcsdk.Tag{}
+	if c.Key != nil {
+		res.SetKey(*c.Key)
+	}
+	if c.Value != nil {
+		res.SetValue(*c.Value)
+	}
+
+	return res
 }
