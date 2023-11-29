@@ -20,6 +20,7 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/samber/lo"
 )
 
 type DNSAttrs struct {
@@ -309,7 +310,9 @@ func (rm *resourceManager) customUpdateVPC(
 		}
 	}
 
-	respondToPendingVpcPeeringConnectionRequests(ctx, desired)
+	if err := rm.respondToPendingVpcPeeringConnectionRequests(ctx, desired); err != nil {
+		return nil, err
+	}
 
 	return updated, nil
 }
@@ -324,76 +327,113 @@ func applyPrimaryCIDRBlockInCreateRequest(r *resource,
 	}
 }
 
+func newDescribeVpcPeeringConnectionsPayload(
+	vpcID *string,
+) *svcsdk.DescribeVpcPeeringConnectionsInput {
+	input := &svcsdk.DescribeVpcPeeringConnectionsInput{}
+	input.Filters = []*svcsdk.Filter{
+		{
+			Name:   lo.ToPtr("status-code"),
+			Values: []*string{lo.ToPtr("pending-acceptance")},
+		},
+		{
+			Name:   lo.ToPtr("accepter-vpc-info.vpc-id"),
+			Values: []*string{vpcID},
+		},
+	}
+	return input
+}
+
+func isOnVpcPeeringConnectionRequestList(
+	listType string,
+	vpcID *string,
+	desired *resource,
+) bool {
+	var idsList []*string
+	//var refsList []*ackv1alpha1.AWSResourceReferenceWrapper
+
+	// Choose the right list
+	if listType == "accept" {
+		idsList = desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs
+		//refsList = desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs
+	}
+	if listType == "reject" {
+		idsList = desired.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs
+		//refsList = desired.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs
+	}
+
+	// Iterate through VPC IDs
+	for _, id := range idsList {
+		if id == vpcID {
+			return true
+		}
+	}
+
+	// // Iterate through VPC Refs
+	// for _, id := range refsList {
+	// 	if id.From.Name == vpcID {
+	// 		return true
+	// 	}
+	// }
+
+	return false
+}
+
 // respondToPendingVpcPeeringConnectionRequests uses the value of fields:
 // '.spec.acceptVpcPeeringRequestsFromVpcId'
 // '.spec.acceptVpcPeeringRequestsFromVpcRef'
 // '.spec.rejectVpcPeeringRequestsFromVpcId'
 // '.spec.rejectVpcPeeringRequestsFromVpcRef'
-// to either Accept or Reject incoming VPC Peering Connection requests that have the current VPC
-// as the 'Accepter VPC' and that have the status 'Pending Acceptance'
+// to either Accept or Reject incoming VPC Peering Connection requests that meet these conditions:
+// 1. Has the status 'Pending Acceptance' (See Filters in func newDescribeVpcPeeringConnectionsPayload)
+// 2. Has the current VPC as the 'Accepter VPC' (See Filters in func newDescribeVpcPeeringConnectionsPayload)
+// 3. The 'Requester VPC' is in the list of VPC IDs/Ref in one of the fields above
 func (rm *resourceManager) respondToPendingVpcPeeringConnectionRequests(
 	ctx context.Context,
 	desired *resource,
-) {
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.respondToPendingVpcPeeringConnectionRequests")
+	defer exit(err)
 
-	// if r.ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs != nil ||
-	// 	r.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs != nil ||
-	// 	r.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs != nil ||
-	// 	r.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs != nil {
+	// Don't execute if the relevant fields have a nil value
+	if desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs == nil &&
+		desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs == nil &&
+		desired.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs == nil &&
+		desired.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs == nil {
+		return nil
+	}
 
-	// 	// Create an EC2 client using the AWS SDK Go v2
-	// 	cfg, err := config.LoadDefaultConfig(ctx)
-	// 	if err != nil {
-	// 		fmt.Println("Error loading AWS SDK config:", err)
-	// 		return
-	// 	}
-	// 	// Create an EC2 client
-	// 	ec2Client := ec2.NewFromConfig(cfg)
+	peeringConnectionsObject, err := rm.sdkapi.DescribeVpcPeeringConnectionsWithContext(
+		ctx,
+		newDescribeVpcPeeringConnectionsPayload(desired.ko.Status.VPCID),
+	)
+	if err != nil {
+		return err
+	}
+	peeringConnections := peeringConnectionsObject.VpcPeeringConnections
+	for _, peeringConnection := range peeringConnections {
+		if isOnVpcPeeringConnectionRequestList("reject", peeringConnection.RequesterVpcInfo.VpcId, desired) {
+			rejectParams := &svcsdk.RejectVpcPeeringConnectionInput{
+				VpcPeeringConnectionId: peeringConnection.VpcPeeringConnectionId,
+			}
+			_, err := rm.sdkapi.RejectVpcPeeringConnectionWithContext(ctx, rejectParams)
+			if err != nil {
+				return err
+			}
+		}
+		if isOnVpcPeeringConnectionRequestList("allow", peeringConnection.RequesterVpcInfo.VpcId, desired) {
+			acceptParams := &svcsdk.AcceptVpcPeeringConnectionInput{
+				VpcPeeringConnectionId: peeringConnection.VpcPeeringConnectionId,
+			}
+			_, err := rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptParams)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
-	// 	// Describe all VPC Peering connections that are Pending Acceptance
-	// 	input := *svcsdk.DescribeVpcPeeringConnectionsInput{
-	// 		Filters: []svcsdk.Filter{
-	// 			{
-	// 				Name:   aws.String("status-code"),
-	// 				Values: []string{"pending-acceptance"},
-	// 			},
-	// 		},
-	// 	}
-	// 	resp, err := client.DescribeVpcPeeringConnections(ctx, input)
-	// 	if err != nil {
-	// 		fmt.Println("Error describing VPC peering connections:", err)
-	// 		return
-	// 	}
-	// 	peeringConnections = resp.VpcPeeringConnections
-
-	// 	// Iterate through each VPC Peering connection
-	// 	for _, peeringConnection := range peeringConnections {
-	// 		// Check if the peerVpcId is our VPC
-	// 		if peeringConnection.AccepterVPCInfo.VpcID == desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCID {
-	// 			// Check if the VpcId is in our allow-list of VPCs
-	// 			if isVPCInWhitelist(peeringConnection.RequesterVPCInfo.VpcID) {
-	// 				// Accept the VPC Peering Request
-	// 				err := acceptVPCPeeringRequest(ec2Client, peeringConnection.VpcPeeringConnectionId)
-	// 				if err != nil {
-	// 					return err
-	// 				}
-	// 			}
-	// 		}
-	// 		if peeringConnection.AccepterVPCInfo.VpcID == desired.ko.Spec.RejectVPCPeeringRequestsFromVPCID {
-	// 			// Check if the VpcId is in our block-list of VPCs
-	// 			if isVPCInWhitelist(peeringConnection.RequesterVPCInfo.VpcID) {
-	// 				// Reject the VPC Peering Request
-	// 				err := rejectVPCPeeringRequest(ec2Client, peeringConnection.VpcPeeringConnectionId)
-	// 				if err != nil {
-	// 					return err
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	//}
-
-	// log.errors
-
+	return nil
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
