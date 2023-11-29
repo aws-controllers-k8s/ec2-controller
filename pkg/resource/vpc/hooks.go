@@ -401,13 +401,15 @@ func (rm *resourceManager) respondToPendingVpcPeeringConnectionRequests(
 	if err != nil {
 		return err
 	}
+	peeringConnections := peeringConnectionsObject.VpcPeeringConnections
+	rlog.Debug("Found VPC Peering Connections", "peeringConnections", peeringConnectionsObject.VpcPeeringConnections)
 
 	// Iterate through the list of VPC Peering Connections
-	peeringConnections := peeringConnectionsObject.VpcPeeringConnections
 	for _, peeringConnection := range peeringConnections {
 
 		// Reject VPC Peering Connection Requests that are on the reject-list
 		if isOnVpcPeeringConnectionRequestList("reject", peeringConnection.RequesterVpcInfo.VpcId, desired) {
+			rlog.Debug("Rejecting VPC Peering Connection", "VpcPeeringConnectionId", peeringConnection.VpcPeeringConnectionId)
 			rejectParams := &svcsdk.RejectVpcPeeringConnectionInput{
 				VpcPeeringConnectionId: peeringConnection.VpcPeeringConnectionId,
 			}
@@ -419,6 +421,7 @@ func (rm *resourceManager) respondToPendingVpcPeeringConnectionRequests(
 
 		// Accept VPC Peering Connection Requests that are on the accept-list
 		if isOnVpcPeeringConnectionRequestList("accept", peeringConnection.RequesterVpcInfo.VpcId, desired) {
+			rlog.Debug("Accepting VPC Peering Connection", "VpcPeeringConnectionId", peeringConnection.VpcPeeringConnectionId)
 			acceptParams := &svcsdk.AcceptVpcPeeringConnectionInput{
 				VpcPeeringConnectionId: peeringConnection.VpcPeeringConnectionId,
 			}
