@@ -42,6 +42,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions) {
 		delta.Add("Spec.AccepterPeeringConnectionOptions", a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions)
