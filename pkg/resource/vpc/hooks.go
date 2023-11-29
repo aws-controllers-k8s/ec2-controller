@@ -309,6 +309,8 @@ func (rm *resourceManager) customUpdateVPC(
 		}
 	}
 
+	respondToPendingVpcPeeringConnectionRequests(ctx, desired)
+
 	return updated, nil
 }
 
@@ -320,6 +322,22 @@ func applyPrimaryCIDRBlockInCreateRequest(r *resource,
 	if len(r.ko.Spec.CIDRBlocks) > 0 {
 		input.CidrBlock = r.ko.Spec.CIDRBlocks[0]
 	}
+}
+
+// respondToPendingVpcPeeringConnectionRequests uses the value of fields:
+// '.spec.acceptVpcPeeringRequestsFromVpcId'
+// '.spec.acceptVpcPeeringRequestsFromVpcRef'
+// '.spec.rejectVpcPeeringRequestsFromVpcId'
+// '.spec.rejectVpcPeeringRequestsFromVpcRef'
+// to either Accept or Reject incoming VPC Peering Connection requests that have the current VPC
+// as the 'Accepter VPC' and that have the status 'Pending Acceptance'
+func respondToPendingVpcPeeringConnectionRequests(
+	ctx context.Context,
+	desired *resource,
+) {
+
+	// log.errors
+
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's

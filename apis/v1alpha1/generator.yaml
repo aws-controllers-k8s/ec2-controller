@@ -720,9 +720,14 @@ resources:
         print:
           path: Status.vpcID
           name: ID
-      # Allows you to specify a list of VPC IDs and/or VPC Refs from which
-      # incoming VPC Peering requests will be automatically accepted
+      # The 2 following fields allow you to specify a list of VPC IDs/Refs from which
+      # incoming VPC Peering requests will be automatically accepted or rejected
       AcceptVpcPeeringRequestsFromVpcIds:
+        type: "[]*string"
+        references:
+          resource: VPC
+          path: Status.VPCID
+      RejectVpcPeeringRequestsFromVpcIds:
         type: "[]*string"
         references:
           resource: VPC

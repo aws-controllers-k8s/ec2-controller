@@ -41,6 +41,10 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 		ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs = nil
 	}
 
+	if len(ko.Spec.RejectVPCPeeringRequestsFromVPCRefs) > 0 {
+		ko.Spec.RejectVPCPeeringRequestsFromVPCIDs = nil
+	}
+
 	return &resource{ko}
 }
 
@@ -67,6 +71,12 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForRejectVPCPeeringRequestsFromVPCIDs(ctx, apiReader, namespace, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	return &resource{ko}, resourceHasReferences, err
 }
 
@@ -76,6 +86,10 @@ func validateReferenceFields(ko *svcapitypes.VPC) error {
 
 	if len(ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs) > 0 && len(ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs) > 0 {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("AcceptVPCPeeringRequestsFromVPCIDs", "AcceptVPCPeeringRequestsFromVPCRefs")
+	}
+
+	if len(ko.Spec.RejectVPCPeeringRequestsFromVPCRefs) > 0 && len(ko.Spec.RejectVPCPeeringRequestsFromVPCIDs) > 0 {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("RejectVPCPeeringRequestsFromVPCIDs", "RejectVPCPeeringRequestsFromVPCRefs")
 	}
 	return nil
 }
@@ -160,4 +174,35 @@ func getReferencedResourceState_VPC(
 			"Status.VPCID")
 	}
 	return nil
+}
+
+// resolveReferenceForRejectVPCPeeringRequestsFromVPCIDs reads the resource referenced
+// from RejectVPCPeeringRequestsFromVPCRefs field and sets the RejectVPCPeeringRequestsFromVPCIDs
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForRejectVPCPeeringRequestsFromVPCIDs(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.VPC,
+) (hasReferences bool, err error) {
+	for _, f0iter := range ko.Spec.RejectVPCPeeringRequestsFromVPCRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: RejectVPCPeeringRequestsFromVPCRefs")
+			}
+			obj := &svcapitypes.VPC{}
+			if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			if ko.Spec.RejectVPCPeeringRequestsFromVPCIDs == nil {
+				ko.Spec.RejectVPCPeeringRequestsFromVPCIDs = make([]*string, 0, 1)
+			}
+			ko.Spec.RejectVPCPeeringRequestsFromVPCIDs = append(ko.Spec.RejectVPCPeeringRequestsFromVPCIDs, (*string)(obj.Status.VPCID))
+		}
+	}
+
+	return hasReferences, nil
 }

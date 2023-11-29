@@ -80,7 +80,9 @@ type VPCSpec struct {
 	// in the Amazon VPC IPAM User Guide.
 	IPv6NetmaskLength *int64 `json:"ipv6NetmaskLength,omitempty"`
 	// The ID of an IPv6 address pool from which to allocate the IPv6 CIDR block.
-	IPv6Pool *string `json:"ipv6Pool,omitempty"`
+	IPv6Pool                            *string                                    `json:"ipv6Pool,omitempty"`
+	RejectVPCPeeringRequestsFromVPCIDs  []*string                                  `json:"rejectVPCPeeringRequestsFromVPCIDs,omitempty"`
+	RejectVPCPeeringRequestsFromVPCRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"rejectVPCPeeringRequestsFromVPCRefs,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.

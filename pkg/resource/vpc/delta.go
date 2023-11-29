@@ -130,6 +130,12 @@ func newResourceDelta(
 			delta.Add("Spec.IPv6Pool", a.ko.Spec.IPv6Pool, b.ko.Spec.IPv6Pool)
 		}
 	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs, b.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs) {
+		delta.Add("Spec.RejectVPCPeeringRequestsFromVPCIDs", a.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs, b.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs)
+	}
+	if !reflect.DeepEqual(a.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs, b.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs) {
+		delta.Add("Spec.RejectVPCPeeringRequestsFromVPCRefs", a.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs, b.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs)
+	}
 
 	return delta
 }
