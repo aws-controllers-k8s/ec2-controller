@@ -357,16 +357,13 @@ func isOnVpcPeeringConnectionRequestList(
 	desired *resource,
 ) bool {
 	var idsList []*string
-	//var refsList []*ackv1alpha1.AWSResourceReferenceWrapper
 
 	// Choose the right list
 	if listType == "accept" {
 		idsList = desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs
-		//refsList = desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs
 	}
 	if listType == "reject" {
 		idsList = desired.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs
-		//refsList = desired.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs
 	}
 
 	// Iterate through VPC IDs
@@ -375,14 +372,6 @@ func isOnVpcPeeringConnectionRequestList(
 			return true
 		}
 	}
-
-	// TO DO
-	// // Iterate through VPC Refs
-	// for _, id := range refsList {
-	// 	if id.From.Name == vpcID {
-	// 		return true
-	// 	}
-	// }
 
 	return false
 }
