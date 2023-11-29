@@ -310,8 +310,13 @@ func (rm *resourceManager) customUpdateVPC(
 		}
 	}
 
-	if err := rm.respondToPendingVpcPeeringConnectionRequests(ctx, desired); err != nil {
-		return nil, err
+	if desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs != nil ||
+		desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs != nil ||
+		desired.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs != nil ||
+		desired.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs != nil {
+		if err := rm.respondToPendingVpcPeeringConnectionRequests(ctx, desired); err != nil {
+			return nil, err
+		}
 	}
 
 	return updated, nil
@@ -344,6 +349,8 @@ func newDescribeVpcPeeringConnectionsPayload(
 	return input
 }
 
+// Helper function that determines if a given VPC ID is on the Allow-list
+// or the Reject-list to respond to VPC Peering Connection Requests
 func isOnVpcPeeringConnectionRequestList(
 	listType string,
 	vpcID *string,
@@ -369,6 +376,7 @@ func isOnVpcPeeringConnectionRequestList(
 		}
 	}
 
+	// TO DO
 	// // Iterate through VPC Refs
 	// for _, id := range refsList {
 	// 	if id.From.Name == vpcID {
@@ -379,7 +387,7 @@ func isOnVpcPeeringConnectionRequestList(
 	return false
 }
 
-// respondToPendingVpcPeeringConnectionRequests uses the value of fields:
+// This function uses the value of fields:
 // '.spec.acceptVpcPeeringRequestsFromVpcId'
 // '.spec.acceptVpcPeeringRequestsFromVpcRef'
 // '.spec.rejectVpcPeeringRequestsFromVpcId'
@@ -396,14 +404,7 @@ func (rm *resourceManager) respondToPendingVpcPeeringConnectionRequests(
 	exit := rlog.Trace("rm.respondToPendingVpcPeeringConnectionRequests")
 	defer exit(err)
 
-	// Don't execute if the relevant fields have a nil value
-	if desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCIDs == nil &&
-		desired.ko.Spec.AcceptVPCPeeringRequestsFromVPCRefs == nil &&
-		desired.ko.Spec.RejectVPCPeeringRequestsFromVPCIDs == nil &&
-		desired.ko.Spec.RejectVPCPeeringRequestsFromVPCRefs == nil {
-		return nil
-	}
-
+	// Describe VPC Peering Connections
 	peeringConnectionsObject, err := rm.sdkapi.DescribeVpcPeeringConnectionsWithContext(
 		ctx,
 		newDescribeVpcPeeringConnectionsPayload(desired.ko.Status.VPCID),
@@ -411,8 +412,12 @@ func (rm *resourceManager) respondToPendingVpcPeeringConnectionRequests(
 	if err != nil {
 		return err
 	}
+
+	// Iterate through the list of VPC Peering Connections
 	peeringConnections := peeringConnectionsObject.VpcPeeringConnections
 	for _, peeringConnection := range peeringConnections {
+
+		// Reject VPC Peering Connection Requests that are on the reject-list
 		if isOnVpcPeeringConnectionRequestList("reject", peeringConnection.RequesterVpcInfo.VpcId, desired) {
 			rejectParams := &svcsdk.RejectVpcPeeringConnectionInput{
 				VpcPeeringConnectionId: peeringConnection.VpcPeeringConnectionId,
@@ -422,7 +427,9 @@ func (rm *resourceManager) respondToPendingVpcPeeringConnectionRequests(
 				return err
 			}
 		}
-		if isOnVpcPeeringConnectionRequestList("allow", peeringConnection.RequesterVpcInfo.VpcId, desired) {
+
+		// Accept VPC Peering Connection Requests that are on the accept-list
+		if isOnVpcPeeringConnectionRequestList("accept", peeringConnection.RequesterVpcInfo.VpcId, desired) {
 			acceptParams := &svcsdk.AcceptVpcPeeringConnectionInput{
 				VpcPeeringConnectionId: peeringConnection.VpcPeeringConnectionId,
 			}
