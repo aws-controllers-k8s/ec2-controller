@@ -44,6 +44,13 @@ func newResourceDelta(
 	}
 	compareTags(delta, a, b)
 
+	if ackcompare.HasNilDifference(a.ko.Spec.AcceptRequest, b.ko.Spec.AcceptRequest) {
+		delta.Add("Spec.AcceptRequest", a.ko.Spec.AcceptRequest, b.ko.Spec.AcceptRequest)
+	} else if a.ko.Spec.AcceptRequest != nil && b.ko.Spec.AcceptRequest != nil {
+		if *a.ko.Spec.AcceptRequest != *b.ko.Spec.AcceptRequest {
+			delta.Add("Spec.AcceptRequest", a.ko.Spec.AcceptRequest, b.ko.Spec.AcceptRequest)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions) {
 		delta.Add("Spec.AccepterPeeringConnectionOptions", a.ko.Spec.AccepterPeeringConnectionOptions, b.ko.Spec.AccepterPeeringConnectionOptions)
 	} else if a.ko.Spec.AccepterPeeringConnectionOptions != nil && b.ko.Spec.AccepterPeeringConnectionOptions != nil {

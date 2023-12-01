@@ -37,6 +37,8 @@ spec:
             description: "VpcPeeringConnectionSpec defines the desired state of VpcPeeringConnection.
               \n Describes a VPC peering connection."
             properties:
+              acceptRequest:
+                type: boolean
               accepterPeeringConnectionOptions:
                 description: The VPC peering connection options for the accepter VPC.
                 properties:
