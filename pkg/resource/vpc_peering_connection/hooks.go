@@ -22,32 +22,6 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
-func (rm *resourceManager) customUpdateVPCPeeringConnection(
-	ctx context.Context,
-	desired *resource,
-	latest *resource,
-	delta *ackcompare.Delta,
-) (updated *resource, err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.customUpdateVPC")
-	defer exit(err)
-
-	// Default `updated` to `desired` because it is likely
-	// EC2 `modify` APIs do NOT return output, only errors.
-	// If the `modify` calls (i.e. `sync`) do NOT return
-	// an error, then the update was successful and desired.Spec
-	// (now updated.Spec) reflects the latest resource state.
-	updated = rm.concreteResource(desired.DeepCopy())
-
-	if delta.DifferentAt("Spec.Tags") {
-		if err := rm.syncTags(ctx, desired, latest); err != nil {
-			return nil, err
-		}
-	}
-
-	return updated, nil
-}
-
 // syncTags used to keep tags in sync by calling Create and Delete API's
 func (rm *resourceManager) syncTags(
 	ctx context.Context,
