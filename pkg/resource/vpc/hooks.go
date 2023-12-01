@@ -377,10 +377,10 @@ func isOnVpcPeeringConnectionRequestList(
 }
 
 // This function uses the value of fields:
-// '.spec.acceptVpcPeeringRequestsFromVpcId'
-// '.spec.acceptVpcPeeringRequestsFromVpcRef'
-// '.spec.rejectVpcPeeringRequestsFromVpcId'
-// '.spec.rejectVpcPeeringRequestsFromVpcRef'
+// '.spec.acceptVpcPeeringRequestsFromVpcIds'
+// '.spec.acceptVpcPeeringRequestsFromVpcRefs'
+// '.spec.rejectVpcPeeringRequestsFromVpcIds'
+// '.spec.rejectVpcPeeringRequestsFromVpcRefs'
 // to either Accept or Reject incoming VPC Peering Connection requests that meet these conditions:
 // 1. Has the status 'Pending Acceptance' (See Filters in func newDescribeVpcPeeringConnectionsPayload)
 // 2. Has the current VPC as the 'Accepter VPC' (See Filters in func newDescribeVpcPeeringConnectionsPayload)
