@@ -24,7 +24,7 @@ import (
 //
 // Describes a VPC peering connection.
 type VPCPeeringConnectionSpec struct {
-
+	AcceptRequest *bool `json:"acceptRequest,omitempty"`
 	// The VPC peering connection options for the accepter VPC.
 	AccepterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"accepterPeeringConnectionOptions,omitempty"`
 	// The Amazon Web Services account ID of the owner of the accepter VPC.

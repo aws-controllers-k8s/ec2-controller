@@ -796,6 +796,8 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      AcceptRequest:
+        type: bool
       AccepterPeeringConnectionOptions:
         from:
           operation: ModifyVpcPeeringConnectionOptions
