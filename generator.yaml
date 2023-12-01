@@ -810,6 +810,8 @@ resources:
           path: Tags
         compare:
           is_ignored: True
+    update_operation:
+      omit_unchanged_fields: true
     hooks:
       delta_pre_compare:
         code: compareTags(delta, a, b)
