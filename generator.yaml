@@ -819,7 +819,5 @@ resources:
         template_path: hooks/vpc_endpoint/sdk_create_post_build_request.go.tpl
       sdk_update_pre_build_request:
         template_path: hooks/vpc_peering_connection/sdk_update_pre_build_request.go.tpl
-      sdk_update_post_build_request:
-        template_path: hooks/vpc_peering_connection/sdk_update_post_build_request.go.tpl
       sdk_file_end:
         template_path: hooks/vpc_peering_connection/sdk_file_end.go.tpl
