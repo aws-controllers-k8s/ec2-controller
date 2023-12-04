@@ -491,11 +491,6 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
-	// Only continue if something other than Tags has changed in the Spec
-	if !delta.DifferentExcept("Spec.Tags") {
-		return desired, nil
-	}
-
 	// Accept the VPC Peering Connection Request, if the field 'Spec.AcceptRequest' is set to true
 	if *desired.ko.Spec.AcceptRequest {
 		if *latest.ko.Status.Status.Code == "pending-acceptance" {
@@ -512,6 +507,10 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
+	// Only continue if something other than Tags or certain fields has changed in the Spec
+	if !delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
+		return desired, nil
+	}
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
