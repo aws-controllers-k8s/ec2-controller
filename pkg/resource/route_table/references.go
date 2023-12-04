@@ -61,6 +61,12 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 		}
 	}
 
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.VPCPeeringConnectionRef != nil {
+			ko.Spec.Routes[f0idx].VPCPeeringConnectionID = nil
+		}
+	}
+
 	if ko.Spec.VPCRef != nil {
 		ko.Spec.VPCID = nil
 	}
@@ -109,6 +115,12 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCPeeringConnectionID(ctx, apiReader, namespace, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, namespace, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -143,6 +155,12 @@ func validateReferenceFields(ko *svcapitypes.RouteTable) error {
 	for _, f0iter := range ko.Spec.Routes {
 		if f0iter.VPCEndpointRef != nil && f0iter.VPCEndpointID != nil {
 			return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.VPCEndpointID", "Routes.VPCEndpointRef")
+		}
+	}
+
+	for _, f0iter := range ko.Spec.Routes {
+		if f0iter.VPCPeeringConnectionRef != nil && f0iter.VPCPeeringConnectionID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.VPCPeeringConnectionID", "Routes.VPCPeeringConnectionRef")
 		}
 	}
 
@@ -467,6 +485,85 @@ func getReferencedResourceState_VPCEndpoint(
 			"VPCEndpoint",
 			namespace, name,
 			"Status.VPCEndpointID")
+	}
+	return nil
+}
+
+// resolveReferenceForRoutes_VPCPeeringConnectionID reads the resource referenced
+// from Routes.VPCPeeringConnectionRef field and sets the Routes.VPCPeeringConnectionID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForRoutes_VPCPeeringConnectionID(
+	ctx context.Context,
+	apiReader client.Reader,
+	namespace string,
+	ko *svcapitypes.RouteTable,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.VPCPeeringConnectionRef != nil && f0iter.VPCPeeringConnectionRef.From != nil {
+			hasReferences = true
+			arr := f0iter.VPCPeeringConnectionRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.VPCPeeringConnectionRef")
+			}
+			obj := &svcapitypes.VPCPeeringConnection{}
+			if err := getReferencedResourceState_VPCPeeringConnection(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.Routes[f0idx].VPCPeeringConnectionID = (*string)(obj.Status.VPCPeeringConnectionID)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_VPCPeeringConnection looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_VPCPeeringConnection(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.VPCPeeringConnection,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceSynced, refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"VPCPeeringConnection",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"VPCPeeringConnection",
+			namespace, name)
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"VPCPeeringConnection",
+			namespace, name)
+	}
+	if obj.Status.VPCPeeringConnectionID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"VPCPeeringConnection",
+			namespace, name,
+			"Status.VPCPeeringConnectionID")
 	}
 	return nil
 }

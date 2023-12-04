@@ -474,6 +474,10 @@ resources:
         references:
           resource: VPCEndpoint
           path: Status.VPCEndpointID
+      Routes.VPCPeeringConnectionID:
+        references:
+          resource: VPCPeeringConnection
+          path: Status.VPCPeeringConnectionID
     hooks:
       delta_pre_compare:
         code: customPreCompare(delta, a, b)

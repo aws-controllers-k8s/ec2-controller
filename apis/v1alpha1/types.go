@@ -678,6 +678,8 @@ type CreateRouteInput struct {
 	// Reference field for VPCEndpointID
 	VPCEndpointRef         *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcEndpointRef,omitempty"`
 	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for VPCPeeringConnectionID
+	VPCPeeringConnectionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcPeeringConnectionRef,omitempty"`
 }
 
 // Describes the options for a VPC attachment.
