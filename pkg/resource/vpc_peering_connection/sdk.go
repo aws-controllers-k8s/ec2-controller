@@ -602,6 +602,9 @@ func (rm *resourceManager) newUpdateRequestPayload(
 			res.SetRequesterPeeringConnectionOptions(f2)
 		}
 	}
+	if r.ko.Status.VPCPeeringConnectionID != nil {
+		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
+	}
 
 	return res, nil
 }
