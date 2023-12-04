@@ -5,6 +5,7 @@ metadata:
 spec:
   vpcID: $VPC_ID
   peerVPCID: $PEER_VPC_ID
+  acceptRequest: true
   requesterPeeringConnectionOptions:
     allowDNSResolutionFromRemoteVPC: true
     allowEgressFromLocalClassicLinkToRemoteVPC: true
