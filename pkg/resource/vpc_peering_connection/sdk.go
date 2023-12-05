@@ -502,7 +502,7 @@ func (rm *resourceManager) sdkUpdate(
 		acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
 			VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
 		}
-		acceptResp, err = rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
+		acceptResp, err := rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
 		if err != nil {
 			return nil, err
 		}
