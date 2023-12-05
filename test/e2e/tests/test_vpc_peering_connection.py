@@ -217,6 +217,7 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=500):
             logging.debug("VPC Peering Connection Status Code is 'active'", resource)
             return
         time.sleep(5)
+    print("CR contents", resource)
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'")
 
 @service_marker
