@@ -444,21 +444,6 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-
-	// Accept the VPC Peering Connection Request, if the field 'Spec.AcceptRequest' is set to true
-	if *desired.ko.Spec.AcceptRequest {
-		var acceptResp *svcsdk.AcceptVpcPeeringConnectionOutput
-		_ = acceptResp
-		acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
-			VpcPeeringConnectionId: ko.Status.VPCPeeringConnectionID,
-		}
-		acceptResp, err = rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
-		if err != nil {
-			return nil, err
-		}
-		rlog.Debug("VPC Peering Connection accepted", "VpcPeeringConnectionId", *acceptResp.VpcPeeringConnection.VpcPeeringConnectionId)
-	}
-
 	return &resource{ko}, nil
 }
 
@@ -506,20 +491,22 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
-	// Accept the VPC Peering Connection Request, if the field 'Spec.AcceptRequest' is set to true
-	if *desired.ko.Spec.AcceptRequest {
-		if *latest.ko.Status.Status.Code == "pending-acceptance" {
-			var acceptResp *svcsdk.AcceptVpcPeeringConnectionOutput
-			_ = acceptResp
-			acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
-				VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
-			}
-			acceptResp, err = rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
-			if err != nil {
-				return nil, err
-			}
-			rlog.Debug("VPC Peering Connection accepted", "VpcPeeringConnectionId", *acceptResp.VpcPeeringConnection.VpcPeeringConnectionId)
+	if delta.DifferentAt("Spec.AcceptRequest") {
+		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
+		if !*desired.ko.Spec.AcceptRequest {
+			msg := fmt.Sprintf("You cannot set AcceptRequest to false after setting it to true")
+			return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
 		}
+
+		// Accept the VPC Peering Connection Request, if the field is set to 'true'
+		acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
+			VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
+		}
+		acceptResp, err = rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
+		if err != nil {
+			return nil, err
+		}
+		rlog.Debug("VPC Peering Connection accepted", "VpcPeeringConnectionId", *acceptResp.VpcPeeringConnection.VpcPeeringConnectionId)
 	}
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
