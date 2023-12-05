@@ -240,6 +240,15 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	if r.ko.Status.Status != nil &&
+		r.ko.Status.Status.Code != nil &&
+		*r.ko.Status.Status.Code == "pending-acceptance" {
+		r.ko.Spec.AcceptRequest = aws.Bool(true)
+	} else {
+		r.ko.Spec.AcceptRequest = aws.Bool(false)
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -444,6 +453,11 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	// This causes a requeue and the rest of the fields will be synced on the next
+	// reconciliation loop
+	ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
+
 	return &resource{ko}, nil
 }
 
