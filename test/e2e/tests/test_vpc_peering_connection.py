@@ -17,6 +17,7 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 DEFAULT_WAIT_AFTER_SECONDS = 5
+REQUEUE_WAIT_AFTER_SECONDS = 60
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
@@ -86,6 +87,7 @@ def simple_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
+    time.sleep(REQUEUE_WAIT_AFTER_SECONDS)
     assert cr["status"]["status"]["code"] == "active" 
 
     yield (ref, cr)
@@ -185,6 +187,7 @@ def ref_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
+    time.sleep(REQUEUE_WAIT_AFTER_SECONDS)
     assert cr["status"]["status"]["code"] == "active" 
 
     yield (ref, cr)
