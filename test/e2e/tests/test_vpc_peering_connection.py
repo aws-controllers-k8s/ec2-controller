@@ -17,7 +17,6 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 DEFAULT_WAIT_AFTER_SECONDS = 5
-REQUEUE_WAIT_AFTER_SECONDS = 120
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
@@ -87,7 +86,7 @@ def simple_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
-    time.sleep(REQUEUE_WAIT_AFTER_SECONDS)
+    wait_for_vpc_peering_connection_status(ref)
     assert cr["status"]["status"]["code"] == "active" 
 
     yield (ref, cr)
@@ -187,7 +186,7 @@ def ref_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
-    time.sleep(REQUEUE_WAIT_AFTER_SECONDS)
+    wait_for_vpc_peering_connection_status(ref)
     assert cr["status"]["status"]["code"] == "active" 
 
     yield (ref, cr)
@@ -209,6 +208,16 @@ def ref_vpc_peering_connection(request):
         assert vpc_2_deleted is True
     except:
         pass
+
+def wait_for_vpc_peering_connection_status(ref, timeout_seconds=500):
+    start_time = time.time()
+    while time.time() - start_time < timeout_seconds:
+        resource = k8s.get_resource(ref)
+        if resource["status"]["status"]["code"] == "active":
+            logging.debug("VPC Peering Connection Status Code is 'active'", resource)
+            return
+        time.sleep(5)
+    raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'")
 
 @service_marker
 @pytest.mark.canary
