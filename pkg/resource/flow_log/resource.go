@@ -90,13 +90,13 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	}
 	r.ko.Status.FlowLogID = &identifier.NameOrID
 
-	f6, f6ok := identifier.AdditionalKeys["resourceID"]
-	if f6ok {
-		r.ko.Spec.ResourceID = &f6
+	identifierResourceID, identifierResourceIDOk := identifier.AdditionalKeys["resourceID"]
+	if identifierResourceIDOk {
+		r.ko.Spec.ResourceID = &identifierResourceID
 	}
-	f7, f7ok := identifier.AdditionalKeys["resourceType"]
-	if f7ok {
-		r.ko.Spec.ResourceType = &f7
+	identifierResourceType, identifierResourceTypeOk := identifier.AdditionalKeys["resourceType"]
+	if identifierResourceTypeOk {
+		r.ko.Spec.ResourceType = &identifierResourceType
 	}
 
 	return nil

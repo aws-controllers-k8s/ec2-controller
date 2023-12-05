@@ -1,4 +1,4 @@
-	f6, f6ok := identifier.AdditionalKeys["name"]
-	if f6ok {
-		r.ko.Spec.Name = &f6
+	identifierName, identifierNameOk := identifier.AdditionalKeys["name"]
+	if identifierNameOk {
+		r.ko.Spec.Name = &identifierName
 	}
