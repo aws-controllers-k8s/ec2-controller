@@ -1,11 +1,22 @@
   
-  if delta.DifferentAt("Spec.Tags") {
-		if err := rm.syncTags(ctx, desired, latest); err != nil {
-			return nil, err
-		}
+  	if isVPCPeeringConnectionCreating(desired) {
+		return desired, requeueWaitWhileCreating
 	}
+	if isVPCPeeringConnectionProvisioning(desired) {
+		return desired, requeueWaitWhileProvisioning
+	}
+	if isVPCPeeringConnectionDeleting(desired) {
+		return desired, requeueWaitWhileDeleting
+	}
+	
+	// in case of pending acceptance or accepted state we make the updates.
+	if delta.DifferentAt("Spec.Tags") {
+			if err := rm.syncTags(ctx, desired, latest); err != nil {
+				return nil, err
+			}
+		}
 
-    if delta.DifferentAt("Spec.AcceptRequest") {
+	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {
 			msg := fmt.Sprintf("You cannot set AcceptRequest to false after setting it to true")

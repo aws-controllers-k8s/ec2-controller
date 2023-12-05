@@ -241,12 +241,10 @@ func (rm *resourceManager) sdkFind(
 
 	rm.setStatusDefaults(ko)
 
-	if r.ko.Status.Status != nil &&
-		r.ko.Status.Status.Code != nil &&
-		*r.ko.Status.Status.Code == "pending-acceptance" {
-		r.ko.Spec.AcceptRequest = aws.Bool(true)
-	} else {
+	if isVPCPeeringConnectionPendingAcceptance(r) {
 		r.ko.Spec.AcceptRequest = aws.Bool(false)
+	} else if isVPCPeeringConnectionActive(r) || isVPCPeeringConnectionProvisioning(r) {
+		r.ko.Spec.AcceptRequest = aws.Bool(true)
 	}
 
 	return &resource{ko}, nil
@@ -499,6 +497,17 @@ func (rm *resourceManager) sdkUpdate(
 		exit(err)
 	}()
 
+	if isVPCPeeringConnectionCreating(desired) {
+		return desired, requeueWaitWhileCreating
+	}
+	if isVPCPeeringConnectionProvisioning(desired) {
+		return desired, requeueWaitWhileProvisioning
+	}
+	if isVPCPeeringConnectionDeleting(desired) {
+		return desired, requeueWaitWhileDeleting
+	}
+
+	// in case of pending acceptance or accepted state we make the updates.
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err

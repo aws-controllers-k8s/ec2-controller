@@ -15,12 +15,85 @@ package vpc_peering_connection
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
+
+var (
+	ErrVPCPeeringConnectionCreating = fmt.Errorf(
+		"VPCPerringConnection in '%v' state, cannot be modified or deleted",
+		"creating",
+	)
+	ErrVPCPeeringConnectionProvisioning = fmt.Errorf(
+		"VPCPerringConnection in '%v' state, cannot be modified or deleted",
+		svcsdk.VpcPeeringConnectionStateReasonCodeProvisioning,
+	)
+	ErrVPCPeeringConnectionDeleting = fmt.Errorf(
+		"VPCPerringConnection in '%v' state, cannot be modified or deleted",
+		svcsdk.VpcPeeringConnectionStateReasonCodeDeleting,
+	)
+)
+
+var (
+	requeueWaitWhileDeleting = ackrequeue.NeededAfter(
+		ErrVPCPeeringConnectionDeleting,
+		5*time.Second,
+	)
+	requeueWaitWhileCreating = ackrequeue.NeededAfter(
+		ErrVPCPeeringConnectionCreating,
+		5*time.Second,
+	)
+	requeueWaitWhileProvisioning = ackrequeue.NeededAfter(
+		ErrVPCPeeringConnectionProvisioning,
+		5*time.Second,
+	)
+)
+
+func isVPCPeeringConnectionCreating(r *resource) bool {
+	if r.ko.Status.Status == nil || r.ko.Status.Status.Code == nil {
+		return false
+	}
+	status := *r.ko.Status.Status.Code
+	return status == string(svcapitypes.VPCPeeringConnectionStateReasonCode_initiating_request)
+}
+
+func isVPCPeeringConnectionProvisioning(r *resource) bool {
+	if r.ko.Status.Status == nil || r.ko.Status.Status.Code == nil {
+		return false
+	}
+	status := *r.ko.Status.Status.Code
+	return status == string(svcapitypes.VPCPeeringConnectionStateReasonCode_provisioning)
+}
+
+func isVPCPeeringConnectionDeleting(r *resource) bool {
+	if r.ko.Status.Status == nil || r.ko.Status.Status.Code == nil {
+		return false
+	}
+	status := *r.ko.Status.Status.Code
+	return status == string(svcapitypes.VPCPeeringConnectionStateReasonCode_deleting)
+}
+
+func isVPCPeeringConnectionActive(r *resource) bool {
+	if r.ko.Status.Status == nil || r.ko.Status.Status.Code == nil {
+		return false
+	}
+	status := *r.ko.Status.Status.Code
+	return status == string(svcapitypes.VPCPeeringConnectionStateReasonCode_active)
+}
+
+func isVPCPeeringConnectionPendingAcceptance(r *resource) bool {
+	if r.ko.Status.Status == nil || r.ko.Status.Status.Code == nil {
+		return false
+	}
+	status := *r.ko.Status.Status.Code
+	return status == string(svcapitypes.VPCPeeringConnectionStateReasonCode_pending_acceptance)
+}
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
 func (rm *resourceManager) syncTags(
