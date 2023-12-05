@@ -298,20 +298,6 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	// Accept the VPC Peering Connection Request, if the field 'Spec.AcceptRequest' is set to true
-	if *desired.ko.Spec.AcceptRequest {
-		var acceptResp *svcsdk.AcceptVpcPeeringConnectionOutput
-		_ = acceptResp
-		acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
-			VpcPeeringConnectionId: ko.Status.VPCPeeringConnectionID,
-		}
-		acceptResp, err = rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
-		if err != nil {
-			return nil, err
-		}
-		rlog.Debug("VPC Peering Connection accepted", "VpcPeeringConnectionId", *acceptResp.VpcPeeringConnection.VpcPeeringConnectionId)
-	}
-
 	if resp.VpcPeeringConnection.AccepterVpcInfo != nil {
 		f0 := &svcapitypes.VPCPeeringConnectionVPCInfo{}
 		if resp.VpcPeeringConnection.AccepterVpcInfo.CidrBlock != nil {
@@ -458,6 +444,21 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	// Accept the VPC Peering Connection Request, if the field 'Spec.AcceptRequest' is set to true
+	if *desired.ko.Spec.AcceptRequest {
+		var acceptResp *svcsdk.AcceptVpcPeeringConnectionOutput
+		_ = acceptResp
+		acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
+			VpcPeeringConnectionId: ko.Status.VPCPeeringConnectionID,
+		}
+		acceptResp, err = rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
+		if err != nil {
+			return nil, err
+		}
+		rlog.Debug("VPC Peering Connection accepted", "VpcPeeringConnectionId", *acceptResp.VpcPeeringConnection.VpcPeeringConnectionId)
+	}
+
 	return &resource{ko}, nil
 }
 

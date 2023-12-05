@@ -823,8 +823,8 @@ resources:
         code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc_peering_connection/sdk_create_post_build_request.go.tpl
-      sdk_create_pre_set_output:
-        template_path: hooks/vpc_peering_connection/sdk_create_pre_set_output.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/vpc_peering_connection/sdk_create_post_set_output.go.tpl
       sdk_update_pre_build_request:
         template_path: hooks/vpc_peering_connection/sdk_update_pre_build_request.go.tpl
       sdk_file_end:
