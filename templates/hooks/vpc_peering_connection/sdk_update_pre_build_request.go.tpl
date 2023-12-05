@@ -7,7 +7,7 @@
 
 	if delta.DifferentAt("Spec.AcceptRequest") {
          // Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
-		 if !*desired.ko.Spec.AcceptRequest  {
+		 if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest  {
          		msg := fmt.Sprintf("You cannot set AcceptRequest to false after setting it to true")
 		        return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
          }
