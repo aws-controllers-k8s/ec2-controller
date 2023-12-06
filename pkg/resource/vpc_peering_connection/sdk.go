@@ -241,21 +241,13 @@ func (rm *resourceManager) sdkFind(
 
 	rm.setStatusDefaults(ko)
 
-	// Hack to artificially trigger detection by delta.DifferentAt("Spec.AcceptRequest")
-	rlog.Debug("Hack to artificially trigger detection",
-		"r.ko.Status.Status", r.ko.Status.Status,
-		"r.ko.Spec.AcceptRequest", r.ko.Spec.AcceptRequest,
-		"ko.Status.Status", ko.Status.Status,
-		"ko.Spec.AcceptRequest", ko.Spec.AcceptRequest)
+	// Artificially trigger detection by delta.DifferentAt("Spec.AcceptRequest")
 	res := &resource{ko}
 	if isVPCPeeringConnectionPendingAcceptance(res) {
-		rlog.Debug("Setting VPC Peering Connection spec.acceptRequest to false")
 		res.ko.Spec.AcceptRequest = aws.Bool(false)
 	} else if isVPCPeeringConnectionActive(res) || isVPCPeeringConnectionProvisioning(res) {
-		rlog.Debug("Setting VPC Peering Connection spec.acceptRequest to true")
 		res.ko.Spec.AcceptRequest = aws.Bool(true)
 	} else if isVPCPeeringConnectionCreating(res) {
-		rlog.Debug("Requeuing until VPC Peering Connection is not Creating")
 		return nil, requeueWaitWhileCreating
 	}
 
@@ -550,8 +542,6 @@ func (rm *resourceManager) sdkUpdate(
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
 			ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
 			return desired, nil
-		} else {
-			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
 	}
 
@@ -649,8 +639,10 @@ func (rm *resourceManager) newUpdateRequestPayload(
 			res.SetRequesterPeeringConnectionOptions(f2)
 		}
 	}
-	if r.ko.Status.VPCPeeringConnectionID != nil {
-		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
+	if delta.DifferentAt("Spec.VPCPeeringConnectionID") {
+		if r.ko.Status.VPCPeeringConnectionID != nil {
+			res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
+		}
 	}
 
 	return res, nil

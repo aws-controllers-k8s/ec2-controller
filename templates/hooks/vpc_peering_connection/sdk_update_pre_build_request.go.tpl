@@ -41,8 +41,6 @@
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
 			ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
 			return desired, nil
-		} else {
-			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
 	}
 
