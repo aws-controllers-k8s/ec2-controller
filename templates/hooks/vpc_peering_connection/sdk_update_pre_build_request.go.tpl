@@ -38,7 +38,7 @@
 				return nil, err
 			}
 			latest = rm.concreteResource(readOneLatest.DeepCopy())
-			desired.ko.Status =  latest.ko.Status
+			desired.ko.Status.Status =  latest.ko.Status.Status
 		} else {
 			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
