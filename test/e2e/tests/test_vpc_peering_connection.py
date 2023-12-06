@@ -189,7 +189,7 @@ def ref_vpc_peering_connection(request):
     updated_cr = wait_for_vpc_peering_connection_status(ref)
     assert updated_cr["status"]["status"]["code"] == "active" 
 
-    yield (ref, cr)
+    yield (ref, updated_cr)
 
     # Delete VPC Peering Connection k8s resource 
     try:
