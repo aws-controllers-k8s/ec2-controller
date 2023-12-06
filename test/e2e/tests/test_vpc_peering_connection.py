@@ -218,7 +218,7 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=120):
             return
         time.sleep(5)
     print("CR contents", resource)
-    raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'")
+    raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code:", resource["status"]["status"]["code"])
 
 @service_marker
 @pytest.mark.canary
