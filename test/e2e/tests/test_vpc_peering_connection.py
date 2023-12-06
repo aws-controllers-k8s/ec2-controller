@@ -186,10 +186,12 @@ def ref_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
-    updated_cr = wait_for_vpc_peering_connection_status(ref)
-    assert updated_cr["status"]["status"]["code"] == "active" 
+    wait_for_vpc_peering_connection_status(ref)
+    # Get the CR again after waiting for the Status to be updated
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr["status"]["status"]["code"] == "active" 
 
-    yield (ref, updated_cr)
+    yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 
     try:
@@ -212,7 +214,7 @@ def ref_vpc_peering_connection(request):
 def wait_for_vpc_peering_connection_status(ref, timeout_seconds=120):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
-        resource = k8s.wait_resource_consumed_by_controller(ref)
+        resource = k8s.get_resource(ref)
         if resource["status"]["status"]["code"] == "active":
             logging.debug("VPC Peering Connection Status Code is 'active'", resource)
             return resource
