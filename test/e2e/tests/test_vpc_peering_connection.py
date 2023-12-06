@@ -87,6 +87,8 @@ def simple_vpc_peering_connection(request):
     assert cr is not None
     assert k8s.get_resource_exists(ref)
     wait_for_vpc_peering_connection_status(ref)
+    # Get the CR again after waiting for the Status to be updated
+    cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "active" 
 
     yield (ref, cr)
@@ -243,113 +245,113 @@ class TestVPCPeeringConnections:
         # Check VPC Peering Connection no longer exists in AWS
         ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
 
-    # def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
-    #     (ref, cr) = simple_vpc_peering_connection
-    #     vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
+    def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
+        (ref, cr) = simple_vpc_peering_connection
+        vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
-    #     # Check VPC Peering Connection exists
-    #     ec2_validator = EC2Validator(ec2_client)
-    #     ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id)
+        # Check VPC Peering Connection exists
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id)
 
-    #     # Delete k8s resource
-    #     _, deleted = k8s.delete_custom_resource(ref, 2, 5)
-    #     assert deleted is True
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
 
-    #     time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-    #     # Check VPC Peering Connection no longer exists in AWS
-    #     ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
+        # Check VPC Peering Connection no longer exists in AWS
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
 
-    # def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
-    #     (ref, cr) = simple_vpc_peering_connection
+    def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
+        (ref, cr) = simple_vpc_peering_connection
 
-    #     resource = k8s.get_resource(ref)
-    #     resource_id = cr["status"]["vpcPeeringConnectionID"]
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["vpcPeeringConnectionID"]
 
-    #     time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-    #     # Check VPC Peering Connection exists in AWS
-    #     ec2_validator = EC2Validator(ec2_client)
-    #     ec2_validator.assert_vpc_peering_connection(resource_id)
+        # Check VPC Peering Connection exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_peering_connection(resource_id)
 
-    #     # Check system and user tags exist for VPC Peering Connection resource
-    #     vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
-    #     user_tags = {
-    #         "initialtagkey": "initialtagvalue"
-    #     }
-    #     tags.assert_ack_system_tags(
-    #        tags=vpc_peering_connection["Tags"],
-    #     )
-    #     tags.assert_equal_without_ack_tags(
-    #         expected=user_tags,
-    #         actual=vpc_peering_connection["Tags"],
-    #     )
+        # Check system and user tags exist for VPC Peering Connection resource
+        vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
+        user_tags = {
+            "initialtagkey": "initialtagvalue"
+        }
+        tags.assert_ack_system_tags(
+           tags=vpc_peering_connection["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=user_tags,
+            actual=vpc_peering_connection["Tags"],
+        )
         
-    #     # Update tags
-    #     update_tags = [
-    #         {
-    #             "key": "updatedtagkey",
-    #             "value": "updatedtagvalue",
-    #         }
-    #     ]
+        # Update tags
+        update_tags = [
+            {
+                "key": "updatedtagkey",
+                "value": "updatedtagvalue",
+            }
+        ]
 
-    #     # Patch the VPCPeeringConnection, updating the tags with a new pair
-    #     updates = {
-    #         "spec": {"tags": update_tags},
-    #     }
+        # Patch the VPCPeeringConnection, updating the tags with a new pair
+        updates = {
+            "spec": {"tags": update_tags},
+        }
 
-    #     k8s.patch_custom_resource(ref, updates)
-    #     time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
-    #     # Check resource synced successfully
-    #     assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-    #     # Check for updated user tags; system tags should persist
-    #     vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
-    #     updated_tags = {
-    #         "updatedtagkey": "updatedtagvalue"
-    #     }
-    #     tags.assert_ack_system_tags(
-    #         tags=vpc_peering_connection["Tags"],
-    #     )
-    #     tags.assert_equal_without_ack_tags(
-    #         expected=updated_tags,
-    #         actual=vpc_peering_connection["Tags"],
-    #     )
+        # Check for updated user tags; system tags should persist
+        vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
+        updated_tags = {
+            "updatedtagkey": "updatedtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=vpc_peering_connection["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=updated_tags,
+            actual=vpc_peering_connection["Tags"],
+        )
 
-    #     # Patch the VPCPeeringConnection resource, deleting the tags
-    #     updates = {
-    #         "spec": {"tags": []},
-    #     }
+        # Patch the VPCPeeringConnection resource, deleting the tags
+        updates = {
+            "spec": {"tags": []},
+        }
 
-    #     k8s.patch_custom_resource(ref, updates)
-    #     time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
-    #     # Check resource synced successfully
-    #     assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-    #     # Check for removed user tags; system tags should persist
-    #     vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
-    #     tags.assert_ack_system_tags(
-    #         tags=vpc_peering_connection["Tags"],
-    #     )
-    #     tags.assert_equal_without_ack_tags(
-    #         expected=[],
-    #         actual=vpc_peering_connection["Tags"],
-    #     )
+        # Check for removed user tags; system tags should persist
+        vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
+        tags.assert_ack_system_tags(
+            tags=vpc_peering_connection["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=[],
+            actual=vpc_peering_connection["Tags"],
+        )
 
-    #     # Check user tags are removed from Spec
-    #     resource = k8s.get_resource(ref)
-    #     assert len(resource["spec"]["tags"]) == 0
+        # Check user tags are removed from Spec
+        resource = k8s.get_resource(ref)
+        assert len(resource["spec"]["tags"]) == 0
 
-    #     # Delete k8s resource
-    #     try:
-    #         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
-    #         assert deleted
-    #     except:
-    #         pass
-    #     time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        # Delete k8s resource
+        try:
+            _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+            assert deleted
+        except:
+            pass
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-    #     # Check VPC Peering Connection no longer exists in AWS
-    #     ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
+        # Check VPC Peering Connection no longer exists in AWS
+        ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
 
