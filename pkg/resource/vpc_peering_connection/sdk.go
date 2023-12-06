@@ -549,9 +549,6 @@ func (rm *resourceManager) sdkUpdate(
 			}
 			latest = rm.concreteResource(readOneLatest.DeepCopy())
 			desired.ko.Status.Status = latest.ko.Status.Status
-			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
-			ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
-			return desired, nil
 		} else {
 			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
