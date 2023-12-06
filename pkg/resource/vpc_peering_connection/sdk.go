@@ -242,6 +242,7 @@ func (rm *resourceManager) sdkFind(
 	rm.setStatusDefaults(ko)
 
 	// Hack to artificially trigger detection by delta.DifferentAt("Spec.AcceptRequest")
+	rlog.Debug("Hack to artificially trigger detection", "resource", r)
 	if isVPCPeeringConnectionPendingAcceptance(r) {
 		rlog.Debug("Setting VPC Peering Connection spec.acceptRequest to false", "Resource", r)
 		r.ko.Spec.AcceptRequest = aws.Bool(false)
@@ -517,6 +518,7 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
+	rlog.Debug("Preparing to accept VPC Peering Connection", "Desired", desired, "Latest:", latest)
 	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {
@@ -533,6 +535,8 @@ func (rm *resourceManager) sdkUpdate(
 				return nil, err
 			}
 			rlog.Debug("VPC Peering Connection accepted", "apiResponse", acceptResp)
+		} else {
+			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
 	}
 

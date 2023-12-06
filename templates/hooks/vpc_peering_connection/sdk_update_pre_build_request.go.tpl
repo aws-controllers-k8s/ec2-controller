@@ -16,13 +16,14 @@
 			}
 		}
 
+	rlog.Debug("Preparing to accept VPC Peering Connection", "Desired", desired, "Latest:", latest)
 	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {
 			msg := fmt.Sprintf("You cannot set AcceptRequest to false after setting it to true")
 			return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
 
-		// Accept the VPC Peering Connection Request, if the field is set to 'true' and is still at status Pending Acceptance
+			// Accept the VPC Peering Connection Request, if the field is set to 'true' and is still at status Pending Acceptance
 		} else if *latest.ko.Status.Status.Code == "pending-acceptance" {
 			acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
 				VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
@@ -32,6 +33,8 @@
 				return nil, err
 			}
 			rlog.Debug("VPC Peering Connection accepted", "apiResponse", acceptResp)
+		} else {
+			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
 	}
 
