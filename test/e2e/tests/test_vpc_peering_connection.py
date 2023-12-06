@@ -212,7 +212,7 @@ def ref_vpc_peering_connection(request):
 def wait_for_vpc_peering_connection_status(ref, timeout_seconds=120):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
-        resource = k8s.get_resource(ref)
+        resource = k8s.wait_resource_consumed_by_controller(ref)
         if resource["status"]["status"]["code"] == "active":
             logging.debug("VPC Peering Connection Status Code is 'active'", resource)
             return
