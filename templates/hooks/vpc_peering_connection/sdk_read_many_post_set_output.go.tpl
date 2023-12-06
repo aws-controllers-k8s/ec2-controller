@@ -5,12 +5,14 @@
 		"r.ko.Spec.AcceptRequest", r.ko.Spec.AcceptRequest,
 		"ko.Status.Status", ko.Status.Status,
 		"ko.Spec.AcceptRequest", ko.Spec.AcceptRequest)
-	if isVPCPeeringConnectionPendingAcceptance(r) {
+	res := &resource{ko}
+	if isVPCPeeringConnectionPendingAcceptance(res) {
 		rlog.Debug("Setting VPC Peering Connection spec.acceptRequest to false")
-		r.ko.Spec.AcceptRequest = aws.Bool(false)
-	} else if isVPCPeeringConnectionActive(r) || isVPCPeeringConnectionProvisioning(r) {
+		res.ko.Spec.AcceptRequest = aws.Bool(false)
+	} else if isVPCPeeringConnectionActive(res) || isVPCPeeringConnectionProvisioning(res) {
 		rlog.Debug("Setting VPC Peering Connection spec.acceptRequest to true")
-		r.ko.Spec.AcceptRequest = aws.Bool(true)
-	} else if isVPCPeeringConnectionCreating(r) {
+		res.ko.Spec.AcceptRequest = aws.Bool(true)
+	} else if isVPCPeeringConnectionCreating(res) {
+		rlog.Debug("Requeuing until VPC Peering Connection is not Creating")
 		return nil, requeueWaitWhileCreating
 	}
