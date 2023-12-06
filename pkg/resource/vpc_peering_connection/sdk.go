@@ -464,8 +464,7 @@ func (rm *resourceManager) sdkCreate(
 
 	rm.setStatusDefaults(ko)
 
-	// This causes a requeue and the rest of the fields will be synced on the next
-	// reconciliation loop
+	// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
 	ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 
 	return &resource{ko}, nil
@@ -526,7 +525,6 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
-	rlog.Debug("Preparing to accept VPC Peering Connection", "Desired", desired, "Latest:", latest)
 	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {

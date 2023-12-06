@@ -16,7 +16,6 @@
 			}
 		}
 
-	rlog.Debug("Preparing to accept VPC Peering Connection", "Desired", desired, "Latest:", latest)
 	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {
