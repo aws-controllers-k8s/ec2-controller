@@ -522,17 +522,18 @@ func (rm *resourceManager) sdkUpdate(
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {
 			msg := fmt.Sprintf("You cannot set AcceptRequest to false after setting it to true")
 			return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
-		} 
-	} else if *desired.ko.Spec.AcceptRequest && *latest.ko.Status.Status.Code == "pending-acceptance" {
-		// Accept the VPC Peering Connection Request
-		acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
-			VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
+
+			// Accept the VPC Peering Connection Request, if the field is set to 'true' and is still at status Pending Acceptance
+		} else if *latest.ko.Status.Status.Code == "pending-acceptance" {
+			acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
+				VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
+			}
+			acceptResp, err := rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
+			if err != nil {
+				return nil, err
+			}
+			rlog.Debug("VPC Peering Connection accepted", "apiResponse", acceptResp)
 		}
-		acceptResp, err := rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
-		if err != nil {
-			return nil, err
-		}
-		rlog.Debug("VPC Peering Connection accepted", "apiResponse", acceptResp)
 	}
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
