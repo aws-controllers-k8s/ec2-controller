@@ -35,6 +35,8 @@ rules:
 
   - vpcendpoints
 
+  - vpcpeeringconnections
+
   verbs:
   - create
   - delete
@@ -59,6 +61,7 @@ rules:
   - transitgateways
   - vpcs
   - vpcendpoints
+  - vpcpeeringconnections
   verbs:
   - get
   - patch

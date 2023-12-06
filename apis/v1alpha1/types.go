@@ -678,6 +678,8 @@ type CreateRouteInput struct {
 	// Reference field for VPCEndpointID
 	VPCEndpointRef         *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcEndpointRef,omitempty"`
 	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for VPCPeeringConnectionID
+	VPCPeeringConnectionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcPeeringConnectionRef,omitempty"`
 }
 
 // Describes the options for a VPC attachment.
@@ -4674,13 +4676,6 @@ type VPCIPv6CIDRBlockAssociation struct {
 	NetworkBorderGroup *string            `json:"networkBorderGroup,omitempty"`
 }
 
-// Describes a VPC peering connection.
-type VPCPeeringConnection struct {
-	ExpirationTime         *metav1.Time `json:"expirationTime,omitempty"`
-	Tags                   []*Tag       `json:"tags,omitempty"`
-	VPCPeeringConnectionID *string      `json:"vpcPeeringConnectionID,omitempty"`
-}
-
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -4695,15 +4690,39 @@ type VPCPeeringConnectionOptionsDescription struct {
 
 // Describes the status of a VPC peering connection.
 type VPCPeeringConnectionStateReason struct {
+	Code    *string `json:"code,omitempty"`
 	Message *string `json:"message,omitempty"`
 }
 
 // Describes a VPC in a VPC peering connection.
 type VPCPeeringConnectionVPCInfo struct {
-	CIDRBlock *string `json:"cidrBlock,omitempty"`
-	OwnerID   *string `json:"ownerID,omitempty"`
-	Region    *string `json:"region,omitempty"`
-	VPCID     *string `json:"vpcID,omitempty"`
+	CIDRBlock        *string          `json:"cidrBlock,omitempty"`
+	CIDRBlockSet     []*CIDRBlock     `json:"cidrBlockSet,omitempty"`
+	IPv6CIDRBlockSet []*IPv6CIDRBlock `json:"ipv6CIDRBlockSet,omitempty"`
+	OwnerID          *string          `json:"ownerID,omitempty"`
+	//
+	// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+	// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+	// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+	// in the Amazon Elastic Compute Cloud User Guide.
+	//
+	// Describes the VPC peering connection options.
+	PeeringOptions *VPCPeeringConnectionOptionsDescription `json:"peeringOptions,omitempty"`
+	Region         *string                                 `json:"region,omitempty"`
+	VPCID          *string                                 `json:"vpcID,omitempty"`
+}
+
+// Describes a VPC peering connection.
+type VPCPeeringConnection_SDK struct {
+	// Describes a VPC in a VPC peering connection.
+	AccepterVPCInfo *VPCPeeringConnectionVPCInfo `json:"accepterVPCInfo,omitempty"`
+	ExpirationTime  *metav1.Time                 `json:"expirationTime,omitempty"`
+	// Describes a VPC in a VPC peering connection.
+	RequesterVPCInfo *VPCPeeringConnectionVPCInfo `json:"requesterVPCInfo,omitempty"`
+	// Describes the status of a VPC peering connection.
+	Status                 *VPCPeeringConnectionStateReason `json:"status,omitempty"`
+	Tags                   []*Tag                           `json:"tags,omitempty"`
+	VPCPeeringConnectionID *string                          `json:"vpcPeeringConnectionID,omitempty"`
 }
 
 // Describes a VPC.

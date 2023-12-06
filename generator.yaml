@@ -36,6 +36,8 @@ ignore:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
+    - CreateVpcPeeringConnectionInput.DryRun
+    - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
     - DeleteRouteInput.RouteTableId
     # support EC2-VPC only
@@ -122,7 +124,7 @@ ignore:
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
-    - VpcPeeringConnection
+    #- VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway    
@@ -184,6 +186,10 @@ operations:
     operation_type:
       - Delete
     resource_name: Instance
+  ModifyVpcPeeringConnectionOptions:
+    operation_type:
+      - Update
+    resource_name: VpcPeeringConnection
 resources:
   DhcpOptions:
     exceptions:
@@ -468,6 +474,10 @@ resources:
         references:
           resource: VPCEndpoint
           path: Status.VPCEndpointID
+      Routes.VPCPeeringConnectionID:
+        references:
+          resource: VPCPeeringConnection
+          path: Status.VPCPeeringConnectionID
     hooks:
       delta_pre_compare:
         code: customPreCompare(delta, a, b)
@@ -779,5 +789,45 @@ resources:
       sdk_file_end:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
-      custom_method_name: customUpdateVPCEndpoint
-    
+      custom_method_name: customUpdateVPCEndpoint  
+  VpcPeeringConnection:
+    fields:      
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      peerVpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      AcceptRequest:
+        type: bool
+      AccepterPeeringConnectionOptions:
+        from:
+          operation: ModifyVpcPeeringConnectionOptions
+          path: AccepterPeeringConnectionOptions
+      RequesterPeeringConnectionOptions:
+        from:
+          operation: ModifyVpcPeeringConnectionOptions
+          path: RequesterPeeringConnectionOptions
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: True
+    update_operation:
+      omit_unchanged_fields: true
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      sdk_create_post_build_request:
+        template_path: hooks/vpc_peering_connection/sdk_create_post_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/vpc_peering_connection/sdk_create_post_set_output.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/vpc_peering_connection/sdk_update_pre_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/vpc_peering_connection/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/vpc_peering_connection/sdk_file_end.go.tpl

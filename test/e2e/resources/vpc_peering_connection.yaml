@@ -1,0 +1,19 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPCPeeringConnection
+metadata:
+  name: $VPC_PEERING_CONNECTION_NAME
+spec:
+  vpcID: $VPC_ID
+  peerVPCID: $PEER_VPC_ID
+  acceptRequest: true
+  requesterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: true
+    allowEgressFromLocalClassicLinkToRemoteVPC: true
+    allowEgressFromLocalVPCToRemoteClassicLink: true
+  accepterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: true
+    allowEgressFromLocalClassicLinkToRemoteVPC: true
+    allowEgressFromLocalVPCToRemoteClassicLink: true
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
