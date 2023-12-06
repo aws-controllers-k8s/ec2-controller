@@ -543,6 +543,8 @@ func (rm *resourceManager) sdkUpdate(
 				return nil, err
 			}
 			rlog.Debug("VPC Peering Connection accepted", "apiResponse", acceptResp)
+			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
+			ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
 		} else {
 			rlog.Debug("Skipped Accepting the VPC Peering Request")
 		}
