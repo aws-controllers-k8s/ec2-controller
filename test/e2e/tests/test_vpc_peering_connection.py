@@ -90,12 +90,12 @@ def simple_vpc_peering_connection(request):
     # Get the CR again after waiting for the Status to be updated
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "active" 
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "false"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "false"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "false"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "false"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "false"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "false"
 
     yield (ref, cr)
 
@@ -367,3 +367,64 @@ class TestVPCPeeringConnections:
         # Check VPC Peering Connection no longer exists in AWS
         ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
 
+
+    def test_update_peering_options(self, ec2_client, simple_vpc_peering_connection):
+        (ref, cr) = simple_vpc_peering_connection
+
+        resource_id = cr["status"]["vpcPeeringConnectionID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check VPC Peering Connection exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_peering_connection(resource_id)
+
+        assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "false"
+        assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "false"
+        assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "false"
+        assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "false"
+        assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "false"
+        assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "false"
+        
+        # Payload used to update the VPC Peering Connection
+        update_peering_options_payload = {
+            "spec": {
+                "requesterPeeringConnectionOptions": {
+                    "allowDnsResolutionFromRemoteVPC": "true",
+                    "allowEgressFromLocalClassicLinkToRemoteVPC": "true",
+                    "allowEgressFromLocalVPCToRemoteClassicLink": "true",
+                },
+                "accepterPeeringConnectionOptions": {
+                    "allowDnsResolutionFromRemoteVPC": "true",
+                    "allowEgressFromLocalClassicLinkToRemoteVPC": "true",
+                    "allowEgressFromLocalVPCToRemoteClassicLink": "true",
+                },
+            },
+        }
+
+        # Patch the VPCPeeringConnection with the payload
+        k8s.patch_custom_resource(ref, update_peering_options_payload)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check for updated peering options        
+        updated_cr = k8s.get_resource(ref)
+        assert updated_cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
+        assert updated_cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
+        assert updated_cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+        assert updated_cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
+        assert updated_cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
+        assert updated_cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+
+        # Delete k8s resource
+        try:
+            _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+            assert deleted
+        except:
+            pass
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC Peering Connection no longer exists in AWS
+        ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
