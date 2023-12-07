@@ -90,12 +90,12 @@ def simple_vpc_peering_connection(request):
     # Get the CR again after waiting for the Status to be updated
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "active" 
-    assert cr["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
-    assert cr["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
-    assert cr["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
-    assert cr["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
-    assert cr["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
-    assert cr["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
 
     yield (ref, cr)
 
@@ -198,13 +198,13 @@ def ref_vpc_peering_connection(request):
     # Get the CR again after waiting for the Status to be updated
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "active" 
-    assert cr["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
-    assert cr["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
-    assert cr["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
-    assert cr["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
-    assert cr["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
-    assert cr["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
-    
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == "true"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == "true"
+    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == "true"
+
     yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 
