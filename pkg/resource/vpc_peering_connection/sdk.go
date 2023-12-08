@@ -540,8 +540,8 @@ func (rm *resourceManager) sdkUpdate(
 	if isVPCPeeringConnectionDeleting(desired) {
 		return desired, requeueWaitWhileDeleting
 	}
+	// If the VPC Peering Connection is Pending Acceptance or Active, continue
 
-	// in case of pending acceptance or accepted state we make the updates.
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
@@ -582,7 +582,7 @@ func (rm *resourceManager) sdkUpdate(
 	//	return desired, nil
 	//}
 
-	rlog.Debug("BEFORE", "desired", desired.ko.Spec)
+	rlog.Debug("BEFORE", "desired", desired)
 	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
 		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
 		if desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
@@ -613,7 +613,7 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		desired.ko.Spec.RequesterPeeringConnectionOptions = nil
 	}
-	rlog.Debug("AFTER", "desired", desired.ko.Spec)
+	rlog.Debug("AFTER", "desired", desired)
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err

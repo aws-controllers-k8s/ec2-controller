@@ -8,8 +8,8 @@
 	if isVPCPeeringConnectionDeleting(desired) {
 		return desired, requeueWaitWhileDeleting
 	}
-	
-	// in case of pending acceptance or accepted state we make the updates.
+	// If the VPC Peering Connection is Pending Acceptance or Active, continue
+
 	if delta.DifferentAt("Spec.Tags") {
 			if err := rm.syncTags(ctx, desired, latest); err != nil {
 				return nil, err
