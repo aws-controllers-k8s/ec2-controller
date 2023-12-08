@@ -50,6 +50,7 @@
 		return desired, nil
 	}
 
+	rlog.Debug("BEFORE", "desired", desired)
   	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
 		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
 		if desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
@@ -80,3 +81,4 @@
 	} else {
 		desired.ko.Spec.RequesterPeeringConnectionOptions = nil
 	}
+	rlog.Debug("AFTER", "desired", desired)

@@ -581,6 +581,7 @@ func (rm *resourceManager) sdkUpdate(
 		return desired, nil
 	}
 
+	rlog.Debug("BEFORE", "desired", desired)
 	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
 		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
 		if desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
@@ -611,6 +612,7 @@ func (rm *resourceManager) sdkUpdate(
 	} else {
 		desired.ko.Spec.RequesterPeeringConnectionOptions = nil
 	}
+	rlog.Debug("AFTER", "desired", desired)
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
@@ -619,6 +621,9 @@ func (rm *resourceManager) sdkUpdate(
 	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput
 	_ = resp
 	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptionsWithContext(ctx, input)
+
+	rlog.Debug("UPDATE PAYLOAD", "input", input, "response", resp)
+
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcPeeringConnectionOptions", err)
 	if err != nil {
 		return nil, err
