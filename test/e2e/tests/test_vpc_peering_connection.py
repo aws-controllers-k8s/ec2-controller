@@ -91,9 +91,9 @@ def simple_vpc_peering_connection(request):
     # Get the CR again after waiting for the Status to be updated
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "active" 
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
     assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
-
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
+    
     yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 
