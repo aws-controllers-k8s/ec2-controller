@@ -16,7 +16,6 @@
 			}
 		}
 
-	rlog.Debug("SHOULD I ACCEPT", "desired", desired.ko.Spec, "latest", latest.ko.Status)
 	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'
 		if desired.ko.Spec.AcceptRequest == nil || !*desired.ko.Spec.AcceptRequest {
@@ -44,15 +43,13 @@
 			return desired, nil
 		}
 	}
-	rlog.Debug("I GOT PAST", "desired", desired.ko.Spec, "latest", latest.ko.Status)
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
-	//if delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
-	//	rlog.Debug("No difference found with delta.DifferentExcept('Spec.Tags', 'Spec.AcceptRequest')")
-	//	return desired, nil
-	//}
+	if !delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
+		rlog.Debug("No difference found with delta.DifferentExcept('Spec.Tags', 'Spec.AcceptRequest')")
+		return desired, nil
+	}
 
-	rlog.Debug("BEFORE", "desired", desired.ko.Spec)
   	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
 		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
 		if desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
@@ -83,4 +80,3 @@
 	} else {
 		desired.ko.Spec.RequesterPeeringConnectionOptions = nil
 	}
-	rlog.Debug("AFTER", "desired", desired.ko.Spec)
