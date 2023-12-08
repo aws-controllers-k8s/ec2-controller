@@ -46,10 +46,10 @@
 
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
-	if delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
-		rlog.Debug("No difference found with delta.DifferentExcept('Spec.Tags', 'Spec.AcceptRequest')")
-		return desired, nil
-	}
+	//if delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
+	//	rlog.Debug("No difference found with delta.DifferentExcept('Spec.Tags', 'Spec.AcceptRequest')")
+	//	return desired, nil
+	//}
 
 	rlog.Debug("BEFORE", "desired", desired)
   	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
