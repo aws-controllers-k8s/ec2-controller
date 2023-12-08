@@ -194,9 +194,6 @@ def ref_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
-    #wait_for_vpc_peering_connection_status(ref)
-    # Get the CR again after waiting for the Status to be updated
-    cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "pending-acceptance" 
     assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
     assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == True
