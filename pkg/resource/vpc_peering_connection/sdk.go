@@ -577,7 +577,8 @@ func (rm *resourceManager) sdkUpdate(
 	}
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
-	if !delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
+	if delta.DifferentExcept("Spec.Tags", "Spec.AcceptRequest") {
+		rlog.Debug("No difference found with delta.DifferentExcept('Spec.Tags', 'Spec.AcceptRequest')")
 		return desired, nil
 	}
 
@@ -621,7 +622,7 @@ func (rm *resourceManager) sdkUpdate(
 	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput
 	_ = resp
 	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptionsWithContext(ctx, input)
-
+	// For Troubleshooting
 	rlog.Debug("UPDATE PAYLOAD", "input", input, "response", resp)
 
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcPeeringConnectionOptions", err)
