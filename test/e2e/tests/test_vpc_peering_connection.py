@@ -17,6 +17,7 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 DEFAULT_WAIT_AFTER_SECONDS = 5
+PATCH_WAIT_AFTER_SECONDS = 35
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
@@ -190,9 +191,16 @@ def ref_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
-    assert cr["status"]["status"]["code"] == "pending-acceptance" 
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
+    wait_for_vpc_peering_connection_status(ref)
+    # Get the CR again after waiting for the Status to be updated
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr["status"]["status"]["code"] == "active"
+
+    # Once the VPC Peering Connection is 'active' wait for the next requeue to update Peering Options
+    time.sleep(PATCH_WAIT_AFTER_SECONDS)
     assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
+    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
+    
     yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 

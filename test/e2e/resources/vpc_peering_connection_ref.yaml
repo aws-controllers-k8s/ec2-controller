@@ -9,7 +9,7 @@ spec:
   peerVPCRef:
     from:
       name: $PEER_VPC_REF_NAME
-  acceptRequest: false
+  acceptRequest: true
   requesterPeeringConnectionOptions:
     allowDNSResolutionFromRemoteVPC: true
   accepterPeeringConnectionOptions:
