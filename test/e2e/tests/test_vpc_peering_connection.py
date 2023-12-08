@@ -21,6 +21,12 @@ PATCH_WAIT_AFTER_SECONDS = 60
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
+    '''
+      - This test accepts the VPC Peering Connection Request (spec.acceptRequest = true)
+      - This test creates a resource with these settings set to false:
+         - requesterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
+         - accepterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
+    '''
     resource_name = random_suffix_name("simple-vpc-peering-connection-test", 40)
     resources = get_bootstrap_resources()
 
@@ -111,6 +117,12 @@ def simple_vpc_peering_connection(request):
 
 @pytest.fixture
 def ref_vpc_peering_connection(request):
+    '''
+      - This test accepts the VPC Peering Connection Request (spec.acceptRequest = true)
+      - This test creates a resource with these settings set to true:
+         - requesterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
+         - accepterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
+    '''
     resource_name = random_suffix_name("ref-vpc-peering-connection-test", 40)
 
     # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
@@ -367,6 +379,11 @@ class TestVPCPeeringConnections:
 
 
     def test_update_peering_options(self, ec2_client, simple_vpc_peering_connection):
+        '''
+        - This test updates the resource with these settings set to true (previously false):
+            - requesterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
+            - accepterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
+        '''
         (ref, cr) = simple_vpc_peering_connection
 
         resource_id = cr["status"]["vpcPeeringConnectionID"]
