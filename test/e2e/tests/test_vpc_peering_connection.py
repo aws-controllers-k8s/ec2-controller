@@ -91,11 +91,7 @@ def simple_vpc_peering_connection(request):
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr["status"]["status"]["code"] == "active" 
     assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == False
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == False
     assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == False
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == False
 
     yield (ref, cr)
 
@@ -196,12 +192,7 @@ def ref_vpc_peering_connection(request):
     assert k8s.get_resource_exists(ref)
     assert cr["status"]["status"]["code"] == "pending-acceptance" 
     assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == True
-    assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == True
     assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == True
-    assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == True
-
     yield (ref, cr)
 
     # Delete VPC Peering Connection k8s resource 
@@ -377,11 +368,7 @@ class TestVPCPeeringConnections:
         ec2_validator.assert_vpc_peering_connection(resource_id)
 
         assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
-        assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == False
-        assert cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == False
         assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == False
-        assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == False
-        assert cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == False
         
         # Payload used to update the VPC Peering Connection
         update_peering_options_payload = {
@@ -409,11 +396,7 @@ class TestVPCPeeringConnections:
         # Check for updated peering options        
         updated_cr = k8s.get_resource(ref)
         assert updated_cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
-        assert updated_cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == True
-        assert updated_cr["status"]["accepterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == True
         assert updated_cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowDNSResolutionFromRemoteVPC"] == True
-        assert updated_cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalClassicLinkToRemoteVPC"] == True
-        assert updated_cr["status"]["requesterVPCInfo"]["peeringOptions"]["allowEgressFromLocalVPCToRemoteClassicLink"] == True
 
         # Delete k8s resource
         try:

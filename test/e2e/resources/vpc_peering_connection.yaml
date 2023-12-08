@@ -8,12 +8,8 @@ spec:
   acceptRequest: true
   requesterPeeringConnectionOptions:
     allowDNSResolutionFromRemoteVPC: false
-    allowEgressFromLocalClassicLinkToRemoteVPC: false
-    allowEgressFromLocalVPCToRemoteClassicLink: false
   accepterPeeringConnectionOptions:
     allowDNSResolutionFromRemoteVPC: false
-    allowEgressFromLocalClassicLinkToRemoteVPC: false
-    allowEgressFromLocalVPCToRemoteClassicLink: false
   tags:
     - key: $TAG_KEY
       value: $TAG_VALUE
