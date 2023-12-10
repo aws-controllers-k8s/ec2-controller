@@ -7,9 +7,9 @@ spec:
   peerVPCID: $PEER_VPC_ID
   acceptRequest: true
   requesterPeeringConnectionOptions:
-    allowDNSResolutionFromRemoteVPC: false
+    allowDNSResolutionFromRemoteVPC: true
   accepterPeeringConnectionOptions:
-    allowDNSResolutionFromRemoteVPC: false
+    allowDNSResolutionFromRemoteVPC: true
   tags:
     - key: $TAG_KEY
       value: $TAG_VALUE
