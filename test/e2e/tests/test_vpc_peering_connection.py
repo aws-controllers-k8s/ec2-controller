@@ -27,7 +27,7 @@ def simple_vpc_peering_connection(request):
 
     # Replacements for Test VPC
     replacements = REPLACEMENT_VALUES.copy()
-    replacements["VPC_NAME"] = resource_name + "-vpc"
+    replacements["VPC_NAME"] = resource_name
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
@@ -52,7 +52,7 @@ def simple_vpc_peering_connection(request):
     # Create k8s resource
     vpc_ref = k8s.CustomResourceReference(
         CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
-        resource_name + "vpc", namespace="default",
+        resource_name, namespace="default",
     )
     k8s.create_custom_resource(vpc_ref, vpc_resource_data)
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
