@@ -354,3 +354,4 @@ class TestVPCPeeringConnections:
 
         # Check VPC Peering Connection no longer exists in AWS
         ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
+        
