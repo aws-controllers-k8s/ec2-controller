@@ -52,7 +52,7 @@ def simple_vpc_peering_connection(request):
     # Create k8s resource
     vpc_ref = k8s.CustomResourceReference(
         CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
-        resource_name, namespace="default",
+        resource_name + "vpc", namespace="default",
     )
     k8s.create_custom_resource(vpc_ref, vpc_resource_data)
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
