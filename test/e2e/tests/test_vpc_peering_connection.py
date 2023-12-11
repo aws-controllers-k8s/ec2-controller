@@ -27,7 +27,7 @@ def simple_vpc_peering_connection(request):
 
     # Replacements for Test VPC
     replacements = REPLACEMENT_VALUES.copy()
-    replacements["VPC_NAME"] = resource_name
+    replacements["VPC_NAME"] = resource_name + "-vpc"
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
