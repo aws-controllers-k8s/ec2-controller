@@ -213,7 +213,7 @@ def ref_vpc_peering_connection(request):
     except:
         pass
 
-def wait_for_vpc_peering_connection_status(ref, timeout_seconds=120):
+def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
         resource = k8s.wait_resource_consumed_by_controller(ref)

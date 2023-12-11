@@ -12,7 +12,9 @@
 
 	if delta.DifferentAt("Spec.Tags") {
 			if err := rm.syncTags(ctx, desired, latest); err != nil {
-				return nil, err
+				// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
+				ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
+				return desired, err
 			}
 		}
 
