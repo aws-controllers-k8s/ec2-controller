@@ -670,31 +670,35 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.ModifyVpcPeeringConnectionOptionsInput, error) {
 	res := &svcsdk.ModifyVpcPeeringConnectionOptionsInput{}
 
-	if r.ko.Spec.AccepterPeeringConnectionOptions != nil {
-		f0 := &svcsdk.PeeringConnectionOptionsRequest{}
-		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
-			f0.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+	if delta.DifferentAt("Spec.AccepterPeeringConnectionOptions") {
+		if r.ko.Spec.AccepterPeeringConnectionOptions != nil {
+			f0 := &svcsdk.PeeringConnectionOptionsRequest{}
+			if r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
+				f0.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+			}
+			if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
+				f0.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+			}
+			if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
+				f0.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+			}
+			res.SetAccepterPeeringConnectionOptions(f0)
 		}
-		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
-			f0.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
-		}
-		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
-			f0.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
-		}
-		res.SetAccepterPeeringConnectionOptions(f0)
 	}
-	if r.ko.Spec.RequesterPeeringConnectionOptions != nil {
-		f2 := &svcsdk.PeeringConnectionOptionsRequest{}
-		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
-			f2.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+	if delta.DifferentAt("Spec.RequesterPeeringConnectionOptions") {
+		if r.ko.Spec.RequesterPeeringConnectionOptions != nil {
+			f2 := &svcsdk.PeeringConnectionOptionsRequest{}
+			if r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
+				f2.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+			}
+			if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
+				f2.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+			}
+			if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
+				f2.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+			}
+			res.SetRequesterPeeringConnectionOptions(f2)
 		}
-		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
-			f2.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
-		}
-		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
-			f2.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
-		}
-		res.SetRequesterPeeringConnectionOptions(f2)
 	}
 	if r.ko.Status.VPCPeeringConnectionID != nil {
 		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
