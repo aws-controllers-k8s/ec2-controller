@@ -29,8 +29,8 @@ def simple_vpc_peering_connection(request):
     replacements = REPLACEMENT_VALUES.copy()
     replacements["VPC_NAME"] = resource_name
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
-    replacements["ENABLE_DNS_SUPPORT"] = "False"
-    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+    replacements["ENABLE_DNS_SUPPORT"] = "True"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "True"
     replacements["TAG_KEY"] = "initialtagkey"
     replacements["TAG_VALUE"] = "initialtagvalue"
     
@@ -116,8 +116,8 @@ def ref_vpc_peering_connection(request):
     replacements = REPLACEMENT_VALUES.copy()
     replacements["VPC_NAME"] = resource_name + "-1"
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
-    replacements["ENABLE_DNS_SUPPORT"] = "False"
-    replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+    replacements["ENABLE_DNS_SUPPORT"] = "True"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "True"
     replacements["TAG_KEY"] = "initialtagkey"
     replacements["TAG_VALUE"] = "initialtagvalue"
     
@@ -354,4 +354,3 @@ class TestVPCPeeringConnections:
 
         # Check VPC Peering Connection no longer exists in AWS
         ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
-        
