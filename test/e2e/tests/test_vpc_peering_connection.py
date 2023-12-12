@@ -375,8 +375,8 @@ class TestVPCPeeringConnections:
         c = boto3.client('ec2')
         resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[resource_id])
         assert len(resp['VpcPeeringConnections']) == 1
-        assert resp['VpcPeeringConnections']['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
-        assert resp['VpcPeeringConnections']['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
+        assert resp['VpcPeeringConnections'][0]['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
+        assert resp['VpcPeeringConnections'][0]['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
         
         # Payload used to update the VPC Peering Connection
         update_peering_options_payload = {
@@ -399,8 +399,8 @@ class TestVPCPeeringConnections:
 
         # Check for updated peering options
         updated_resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[resource_id])     
-        assert updated_resp['VpcPeeringConnections']['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
-        assert updated_resp['VpcPeeringConnections']['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        assert updated_resp['VpcPeeringConnections'][0]['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        assert updated_resp['VpcPeeringConnections'][0]['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
 
         # Delete k8s resource
         try:
