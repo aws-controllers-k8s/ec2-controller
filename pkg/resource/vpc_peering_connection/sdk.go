@@ -530,13 +530,13 @@ func (rm *resourceManager) sdkUpdate(
 		exit(err)
 	}()
 
-	if isVPCPeeringConnectionCreating(desired) {
+	if isVPCPeeringConnectionCreating(latest) {
 		return desired, requeueWaitWhileCreating
 	}
-	if isVPCPeeringConnectionProvisioning(desired) {
+	if isVPCPeeringConnectionProvisioning(latest) {
 		return desired, requeueWaitWhileProvisioning
 	}
-	if isVPCPeeringConnectionDeleting(desired) {
+	if isVPCPeeringConnectionDeleting(latest) {
 		return desired, requeueWaitWhileDeleting
 	}
 	// If the VPC Peering Connection is Pending Acceptance or Active, continue

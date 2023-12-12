@@ -27,15 +27,15 @@ import (
 
 var (
 	ErrVPCPeeringConnectionCreating = fmt.Errorf(
-		"VPCPerringConnection in '%v' state, cannot be modified or deleted",
+		"VPCPeeringConnection in '%v' state, cannot be modified or deleted",
 		"creating",
 	)
 	ErrVPCPeeringConnectionProvisioning = fmt.Errorf(
-		"VPCPerringConnection in '%v' state, cannot be modified or deleted",
+		"VPCPeeringConnection in '%v' state, cannot be modified or deleted",
 		svcsdk.VpcPeeringConnectionStateReasonCodeProvisioning,
 	)
 	ErrVPCPeeringConnectionDeleting = fmt.Errorf(
-		"VPCPerringConnection in '%v' state, cannot be modified or deleted",
+		"VPCPeeringConnection in '%v' state, cannot be modified or deleted",
 		svcsdk.VpcPeeringConnectionStateReasonCodeDeleting,
 	)
 )
