@@ -402,7 +402,7 @@ class TestVPCPeeringConnections:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check for updated peering options
-        updated_resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=resource_id)     
+        updated_resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[resource_id])     
         assert updated_resp['VpcPeeringConnections']['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
         assert updated_resp['VpcPeeringConnections']['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
 
