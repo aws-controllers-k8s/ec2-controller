@@ -64,7 +64,6 @@ def simple_vpc_peering_connection(request):
     assert k8s.get_resource_exists(vpc_ref)
 
     # Create the VPC Peering Connection
-
     # Replacements for VPC Peering Connection
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
@@ -359,13 +358,7 @@ class TestVPCPeeringConnections:
 
 
     def test_update_peering_options(self, ec2_client, simple_vpc_peering_connection):
-        '''
-        - This test updates the resource with these settings set to true (previously false):
-            - requesterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
-            - accepterVPCInfo.peeringOptions.allowDNSResolutionFromRemoteVPC
-        '''
         (ref, cr) = simple_vpc_peering_connection
-
         resource_id = cr["status"]["vpcPeeringConnectionID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -374,10 +367,13 @@ class TestVPCPeeringConnections:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc_peering_connection(resource_id)
 
-        # Check Peering Options in AWS, after waiting for requeue after Patch
+        # Check resource synced successfully, after waiting for requeue after Patch Peering Options to True
         time.sleep(PATCH_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check Peering Options in AWS
         c = boto3.client('ec2')
-        resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=resource_id)
+        resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[resource_id])
         assert len(resp['VpcPeeringConnections']) == 1
         assert resp['VpcPeeringConnections']['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
         assert resp['VpcPeeringConnections']['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
