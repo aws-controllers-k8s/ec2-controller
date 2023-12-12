@@ -358,7 +358,7 @@ class TestVPCPeeringConnections:
 
 
     def test_update_peering_options(self, ec2_client, simple_vpc_peering_connection):
-        (ref, cr) = ref_vpc_peering_connection
+        (ref, cr) = simple_vpc_peering_connection
         resource_id = cr["status"]["vpcPeeringConnectionID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)

@@ -6,6 +6,10 @@ spec:
   vpcID: $VPC_ID
   peerVPCID: $PEER_VPC_ID
   acceptRequest: true
+  requesterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: true
+  accepterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: true
   tags:
     - key: $TAG_KEY
       value: $TAG_VALUE
