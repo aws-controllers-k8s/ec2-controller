@@ -90,6 +90,10 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	}
 	r.ko.Status.ID = &identifier.NameOrID
 
+	if name, ok := identifier.AdditionalKeys["name"]; ok {
+		r.ko.Spec.Name = &name
+	}
+
 	return nil
 }
 
