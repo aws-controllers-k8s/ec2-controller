@@ -243,6 +243,7 @@ def peering_options_vpc_peering_connection(request):
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     vpc_cr = k8s.wait_resource_consumed_by_controller(vpc_ref)
+    print("VPC_CR contents", vpc_cr)
     assert vpc_cr is not None
     assert k8s.get_resource_exists(vpc_ref)
 
