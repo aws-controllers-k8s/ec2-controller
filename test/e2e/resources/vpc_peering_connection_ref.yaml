@@ -11,9 +11,6 @@ spec:
       name: $PEER_VPC_REF_NAME
   acceptRequest: true
   requesterPeeringConnectionOptions:
-    allowDNSResolutionFromRemoteVPC: $PEERING_OPTIONS_BOOL
+    allowDNSResolutionFromRemoteVPC: false
   accepterPeeringConnectionOptions:
-    allowDNSResolutionFromRemoteVPC: $PEERING_OPTIONS_BOOL
-  tags:
-    - key: $TAG_KEY
-      value: $TAG_VALUE
+    allowDNSResolutionFromRemoteVPC: false

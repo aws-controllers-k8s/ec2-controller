@@ -118,8 +118,6 @@ def ref_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
-    replacements["TAG_KEY"] = "initialtagkey"
-    replacements["TAG_VALUE"] = "initialtagvalue"
     
     # Load VPC CR
     vpc_1_resource_data = load_ec2_resource(
@@ -169,7 +167,6 @@ def ref_vpc_peering_connection(request):
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_REF_NAME"] = resource_name + "-1"
     replacements["PEER_VPC_REF_NAME"] = resource_name + "-2"
-    replacements["PEERING_OPTIONS_BOOL"] = "True"
 
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
@@ -226,8 +223,6 @@ def peering_options_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
-    replacements["TAG_KEY"] = "initialtagkey"
-    replacements["TAG_VALUE"] = "initialtagvalue"
     
     # Load VPC CR
     vpc_1_resource_data = load_ec2_resource(
@@ -275,13 +270,12 @@ def peering_options_vpc_peering_connection(request):
 
     # Replacements for VPC Peering Connection
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
-    replacements["VPC_REF_NAME"] = resource_name + "-1"
-    replacements["PEER_VPC_REF_NAME"] = resource_name + "-2"
-    replacements["PEERING_OPTIONS_BOOL"] = "False"
+    replacements["VPC_ID"] = vpc_1_cr["status"]["vpcID"]
+    replacements["PEER_VPC_ID"] = vpc_2_cr["status"]["vpcID"]
 
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
-        "vpc_peering_connection_ref",
+        "vpc_peering_connection_peering_options",
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
@@ -334,7 +328,7 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=600):
     print("CR contents", resource)
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", resource["status"]["status"]["code"])
 
-def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=600):
+def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
     start_time = time.time()
     ec2_validator = EC2Validator(ec2_client)
     while time.time() - start_time < timeout_seconds:
