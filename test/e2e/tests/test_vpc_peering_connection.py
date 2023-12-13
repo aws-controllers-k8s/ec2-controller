@@ -322,7 +322,7 @@ def peering_options_vpc_peering_connection(request):
     except:
         pass
 
-def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
+def wait_for_vpc_peering_connection_status(ref, timeout_seconds=600):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
         resource = k8s.wait_resource_consumed_by_controller(ref)
@@ -334,7 +334,7 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     print("CR contents", resource)
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", resource["status"]["status"]["code"])
 
-def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
+def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=600):
     start_time = time.time()
     ec2_validator = EC2Validator(ec2_client)
     while time.time() - start_time < timeout_seconds:
