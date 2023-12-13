@@ -334,6 +334,19 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     print("CR contents", resource)
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", resource["status"]["status"]["code"])
 
+def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
+    start_time = time.time()
+    ec2_validator = EC2Validator(ec2_client)
+    while time.time() - start_time < timeout_seconds:
+        resource = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
+        print("AWS resource response", resource)
+        if resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean:
+            logging.debug("VPC Peering Connection Peering Options are 'True'", resource)
+            return resource
+        time.sleep(5)
+    print("CR contents", resource)
+    raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become 'True'", "Current values are", resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
+
 @service_marker
 @pytest.mark.canary
 class TestVPCPeeringConnections:
@@ -477,9 +490,9 @@ class TestVPCPeeringConnections:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check Peering Options in AWS
-        latest = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
-        assert latest['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
-        assert latest['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
+        aws_res = wait_for_vpc_peering_connection_peering_options(ec2_client, True, vpc_peering_connection_id)
+        assert aws_res['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
+        assert aws_res['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
         
         # Payload used to update the VPC Peering Connection
         update_peering_options_payload = {
@@ -501,9 +514,9 @@ class TestVPCPeeringConnections:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check for updated peering options
-        latest = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
-        assert latest['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
-        assert latest['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        latest_aws_res = wait_for_vpc_peering_connection_peering_options(ec2_client, False, vpc_peering_connection_id)
+        assert latest_aws_res['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        assert latest_aws_res['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
 
         # Delete k8s resource
         try:
