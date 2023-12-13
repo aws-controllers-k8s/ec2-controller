@@ -337,14 +337,14 @@ def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_pee
     start_time = time.time()
     ec2_validator = EC2Validator(ec2_client)
     while time.time() - start_time < timeout_seconds:
-        resource = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
-        print("AWS resource response", resource)
-        if resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean:
-            logging.debug("VPC Peering Connection Peering Options are 'True'", resource)
-            return resource
+        aws_resource = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
+        print("AWS resource response", aws_resource)
+        if aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean:
+            logging.debug("VPC Peering Connection Peering Options are " + boolean, aws_resource)
+            return aws_resource
         time.sleep(5)
-    print("CR contents", resource)
-    raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become 'True'", "Current values are", resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
+    print("CR contents", aws_resource)
+    raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become " + boolean, "Current values are", aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
 
 @service_marker
 @pytest.mark.canary
@@ -497,10 +497,10 @@ class TestVPCPeeringConnections:
         update_peering_options_payload = {
             "spec": {
                 "requesterPeeringConnectionOptions": {
-                    "allowDnsResolutionFromRemoteVPC": False,
+                    "allowDNSResolutionFromRemoteVPC": False,
                 },
                 "accepterPeeringConnectionOptions": {
-                    "allowDnsResolutionFromRemoteVPC": False,
+                    "allowDNSResolutionFromRemoteVPC": False,
                 },
             },
         }
