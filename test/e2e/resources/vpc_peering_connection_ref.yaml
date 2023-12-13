@@ -11,13 +11,6 @@ spec:
       name: $PEER_VPC_REF_NAME
   acceptRequest: true
   requesterPeeringConnectionOptions:
-    allowDNSResolutionFromRemoteVPC: true
-    allowEgressFromLocalClassicLinkToRemoteVPC: true
-    allowEgressFromLocalVPCToRemoteClassicLink: true
+    allowDNSResolutionFromRemoteVPC: false
   accepterPeeringConnectionOptions:
-    allowDNSResolutionFromRemoteVPC: true
-    allowEgressFromLocalClassicLinkToRemoteVPC: true
-    allowEgressFromLocalVPCToRemoteClassicLink: true
-  tags:
-    - key: $TAG_KEY
-      value: $TAG_VALUE
+    allowDNSResolutionFromRemoteVPC: false

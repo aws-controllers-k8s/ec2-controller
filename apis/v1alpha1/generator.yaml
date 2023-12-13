@@ -340,6 +340,8 @@ resources:
         template_path: hooks/flow_log/sdk_read_many_post_build_request.go.tpl
       sdk_file_end:
         template_path: hooks/flow_log/sdk_file_end.go.tpl
+      post_set_resource_identifiers:
+        template_path: hooks/flow_log/post_set_resource_identifiers.go.tpl
     update_operation:
       custom_method_name: customUpdateFlowLog
   InternetGateway:
@@ -816,8 +818,6 @@ resources:
           path: Tags
         compare:
           is_ignored: True
-    update_operation:
-      omit_unchanged_fields: true
     hooks:
       delta_pre_compare:
         code: compareTags(delta, a, b)
