@@ -1,7 +1,6 @@
 import pytest
 import time
 import logging
-import boto3
 
 from acktest import tags
 from acktest.resources import random_suffix_name
@@ -449,11 +448,9 @@ class TestVPCPeeringConnections:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check Peering Options in AWS
-        c = boto3.client('ec2')
-        resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[resource_id])
-        assert len(resp['VpcPeeringConnections']) == 1
-        assert resp['VpcPeeringConnections'][0]['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
-        assert resp['VpcPeeringConnections'][0]['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
+        latest = ec2_validator.get_vpc_peering_connection(resource_id)
+        assert latest['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
+        assert latest['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
         
         # Payload used to update the VPC Peering Connection
         update_peering_options_payload = {
@@ -475,9 +472,9 @@ class TestVPCPeeringConnections:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check for updated peering options
-        updated_resp = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[resource_id])     
-        assert updated_resp['VpcPeeringConnections'][0]['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
-        assert updated_resp['VpcPeeringConnections'][0]['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        latest = ec2_validator.get_vpc_peering_connection(resource_id)
+        assert latest['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        assert latest['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
 
         # Delete k8s resource
         try:
