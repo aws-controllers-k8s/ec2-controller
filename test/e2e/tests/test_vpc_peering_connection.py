@@ -340,11 +340,11 @@ def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_pee
         aws_resource = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
         print("AWS resource response", aws_resource)
         if aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean:
-            logging.debug("VPC Peering Connection Peering Options are " + boolean, aws_resource)
+            logging.debug("VPC Peering Connection Peering Options are " + str(boolean), aws_resource)
             return aws_resource
         time.sleep(5)
     print("CR contents", aws_resource)
-    raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become " + boolean, "Current values are", aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
+    raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become " + str(boolean), "Current values are", aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
 
 @service_marker
 @pytest.mark.canary
