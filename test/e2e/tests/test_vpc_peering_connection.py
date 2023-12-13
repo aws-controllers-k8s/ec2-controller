@@ -214,6 +214,7 @@ def ref_vpc_peering_connection(request):
     except:
         pass
 
+@pytest.fixture
 def peering_options_vpc_peering_connection(request):
     resource_name = random_suffix_name("peering-options-test", 40)
     resources = get_bootstrap_resources()
