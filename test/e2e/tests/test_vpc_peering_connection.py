@@ -213,85 +213,6 @@ def ref_vpc_peering_connection(request):
     except:
         pass
 
-@pytest.fixture
-def peering_options_vpc_peering_connection(request):
-    resource_name = random_suffix_name("peering-options-test", 40)
-    resources = get_bootstrap_resources()
-
-    # Create an additional VPC to test Peering with the Shared Test VPC
-
-    # Replacements for Test VPC
-    replacements = REPLACEMENT_VALUES.copy()
-    replacements["VPC_NAME"] = resource_name
-    replacements["CIDR_BLOCK"] = "10.2.0.0/16"
-    replacements["ENABLE_DNS_SUPPORT"] = "True"
-    replacements["ENABLE_DNS_HOSTNAMES"] = "True"
-    
-    # Load VPC CR
-    vpc_resource_data = load_ec2_resource(
-        "vpc",
-        additional_replacements=replacements,
-    )
-    logging.debug(vpc_resource_data)
-
-    # Create k8s resource
-    vpc_ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
-        resource_name, namespace="default",
-    )
-    k8s.create_custom_resource(vpc_ref, vpc_resource_data)
-    time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-    vpc_cr = k8s.wait_resource_consumed_by_controller(vpc_ref)
-    print("VPC_CR contents", vpc_cr)
-    assert vpc_cr is not None
-    assert k8s.get_resource_exists(vpc_ref)
-
-    # Create the VPC Peering Connection
-    # Replacements for VPC Peering Connection
-    replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
-    replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
-    replacements["PEER_VPC_ID"] = vpc_cr["status"]["vpcID"]
-
-    # Load VPCPeeringConnection CR
-    resource_data = load_ec2_resource(
-        "vpc_peering_connection_peering_options",
-        additional_replacements=replacements,
-    )
-    logging.debug(resource_data)
-
-    # Create k8s resource
-    ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        resource_name, namespace="default",
-    )
-    k8s.create_custom_resource(ref, resource_data)
-    time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-    cr = k8s.wait_resource_consumed_by_controller(ref)
-    assert cr is not None
-    assert k8s.get_resource_exists(ref)
-    wait_for_vpc_peering_connection_status(ref)
-    # Get the CR again after waiting for the Status to be updated
-    cr = k8s.wait_resource_consumed_by_controller(ref)
-    assert cr["status"]["status"]["code"] == "active" 
-
-    yield (ref, cr)
-
-    # Delete VPC Peering Connection k8s resource 
-    try:
-        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
-        assert deleted
-    except:
-        pass
-
-    time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-    # Delete VPC resource 
-    _, vpc_deleted = k8s.delete_custom_resource(vpc_ref, 3, 10)
-    assert vpc_deleted is True
-
-
 def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
@@ -434,22 +355,20 @@ class TestVPCPeeringConnections:
         # Check VPC Peering Connection no longer exists in AWS
         ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
 
-    def test_update_peering_options(self, ec2_client, peering_options_vpc_peering_connection):
-        (ref, cr) = peering_options_vpc_peering_connection
-        resource_id = cr["status"]["vpcPeeringConnectionID"]
+    def test_update_peering_options(self, ec2_client, ref_vpc_peering_connection):
+        (ref, cr) = ref_vpc_peering_connection
+        vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-        # Check VPC Peering Connection exists in AWS
+        # Check VPC Peering Connection exists
         ec2_validator = EC2Validator(ec2_client)
-        ec2_validator.assert_vpc_peering_connection(resource_id)
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id)
 
         # Check resource synced successfully, after waiting for requeue after Patch Peering Options to True
         time.sleep(PATCH_WAIT_AFTER_SECONDS)
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check Peering Options in AWS
-        latest = ec2_validator.get_vpc_peering_connection(resource_id)
+        latest = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
         assert latest['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
         assert latest['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
         
@@ -473,7 +392,7 @@ class TestVPCPeeringConnections:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check for updated peering options
-        latest = ec2_validator.get_vpc_peering_connection(resource_id)
+        latest = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
         assert latest['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
         assert latest['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
 
@@ -486,4 +405,4 @@ class TestVPCPeeringConnections:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check VPC Peering Connection no longer exists in AWS
-        ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
+        ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
