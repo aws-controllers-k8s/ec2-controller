@@ -464,8 +464,8 @@ class TestVPCPeeringConnections:
         # Check VPC Peering Connection no longer exists in AWS
         ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
 
-    def test_update_peering_options(self, ec2_client, ref_vpc_peering_connection):
-        (ref, cr) = ref_vpc_peering_connection
+    def test_update_peering_options(self, ec2_client, peering_options_vpc_peering_connection):
+        (ref, cr) = peering_options_vpc_peering_connection
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
         # Check VPC Peering Connection exists
