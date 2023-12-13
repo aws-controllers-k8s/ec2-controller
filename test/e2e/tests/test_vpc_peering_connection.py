@@ -169,6 +169,115 @@ def ref_vpc_peering_connection(request):
     replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
     replacements["VPC_REF_NAME"] = resource_name + "-1"
     replacements["PEER_VPC_REF_NAME"] = resource_name + "-2"
+    replacements["PEERING_OPTIONS_BOOL"] = "True"
+
+    # Load VPCPeeringConnection CR
+    resource_data = load_ec2_resource(
+        "vpc_peering_connection_ref",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+    wait_for_vpc_peering_connection_status(ref)
+    # Get the CR again after waiting for the Status to be updated
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr["status"]["status"]["code"] == "active" 
+
+    yield (ref, cr)
+
+    # Delete VPC Peering Connection k8s resource 
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
+    time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    # Delete 2 x VPC resources
+    try: 
+        _, vpc_1_deleted = k8s.delete_custom_resource(vpc_1_ref, 3, 10)
+        _, vpc_2_deleted = k8s.delete_custom_resource(vpc_2_ref, 3, 10)
+        assert vpc_1_deleted is True
+        assert vpc_2_deleted is True
+    except:
+        pass
+
+@pytest.fixture
+def peering_options_vpc_peering_connection(request):
+    resource_name = random_suffix_name("peering-options-vpc-p-c-test", 40)
+
+    # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
+
+    # Replacements for Test VPC 1
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_NAME"] = resource_name + "-1"
+    replacements["CIDR_BLOCK"] = "10.0.0.0/16"
+    replacements["ENABLE_DNS_SUPPORT"] = "True"
+    replacements["ENABLE_DNS_HOSTNAMES"] = "True"
+    replacements["TAG_KEY"] = "initialtagkey"
+    replacements["TAG_VALUE"] = "initialtagvalue"
+    
+    # Load VPC CR
+    vpc_1_resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(vpc_1_resource_data)
+
+    # Create k8s resource
+    vpc_1_ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        replacements["VPC_NAME"], namespace="default",
+    )
+    k8s.create_custom_resource(vpc_1_ref, vpc_1_resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    vpc_1_cr = k8s.wait_resource_consumed_by_controller(vpc_1_ref)
+    assert vpc_1_cr is not None
+    assert k8s.get_resource_exists(vpc_1_ref)
+
+    # Replacements for Test VPC 2 (squashes previous values used by VPC 1)
+    replacements["VPC_NAME"] = resource_name + "-2"
+    replacements["CIDR_BLOCK"] = "10.1.0.0/16"
+    
+    # Load VPC CR
+    vpc_2_resource_data = load_ec2_resource(
+        "vpc",
+        additional_replacements=replacements,
+    )
+    logging.debug(vpc_2_resource_data)
+
+    # Create k8s resource
+    vpc_2_ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, VPC_RESOURCE_PLURAL,
+        replacements["VPC_NAME"], namespace="default",
+    )
+    k8s.create_custom_resource(vpc_2_ref, vpc_2_resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    vpc_2_cr = k8s.wait_resource_consumed_by_controller(vpc_2_ref)
+    assert vpc_2_cr is not None
+    assert k8s.get_resource_exists(vpc_2_ref)
+
+    # Create the VPC Peering Connection
+
+    # Replacements for VPC Peering Connection
+    replacements["VPC_PEERING_CONNECTION_NAME"] = resource_name
+    replacements["VPC_REF_NAME"] = resource_name + "-1"
+    replacements["PEER_VPC_REF_NAME"] = resource_name + "-2"
+    replacements["PEERING_OPTIONS_BOOL"] = "False"
 
     # Load VPCPeeringConnection CR
     resource_data = load_ec2_resource(
