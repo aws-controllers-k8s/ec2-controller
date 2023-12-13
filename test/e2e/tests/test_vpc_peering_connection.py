@@ -315,8 +315,6 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
         k8s_resource = k8s.wait_resource_consumed_by_controller(ref)
-        
-        print("CR contents", k8s_resource)
         if k8s_resource["status"]["status"]["code"] == "active":
             logging.debug("VPC Peering Connection Status Code is 'active'", k8s_resource)
             return k8s_resource
@@ -330,7 +328,6 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
         return k8s_resource
     
     # Both options timed out
-    print("CR contents", k8s_resource, "AWS resource", aws_resource)
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", k8s_resource["status"]["status"]["code"])
 
 def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
@@ -338,12 +335,10 @@ def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_pee
     ec2_validator = EC2Validator(ec2_client)
     while time.time() - start_time < timeout_seconds:
         aws_resource = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
-        print("AWS resource response", aws_resource)
         if aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean:
             logging.debug("VPC Peering Connection Peering Options are " + str(boolean), aws_resource)
             return aws_resource
         time.sleep(5)
-    print("CR contents", aws_resource)
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become " + str(boolean), "Current values are", aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
 
 @service_marker
