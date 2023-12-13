@@ -1,6 +1,6 @@
-import pytest
 import time
 import logging
+import pytest
 import boto3
 
 from acktest import tags
@@ -38,7 +38,7 @@ def simple_vpc_peering_connection(request):
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
     replacements["TAG_KEY"] = "initialtagkey"
     replacements["TAG_VALUE"] = "initialtagvalue"
-    
+
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
@@ -93,11 +93,11 @@ def simple_vpc_peering_connection(request):
     wait_for_vpc_peering_connection_status(ref)
     # Get the CR again after waiting for the Status to be updated
     cr = k8s.wait_resource_consumed_by_controller(ref)
-    assert cr["status"]["status"]["code"] == "active" 
+    assert cr["status"]["status"]["code"] == "active"
 
     yield (ref, cr)
 
-    # Delete VPC Peering Connection k8s resource 
+    # Delete VPC Peering Connection k8s resource
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted
@@ -106,7 +106,7 @@ def simple_vpc_peering_connection(request):
 
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
-    # Delete VPC resource 
+    # Delete VPC resource
     _, vpc_deleted = k8s.delete_custom_resource(vpc_ref, 3, 10)
     assert vpc_deleted is True
 
@@ -125,7 +125,7 @@ def ref_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
-    
+
     # Load VPC CR
     vpc_1_resource_data = load_ec2_resource(
         "vpc",
@@ -148,7 +148,7 @@ def ref_vpc_peering_connection(request):
     # Replacements for Test VPC 2 (squashes previous values used by VPC 1)
     replacements["VPC_NAME"] = resource_name + "-2"
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
-    
+
     # Load VPC CR
     vpc_2_resource_data = load_ec2_resource(
         "vpc",
@@ -197,7 +197,7 @@ def ref_vpc_peering_connection(request):
 
     yield (ref, cr)
 
-    # Delete VPC Peering Connection k8s resource 
+    # Delete VPC Peering Connection k8s resource
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted
@@ -207,7 +207,7 @@ def ref_vpc_peering_connection(request):
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
     # Delete 2 x VPC resources
-    try: 
+    try:
         _, vpc_1_deleted = k8s.delete_custom_resource(vpc_1_ref, 3, 10)
         _, vpc_2_deleted = k8s.delete_custom_resource(vpc_2_ref, 3, 10)
         assert vpc_1_deleted is True
@@ -230,7 +230,7 @@ def peering_options_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
-    
+
     # Load VPC CR
     vpc_1_resource_data = load_ec2_resource(
         "vpc",
@@ -253,7 +253,7 @@ def peering_options_vpc_peering_connection(request):
     # Replacements for Test VPC 2 (squashes previous values used by VPC 1)
     replacements["VPC_NAME"] = resource_name + "-2"
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
-    
+
     # Load VPC CR
     vpc_2_resource_data = load_ec2_resource(
         "vpc",
@@ -302,7 +302,7 @@ def peering_options_vpc_peering_connection(request):
 
     yield (ref, cr)
 
-    # Delete VPC Peering Connection k8s resource 
+    # Delete VPC Peering Connection k8s resource
     try:
         _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted
@@ -312,7 +312,7 @@ def peering_options_vpc_peering_connection(request):
     time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
     # Delete 2 x VPC resources
-    try: 
+    try:
         _, vpc_1_deleted = k8s.delete_custom_resource(vpc_1_ref, 3, 10)
         _, vpc_2_deleted = k8s.delete_custom_resource(vpc_2_ref, 3, 10)
         assert vpc_1_deleted is True
@@ -338,9 +338,10 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     if aws_resource["VpcPeeringConnections"][0]["Status"]["Code"] == "active":
         logging.debug("VPC Peering Connection Status Code is 'active' (fallback to AWS API)", k8s_resource, "AWS resource", aws_resource)
         return k8s_resource
-    
+
     # Both options timed out
-    raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", k8s_resource["status"]["status"]["code"])
+    raise TimeoutError("Timed out waiting for VPC Peering Connection status to become 'active'",
+    "Current status code", k8s_resource["status"]["status"]["code"])
 
 def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
     '''
@@ -350,11 +351,14 @@ def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_pee
     ec2_validator = EC2Validator(ec2_client)
     while time.time() - start_time < timeout_seconds:
         aws_resource = ec2_validator.get_vpc_peering_connection(vpc_peering_connection_id)
-        if aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean:
+        if (aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean and
+        aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == boolean):
             logging.debug("VPC Peering Connection Peering Options are " + str(boolean), aws_resource)
             return aws_resource
         time.sleep(5)
-    raise TimeoutError(f"Timed out waiting for VPC Peering Connection Peering Options to become " + str(boolean), "Current values are", aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'], "and", aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
+    raise TimeoutError("Timed out waiting for VPC Peering Connection Peering Options to become " + str(boolean),
+    "Current values are", aws_resource['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'],
+    "and", aws_resource['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'])
 
 @service_marker
 @pytest.mark.canary
@@ -426,7 +430,7 @@ class TestVPCPeeringConnections:
             expected=user_tags,
             actual=vpc_peering_connection["Tags"],
         )
-        
+
         # Update tags
         update_tags = [
             {
@@ -512,9 +516,9 @@ class TestVPCPeeringConnections:
 
         # Check Peering Options in AWS
         aws_res = wait_for_vpc_peering_connection_peering_options(ec2_client, True, vpc_peering_connection_id)
-        assert aws_res['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
-        assert aws_res['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == True
-        
+        assert aws_res['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] is True
+        assert aws_res['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] is True
+
         # Payload used to update the VPC Peering Connection
         update_peering_options_payload = {
             "spec": {
@@ -536,8 +540,8 @@ class TestVPCPeeringConnections:
 
         # Check for updated peering options
         latest_aws_res = wait_for_vpc_peering_connection_peering_options(ec2_client, False, vpc_peering_connection_id)
-        assert latest_aws_res['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
-        assert latest_aws_res['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] == False
+        assert latest_aws_res['AccepterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] is False
+        assert latest_aws_res['RequesterVpcInfo']['PeeringOptions']['AllowDnsResolutionFromRemoteVpc'] is False
 
         # Delete k8s resource
         try:
