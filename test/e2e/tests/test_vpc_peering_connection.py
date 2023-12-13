@@ -22,6 +22,9 @@ PATCH_WAIT_AFTER_SECONDS = 30
 
 @pytest.fixture
 def simple_vpc_peering_connection(request):
+    '''
+    Fixture for creating a Peering Connection using 'VPCID' and 'PeerVPCID'
+    '''
     resource_name = random_suffix_name("simple-vpc-peering-connection-test", 40)
     resources = get_bootstrap_resources()
 
@@ -109,6 +112,9 @@ def simple_vpc_peering_connection(request):
 
 @pytest.fixture
 def ref_vpc_peering_connection(request):
+    '''
+    Fixture for creating a Peering Connection using 'VPCRef' and 'PeerVPCRef'
+    '''
     resource_name = random_suffix_name("ref-vpc-peering-connection-test", 40)
 
     # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
@@ -211,6 +217,9 @@ def ref_vpc_peering_connection(request):
 
 @pytest.fixture
 def peering_options_vpc_peering_connection(request):
+    '''
+    Fixture for creating a Peering Connection with Peering Options set to True
+    '''
     resource_name = random_suffix_name("peering-options-vpc-p-c-test", 40)
 
     # Create 2 VPCs with ACK to test Peering with and refer to them by their k8s resource name
@@ -312,6 +321,9 @@ def peering_options_vpc_peering_connection(request):
         pass
 
 def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
+    '''
+    Loops until the VPC Peering Connection's Status Code is 'active'
+    '''
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
         k8s_resource = k8s.wait_resource_consumed_by_controller(ref)
@@ -331,6 +343,9 @@ def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", k8s_resource["status"]["status"]["code"])
 
 def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
+    '''
+    Loops until the VPC Peering Connection's Peering Options are set to the provided boolean value
+    '''
     start_time = time.time()
     ec2_validator = EC2Validator(ec2_client)
     while time.time() - start_time < timeout_seconds:
@@ -345,6 +360,9 @@ def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_pee
 @pytest.mark.canary
 class TestVPCPeeringConnections:
     def test_create_delete_ref(self, ec2_client, ref_vpc_peering_connection):
+        '''
+        Creates a Peering Connection using 'VPCRef' and 'PeerVPCRef'
+        '''
         (ref, cr) = ref_vpc_peering_connection
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
@@ -362,6 +380,9 @@ class TestVPCPeeringConnections:
         ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
 
     def test_create_delete(self, ec2_client, simple_vpc_peering_connection):
+        '''
+        Creates a Peering Connection using 'VPCID' and 'PeerVPCID' and 'Tags'
+        '''
         (ref, cr) = simple_vpc_peering_connection
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
@@ -379,6 +400,9 @@ class TestVPCPeeringConnections:
         ec2_validator.assert_vpc_peering_connection(vpc_peering_connection_id, exists=False)
 
     def test_crud_tags(self, ec2_client, simple_vpc_peering_connection):
+        '''
+        Creates a Peering Connection with a set of 'Tags', then updates them
+        '''
         (ref, cr) = simple_vpc_peering_connection
 
         resource = k8s.get_resource(ref)
@@ -472,6 +496,9 @@ class TestVPCPeeringConnections:
         ec2_validator.assert_vpc_peering_connection(resource_id, exists=False)
 
     def test_update_peering_options(self, ec2_client, peering_options_vpc_peering_connection):
+        '''
+        Creates a Peering Connection with Peering Options set to True, it then updates them to False
+        '''
         (ref, cr) = peering_options_vpc_peering_connection
         vpc_peering_connection_id = cr["status"]["vpcPeeringConnectionID"]
 
