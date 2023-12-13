@@ -1,6 +1,7 @@
 import pytest
 import time
 import logging
+import boto3
 
 from acktest import tags
 from acktest.resources import random_suffix_name
@@ -316,17 +317,27 @@ def peering_options_vpc_peering_connection(request):
     except:
         pass
 
-def wait_for_vpc_peering_connection_status(ref, timeout_seconds=600):
+def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
-        resource = k8s.wait_resource_consumed_by_controller(ref)
-        print("CR contents", resource)
-        if resource["status"]["status"]["code"] == "active":
-            logging.debug("VPC Peering Connection Status Code is 'active'", resource)
-            return resource
+        k8s_resource = k8s.wait_resource_consumed_by_controller(ref)
+        
+        print("CR contents", k8s_resource)
+        if k8s_resource["status"]["status"]["code"] == "active":
+            logging.debug("VPC Peering Connection Status Code is 'active'", k8s_resource)
+            return k8s_resource
         time.sleep(5)
-    print("CR contents", resource)
-    raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", resource["status"]["status"]["code"])
+
+    # Fallback to AWS API if K8s resource status is not being updated (To be removed once k8s resource's status updates normally)
+    c = boto3.client('ec2')
+    aws_resource = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[k8s_resource["status"]["vpcPeeringConnectionID"]])
+    if aws_resource["VpcPeeringConnections"][0]["Status"]["Code"] == "active":
+        logging.debug("VPC Peering Connection Status Code is 'active' (fallback to AWS API)", k8s_resource, "AWS resource", aws_resource)
+        return k8s_resource
+    
+    # Both options timed out
+    print("CR contents", k8s_resource, "AWS resource", aws_resource)
+    raise TimeoutError(f"Timed out waiting for VPC Peering Connection status to become 'active'", "Current status code", k8s_resource["status"]["status"]["code"])
 
 def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
     start_time = time.time()
