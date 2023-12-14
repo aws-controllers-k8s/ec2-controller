@@ -624,7 +624,7 @@ func compareNetworkACLEntry(
 	if ackcompare.HasNilDifference(a.RuleAction, b.RuleAction) {
 		delta.Add("NetworkACLEntry.RuleAction", a.RuleAction, b.RuleAction)
 	} else if a.RuleAction != nil && b.RuleAction != nil {
-		if !strings.EqualFold(*a.RuleAction, *b.RuleAction) {
+		if *a.RuleAction != *b.RuleAction {
 			delta.Add("NetworkACLEntry.RuleAction", a.RuleAction, b.RuleAction)
 		}
 	}
