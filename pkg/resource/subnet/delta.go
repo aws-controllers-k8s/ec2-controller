@@ -138,8 +138,12 @@ func newResourceDelta(
 	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
 		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTables, b.ko.Spec.RouteTables) {
+	if len(a.ko.Spec.RouteTables) != len(b.ko.Spec.RouteTables) {
 		delta.Add("Spec.RouteTables", a.ko.Spec.RouteTables, b.ko.Spec.RouteTables)
+	} else if len(a.ko.Spec.RouteTables) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTables, b.ko.Spec.RouteTables) {
+			delta.Add("Spec.RouteTables", a.ko.Spec.RouteTables, b.ko.Spec.RouteTables)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)

@@ -62,6 +62,8 @@ ignore:
     - CarrierGateway
     - ClientVpnEndpoint
     - ClientVpnRoute
+    - CoipCidr
+    - CoipPool
     - CustomerGateway
     - DefaultSubnet
     - DefaultVpc
@@ -71,16 +73,20 @@ ignore:
     - FpgaImage
     - Image
     #- Instance
+    - InstanceConnectEndpoint
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
     - Ipam
     - IpamPool
+    - IpamResourceDiscovery
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
     - LaunchTemplate
+    - LocalGatewayRouteTable
     - LocalGatewayRouteTableVpcAssociation
+    - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
     - ManagedPrefixList
     #- NatGateway
@@ -118,6 +124,10 @@ ignore:
     - TransitGatewayRouteTableAnnouncement
     - TransitGatewayVpcAttachment
     #- TransitGateway
+    - VerifiedAccessEndpoint
+    - VerifiedAccessGroup
+    - VerifiedAccessInstance
+    - VerifiedAccessTrustProvider
     - Volume
     - VpcEndpointConnectionNotification
     - VpcEndpointServiceConfiguration
