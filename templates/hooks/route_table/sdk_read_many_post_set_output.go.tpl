@@ -21,4 +21,3 @@
 			ko.Spec.Routes[i].GatewayID = nil
 		}
 	}
-
