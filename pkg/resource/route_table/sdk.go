@@ -235,6 +235,19 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.Tags = r.ko.Spec.Tags
 	}
 
+	// Even if route is created with arguments as VPCEndpointID,
+	// when aws api is called to describe the route (inside skdFind), it
+	// returns VPCEndpointID as GatewayID. Due to this bug, spec section for
+	// routes is populated incorrectly in above auto-gen code.
+	// To solve this, if 'GatewayID' has prefix 'vpce-', then the entry is
+	// moved from 'GatewayID' to 'VPCEndpointID'.
+	for i, route := range ko.Spec.Routes {
+		if route.GatewayID != nil && strings.HasPrefix(*route.GatewayID, "vpce-") {
+			ko.Spec.Routes[i].VPCEndpointID = route.GatewayID
+			ko.Spec.Routes[i].GatewayID = nil
+		}
+	}
+
 	return &resource{ko}, nil
 }
 
