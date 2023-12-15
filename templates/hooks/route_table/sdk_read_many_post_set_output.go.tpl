@@ -8,7 +8,7 @@
 		// then assign resource's tags to maintain tag order
 		ko.Spec.Tags = r.ko.Spec.Tags
 	}
-    
+
 	// Even if route is created with arguments as VPCEndpointID,
 	// when aws api is called to describe the route (inside skdFind), it
 	// returns VPCEndpointID as GatewayID. Due to this bug, spec section for
@@ -21,3 +21,4 @@
 			ko.Spec.Routes[i].GatewayID = nil
 		}
 	}
+
