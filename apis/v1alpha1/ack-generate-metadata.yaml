@@ -1,4 +1,5 @@
 ack_generate_info:
+<<<<<<< HEAD
   build_date: "2024-01-03T22:47:06Z"
   build_hash: 00e081fb541587f33970ad80c99f2ac02e9c2525
   go_version: go1.21.5
@@ -8,6 +9,17 @@ api_version: v1alpha1
 aws_sdk_go_version: v1.44.93
 generator_config_info:
   file_checksum: 216d65c35dbc73d4eaaa52c2f5c84444abf4a960
+=======
+  build_date: "2023-12-20T15:43:14Z"
+  build_hash: 3653329ceeb20015851b8776a6061a3fb0ec2935
+  go_version: go1.21.5
+  version: v0.27.1-6-g3653329-dirty
+api_directory_checksum: d452bf19bfd1496aacdc215bf7cc9ea86c55c122
+api_version: v1alpha1
+aws_sdk_go_version: v1.44.93
+generator_config_info:
+  file_checksum: 0ea278e11a33d237e88a1bcdca878656a8ba43f9
+>>>>>>> f0bab55 (Fixed adoption of security groups)
   original_file_name: generator.yaml
 last_modification:
   reason: API generation
