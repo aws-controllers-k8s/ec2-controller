@@ -1,4 +1,8 @@
 	if found {
+
+	// Needed because SecurityGroups Name are held in GroupName property of the AWS resource
+        ko.Spec.Name = resp.SecurityGroups[0].GroupName
+
         rm.addRulesToSpec(ko, resp.SecurityGroups[0])
     	
         // A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
