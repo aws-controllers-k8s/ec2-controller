@@ -25,8 +25,11 @@ type VPCEndpointServiceConfigurationSpec struct {
 
 	// Indicates whether requests from service consumers to create an endpoint to
 	// your service must be accepted manually.
-	AcceptanceRequired *bool     `json:"acceptanceRequired,omitempty"`
-	AllowPrincipals    []*string `json:"allowPrincipals,omitempty"`
+	AcceptanceRequired *bool `json:"acceptanceRequired,omitempty"`
+	// The Amazon Resource Names (ARN) of one or more principals. Permissions are
+	// granted to the principals in this list. To grant permissions to all principals,
+	// specify an asterisk (*).
+	AllowPrincipals []*string `json:"allowPrincipals,omitempty"`
 	// The Amazon Resource Names (ARNs) of one or more Gateway Load Balancers.
 	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
 	// The Amazon Resource Names (ARNs) of one or more Network Load Balancers for

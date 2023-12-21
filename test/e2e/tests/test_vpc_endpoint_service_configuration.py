@@ -50,6 +50,7 @@ def simple_vpc_endpoint_service_configuration(request):
     test_resource_values["PRIVATE_DNS_NAME"] = ""
     test_resource_values["NETWORK_LOAD_BALANCER_ARN_SET"] = nlb.arn
     test_resource_values["SUPPORTED_IP_ADDRESS_TYPE_SET"] = supported_ip_address_types
+    test_resource_values["ALLOW_PRINCIPAL"] = "arn:aws:iam::111111111111:root"
 
 
     marker = request.node.get_closest_marker("resource_data")
