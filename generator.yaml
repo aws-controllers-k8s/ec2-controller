@@ -834,6 +834,8 @@ resources:
           path: Tags
         compare:
           is_ignored: true
+      VerifyPrivateDnsName:
+        type: bool
     synced:
       when:
       - path: Status.ServiceState

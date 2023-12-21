@@ -70,6 +70,13 @@ func newResourceDelta(
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes) {
 		delta.Add("Spec.SupportedIPAddressTypes", a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes)
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.VerifyPrivateDNSName, b.ko.Spec.VerifyPrivateDNSName) {
+		delta.Add("Spec.VerifyPrivateDNSName", a.ko.Spec.VerifyPrivateDNSName, b.ko.Spec.VerifyPrivateDNSName)
+	} else if a.ko.Spec.VerifyPrivateDNSName != nil && b.ko.Spec.VerifyPrivateDNSName != nil {
+		if *a.ko.Spec.VerifyPrivateDNSName != *b.ko.Spec.VerifyPrivateDNSName {
+			delta.Add("Spec.VerifyPrivateDNSName", a.ko.Spec.VerifyPrivateDNSName, b.ko.Spec.VerifyPrivateDNSName)
+		}
+	}
 
 	return delta
 }
