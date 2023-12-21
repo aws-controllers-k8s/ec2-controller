@@ -35,6 +35,8 @@ rules:
 
   - vpcendpoints
 
+  - vpcendpointserviceconfigurations
+
   - vpcpeeringconnections
 
   verbs:
@@ -61,6 +63,7 @@ rules:
   - transitgateways
   - vpcs
   - vpcendpoints
+  - vpcendpointserviceconfigurations
   - vpcpeeringconnections
   verbs:
   - get
