@@ -51,6 +51,9 @@ func newResourceDelta(
 			delta.Add("Spec.AcceptanceRequired", a.ko.Spec.AcceptanceRequired, b.ko.Spec.AcceptanceRequired)
 		}
 	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowPrincipals, b.ko.Spec.AllowPrincipals) {
+		delta.Add("Spec.AllowPrincipals", a.ko.Spec.AllowPrincipals, b.ko.Spec.AllowPrincipals)
+	}
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs) {
 		delta.Add("Spec.GatewayLoadBalancerARNs", a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs)
 	}

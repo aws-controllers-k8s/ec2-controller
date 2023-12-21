@@ -25,7 +25,8 @@ type VPCEndpointServiceConfigurationSpec struct {
 
 	// Indicates whether requests from service consumers to create an endpoint to
 	// your service must be accepted manually.
-	AcceptanceRequired *bool `json:"acceptanceRequired,omitempty"`
+	AcceptanceRequired *bool     `json:"acceptanceRequired,omitempty"`
+	AllowPrincipals    []*string `json:"allowPrincipals,omitempty"`
 	// The Amazon Resource Names (ARNs) of one or more Gateway Load Balancers.
 	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
 	// The Amazon Resource Names (ARNs) of one or more Network Load Balancers for
