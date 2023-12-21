@@ -21951,8 +21951,8 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 		*out = new(bool)
 		**out = **in
 	}
-	if in.AllowPrincipals != nil {
-		in, out := &in.AllowPrincipals, &out.AllowPrincipals
+	if in.AllowedPrincipals != nil {
+		in, out := &in.AllowedPrincipals, &out.AllowedPrincipals
 		*out = make([]*string, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {

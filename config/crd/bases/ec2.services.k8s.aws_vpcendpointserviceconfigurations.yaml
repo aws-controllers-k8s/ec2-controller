@@ -48,7 +48,7 @@ spec:
                 description: Indicates whether requests from service consumers to
                   create an endpoint to your service must be accepted manually.
                 type: boolean
-              allowPrincipals:
+              allowedPrincipals:
                 description: The Amazon Resource Names (ARN) of one or more principals.
                   Permissions are granted to the principals in this list. To grant
                   permissions to all principals, specify an asterisk (*).
