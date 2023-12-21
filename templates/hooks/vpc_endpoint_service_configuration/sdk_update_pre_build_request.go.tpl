@@ -13,9 +13,9 @@
 	}
 
 	var listOfPrincipalsToAdd []*string
-	if delta.DifferentAt("Spec.AllowPrincipals") {
-		for _, desiredPrincipal := range desired.ko.Spec.AllowPrincipals {
-			for _, latestPrincipal := range latest.ko.Spec.AllowPrincipals {
+	if delta.DifferentAt("Spec.AllowedPrincipals") {
+		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
+			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
 				if *desiredPrincipal == *latestPrincipal {
 					// Principal already in Allow List, skip
 					continue
@@ -36,9 +36,11 @@
 				return nil, err
 			}
 		}
+
+		// TODO: Add Logic to remove any principal that is not on the allowed list anymore
 	}
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
-	if !delta.DifferentExcept("Spec.Tags", "Spec.AllowPrincipals") {
+	if !delta.DifferentExcept("Spec.Tags", "Spec.AllowedPrincipals") {
 		return desired, nil
 	}
