@@ -51,8 +51,12 @@ func newResourceDelta(
 			delta.Add("Spec.AmazonProvidedIPv6CIDRBlock", a.ko.Spec.AmazonProvidedIPv6CIDRBlock, b.ko.Spec.AmazonProvidedIPv6CIDRBlock)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks) {
+	if len(a.ko.Spec.CIDRBlocks) != len(b.ko.Spec.CIDRBlocks) {
 		delta.Add("Spec.CIDRBlocks", a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks)
+	} else if len(a.ko.Spec.CIDRBlocks) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks) {
+			delta.Add("Spec.CIDRBlocks", a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames) {
 		delta.Add("Spec.EnableDNSHostnames", a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames)

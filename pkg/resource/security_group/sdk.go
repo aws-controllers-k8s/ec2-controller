@@ -429,14 +429,26 @@ func compareIPPermission(
 			delta.Add("IPPermission.IPProtocol", a.IPProtocol, b.IPProtocol)
 		}
 	}
-	if !reflect.DeepEqual(a.IPRanges, b.IPRanges) {
+	if len(a.IPRanges) != len(b.IPRanges) {
 		delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
+	} else if len(a.IPRanges) > 0 {
+		if !reflect.DeepEqual(a.IPRanges, b.IPRanges) {
+			delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
+		}
 	}
-	if !reflect.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
+	if len(a.IPv6Ranges) != len(b.IPv6Ranges) {
 		delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
+	} else if len(a.IPv6Ranges) > 0 {
+		if !reflect.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
+			delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
+		}
 	}
-	if !reflect.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
+	if len(a.PrefixListIDs) != len(b.PrefixListIDs) {
 		delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
+	} else if len(a.PrefixListIDs) > 0 {
+		if !reflect.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
+			delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ToPort, b.ToPort) {
 		delta.Add("IPPermission.ToPort", a.ToPort, b.ToPort)
@@ -445,8 +457,12 @@ func compareIPPermission(
 			delta.Add("IPPermission.ToPort", a.ToPort, b.ToPort)
 		}
 	}
-	if !reflect.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
+	if len(a.UserIDGroupPairs) != len(b.UserIDGroupPairs) {
 		delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
+	} else if len(a.UserIDGroupPairs) > 0 {
+		if !reflect.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
+			delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
+		}
 	}
 
 	return delta

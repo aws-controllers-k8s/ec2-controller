@@ -97,6 +97,7 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if resourceType, ok := identifier.AdditionalKeys["resourceType"]; ok {
 		r.ko.Spec.ResourceType = &resourceType
 	}
+
 	return nil
 }
 
