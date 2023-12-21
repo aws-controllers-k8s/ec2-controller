@@ -823,6 +823,37 @@ resources:
       custom_method_name: customUpdateVPCEndpoint  
   VpcEndpointServiceConfiguration:
     fields:
+      ServiceID:
+        is_primary_key: true
+        is_read_only: true
+        print:
+          path: Status.serviceID
+          name: ServiceID
+      ServiceState:
+        is_read_only: true
+        print:
+          path: Status.serviceState
+          name: ServiceState
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: true
+    synced:
+      when:
+      - path: Status.ServiceState
+        in:
+        - available
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      #sdk_delete_post_build_request:
+      #  template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
+      #sdk_file_end:
+        #template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
+  VpcEndpointServiceConfiguration:
+    fields:
       AllowedPrincipals:
         from:
           operation: ModifyVpcEndpointServicePermissions

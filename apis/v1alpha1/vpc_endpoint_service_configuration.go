@@ -26,13 +26,14 @@ type VPCEndpointServiceConfigurationSpec struct {
 	// Indicates whether requests from service consumers to create an endpoint to
 	// your service must be accepted manually.
 	AcceptanceRequired *bool `json:"acceptanceRequired,omitempty"`
-	// The Amazon Resource Names (ARN) of the principals. Permissions are granted
-	// to the principals in this list. To grant permissions to all principals, specify
-	// an asterisk (*).
+	// The Amazon Resource Names (ARN) of one or more principals. Permissions are
+	// granted to the principals in this list. To grant permissions to all principals,
+	// specify an asterisk (*).
 	AllowedPrincipals []*string `json:"allowedPrincipals,omitempty"`
-	// The Amazon Resource Names (ARNs) of the Gateway Load Balancers.
+	// The Amazon Resource Names (ARNs) of one or more Gateway Load Balancers.
 	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
-	// The Amazon Resource Names (ARNs) of the Network Load Balancers.
+	// The Amazon Resource Names (ARNs) of one or more Network Load Balancers for
+	// your service.
 	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
 	// (Interface endpoint configuration) The private DNS name to assign to the
 	// VPC endpoint service.
