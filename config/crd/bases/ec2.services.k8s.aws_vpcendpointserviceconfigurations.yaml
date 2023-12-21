@@ -90,8 +90,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              verifyPrivateDNSName:
-                type: boolean
             type: object
           status:
             description: VPCEndpointServiceConfigurationStatus defines the observed
