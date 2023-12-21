@@ -48,6 +48,10 @@ spec:
                 description: Indicates whether requests from service consumers to
                   create an endpoint to your service must be accepted manually.
                 type: boolean
+              allowPrincipals:
+                items:
+                  type: string
+                type: array
               gatewayLoadBalancerARNs:
                 description: The Amazon Resource Names (ARNs) of one or more Gateway
                   Load Balancers.

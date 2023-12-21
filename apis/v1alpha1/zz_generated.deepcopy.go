@@ -21951,6 +21951,17 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 		*out = new(bool)
 		**out = **in
 	}
+	if in.AllowPrincipals != nil {
+		in, out := &in.AllowPrincipals, &out.AllowPrincipals
+		*out = make([]*string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(string)
+				**out = **in
+			}
+		}
+	}
 	if in.GatewayLoadBalancerARNs != nil {
 		in, out := &in.GatewayLoadBalancerARNs, &out.GatewayLoadBalancerARNs
 		*out = make([]*string, len(*in))
