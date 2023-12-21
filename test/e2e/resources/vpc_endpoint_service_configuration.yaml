@@ -4,6 +4,8 @@ metadata:
   name: $VPC_ENDPOINT_SERVICE_NAME
 spec:
   acceptanceRequired: $ACCEPTANCE_REQUIRED
+  allowPrincipals:
+  - $ALLOW_PRINCIPAL
   # gatewayLoadBalancerARNs: $GATEWAY_LOAD_BALANCER_ARN_SET
   networkLoadBalancerARNs:
   - $NETWORK_LOAD_BALANCER_ARN_SET

@@ -814,7 +814,9 @@ resources:
   VpcEndpointServiceConfiguration:
     fields:
       AllowPrincipals:
-        type: "[]string"
+        from:
+          operation: ModifyVpcEndpointServicePermissions
+          path: AddAllowedPrincipals
       ServiceID:
         is_primary_key: true
         is_read_only: true
