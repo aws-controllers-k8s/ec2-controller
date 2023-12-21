@@ -39,6 +39,9 @@ ignore:
     - CreateVpcEndpointServiceConfigurationInput.ClientToken
     - CreateVpcEndpointServiceConfigurationInput.DryRun
     - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
+    - CreateVpcEndpointServiceConfigurationInput.ClientToken
+    - CreateVpcEndpointServiceConfigurationInput.DryRun
+    - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
     - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
@@ -134,6 +137,7 @@ ignore:
     - Volume
     - VpcEndpointConnectionNotification
     #- VpcEndpointServiceConfiguration
+    #- VpcEndpointServiceConfiguration
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
@@ -165,6 +169,12 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  CreateVpcEndpointServiceConfiguration:
+    output_wrapper_field_path: ServiceConfiguration
+  DeleteVpcEndpointServiceConfigurations:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpointServiceConfiguration
   CreateVpcEndpointServiceConfiguration:
     output_wrapper_field_path: ServiceConfiguration
   DeleteVpcEndpointServiceConfigurations:

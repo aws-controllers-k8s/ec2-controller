@@ -92,23 +92,28 @@ func (rm *resourceManager) sdkFind(
 
 	found := false
 	for _, elem := range resp.FlowLogs {
+		if elem.DeliverCrossAccountRole != nil {
+			ko.Spec.DeliverCrossAccountRole = elem.DeliverCrossAccountRole
+		} else {
+			ko.Spec.DeliverCrossAccountRole = nil
+		}
 		if elem.DeliverLogsPermissionArn != nil {
 			ko.Spec.DeliverLogsPermissionARN = elem.DeliverLogsPermissionArn
 		} else {
 			ko.Spec.DeliverLogsPermissionARN = nil
 		}
 		if elem.DestinationOptions != nil {
-			f4 := &svcapitypes.DestinationOptionsRequest{}
+			f5 := &svcapitypes.DestinationOptionsRequest{}
 			if elem.DestinationOptions.FileFormat != nil {
-				f4.FileFormat = elem.DestinationOptions.FileFormat
+				f5.FileFormat = elem.DestinationOptions.FileFormat
 			}
 			if elem.DestinationOptions.HiveCompatiblePartitions != nil {
-				f4.HiveCompatiblePartitions = elem.DestinationOptions.HiveCompatiblePartitions
+				f5.HiveCompatiblePartitions = elem.DestinationOptions.HiveCompatiblePartitions
 			}
 			if elem.DestinationOptions.PerHourPartition != nil {
-				f4.PerHourPartition = elem.DestinationOptions.PerHourPartition
+				f5.PerHourPartition = elem.DestinationOptions.PerHourPartition
 			}
-			ko.Spec.DestinationOptions = f4
+			ko.Spec.DestinationOptions = f5
 		} else {
 			ko.Spec.DestinationOptions = nil
 		}
@@ -138,18 +143,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.MaxAggregationInterval = nil
 		}
 		if elem.Tags != nil {
-			f13 := []*svcapitypes.Tag{}
-			for _, f13iter := range elem.Tags {
-				f13elem := &svcapitypes.Tag{}
-				if f13iter.Key != nil {
-					f13elem.Key = f13iter.Key
+			f14 := []*svcapitypes.Tag{}
+			for _, f14iter := range elem.Tags {
+				f14elem := &svcapitypes.Tag{}
+				if f14iter.Key != nil {
+					f14elem.Key = f14iter.Key
 				}
-				if f13iter.Value != nil {
-					f13elem.Value = f13iter.Value
+				if f14iter.Value != nil {
+					f14elem.Value = f14iter.Value
 				}
-				f13 = append(f13, f13elem)
+				f14 = append(f14, f14elem)
 			}
-			ko.Spec.Tags = f13
+			ko.Spec.Tags = f14
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -262,21 +267,24 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreateFlowLogsInput, error) {
 	res := &svcsdk.CreateFlowLogsInput{}
 
+	if r.ko.Spec.DeliverCrossAccountRole != nil {
+		res.SetDeliverCrossAccountRole(*r.ko.Spec.DeliverCrossAccountRole)
+	}
 	if r.ko.Spec.DeliverLogsPermissionARN != nil {
 		res.SetDeliverLogsPermissionArn(*r.ko.Spec.DeliverLogsPermissionARN)
 	}
 	if r.ko.Spec.DestinationOptions != nil {
-		f1 := &svcsdk.DestinationOptionsRequest{}
+		f2 := &svcsdk.DestinationOptionsRequest{}
 		if r.ko.Spec.DestinationOptions.FileFormat != nil {
-			f1.SetFileFormat(*r.ko.Spec.DestinationOptions.FileFormat)
+			f2.SetFileFormat(*r.ko.Spec.DestinationOptions.FileFormat)
 		}
 		if r.ko.Spec.DestinationOptions.HiveCompatiblePartitions != nil {
-			f1.SetHiveCompatiblePartitions(*r.ko.Spec.DestinationOptions.HiveCompatiblePartitions)
+			f2.SetHiveCompatiblePartitions(*r.ko.Spec.DestinationOptions.HiveCompatiblePartitions)
 		}
 		if r.ko.Spec.DestinationOptions.PerHourPartition != nil {
-			f1.SetPerHourPartition(*r.ko.Spec.DestinationOptions.PerHourPartition)
+			f2.SetPerHourPartition(*r.ko.Spec.DestinationOptions.PerHourPartition)
 		}
-		res.SetDestinationOptions(f1)
+		res.SetDestinationOptions(f2)
 	}
 	if r.ko.Spec.LogDestination != nil {
 		res.SetLogDestination(*r.ko.Spec.LogDestination)

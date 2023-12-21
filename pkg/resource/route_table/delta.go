@@ -44,12 +44,8 @@ func newResourceDelta(
 	}
 	customPreCompare(delta, a, b)
 
-	if len(a.ko.Spec.Routes) != len(b.ko.Spec.Routes) {
+	if !reflect.DeepEqual(a.ko.Spec.Routes, b.ko.Spec.Routes) {
 		delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
-	} else if len(a.ko.Spec.Routes) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Routes, b.ko.Spec.Routes) {
-			delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
-		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)

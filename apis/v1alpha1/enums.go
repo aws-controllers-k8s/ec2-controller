@@ -15,25 +15,53 @@
 
 package v1alpha1
 
+type ASNAssociationState string
+
+const (
+	ASNAssociationState_disassociated          ASNAssociationState = "disassociated"
+	ASNAssociationState_failed_disassociation  ASNAssociationState = "failed-disassociation"
+	ASNAssociationState_failed_association     ASNAssociationState = "failed-association"
+	ASNAssociationState_pending_disassociation ASNAssociationState = "pending-disassociation"
+	ASNAssociationState_pending_association    ASNAssociationState = "pending-association"
+	ASNAssociationState_associated             ASNAssociationState = "associated"
+)
+
+type ASNState string
+
+const (
+	ASNState_deprovisioned       ASNState = "deprovisioned"
+	ASNState_failed_deprovision  ASNState = "failed-deprovision"
+	ASNState_failed_provision    ASNState = "failed-provision"
+	ASNState_pending_deprovision ASNState = "pending-deprovision"
+	ASNState_pending_provision   ASNState = "pending-provision"
+	ASNState_provisioned         ASNState = "provisioned"
+)
+
 type AcceleratorManufacturer string
 
 const (
-	AcceleratorManufacturer_nvidia              AcceleratorManufacturer = "nvidia"
-	AcceleratorManufacturer_amd                 AcceleratorManufacturer = "amd"
 	AcceleratorManufacturer_amazon_web_services AcceleratorManufacturer = "amazon-web-services"
+	AcceleratorManufacturer_amd                 AcceleratorManufacturer = "amd"
+	AcceleratorManufacturer_nvidia              AcceleratorManufacturer = "nvidia"
 	AcceleratorManufacturer_xilinx              AcceleratorManufacturer = "xilinx"
+	AcceleratorManufacturer_habana              AcceleratorManufacturer = "habana"
 )
 
 type AcceleratorName string
 
 const (
 	AcceleratorName_a100            AcceleratorName = "a100"
-	AcceleratorName_v100            AcceleratorName = "v100"
+	AcceleratorName_inferentia      AcceleratorName = "inferentia"
+	AcceleratorName_k520            AcceleratorName = "k520"
 	AcceleratorName_k80             AcceleratorName = "k80"
-	AcceleratorName_t4              AcceleratorName = "t4"
 	AcceleratorName_m60             AcceleratorName = "m60"
 	AcceleratorName_radeon_pro_v520 AcceleratorName = "radeon-pro-v520"
+	AcceleratorName_t4              AcceleratorName = "t4"
 	AcceleratorName_vu9p            AcceleratorName = "vu9p"
+	AcceleratorName_v100            AcceleratorName = "v100"
+	AcceleratorName_a10g            AcceleratorName = "a10g"
+	AcceleratorName_h100            AcceleratorName = "h100"
+	AcceleratorName_t4g             AcceleratorName = "t4g"
 )
 
 type AcceleratorType string
@@ -73,6 +101,14 @@ const (
 	AddressFamily_ipv6 AddressFamily = "ipv6"
 )
 
+type AddressTransferStatus string
+
+const (
+	AddressTransferStatus_pending  AddressTransferStatus = "pending"
+	AddressTransferStatus_disabled AddressTransferStatus = "disabled"
+	AddressTransferStatus_accepted AddressTransferStatus = "accepted"
+)
+
 type Affinity string
 
 const (
@@ -98,6 +134,13 @@ const (
 	AllocationStrategy_diversified                  AllocationStrategy = "diversified"
 	AllocationStrategy_capacityOptimized            AllocationStrategy = "capacityOptimized"
 	AllocationStrategy_capacityOptimizedPrioritized AllocationStrategy = "capacityOptimizedPrioritized"
+	AllocationStrategy_priceCapacityOptimized       AllocationStrategy = "priceCapacityOptimized"
+)
+
+type AllocationType string
+
+const (
+	AllocationType_used AllocationType = "used"
 )
 
 type AllowsMultipleInstanceTypes string
@@ -105,6 +148,13 @@ type AllowsMultipleInstanceTypes string
 const (
 	AllowsMultipleInstanceTypes_on  AllowsMultipleInstanceTypes = "on"
 	AllowsMultipleInstanceTypes_off AllowsMultipleInstanceTypes = "off"
+)
+
+type AmdSevSnpSpecification string
+
+const (
+	AmdSevSnpSpecification_enabled  AmdSevSnpSpecification = "enabled"
+	AmdSevSnpSpecification_disabled AmdSevSnpSpecification = "disabled"
 )
 
 type AnalysisStatus string
@@ -129,6 +179,7 @@ const (
 	ArchitectureType_x86_64     ArchitectureType = "x86_64"
 	ArchitectureType_arm64      ArchitectureType = "arm64"
 	ArchitectureType_x86_64_mac ArchitectureType = "x86_64_mac"
+	ArchitectureType_arm64_mac  ArchitectureType = "arm64_mac"
 )
 
 type ArchitectureValues string
@@ -138,6 +189,7 @@ const (
 	ArchitectureValues_x86_64     ArchitectureValues = "x86_64"
 	ArchitectureValues_arm64      ArchitectureValues = "arm64"
 	ArchitectureValues_x86_64_mac ArchitectureValues = "x86_64_mac"
+	ArchitectureValues_arm64_mac  ArchitectureValues = "arm64_mac"
 )
 
 type AssociatedNetworkType string
@@ -240,8 +292,9 @@ const (
 type BootModeValues string
 
 const (
-	BootModeValues_legacy_bios BootModeValues = "legacy-bios"
-	BootModeValues_uefi        BootModeValues = "uefi"
+	BootModeValues_legacy_bios    BootModeValues = "legacy-bios"
+	BootModeValues_uefi           BootModeValues = "uefi"
+	BootModeValues_uefi_preferred BootModeValues = "uefi-preferred"
 )
 
 type BundleTaskState string
@@ -338,6 +391,7 @@ const (
 	CapacityReservationInstancePlatform_RHEL_with_HA                           CapacityReservationInstancePlatform = "RHEL with HA"
 	CapacityReservationInstancePlatform_RHEL_with_HA_and_SQL_Server_Standard   CapacityReservationInstancePlatform = "RHEL with HA and SQL Server Standard"
 	CapacityReservationInstancePlatform_RHEL_with_HA_and_SQL_Server_Enterprise CapacityReservationInstancePlatform = "RHEL with HA and SQL Server Enterprise"
+	CapacityReservationInstancePlatform_Ubuntu_Pro                             CapacityReservationInstancePlatform = "Ubuntu Pro"
 )
 
 type CapacityReservationPreference string
@@ -350,11 +404,14 @@ const (
 type CapacityReservationState string
 
 const (
-	CapacityReservationState_active    CapacityReservationState = "active"
-	CapacityReservationState_expired   CapacityReservationState = "expired"
-	CapacityReservationState_cancelled CapacityReservationState = "cancelled"
-	CapacityReservationState_pending   CapacityReservationState = "pending"
-	CapacityReservationState_failed    CapacityReservationState = "failed"
+	CapacityReservationState_active          CapacityReservationState = "active"
+	CapacityReservationState_expired         CapacityReservationState = "expired"
+	CapacityReservationState_cancelled       CapacityReservationState = "cancelled"
+	CapacityReservationState_pending         CapacityReservationState = "pending"
+	CapacityReservationState_failed          CapacityReservationState = "failed"
+	CapacityReservationState_scheduled       CapacityReservationState = "scheduled"
+	CapacityReservationState_payment_pending CapacityReservationState = "payment-pending"
+	CapacityReservationState_payment_failed  CapacityReservationState = "payment-failed"
 )
 
 type CapacityReservationTenancy string
@@ -362,6 +419,13 @@ type CapacityReservationTenancy string
 const (
 	CapacityReservationTenancy_default   CapacityReservationTenancy = "default"
 	CapacityReservationTenancy_dedicated CapacityReservationTenancy = "dedicated"
+)
+
+type CapacityReservationType string
+
+const (
+	CapacityReservationType_default        CapacityReservationType = "default"
+	CapacityReservationType_capacity_block CapacityReservationType = "capacity-block"
 )
 
 type CarrierGatewayState string
@@ -526,8 +590,9 @@ const (
 type DefaultTargetCapacityType string
 
 const (
-	DefaultTargetCapacityType_spot      DefaultTargetCapacityType = "spot"
-	DefaultTargetCapacityType_on_demand DefaultTargetCapacityType = "on-demand"
+	DefaultTargetCapacityType_spot           DefaultTargetCapacityType = "spot"
+	DefaultTargetCapacityType_on_demand      DefaultTargetCapacityType = "on-demand"
+	DefaultTargetCapacityType_capacity_block DefaultTargetCapacityType = "capacity-block"
 )
 
 type DeleteFleetErrorCode string
@@ -552,6 +617,14 @@ type DestinationFileFormat string
 const (
 	DestinationFileFormat_plain_text DestinationFileFormat = "plain-text"
 	DestinationFileFormat_parquet    DestinationFileFormat = "parquet"
+)
+
+type DeviceTrustProviderType string
+
+const (
+	DeviceTrustProviderType_jamf        DeviceTrustProviderType = "jamf"
+	DeviceTrustProviderType_crowdstrike DeviceTrustProviderType = "crowdstrike"
+	DeviceTrustProviderType_jumpcloud   DeviceTrustProviderType = "jumpcloud"
 )
 
 type DeviceType string
@@ -611,6 +684,17 @@ const (
 	EBSOptimizedSupport_unsupported EBSOptimizedSupport = "unsupported"
 	EBSOptimizedSupport_supported   EBSOptimizedSupport = "supported"
 	EBSOptimizedSupport_default     EBSOptimizedSupport = "default"
+)
+
+type EC2InstanceConnectEndpointState string
+
+const (
+	EC2InstanceConnectEndpointState_create_in_progress EC2InstanceConnectEndpointState = "create-in-progress"
+	EC2InstanceConnectEndpointState_create_complete    EC2InstanceConnectEndpointState = "create-complete"
+	EC2InstanceConnectEndpointState_create_failed      EC2InstanceConnectEndpointState = "create-failed"
+	EC2InstanceConnectEndpointState_delete_in_progress EC2InstanceConnectEndpointState = "delete-in-progress"
+	EC2InstanceConnectEndpointState_delete_complete    EC2InstanceConnectEndpointState = "delete-complete"
+	EC2InstanceConnectEndpointState_delete_failed      EC2InstanceConnectEndpointState = "delete-failed"
 )
 
 type ENASupport string
@@ -853,6 +937,13 @@ const (
 	HTTPTokensState_required HTTPTokensState = "required"
 )
 
+type HostMaintenance string
+
+const (
+	HostMaintenance_on  HostMaintenance = "on"
+	HostMaintenance_off HostMaintenance = "off"
+)
+
 type HostRecovery string
 
 const (
@@ -900,6 +991,13 @@ const (
 	IPAMAddressHistoryResourceType_instance          IPAMAddressHistoryResourceType = "instance"
 )
 
+type IPAMAssociatedResourceDiscoveryStatus string
+
+const (
+	IPAMAssociatedResourceDiscoveryStatus_active    IPAMAssociatedResourceDiscoveryStatus = "active"
+	IPAMAssociatedResourceDiscoveryStatus_not_found IPAMAssociatedResourceDiscoveryStatus = "not-found"
+)
+
 type IPAMComplianceStatus string
 
 const (
@@ -907,6 +1005,14 @@ const (
 	IPAMComplianceStatus_noncompliant IPAMComplianceStatus = "noncompliant"
 	IPAMComplianceStatus_unmanaged    IPAMComplianceStatus = "unmanaged"
 	IPAMComplianceStatus_ignored      IPAMComplianceStatus = "ignored"
+)
+
+type IPAMDiscoveryFailureCode string
+
+const (
+	IPAMDiscoveryFailureCode_assume_role_failure  IPAMDiscoveryFailureCode = "assume-role-failure"
+	IPAMDiscoveryFailureCode_throttling_failure   IPAMDiscoveryFailureCode = "throttling-failure"
+	IPAMDiscoveryFailureCode_unauthorized_failure IPAMDiscoveryFailureCode = "unauthorized-failure"
 )
 
 type IPAMManagementState string
@@ -938,12 +1044,14 @@ const (
 	IPAMPoolAllocationResourceType_vpc                  IPAMPoolAllocationResourceType = "vpc"
 	IPAMPoolAllocationResourceType_ec2_public_ipv4_pool IPAMPoolAllocationResourceType = "ec2-public-ipv4-pool"
 	IPAMPoolAllocationResourceType_custom               IPAMPoolAllocationResourceType = "custom"
+	IPAMPoolAllocationResourceType_subnet               IPAMPoolAllocationResourceType = "subnet"
 )
 
 type IPAMPoolCIDRFailureCode string
 
 const (
 	IPAMPoolCIDRFailureCode_cidr_not_available IPAMPoolCIDRFailureCode = "cidr-not-available"
+	IPAMPoolCIDRFailureCode_limit_exceeded     IPAMPoolCIDRFailureCode = "limit-exceeded"
 )
 
 type IPAMPoolCIDRState string
@@ -957,6 +1065,19 @@ const (
 	IPAMPoolCIDRState_failed_deprovision  IPAMPoolCIDRState = "failed-deprovision"
 	IPAMPoolCIDRState_pending_import      IPAMPoolCIDRState = "pending-import"
 	IPAMPoolCIDRState_failed_import       IPAMPoolCIDRState = "failed-import"
+)
+
+type IPAMPoolPublicIPSource string
+
+const (
+	IPAMPoolPublicIPSource_amazon IPAMPoolPublicIPSource = "amazon"
+	IPAMPoolPublicIPSource_byoip  IPAMPoolPublicIPSource = "byoip"
+)
+
+type IPAMPoolSourceResourceType string
+
+const (
+	IPAMPoolSourceResourceType_vpc IPAMPoolSourceResourceType = "vpc"
 )
 
 type IPAMPoolState string
@@ -976,6 +1097,68 @@ const (
 	IPAMPoolState_restore_in_progress IPAMPoolState = "restore-in-progress"
 )
 
+type IPAMPublicAddressAWSService string
+
+const (
+	IPAMPublicAddressAWSService_nat_gateway                 IPAMPublicAddressAWSService = "nat-gateway"
+	IPAMPublicAddressAWSService_database_migration_service  IPAMPublicAddressAWSService = "database-migration-service"
+	IPAMPublicAddressAWSService_redshift                    IPAMPublicAddressAWSService = "redshift"
+	IPAMPublicAddressAWSService_elastic_container_service   IPAMPublicAddressAWSService = "elastic-container-service"
+	IPAMPublicAddressAWSService_relational_database_service IPAMPublicAddressAWSService = "relational-database-service"
+	IPAMPublicAddressAWSService_site_to_site_vpn            IPAMPublicAddressAWSService = "site-to-site-vpn"
+	IPAMPublicAddressAWSService_load_balancer               IPAMPublicAddressAWSService = "load-balancer"
+	IPAMPublicAddressAWSService_global_accelerator          IPAMPublicAddressAWSService = "global-accelerator"
+	IPAMPublicAddressAWSService_other                       IPAMPublicAddressAWSService = "other"
+)
+
+type IPAMPublicAddressAssociationStatus string
+
+const (
+	IPAMPublicAddressAssociationStatus_associated    IPAMPublicAddressAssociationStatus = "associated"
+	IPAMPublicAddressAssociationStatus_disassociated IPAMPublicAddressAssociationStatus = "disassociated"
+)
+
+type IPAMPublicAddressType string
+
+const (
+	IPAMPublicAddressType_service_managed_ip    IPAMPublicAddressType = "service-managed-ip"
+	IPAMPublicAddressType_service_managed_byoip IPAMPublicAddressType = "service-managed-byoip"
+	IPAMPublicAddressType_amazon_owned_eip      IPAMPublicAddressType = "amazon-owned-eip"
+	IPAMPublicAddressType_byoip                 IPAMPublicAddressType = "byoip"
+	IPAMPublicAddressType_ec2_public_ip         IPAMPublicAddressType = "ec2-public-ip"
+)
+
+type IPAMResourceDiscoveryAssociationState string
+
+const (
+	IPAMResourceDiscoveryAssociationState_associate_in_progress    IPAMResourceDiscoveryAssociationState = "associate-in-progress"
+	IPAMResourceDiscoveryAssociationState_associate_complete       IPAMResourceDiscoveryAssociationState = "associate-complete"
+	IPAMResourceDiscoveryAssociationState_associate_failed         IPAMResourceDiscoveryAssociationState = "associate-failed"
+	IPAMResourceDiscoveryAssociationState_disassociate_in_progress IPAMResourceDiscoveryAssociationState = "disassociate-in-progress"
+	IPAMResourceDiscoveryAssociationState_disassociate_complete    IPAMResourceDiscoveryAssociationState = "disassociate-complete"
+	IPAMResourceDiscoveryAssociationState_disassociate_failed      IPAMResourceDiscoveryAssociationState = "disassociate-failed"
+	IPAMResourceDiscoveryAssociationState_isolate_in_progress      IPAMResourceDiscoveryAssociationState = "isolate-in-progress"
+	IPAMResourceDiscoveryAssociationState_isolate_complete         IPAMResourceDiscoveryAssociationState = "isolate-complete"
+	IPAMResourceDiscoveryAssociationState_restore_in_progress      IPAMResourceDiscoveryAssociationState = "restore-in-progress"
+)
+
+type IPAMResourceDiscoveryState string
+
+const (
+	IPAMResourceDiscoveryState_create_in_progress  IPAMResourceDiscoveryState = "create-in-progress"
+	IPAMResourceDiscoveryState_create_complete     IPAMResourceDiscoveryState = "create-complete"
+	IPAMResourceDiscoveryState_create_failed       IPAMResourceDiscoveryState = "create-failed"
+	IPAMResourceDiscoveryState_modify_in_progress  IPAMResourceDiscoveryState = "modify-in-progress"
+	IPAMResourceDiscoveryState_modify_complete     IPAMResourceDiscoveryState = "modify-complete"
+	IPAMResourceDiscoveryState_modify_failed       IPAMResourceDiscoveryState = "modify-failed"
+	IPAMResourceDiscoveryState_delete_in_progress  IPAMResourceDiscoveryState = "delete-in-progress"
+	IPAMResourceDiscoveryState_delete_complete     IPAMResourceDiscoveryState = "delete-complete"
+	IPAMResourceDiscoveryState_delete_failed       IPAMResourceDiscoveryState = "delete-failed"
+	IPAMResourceDiscoveryState_isolate_in_progress IPAMResourceDiscoveryState = "isolate-in-progress"
+	IPAMResourceDiscoveryState_isolate_complete    IPAMResourceDiscoveryState = "isolate-complete"
+	IPAMResourceDiscoveryState_restore_in_progress IPAMResourceDiscoveryState = "restore-in-progress"
+)
+
 type IPAMResourceType string
 
 const (
@@ -984,6 +1167,7 @@ const (
 	IPAMResourceType_eip              IPAMResourceType = "eip"
 	IPAMResourceType_public_ipv4_pool IPAMResourceType = "public-ipv4-pool"
 	IPAMResourceType_ipv6_pool        IPAMResourceType = "ipv6-pool"
+	IPAMResourceType_eni              IPAMResourceType = "eni"
 )
 
 type IPAMScopeState string
@@ -1027,6 +1211,13 @@ const (
 	IPAMState_restore_in_progress IPAMState = "restore-in-progress"
 )
 
+type IPAMTier string
+
+const (
+	IPAMTier_free     IPAMTier = "free"
+	IPAMTier_advanced IPAMTier = "advanced"
+)
+
 type IPAddressType string
 
 const (
@@ -1063,6 +1254,19 @@ const (
 	ImageAttributeName_tpmSupport         ImageAttributeName = "tpmSupport"
 	ImageAttributeName_uefiData           ImageAttributeName = "uefiData"
 	ImageAttributeName_lastLaunchedTime   ImageAttributeName = "lastLaunchedTime"
+	ImageAttributeName_imdsSupport        ImageAttributeName = "imdsSupport"
+)
+
+type ImageBlockPublicAccessDisabledState string
+
+const (
+	ImageBlockPublicAccessDisabledState_unblocked ImageBlockPublicAccessDisabledState = "unblocked"
+)
+
+type ImageBlockPublicAccessEnabledState string
+
+const (
+	ImageBlockPublicAccessEnabledState_block_new_sharing ImageBlockPublicAccessEnabledState = "block-new-sharing"
 )
 
 type ImageState string
@@ -1075,6 +1279,7 @@ const (
 	ImageState_transient    ImageState = "transient"
 	ImageState_failed       ImageState = "failed"
 	ImageState_error        ImageState = "error"
+	ImageState_disabled     ImageState = "disabled"
 )
 
 type ImageTypeValues string
@@ -1083,6 +1288,12 @@ const (
 	ImageTypeValues_machine ImageTypeValues = "machine"
 	ImageTypeValues_kernel  ImageTypeValues = "kernel"
 	ImageTypeValues_ramdisk ImageTypeValues = "ramdisk"
+)
+
+type ImdsSupportValues string
+
+const (
+	ImdsSupportValues_v2_0 ImdsSupportValues = "v2.0"
 )
 
 type InstanceAttributeName string
@@ -1111,6 +1322,13 @@ type InstanceAutoRecoveryState string
 const (
 	InstanceAutoRecoveryState_disabled InstanceAutoRecoveryState = "disabled"
 	InstanceAutoRecoveryState_default  InstanceAutoRecoveryState = "default"
+)
+
+type InstanceBootModeValues string
+
+const (
+	InstanceBootModeValues_legacy_bios InstanceBootModeValues = "legacy-bios"
+	InstanceBootModeValues_uefi        InstanceBootModeValues = "uefi"
 )
 
 type InstanceEventWindowState string
@@ -1154,8 +1372,9 @@ const (
 type InstanceLifecycleType string
 
 const (
-	InstanceLifecycleType_spot      InstanceLifecycleType = "spot"
-	InstanceLifecycleType_scheduled InstanceLifecycleType = "scheduled"
+	InstanceLifecycleType_spot           InstanceLifecycleType = "spot"
+	InstanceLifecycleType_scheduled      InstanceLifecycleType = "scheduled"
+	InstanceLifecycleType_capacity_block InstanceLifecycleType = "capacity-block"
 )
 
 type InstanceMatchCriteria string
@@ -1782,6 +2001,219 @@ const (
 	InstanceType_r6a_48xlarge      InstanceType = "r6a.48xlarge"
 	InstanceType_r6a_metal         InstanceType = "r6a.metal"
 	InstanceType_p4de_24xlarge     InstanceType = "p4de.24xlarge"
+	InstanceType_u_3tb1_56xlarge   InstanceType = "u-3tb1.56xlarge"
+	InstanceType_u_18tb1_112xlarge InstanceType = "u-18tb1.112xlarge"
+	InstanceType_u_24tb1_112xlarge InstanceType = "u-24tb1.112xlarge"
+	InstanceType_trn1_2xlarge      InstanceType = "trn1.2xlarge"
+	InstanceType_trn1_32xlarge     InstanceType = "trn1.32xlarge"
+	InstanceType_hpc6id_32xlarge   InstanceType = "hpc6id.32xlarge"
+	InstanceType_c6in_large        InstanceType = "c6in.large"
+	InstanceType_c6in_xlarge       InstanceType = "c6in.xlarge"
+	InstanceType_c6in_2xlarge      InstanceType = "c6in.2xlarge"
+	InstanceType_c6in_4xlarge      InstanceType = "c6in.4xlarge"
+	InstanceType_c6in_8xlarge      InstanceType = "c6in.8xlarge"
+	InstanceType_c6in_12xlarge     InstanceType = "c6in.12xlarge"
+	InstanceType_c6in_16xlarge     InstanceType = "c6in.16xlarge"
+	InstanceType_c6in_24xlarge     InstanceType = "c6in.24xlarge"
+	InstanceType_c6in_32xlarge     InstanceType = "c6in.32xlarge"
+	InstanceType_m6in_large        InstanceType = "m6in.large"
+	InstanceType_m6in_xlarge       InstanceType = "m6in.xlarge"
+	InstanceType_m6in_2xlarge      InstanceType = "m6in.2xlarge"
+	InstanceType_m6in_4xlarge      InstanceType = "m6in.4xlarge"
+	InstanceType_m6in_8xlarge      InstanceType = "m6in.8xlarge"
+	InstanceType_m6in_12xlarge     InstanceType = "m6in.12xlarge"
+	InstanceType_m6in_16xlarge     InstanceType = "m6in.16xlarge"
+	InstanceType_m6in_24xlarge     InstanceType = "m6in.24xlarge"
+	InstanceType_m6in_32xlarge     InstanceType = "m6in.32xlarge"
+	InstanceType_m6idn_large       InstanceType = "m6idn.large"
+	InstanceType_m6idn_xlarge      InstanceType = "m6idn.xlarge"
+	InstanceType_m6idn_2xlarge     InstanceType = "m6idn.2xlarge"
+	InstanceType_m6idn_4xlarge     InstanceType = "m6idn.4xlarge"
+	InstanceType_m6idn_8xlarge     InstanceType = "m6idn.8xlarge"
+	InstanceType_m6idn_12xlarge    InstanceType = "m6idn.12xlarge"
+	InstanceType_m6idn_16xlarge    InstanceType = "m6idn.16xlarge"
+	InstanceType_m6idn_24xlarge    InstanceType = "m6idn.24xlarge"
+	InstanceType_m6idn_32xlarge    InstanceType = "m6idn.32xlarge"
+	InstanceType_r6in_large        InstanceType = "r6in.large"
+	InstanceType_r6in_xlarge       InstanceType = "r6in.xlarge"
+	InstanceType_r6in_2xlarge      InstanceType = "r6in.2xlarge"
+	InstanceType_r6in_4xlarge      InstanceType = "r6in.4xlarge"
+	InstanceType_r6in_8xlarge      InstanceType = "r6in.8xlarge"
+	InstanceType_r6in_12xlarge     InstanceType = "r6in.12xlarge"
+	InstanceType_r6in_16xlarge     InstanceType = "r6in.16xlarge"
+	InstanceType_r6in_24xlarge     InstanceType = "r6in.24xlarge"
+	InstanceType_r6in_32xlarge     InstanceType = "r6in.32xlarge"
+	InstanceType_r6idn_large       InstanceType = "r6idn.large"
+	InstanceType_r6idn_xlarge      InstanceType = "r6idn.xlarge"
+	InstanceType_r6idn_2xlarge     InstanceType = "r6idn.2xlarge"
+	InstanceType_r6idn_4xlarge     InstanceType = "r6idn.4xlarge"
+	InstanceType_r6idn_8xlarge     InstanceType = "r6idn.8xlarge"
+	InstanceType_r6idn_12xlarge    InstanceType = "r6idn.12xlarge"
+	InstanceType_r6idn_16xlarge    InstanceType = "r6idn.16xlarge"
+	InstanceType_r6idn_24xlarge    InstanceType = "r6idn.24xlarge"
+	InstanceType_r6idn_32xlarge    InstanceType = "r6idn.32xlarge"
+	InstanceType_c7g_metal         InstanceType = "c7g.metal"
+	InstanceType_m7g_medium        InstanceType = "m7g.medium"
+	InstanceType_m7g_large         InstanceType = "m7g.large"
+	InstanceType_m7g_xlarge        InstanceType = "m7g.xlarge"
+	InstanceType_m7g_2xlarge       InstanceType = "m7g.2xlarge"
+	InstanceType_m7g_4xlarge       InstanceType = "m7g.4xlarge"
+	InstanceType_m7g_8xlarge       InstanceType = "m7g.8xlarge"
+	InstanceType_m7g_12xlarge      InstanceType = "m7g.12xlarge"
+	InstanceType_m7g_16xlarge      InstanceType = "m7g.16xlarge"
+	InstanceType_m7g_metal         InstanceType = "m7g.metal"
+	InstanceType_r7g_medium        InstanceType = "r7g.medium"
+	InstanceType_r7g_large         InstanceType = "r7g.large"
+	InstanceType_r7g_xlarge        InstanceType = "r7g.xlarge"
+	InstanceType_r7g_2xlarge       InstanceType = "r7g.2xlarge"
+	InstanceType_r7g_4xlarge       InstanceType = "r7g.4xlarge"
+	InstanceType_r7g_8xlarge       InstanceType = "r7g.8xlarge"
+	InstanceType_r7g_12xlarge      InstanceType = "r7g.12xlarge"
+	InstanceType_r7g_16xlarge      InstanceType = "r7g.16xlarge"
+	InstanceType_r7g_metal         InstanceType = "r7g.metal"
+	InstanceType_c6in_metal        InstanceType = "c6in.metal"
+	InstanceType_m6in_metal        InstanceType = "m6in.metal"
+	InstanceType_m6idn_metal       InstanceType = "m6idn.metal"
+	InstanceType_r6in_metal        InstanceType = "r6in.metal"
+	InstanceType_r6idn_metal       InstanceType = "r6idn.metal"
+	InstanceType_inf2_xlarge       InstanceType = "inf2.xlarge"
+	InstanceType_inf2_8xlarge      InstanceType = "inf2.8xlarge"
+	InstanceType_inf2_24xlarge     InstanceType = "inf2.24xlarge"
+	InstanceType_inf2_48xlarge     InstanceType = "inf2.48xlarge"
+	InstanceType_trn1n_32xlarge    InstanceType = "trn1n.32xlarge"
+	InstanceType_i4g_large         InstanceType = "i4g.large"
+	InstanceType_i4g_xlarge        InstanceType = "i4g.xlarge"
+	InstanceType_i4g_2xlarge       InstanceType = "i4g.2xlarge"
+	InstanceType_i4g_4xlarge       InstanceType = "i4g.4xlarge"
+	InstanceType_i4g_8xlarge       InstanceType = "i4g.8xlarge"
+	InstanceType_i4g_16xlarge      InstanceType = "i4g.16xlarge"
+	InstanceType_hpc7g_4xlarge     InstanceType = "hpc7g.4xlarge"
+	InstanceType_hpc7g_8xlarge     InstanceType = "hpc7g.8xlarge"
+	InstanceType_hpc7g_16xlarge    InstanceType = "hpc7g.16xlarge"
+	InstanceType_c7gn_medium       InstanceType = "c7gn.medium"
+	InstanceType_c7gn_large        InstanceType = "c7gn.large"
+	InstanceType_c7gn_xlarge       InstanceType = "c7gn.xlarge"
+	InstanceType_c7gn_2xlarge      InstanceType = "c7gn.2xlarge"
+	InstanceType_c7gn_4xlarge      InstanceType = "c7gn.4xlarge"
+	InstanceType_c7gn_8xlarge      InstanceType = "c7gn.8xlarge"
+	InstanceType_c7gn_12xlarge     InstanceType = "c7gn.12xlarge"
+	InstanceType_c7gn_16xlarge     InstanceType = "c7gn.16xlarge"
+	InstanceType_p5_48xlarge       InstanceType = "p5.48xlarge"
+	InstanceType_m7i_large         InstanceType = "m7i.large"
+	InstanceType_m7i_xlarge        InstanceType = "m7i.xlarge"
+	InstanceType_m7i_2xlarge       InstanceType = "m7i.2xlarge"
+	InstanceType_m7i_4xlarge       InstanceType = "m7i.4xlarge"
+	InstanceType_m7i_8xlarge       InstanceType = "m7i.8xlarge"
+	InstanceType_m7i_12xlarge      InstanceType = "m7i.12xlarge"
+	InstanceType_m7i_16xlarge      InstanceType = "m7i.16xlarge"
+	InstanceType_m7i_24xlarge      InstanceType = "m7i.24xlarge"
+	InstanceType_m7i_48xlarge      InstanceType = "m7i.48xlarge"
+	InstanceType_m7i_flex_large    InstanceType = "m7i-flex.large"
+	InstanceType_m7i_flex_xlarge   InstanceType = "m7i-flex.xlarge"
+	InstanceType_m7i_flex_2xlarge  InstanceType = "m7i-flex.2xlarge"
+	InstanceType_m7i_flex_4xlarge  InstanceType = "m7i-flex.4xlarge"
+	InstanceType_m7i_flex_8xlarge  InstanceType = "m7i-flex.8xlarge"
+	InstanceType_m7a_medium        InstanceType = "m7a.medium"
+	InstanceType_m7a_large         InstanceType = "m7a.large"
+	InstanceType_m7a_xlarge        InstanceType = "m7a.xlarge"
+	InstanceType_m7a_2xlarge       InstanceType = "m7a.2xlarge"
+	InstanceType_m7a_4xlarge       InstanceType = "m7a.4xlarge"
+	InstanceType_m7a_8xlarge       InstanceType = "m7a.8xlarge"
+	InstanceType_m7a_12xlarge      InstanceType = "m7a.12xlarge"
+	InstanceType_m7a_16xlarge      InstanceType = "m7a.16xlarge"
+	InstanceType_m7a_24xlarge      InstanceType = "m7a.24xlarge"
+	InstanceType_m7a_32xlarge      InstanceType = "m7a.32xlarge"
+	InstanceType_m7a_48xlarge      InstanceType = "m7a.48xlarge"
+	InstanceType_m7a_metal_48xl    InstanceType = "m7a.metal-48xl"
+	InstanceType_hpc7a_12xlarge    InstanceType = "hpc7a.12xlarge"
+	InstanceType_hpc7a_24xlarge    InstanceType = "hpc7a.24xlarge"
+	InstanceType_hpc7a_48xlarge    InstanceType = "hpc7a.48xlarge"
+	InstanceType_hpc7a_96xlarge    InstanceType = "hpc7a.96xlarge"
+	InstanceType_c7gd_medium       InstanceType = "c7gd.medium"
+	InstanceType_c7gd_large        InstanceType = "c7gd.large"
+	InstanceType_c7gd_xlarge       InstanceType = "c7gd.xlarge"
+	InstanceType_c7gd_2xlarge      InstanceType = "c7gd.2xlarge"
+	InstanceType_c7gd_4xlarge      InstanceType = "c7gd.4xlarge"
+	InstanceType_c7gd_8xlarge      InstanceType = "c7gd.8xlarge"
+	InstanceType_c7gd_12xlarge     InstanceType = "c7gd.12xlarge"
+	InstanceType_c7gd_16xlarge     InstanceType = "c7gd.16xlarge"
+	InstanceType_m7gd_medium       InstanceType = "m7gd.medium"
+	InstanceType_m7gd_large        InstanceType = "m7gd.large"
+	InstanceType_m7gd_xlarge       InstanceType = "m7gd.xlarge"
+	InstanceType_m7gd_2xlarge      InstanceType = "m7gd.2xlarge"
+	InstanceType_m7gd_4xlarge      InstanceType = "m7gd.4xlarge"
+	InstanceType_m7gd_8xlarge      InstanceType = "m7gd.8xlarge"
+	InstanceType_m7gd_12xlarge     InstanceType = "m7gd.12xlarge"
+	InstanceType_m7gd_16xlarge     InstanceType = "m7gd.16xlarge"
+	InstanceType_r7gd_medium       InstanceType = "r7gd.medium"
+	InstanceType_r7gd_large        InstanceType = "r7gd.large"
+	InstanceType_r7gd_xlarge       InstanceType = "r7gd.xlarge"
+	InstanceType_r7gd_2xlarge      InstanceType = "r7gd.2xlarge"
+	InstanceType_r7gd_4xlarge      InstanceType = "r7gd.4xlarge"
+	InstanceType_r7gd_8xlarge      InstanceType = "r7gd.8xlarge"
+	InstanceType_r7gd_12xlarge     InstanceType = "r7gd.12xlarge"
+	InstanceType_r7gd_16xlarge     InstanceType = "r7gd.16xlarge"
+	InstanceType_r7a_medium        InstanceType = "r7a.medium"
+	InstanceType_r7a_large         InstanceType = "r7a.large"
+	InstanceType_r7a_xlarge        InstanceType = "r7a.xlarge"
+	InstanceType_r7a_2xlarge       InstanceType = "r7a.2xlarge"
+	InstanceType_r7a_4xlarge       InstanceType = "r7a.4xlarge"
+	InstanceType_r7a_8xlarge       InstanceType = "r7a.8xlarge"
+	InstanceType_r7a_12xlarge      InstanceType = "r7a.12xlarge"
+	InstanceType_r7a_16xlarge      InstanceType = "r7a.16xlarge"
+	InstanceType_r7a_24xlarge      InstanceType = "r7a.24xlarge"
+	InstanceType_r7a_32xlarge      InstanceType = "r7a.32xlarge"
+	InstanceType_r7a_48xlarge      InstanceType = "r7a.48xlarge"
+	InstanceType_c7i_large         InstanceType = "c7i.large"
+	InstanceType_c7i_xlarge        InstanceType = "c7i.xlarge"
+	InstanceType_c7i_2xlarge       InstanceType = "c7i.2xlarge"
+	InstanceType_c7i_4xlarge       InstanceType = "c7i.4xlarge"
+	InstanceType_c7i_8xlarge       InstanceType = "c7i.8xlarge"
+	InstanceType_c7i_12xlarge      InstanceType = "c7i.12xlarge"
+	InstanceType_c7i_16xlarge      InstanceType = "c7i.16xlarge"
+	InstanceType_c7i_24xlarge      InstanceType = "c7i.24xlarge"
+	InstanceType_c7i_48xlarge      InstanceType = "c7i.48xlarge"
+	InstanceType_mac2_m2pro_metal  InstanceType = "mac2-m2pro.metal"
+	InstanceType_r7iz_large        InstanceType = "r7iz.large"
+	InstanceType_r7iz_xlarge       InstanceType = "r7iz.xlarge"
+	InstanceType_r7iz_2xlarge      InstanceType = "r7iz.2xlarge"
+	InstanceType_r7iz_4xlarge      InstanceType = "r7iz.4xlarge"
+	InstanceType_r7iz_8xlarge      InstanceType = "r7iz.8xlarge"
+	InstanceType_r7iz_12xlarge     InstanceType = "r7iz.12xlarge"
+	InstanceType_r7iz_16xlarge     InstanceType = "r7iz.16xlarge"
+	InstanceType_r7iz_32xlarge     InstanceType = "r7iz.32xlarge"
+	InstanceType_c7a_medium        InstanceType = "c7a.medium"
+	InstanceType_c7a_large         InstanceType = "c7a.large"
+	InstanceType_c7a_xlarge        InstanceType = "c7a.xlarge"
+	InstanceType_c7a_2xlarge       InstanceType = "c7a.2xlarge"
+	InstanceType_c7a_4xlarge       InstanceType = "c7a.4xlarge"
+	InstanceType_c7a_8xlarge       InstanceType = "c7a.8xlarge"
+	InstanceType_c7a_12xlarge      InstanceType = "c7a.12xlarge"
+	InstanceType_c7a_16xlarge      InstanceType = "c7a.16xlarge"
+	InstanceType_c7a_24xlarge      InstanceType = "c7a.24xlarge"
+	InstanceType_c7a_32xlarge      InstanceType = "c7a.32xlarge"
+	InstanceType_c7a_48xlarge      InstanceType = "c7a.48xlarge"
+	InstanceType_c7a_metal_48xl    InstanceType = "c7a.metal-48xl"
+	InstanceType_r7a_metal_48xl    InstanceType = "r7a.metal-48xl"
+	InstanceType_r7i_large         InstanceType = "r7i.large"
+	InstanceType_r7i_xlarge        InstanceType = "r7i.xlarge"
+	InstanceType_r7i_2xlarge       InstanceType = "r7i.2xlarge"
+	InstanceType_r7i_4xlarge       InstanceType = "r7i.4xlarge"
+	InstanceType_r7i_8xlarge       InstanceType = "r7i.8xlarge"
+	InstanceType_r7i_12xlarge      InstanceType = "r7i.12xlarge"
+	InstanceType_r7i_16xlarge      InstanceType = "r7i.16xlarge"
+	InstanceType_r7i_24xlarge      InstanceType = "r7i.24xlarge"
+	InstanceType_r7i_48xlarge      InstanceType = "r7i.48xlarge"
+	InstanceType_dl2q_24xlarge     InstanceType = "dl2q.24xlarge"
+	InstanceType_mac2_m2_metal     InstanceType = "mac2-m2.metal"
+	InstanceType_i4i_12xlarge      InstanceType = "i4i.12xlarge"
+	InstanceType_i4i_24xlarge      InstanceType = "i4i.24xlarge"
+	InstanceType_c7i_metal_24xl    InstanceType = "c7i.metal-24xl"
+	InstanceType_c7i_metal_48xl    InstanceType = "c7i.metal-48xl"
+	InstanceType_m7i_metal_24xl    InstanceType = "m7i.metal-24xl"
+	InstanceType_m7i_metal_48xl    InstanceType = "m7i.metal-48xl"
+	InstanceType_r7i_metal_24xl    InstanceType = "r7i.metal-24xl"
+	InstanceType_r7i_metal_48xl    InstanceType = "r7i.metal-48xl"
 )
 
 type InstanceTypeHypervisor string
@@ -1900,6 +2332,13 @@ const (
 	LocalGatewayRouteState_deleted   LocalGatewayRouteState = "deleted"
 )
 
+type LocalGatewayRouteTableMode string
+
+const (
+	LocalGatewayRouteTableMode_direct_vpc_routing LocalGatewayRouteTableMode = "direct-vpc-routing"
+	LocalGatewayRouteTableMode_coip               LocalGatewayRouteTableMode = "coip"
+)
+
 type LocalGatewayRouteType string
 
 const (
@@ -1928,19 +2367,38 @@ const (
 	LocationType_region               LocationType = "region"
 	LocationType_availability_zone    LocationType = "availability-zone"
 	LocationType_availability_zone_id LocationType = "availability-zone-id"
+	LocationType_outpost              LocationType = "outpost"
+)
+
+type LockMode string
+
+const (
+	LockMode_compliance LockMode = "compliance"
+	LockMode_governance LockMode = "governance"
+)
+
+type LockState string
+
+const (
+	LockState_compliance         LockState = "compliance"
+	LockState_governance         LockState = "governance"
+	LockState_compliance_cooloff LockState = "compliance-cooloff"
+	LockState_expired            LockState = "expired"
 )
 
 type LogDestinationType string
 
 const (
-	LogDestinationType_cloud_watch_logs LogDestinationType = "cloud-watch-logs"
-	LogDestinationType_s3               LogDestinationType = "s3"
+	LogDestinationType_cloud_watch_logs      LogDestinationType = "cloud-watch-logs"
+	LogDestinationType_s3                    LogDestinationType = "s3"
+	LogDestinationType_kinesis_data_firehose LogDestinationType = "kinesis-data-firehose"
 )
 
 type MarketType string
 
 const (
-	MarketType_spot MarketType = "spot"
+	MarketType_spot           MarketType = "spot"
+	MarketType_capacity_block MarketType = "capacity-block"
 )
 
 type MembershipType string
@@ -1948,6 +2406,12 @@ type MembershipType string
 const (
 	MembershipType_static MembershipType = "static"
 	MembershipType_igmp   MembershipType = "igmp"
+)
+
+type MetricType string
+
+const (
+	MetricType_aggregate_latency MetricType = "aggregate-latency"
 )
 
 type ModifyAvailabilityZoneOptInStatus string
@@ -1978,6 +2442,17 @@ type MulticastSupportValue string
 const (
 	MulticastSupportValue_enable  MulticastSupportValue = "enable"
 	MulticastSupportValue_disable MulticastSupportValue = "disable"
+)
+
+type NATGatewayAddressStatus string
+
+const (
+	NATGatewayAddressStatus_assigning      NATGatewayAddressStatus = "assigning"
+	NATGatewayAddressStatus_unassigning    NATGatewayAddressStatus = "unassigning"
+	NATGatewayAddressStatus_associating    NATGatewayAddressStatus = "associating"
+	NATGatewayAddressStatus_disassociating NATGatewayAddressStatus = "disassociating"
+	NATGatewayAddressStatus_succeeded      NATGatewayAddressStatus = "succeeded"
+	NATGatewayAddressStatus_failed         NATGatewayAddressStatus = "failed"
 )
 
 type NATGatewayState string
@@ -2048,6 +2523,20 @@ const (
 	NetworkInterfaceType_aws_codestar_connections_managed NetworkInterfaceType = "aws_codestar_connections_managed"
 )
 
+type NitroEnclavesSupport string
+
+const (
+	NitroEnclavesSupport_unsupported NitroEnclavesSupport = "unsupported"
+	NitroEnclavesSupport_supported   NitroEnclavesSupport = "supported"
+)
+
+type NitroTPMSupport string
+
+const (
+	NitroTPMSupport_unsupported NitroTPMSupport = "unsupported"
+	NitroTPMSupport_supported   NitroTPMSupport = "supported"
+)
+
 type OfferingClassType string
 
 const (
@@ -2101,6 +2590,17 @@ const (
 	PaymentOption_AllUpfront     PaymentOption = "AllUpfront"
 	PaymentOption_PartialUpfront PaymentOption = "PartialUpfront"
 	PaymentOption_NoUpfront      PaymentOption = "NoUpfront"
+)
+
+type PeriodType string
+
+const (
+	PeriodType_five_minutes    PeriodType = "five-minutes"
+	PeriodType_fifteen_minutes PeriodType = "fifteen-minutes"
+	PeriodType_one_hour        PeriodType = "one-hour"
+	PeriodType_three_hours     PeriodType = "three-hours"
+	PeriodType_one_day         PeriodType = "one-day"
+	PeriodType_one_week        PeriodType = "one-week"
 )
 
 type PermissionGroup string
@@ -2281,6 +2781,7 @@ const (
 	ResourceType_client_vpn_endpoint                                           ResourceType = "client-vpn-endpoint"
 	ResourceType_customer_gateway                                              ResourceType = "customer-gateway"
 	ResourceType_carrier_gateway                                               ResourceType = "carrier-gateway"
+	ResourceType_coip_pool                                                     ResourceType = "coip-pool"
 	ResourceType_dedicated_host                                                ResourceType = "dedicated-host"
 	ResourceType_dhcp_options                                                  ResourceType = "dhcp-options"
 	ResourceType_egress_only_internet_gateway                                  ResourceType = "egress-only-internet-gateway"
@@ -2342,7 +2843,9 @@ const (
 	ResourceType_volume                                                        ResourceType = "volume"
 	ResourceType_vpc                                                           ResourceType = "vpc"
 	ResourceType_vpc_endpoint                                                  ResourceType = "vpc-endpoint"
+	ResourceType_vpc_endpoint_connection                                       ResourceType = "vpc-endpoint-connection"
 	ResourceType_vpc_endpoint_service                                          ResourceType = "vpc-endpoint-service"
+	ResourceType_vpc_endpoint_service_permission                               ResourceType = "vpc-endpoint-service-permission"
 	ResourceType_vpc_peering_connection                                        ResourceType = "vpc-peering-connection"
 	ResourceType_vpn_connection                                                ResourceType = "vpn-connection"
 	ResourceType_vpn_gateway                                                   ResourceType = "vpn-gateway"
@@ -2350,7 +2853,16 @@ const (
 	ResourceType_capacity_reservation_fleet                                    ResourceType = "capacity-reservation-fleet"
 	ResourceType_traffic_mirror_filter_rule                                    ResourceType = "traffic-mirror-filter-rule"
 	ResourceType_vpc_endpoint_connection_device_type                           ResourceType = "vpc-endpoint-connection-device-type"
+	ResourceType_verified_access_instance                                      ResourceType = "verified-access-instance"
+	ResourceType_verified_access_group                                         ResourceType = "verified-access-group"
+	ResourceType_verified_access_endpoint                                      ResourceType = "verified-access-endpoint"
+	ResourceType_verified_access_policy                                        ResourceType = "verified-access-policy"
+	ResourceType_verified_access_trust_provider                                ResourceType = "verified-access-trust-provider"
 	ResourceType_vpn_connection_device_type                                    ResourceType = "vpn-connection-device-type"
+	ResourceType_vpc_block_public_access_exclusion                             ResourceType = "vpc-block-public-access-exclusion"
+	ResourceType_ipam_resource_discovery                                       ResourceType = "ipam-resource-discovery"
+	ResourceType_ipam_resource_discovery_association                           ResourceType = "ipam-resource-discovery-association"
+	ResourceType_instance_connect_endpoint                                     ResourceType = "instance-connect-endpoint"
 )
 
 type RootDeviceType string
@@ -2392,11 +2904,26 @@ const (
 	RuleAction_deny  RuleAction = "deny"
 )
 
+type SSEType string
+
+const (
+	SSEType_sse_ebs SSEType = "sse-ebs"
+	SSEType_sse_kms SSEType = "sse-kms"
+	SSEType_none    SSEType = "none"
+)
+
 type Scope string
 
 const (
 	Scope_Availability_Zone Scope = "Availability Zone"
 	Scope_Region            Scope = "Region"
+)
+
+type SecurityGroupReferencingSupportValue string
+
+const (
+	SecurityGroupReferencingSupportValue_enable  SecurityGroupReferencingSupportValue = "enable"
+	SecurityGroupReferencingSupportValue_disable SecurityGroupReferencingSupportValue = "disable"
 )
 
 type SelfServicePortal string
@@ -2445,6 +2972,14 @@ const (
 	SnapshotAttributeName_createVolumePermission SnapshotAttributeName = "createVolumePermission"
 )
 
+type SnapshotBlockPublicAccessState string
+
+const (
+	SnapshotBlockPublicAccessState_block_all_sharing SnapshotBlockPublicAccessState = "block-all-sharing"
+	SnapshotBlockPublicAccessState_block_new_sharing SnapshotBlockPublicAccessState = "block-new-sharing"
+	SnapshotBlockPublicAccessState_unblocked         SnapshotBlockPublicAccessState = "unblocked"
+)
+
 type SnapshotState string
 
 const (
@@ -2462,6 +2997,7 @@ const (
 	SpotAllocationStrategy_diversified                    SpotAllocationStrategy = "diversified"
 	SpotAllocationStrategy_capacity_optimized             SpotAllocationStrategy = "capacity-optimized"
 	SpotAllocationStrategy_capacity_optimized_prioritized SpotAllocationStrategy = "capacity-optimized-prioritized"
+	SpotAllocationStrategy_price_capacity_optimized       SpotAllocationStrategy = "price-capacity-optimized"
 )
 
 type SpotInstanceInterruptionBehavior string
@@ -2480,6 +3016,7 @@ const (
 	SpotInstanceState_closed    SpotInstanceState = "closed"
 	SpotInstanceState_cancelled SpotInstanceState = "cancelled"
 	SpotInstanceState_failed    SpotInstanceState = "failed"
+	SpotInstanceState_disabled  SpotInstanceState = "disabled"
 )
 
 type SpotInstanceType string
@@ -2514,6 +3051,12 @@ type StaticSourcesSupportValue string
 const (
 	StaticSourcesSupportValue_enable  StaticSourcesSupportValue = "enable"
 	StaticSourcesSupportValue_disable StaticSourcesSupportValue = "disable"
+)
+
+type StatisticType string
+
+const (
+	StatisticType_p50 StatisticType = "p50"
 )
 
 type Status string
@@ -2579,6 +3122,12 @@ const (
 	SummaryStatus_insufficient_data SummaryStatus = "insufficient-data"
 	SummaryStatus_not_applicable    SummaryStatus = "not-applicable"
 	SummaryStatus_initializing      SummaryStatus = "initializing"
+)
+
+type SupportedAdditionalProcessorFeature string
+
+const (
+	SupportedAdditionalProcessorFeature_amd_sev_snp SupportedAdditionalProcessorFeature = "amd-sev-snp"
 )
 
 type TPMSupportValues string
@@ -2839,6 +3388,13 @@ const (
 	TransportProtocol_udp TransportProtocol = "udp"
 )
 
+type TrustProviderType string
+
+const (
+	TrustProviderType_user   TrustProviderType = "user"
+	TrustProviderType_device TrustProviderType = "device"
+)
+
 type TunnelInsideIPVersion string
 
 const (
@@ -2867,15 +3423,24 @@ const (
 type UsageClassType string
 
 const (
-	UsageClassType_spot      UsageClassType = "spot"
-	UsageClassType_on_demand UsageClassType = "on-demand"
+	UsageClassType_spot           UsageClassType = "spot"
+	UsageClassType_on_demand      UsageClassType = "on-demand"
+	UsageClassType_capacity_block UsageClassType = "capacity-block"
+)
+
+type UserTrustProviderType string
+
+const (
+	UserTrustProviderType_iam_identity_center UserTrustProviderType = "iam-identity-center"
+	UserTrustProviderType_oidc                UserTrustProviderType = "oidc"
 )
 
 type VPCAttributeName string
 
 const (
-	VPCAttributeName_enableDnsSupport   VPCAttributeName = "enableDnsSupport"
-	VPCAttributeName_enableDnsHostnames VPCAttributeName = "enableDnsHostnames"
+	VPCAttributeName_enableDnsSupport                 VPCAttributeName = "enableDnsSupport"
+	VPCAttributeName_enableDnsHostnames               VPCAttributeName = "enableDnsHostnames"
+	VPCAttributeName_enableNetworkAddressUsageMetrics VPCAttributeName = "enableNetworkAddressUsageMetrics"
 )
 
 type VPCCIDRBlockStateCode string
@@ -2950,6 +3515,43 @@ type VPNStaticRouteSource string
 
 const (
 	VPNStaticRouteSource_Static VPNStaticRouteSource = "Static"
+)
+
+type VerifiedAccessEndpointAttachmentType string
+
+const (
+	VerifiedAccessEndpointAttachmentType_vpc VerifiedAccessEndpointAttachmentType = "vpc"
+)
+
+type VerifiedAccessEndpointProtocol string
+
+const (
+	VerifiedAccessEndpointProtocol_http  VerifiedAccessEndpointProtocol = "http"
+	VerifiedAccessEndpointProtocol_https VerifiedAccessEndpointProtocol = "https"
+)
+
+type VerifiedAccessEndpointStatusCode string
+
+const (
+	VerifiedAccessEndpointStatusCode_pending  VerifiedAccessEndpointStatusCode = "pending"
+	VerifiedAccessEndpointStatusCode_active   VerifiedAccessEndpointStatusCode = "active"
+	VerifiedAccessEndpointStatusCode_updating VerifiedAccessEndpointStatusCode = "updating"
+	VerifiedAccessEndpointStatusCode_deleting VerifiedAccessEndpointStatusCode = "deleting"
+	VerifiedAccessEndpointStatusCode_deleted  VerifiedAccessEndpointStatusCode = "deleted"
+)
+
+type VerifiedAccessEndpointType string
+
+const (
+	VerifiedAccessEndpointType_load_balancer     VerifiedAccessEndpointType = "load-balancer"
+	VerifiedAccessEndpointType_network_interface VerifiedAccessEndpointType = "network-interface"
+)
+
+type VerifiedAccessLogDeliveryStatusCode string
+
+const (
+	VerifiedAccessLogDeliveryStatusCode_success VerifiedAccessLogDeliveryStatusCode = "success"
+	VerifiedAccessLogDeliveryStatusCode_failed  VerifiedAccessLogDeliveryStatusCode = "failed"
 )
 
 type VirtualizationType string

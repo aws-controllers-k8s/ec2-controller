@@ -118,14 +118,17 @@ func (rm *resourceManager) sdkFind(
 			if elem.Options.MulticastSupport != nil {
 				f2.MulticastSupport = elem.Options.MulticastSupport
 			}
+			if elem.Options.SecurityGroupReferencingSupport != nil {
+				f2.SecurityGroupReferencingSupport = elem.Options.SecurityGroupReferencingSupport
+			}
 			if elem.Options.TransitGatewayCidrBlocks != nil {
-				f2f8 := []*string{}
-				for _, f2f8iter := range elem.Options.TransitGatewayCidrBlocks {
-					var f2f8elem string
-					f2f8elem = *f2f8iter
-					f2f8 = append(f2f8, &f2f8elem)
+				f2f9 := []*string{}
+				for _, f2f9iter := range elem.Options.TransitGatewayCidrBlocks {
+					var f2f9elem string
+					f2f9elem = *f2f9iter
+					f2f9 = append(f2f9, &f2f9elem)
 				}
-				f2.TransitGatewayCIDRBlocks = f2f8
+				f2.TransitGatewayCIDRBlocks = f2f9
 			}
 			if elem.Options.VpnEcmpSupport != nil {
 				f2.VPNECMPSupport = elem.Options.VpnEcmpSupport
@@ -268,14 +271,17 @@ func (rm *resourceManager) sdkCreate(
 		if resp.TransitGateway.Options.MulticastSupport != nil {
 			f2.MulticastSupport = resp.TransitGateway.Options.MulticastSupport
 		}
+		if resp.TransitGateway.Options.SecurityGroupReferencingSupport != nil {
+			f2.SecurityGroupReferencingSupport = resp.TransitGateway.Options.SecurityGroupReferencingSupport
+		}
 		if resp.TransitGateway.Options.TransitGatewayCidrBlocks != nil {
-			f2f8 := []*string{}
-			for _, f2f8iter := range resp.TransitGateway.Options.TransitGatewayCidrBlocks {
-				var f2f8elem string
-				f2f8elem = *f2f8iter
-				f2f8 = append(f2f8, &f2f8elem)
+			f2f9 := []*string{}
+			for _, f2f9iter := range resp.TransitGateway.Options.TransitGatewayCidrBlocks {
+				var f2f9elem string
+				f2f9elem = *f2f9iter
+				f2f9 = append(f2f9, &f2f9elem)
 			}
-			f2.TransitGatewayCIDRBlocks = f2f8
+			f2.TransitGatewayCIDRBlocks = f2f9
 		}
 		if resp.TransitGateway.Options.VpnEcmpSupport != nil {
 			f2.VPNECMPSupport = resp.TransitGateway.Options.VpnEcmpSupport
@@ -358,14 +364,17 @@ func (rm *resourceManager) newCreateRequestPayload(
 		if r.ko.Spec.Options.MulticastSupport != nil {
 			f1.SetMulticastSupport(*r.ko.Spec.Options.MulticastSupport)
 		}
+		if r.ko.Spec.Options.SecurityGroupReferencingSupport != nil {
+			f1.SetSecurityGroupReferencingSupport(*r.ko.Spec.Options.SecurityGroupReferencingSupport)
+		}
 		if r.ko.Spec.Options.TransitGatewayCIDRBlocks != nil {
-			f1f6 := []*string{}
-			for _, f1f6iter := range r.ko.Spec.Options.TransitGatewayCIDRBlocks {
-				var f1f6elem string
-				f1f6elem = *f1f6iter
-				f1f6 = append(f1f6, &f1f6elem)
+			f1f7 := []*string{}
+			for _, f1f7iter := range r.ko.Spec.Options.TransitGatewayCIDRBlocks {
+				var f1f7elem string
+				f1f7elem = *f1f7iter
+				f1f7 = append(f1f7, &f1f7elem)
 			}
-			f1.SetTransitGatewayCidrBlocks(f1f6)
+			f1.SetTransitGatewayCidrBlocks(f1f7)
 		}
 		if r.ko.Spec.Options.VPNECMPSupport != nil {
 			f1.SetVpnEcmpSupport(*r.ko.Spec.Options.VPNECMPSupport)

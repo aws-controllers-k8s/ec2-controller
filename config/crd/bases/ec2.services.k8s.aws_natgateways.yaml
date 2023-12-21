@@ -67,8 +67,34 @@ spec:
                 description: Indicates whether the NAT gateway supports public or
                   private connectivity. The default is public connectivity.
                 type: string
+              privateIPAddress:
+                description: The private IPv4 address to assign to the NAT gateway.
+                  If you don't provide an address, a private IPv4 address will be
+                  automatically assigned.
+                type: string
+              secondaryAllocationIDs:
+                description: Secondary EIP allocation IDs. For more information, see
+                  Create a NAT gateway (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html#nat-gateway-creating)
+                  in the Amazon VPC User Guide.
+                items:
+                  type: string
+                type: array
+              secondaryPrivateIPAddressCount:
+                description: '[Private NAT gateway only] The number of secondary private
+                  IPv4 addresses you want to assign to the NAT gateway. For more information
+                  about secondary addresses, see Create a NAT gateway (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html#nat-gateway-creating)
+                  in the Amazon VPC User Guide.'
+                format: int64
+                type: integer
+              secondaryPrivateIPAddresses:
+                description: Secondary private IPv4 addresses. For more information
+                  about secondary addresses, see Create a NAT gateway (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html#nat-gateway-creating)
+                  in the Amazon VPC User Guide.
+                items:
+                  type: string
+                type: array
               subnetID:
-                description: The subnet in which to create the NAT gateway.
+                description: The ID of the subnet in which to create the NAT gateway.
                 type: string
               subnetRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -198,11 +224,19 @@ spec:
                   properties:
                     allocationID:
                       type: string
+                    associationID:
+                      type: string
+                    failureMessage:
+                      type: string
+                    isPrimary:
+                      type: boolean
                     networkInterfaceID:
                       type: string
                     privateIP:
                       type: string
                     publicIP:
+                      type: string
+                    status:
                       type: string
                   type: object
                 type: array

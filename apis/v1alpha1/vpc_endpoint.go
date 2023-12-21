@@ -48,20 +48,22 @@ type VPCEndpointSpec struct {
 	//
 	// Default: true
 	PrivateDNSEnabled *bool `json:"privateDNSEnabled,omitempty"`
-	// (Gateway endpoint) One or more route table IDs.
+	// (Gateway endpoint) The route table IDs.
 	RouteTableIDs  []*string                                  `json:"routeTableIDs,omitempty"`
 	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
-	// (Interface endpoint) The ID of one or more security groups to associate with
-	// the endpoint network interface.
+	// (Interface endpoint) The IDs of the security groups to associate with the
+	// endpoint network interfaces. If this parameter is not specified, we use the
+	// default security group for the VPC.
 	SecurityGroupIDs  []*string                                  `json:"securityGroupIDs,omitempty"`
 	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
-	// The service name. To get a list of available services, use the DescribeVpcEndpointServices
-	// request, or get the name from the service provider.
+	// The name of the endpoint service.
 	// +kubebuilder:validation:Required
 	ServiceName *string `json:"serviceName"`
-	// (Interface and Gateway Load Balancer endpoints) The ID of one or more subnets
-	// in which to create an endpoint network interface. For a Gateway Load Balancer
-	// endpoint, you can specify one subnet only.
+	// The subnet configurations for the endpoint.
+	SubnetConfigurations []*SubnetConfiguration `json:"subnetConfigurations,omitempty"`
+	// (Interface and Gateway Load Balancer endpoints) The IDs of the subnets in
+	// which to create endpoint network interfaces. For a Gateway Load Balancer
+	// endpoint, you can specify only one subnet.
 	SubnetIDs  []*string                                  `json:"subnetIDs,omitempty"`
 	SubnetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRefs,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
@@ -72,7 +74,7 @@ type VPCEndpointSpec struct {
 	//
 	// Default: Gateway
 	VPCEndpointType *string `json:"vpcEndpointType,omitempty"`
-	// The ID of the VPC in which the endpoint will be used.
+	// The ID of the VPC.
 	VPCID  *string                                  `json:"vpcID,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
@@ -103,7 +105,7 @@ type VPCEndpointStatus struct {
 	// The last error that occurred for endpoint.
 	// +kubebuilder:validation:Optional
 	LastError *LastError `json:"lastError,omitempty"`
-	// (Interface endpoint) One or more network interfaces for the endpoint.
+	// (Interface endpoint) The network interfaces for the endpoint.
 	// +kubebuilder:validation:Optional
 	NetworkInterfaceIDs []*string `json:"networkInterfaceIDs,omitempty"`
 	// The ID of the Amazon Web Services account that owns the endpoint.

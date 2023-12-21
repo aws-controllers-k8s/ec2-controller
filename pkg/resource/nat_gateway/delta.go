@@ -61,6 +61,26 @@ func newResourceDelta(
 			delta.Add("Spec.ConnectivityType", a.ko.Spec.ConnectivityType, b.ko.Spec.ConnectivityType)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.PrivateIPAddress, b.ko.Spec.PrivateIPAddress) {
+		delta.Add("Spec.PrivateIPAddress", a.ko.Spec.PrivateIPAddress, b.ko.Spec.PrivateIPAddress)
+	} else if a.ko.Spec.PrivateIPAddress != nil && b.ko.Spec.PrivateIPAddress != nil {
+		if *a.ko.Spec.PrivateIPAddress != *b.ko.Spec.PrivateIPAddress {
+			delta.Add("Spec.PrivateIPAddress", a.ko.Spec.PrivateIPAddress, b.ko.Spec.PrivateIPAddress)
+		}
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecondaryAllocationIDs, b.ko.Spec.SecondaryAllocationIDs) {
+		delta.Add("Spec.SecondaryAllocationIDs", a.ko.Spec.SecondaryAllocationIDs, b.ko.Spec.SecondaryAllocationIDs)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.SecondaryPrivateIPAddressCount, b.ko.Spec.SecondaryPrivateIPAddressCount) {
+		delta.Add("Spec.SecondaryPrivateIPAddressCount", a.ko.Spec.SecondaryPrivateIPAddressCount, b.ko.Spec.SecondaryPrivateIPAddressCount)
+	} else if a.ko.Spec.SecondaryPrivateIPAddressCount != nil && b.ko.Spec.SecondaryPrivateIPAddressCount != nil {
+		if *a.ko.Spec.SecondaryPrivateIPAddressCount != *b.ko.Spec.SecondaryPrivateIPAddressCount {
+			delta.Add("Spec.SecondaryPrivateIPAddressCount", a.ko.Spec.SecondaryPrivateIPAddressCount, b.ko.Spec.SecondaryPrivateIPAddressCount)
+		}
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecondaryPrivateIPAddresses, b.ko.Spec.SecondaryPrivateIPAddresses) {
+		delta.Add("Spec.SecondaryPrivateIPAddresses", a.ko.Spec.SecondaryPrivateIPAddresses, b.ko.Spec.SecondaryPrivateIPAddresses)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.SubnetID, b.ko.Spec.SubnetID) {
 		delta.Add("Spec.SubnetID", a.ko.Spec.SubnetID, b.ko.Spec.SubnetID)
 	} else if a.ko.Spec.SubnetID != nil && b.ko.Spec.SubnetID != nil {

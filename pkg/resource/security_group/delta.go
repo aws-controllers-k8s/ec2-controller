@@ -51,19 +51,11 @@ func newResourceDelta(
 			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
 		}
 	}
-	if len(a.ko.Spec.EgressRules) != len(b.ko.Spec.EgressRules) {
+	if !reflect.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
 		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
-	} else if len(a.ko.Spec.EgressRules) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
-			delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
-		}
 	}
-	if len(a.ko.Spec.IngressRules) != len(b.ko.Spec.IngressRules) {
+	if !reflect.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
 		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
-	} else if len(a.ko.Spec.IngressRules) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
-			delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
-		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)

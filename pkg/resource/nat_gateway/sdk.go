@@ -120,6 +120,15 @@ func (rm *resourceManager) sdkFind(
 				if f5iter.AllocationId != nil {
 					f5elem.AllocationID = f5iter.AllocationId
 				}
+				if f5iter.AssociationId != nil {
+					f5elem.AssociationID = f5iter.AssociationId
+				}
+				if f5iter.FailureMessage != nil {
+					f5elem.FailureMessage = f5iter.FailureMessage
+				}
+				if f5iter.IsPrimary != nil {
+					f5elem.IsPrimary = f5iter.IsPrimary
+				}
 				if f5iter.NetworkInterfaceId != nil {
 					f5elem.NetworkInterfaceID = f5iter.NetworkInterfaceId
 				}
@@ -128,6 +137,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				if f5iter.PublicIp != nil {
 					f5elem.PublicIP = f5iter.PublicIp
+				}
+				if f5iter.Status != nil {
+					f5elem.Status = f5iter.Status
 				}
 				f5 = append(f5, f5elem)
 			}
@@ -290,6 +302,15 @@ func (rm *resourceManager) sdkCreate(
 			if f5iter.AllocationId != nil {
 				f5elem.AllocationID = f5iter.AllocationId
 			}
+			if f5iter.AssociationId != nil {
+				f5elem.AssociationID = f5iter.AssociationId
+			}
+			if f5iter.FailureMessage != nil {
+				f5elem.FailureMessage = f5iter.FailureMessage
+			}
+			if f5iter.IsPrimary != nil {
+				f5elem.IsPrimary = f5iter.IsPrimary
+			}
 			if f5iter.NetworkInterfaceId != nil {
 				f5elem.NetworkInterfaceID = f5iter.NetworkInterfaceId
 			}
@@ -298,6 +319,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			if f5iter.PublicIp != nil {
 				f5elem.PublicIP = f5iter.PublicIp
+			}
+			if f5iter.Status != nil {
+				f5elem.Status = f5iter.Status
 			}
 			f5 = append(f5, f5elem)
 		}
@@ -380,6 +404,30 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.ConnectivityType != nil {
 		res.SetConnectivityType(*r.ko.Spec.ConnectivityType)
+	}
+	if r.ko.Spec.PrivateIPAddress != nil {
+		res.SetPrivateIpAddress(*r.ko.Spec.PrivateIPAddress)
+	}
+	if r.ko.Spec.SecondaryAllocationIDs != nil {
+		f3 := []*string{}
+		for _, f3iter := range r.ko.Spec.SecondaryAllocationIDs {
+			var f3elem string
+			f3elem = *f3iter
+			f3 = append(f3, &f3elem)
+		}
+		res.SetSecondaryAllocationIds(f3)
+	}
+	if r.ko.Spec.SecondaryPrivateIPAddressCount != nil {
+		res.SetSecondaryPrivateIpAddressCount(*r.ko.Spec.SecondaryPrivateIPAddressCount)
+	}
+	if r.ko.Spec.SecondaryPrivateIPAddresses != nil {
+		f5 := []*string{}
+		for _, f5iter := range r.ko.Spec.SecondaryPrivateIPAddresses {
+			var f5elem string
+			f5elem = *f5iter
+			f5 = append(f5, &f5elem)
+		}
+		res.SetSecondaryPrivateIpAddresses(f5)
 	}
 	if r.ko.Spec.SubnetID != nil {
 		res.SetSubnetId(*r.ko.Spec.SubnetID)

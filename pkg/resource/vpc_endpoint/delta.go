@@ -54,6 +54,13 @@ func newResourceDelta(
 				delta.Add("Spec.DNSOptions.DNSRecordIPType", a.ko.Spec.DNSOptions.DNSRecordIPType, b.ko.Spec.DNSOptions.DNSRecordIPType)
 			}
 		}
+		if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint, b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint) {
+			delta.Add("Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint", a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint, b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint)
+		} else if a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != nil && b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != nil {
+			if *a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != *b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint {
+				delta.Add("Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint", a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint, b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint)
+			}
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType) {
 		delta.Add("Spec.IPAddressType", a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType)
@@ -76,22 +83,14 @@ func newResourceDelta(
 			delta.Add("Spec.PrivateDNSEnabled", a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled)
 		}
 	}
-	if len(a.ko.Spec.RouteTableIDs) != len(b.ko.Spec.RouteTableIDs) {
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs) {
 		delta.Add("Spec.RouteTableIDs", a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs)
-	} else if len(a.ko.Spec.RouteTableIDs) > 0 {
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs) {
-			delta.Add("Spec.RouteTableIDs", a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs)
-		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
 		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
 	}
-	if len(a.ko.Spec.SecurityGroupIDs) != len(b.ko.Spec.SecurityGroupIDs) {
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
 		delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
-	} else if len(a.ko.Spec.SecurityGroupIDs) > 0 {
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
-			delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
-		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.SecurityGroupRefs, b.ko.Spec.SecurityGroupRefs) {
 		delta.Add("Spec.SecurityGroupRefs", a.ko.Spec.SecurityGroupRefs, b.ko.Spec.SecurityGroupRefs)
@@ -103,12 +102,11 @@ func newResourceDelta(
 			delta.Add("Spec.ServiceName", a.ko.Spec.ServiceName, b.ko.Spec.ServiceName)
 		}
 	}
-	if len(a.ko.Spec.SubnetIDs) != len(b.ko.Spec.SubnetIDs) {
+	if !reflect.DeepEqual(a.ko.Spec.SubnetConfigurations, b.ko.Spec.SubnetConfigurations) {
+		delta.Add("Spec.SubnetConfigurations", a.ko.Spec.SubnetConfigurations, b.ko.Spec.SubnetConfigurations)
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs) {
 		delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
-	} else if len(a.ko.Spec.SubnetIDs) > 0 {
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs) {
-			delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
-		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs) {
 		delta.Add("Spec.SubnetRefs", a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs)
