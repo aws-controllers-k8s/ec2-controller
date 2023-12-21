@@ -838,10 +838,10 @@ resources:
     hooks:
       delta_pre_compare:
         code: compareTags(delta, a, b)
-      #sdk_delete_post_build_request:
-      #  template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
-      #sdk_file_end:
-        #template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
   VpcPeeringConnection:
     fields:      
       VpcId:

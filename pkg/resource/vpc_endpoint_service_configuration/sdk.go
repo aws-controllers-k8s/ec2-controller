@@ -539,6 +539,9 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
+	if err = addIDToDeleteRequest(r, input); err != nil {
+		return nil, ackerr.NotFound
+	}
 	var resp *svcsdk.DeleteVpcEndpointServiceConfigurationsOutput
 	_ = resp
 	resp, err = rm.sdkapi.DeleteVpcEndpointServiceConfigurationsWithContext(ctx, input)
@@ -657,4 +660,18 @@ func (rm *resourceManager) updateConditions(
 func (rm *resourceManager) terminalAWSError(err error) bool {
 	// No terminal_errors specified for this resource in generator config
 	return false
+}
+
+func (rm *resourceManager) newTag(
+	c svcapitypes.Tag,
+) *svcsdk.Tag {
+	res := &svcsdk.Tag{}
+	if c.Key != nil {
+		res.SetKey(*c.Key)
+	}
+	if c.Value != nil {
+		res.SetValue(*c.Value)
+	}
+
+	return res
 }
