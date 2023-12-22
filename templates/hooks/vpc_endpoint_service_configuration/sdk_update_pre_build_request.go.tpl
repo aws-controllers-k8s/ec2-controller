@@ -12,22 +12,22 @@
 		}
 	}
 
-	var listOfPrincipalsToAdd []*string
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
+		var listOfPrincipalsToAdd []*string
 		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
 			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
 				if *desiredPrincipal == *latestPrincipal {
 					// Principal already in Allow List, skip
 					continue
 				}
-				// Principal is not in the Allow List, add it
+				// Principal is not in the Allow List, add it to the list of those to add
 				listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
 			}
 		}
 		// Make the AWS API call to add the principals
 		if len(listOfPrincipalsToAdd) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
-				ServiceId: latest.ko.Status.ServiceID,
+				ServiceId:            latest.ko.Status.ServiceID,
 				AddAllowedPrincipals: listOfPrincipalsToAdd,
 			}
 			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
@@ -37,7 +37,30 @@
 			}
 		}
 
-		// TODO: Add Logic to remove any principal that is not on the allowed list anymore
+		// Remove any principal that is not on the allowed list anymore
+		var listOfPrincipalsToRemove []*string
+		for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
+			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
+				if *desiredPrincipal == *latestPrincipal {
+					// Principal still in Allow List, skip
+					continue
+				}
+				// Principal is not in the Allow List, add it to the list of those to remove
+				listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
+			}
+		}
+		// Make the AWS API call to remove the principals
+		if len(listOfPrincipalsToRemove) > 0 {
+			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
+				ServiceId:               latest.ko.Status.ServiceID,
+				RemoveAllowedPrincipals: listOfPrincipalsToRemove,
+			}
+			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
+			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// Only continue if something other than Tags or certain fields has changed in the Spec
