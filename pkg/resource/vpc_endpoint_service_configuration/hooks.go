@@ -16,12 +16,22 @@ package vpc_endpoint_service_configuration
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+)
+
+var (
+	requeueWaitNotAvailable = ackrequeue.NeededAfter(
+		fmt.Errorf("VPCEndpointService is not in %v state yet, requeuing", "Available"),
+		5*time.Second,
+	)
 )
 
 // addIDToDeleteRequest adds resource's Vpc Endpoint Service Configuration ID to DeleteRequest.

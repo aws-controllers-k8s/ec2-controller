@@ -1,7 +1,7 @@
 
 	// Only continue if the VPC Endpoint Service is in 'Available' state
 	if *latest.ko.Status.ServiceState != "Available" {
-		return desired, ackrequeue.NeededAfter(fmt.Errorf("VPCEndpointService is not in %v state yet, requeuing", "Available"), 5 * time.Second)
+		return desired, requeueWaitNotAvailable
 	}
 
 	if delta.DifferentAt("Spec.Tags") {
