@@ -233,6 +233,16 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	if r.ko.Spec.AllowedPrincipals != nil {
+		for i := range r.ko.Spec.AllowedPrincipals {
+			f0 := r.ko.Spec.AllowedPrincipals[i]
+			ko.Spec.AllowedPrincipals[i] = f0
+		}
+	} else {
+		ko.Spec.AllowedPrincipals = nil
+	}
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkFind", "ko.Spec.AllowedPrincipals", ko.Spec.AllowedPrincipals)
 	return &resource{ko}, nil
 }
 
@@ -485,10 +495,12 @@ func (rm *resourceManager) sdkUpdate(
 	}()
 
 	// Only continue if the VPC Endpoint Service is in 'Available' state
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "latest.ko.Status.ServiceState", *latest.ko.Status.ServiceState)
 	if *latest.ko.Status.ServiceState != "Available" {
 		return desired, requeueWaitNotAvailable
 	}
 
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult", delta.DifferentAt("Spec.Tags"))
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
@@ -497,7 +509,9 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult", delta.DifferentAt("Spec.AllowedPrincipals"))
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
+		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "Found difference at Spec.AllowedPrincipals")
 		var listOfPrincipalsToAdd []*string
 		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
 			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
@@ -509,6 +523,7 @@ func (rm *resourceManager) sdkUpdate(
 				listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
 			}
 		}
+		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToAdd", listOfPrincipalsToAdd)
 		// Make the AWS API call to add the principals
 		if len(listOfPrincipalsToAdd) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
@@ -534,6 +549,7 @@ func (rm *resourceManager) sdkUpdate(
 				listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
 			}
 		}
+		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToRemove", listOfPrincipalsToRemove)
 		// Make the AWS API call to remove the principals
 		if len(listOfPrincipalsToRemove) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{

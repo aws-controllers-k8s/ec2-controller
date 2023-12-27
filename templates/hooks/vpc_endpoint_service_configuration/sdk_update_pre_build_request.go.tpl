@@ -12,7 +12,9 @@
 		}
 	}
 
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult", delta.DifferentAt("Spec.AllowedPrincipals"))
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
+		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "Found difference at Spec.AllowedPrincipals")
 		var listOfPrincipalsToAdd []*string
 		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
 			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
@@ -24,6 +26,7 @@
 				listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
 			}
 		}
+		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToAdd", listOfPrincipalsToAdd)
 		// Make the AWS API call to add the principals
 		if len(listOfPrincipalsToAdd) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
@@ -49,6 +52,7 @@
 				listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
 			}
 		}
+		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToRemove", listOfPrincipalsToRemove)
 		// Make the AWS API call to remove the principals
 		if len(listOfPrincipalsToRemove) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
