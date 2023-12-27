@@ -500,7 +500,7 @@ func (rm *resourceManager) sdkUpdate(
 		return desired, requeueWaitNotAvailable
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult", delta.DifferentAt("Spec.Tags"))
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult Tags", delta.DifferentAt("Spec.Tags"))
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
@@ -509,7 +509,7 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult", delta.DifferentAt("Spec.AllowedPrincipals"))
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult AllowedPrincipals", delta.DifferentAt("Spec.AllowedPrincipals"))
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
 		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "Found difference at Spec.AllowedPrincipals")
 		var listOfPrincipalsToAdd []*string

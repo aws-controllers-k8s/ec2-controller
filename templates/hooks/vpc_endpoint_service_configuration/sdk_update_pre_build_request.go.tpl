@@ -1,9 +1,11 @@
 
 	// Only continue if the VPC Endpoint Service is in 'Available' state
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "latest.ko.Status.ServiceState", *latest.ko.Status.ServiceState)
 	if *latest.ko.Status.ServiceState != "Available" {
 		return desired, requeueWaitNotAvailable
 	}
 
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult Tags", delta.DifferentAt("Spec.Tags"))
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
@@ -12,7 +14,7 @@
 		}
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult", delta.DifferentAt("Spec.AllowedPrincipals"))
+	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult AllowedPrincipals", delta.DifferentAt("Spec.AllowedPrincipals"))
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
 		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "Found difference at Spec.AllowedPrincipals")
 		var listOfPrincipalsToAdd []*string
