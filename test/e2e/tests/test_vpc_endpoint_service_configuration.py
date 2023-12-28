@@ -109,7 +109,7 @@ class TestVpcEndpointServiceConfiguration:
 
         # Check that the allowedPrincipal is properly set
         allowed_principals = ec2_validator.get_vpc_endpoint_service_permissions(resource_id)
-        assert allowed_principals[0] == "arn:aws:iam::111111111111:root"
+        assert allowed_principals[0]["Principal"] == "arn:aws:iam::111111111111:root"
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
