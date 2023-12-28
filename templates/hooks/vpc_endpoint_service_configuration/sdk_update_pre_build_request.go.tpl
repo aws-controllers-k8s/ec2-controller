@@ -25,6 +25,7 @@
 			listOfPrincipalsToRemove = latest.ko.Spec.AllowedPrincipals
 			// Otherwise, we'll compare the two lists and add/remove principals as needed
 		} else {
+			// Add any 'desired' principal that is not on the allowed list
 			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
 				principalToAddAlreadyFound := false
 				for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
@@ -40,7 +41,7 @@
 				}
 			}
 
-			// Remove any principal that is not on the allowed list anymore
+			// Remove any 'latest' principal that is not on the allowed list anymore
 			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
 				principalToRemoveAlreadyFound := false
 				for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
@@ -58,25 +59,20 @@
 
 		}
 
-		// Make the AWS API call to add the principals
-		if len(listOfPrincipalsToAdd) > 0 {
+		// Make the AWS API call to update the allowed principals
+		if len(listOfPrincipalsToAdd) > 0 || len(listOfPrincipalsToRemove) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
-				ServiceId:            latest.ko.Status.ServiceID,
-				AddAllowedPrincipals: listOfPrincipalsToAdd,
+				ServiceId: latest.ko.Status.ServiceID,
 			}
-			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
-			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
-			if err != nil {
-				return desired, err
-			}
-		}
 
-		// Make the AWS API call to remove the principals
-		if len(listOfPrincipalsToRemove) > 0 {
-			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
-				ServiceId:               latest.ko.Status.ServiceID,
-				RemoveAllowedPrincipals: listOfPrincipalsToRemove,
+			if len(listOfPrincipalsToAdd) > 0 {
+				modifyPermissionsInput.AddAllowedPrincipals = listOfPrincipalsToAdd
 			}
+
+			if len(listOfPrincipalsToRemove) > 0 {
+				modifyPermissionsInput.RemoveAllowedPrincipals = listOfPrincipalsToRemove
+			}
+
 			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
 			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 			if err != nil {
