@@ -284,7 +284,16 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
-            
+    
+    def get_vpc_endpoint_service_permissions(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_vpc_endpoint_service_permissions(ServiceId=vpc_endpoint_service_configuration_id)
+            if len(aws_res["AllowedPrincipals"]) > 0:
+                return aws_res["AllowedPrincipals"]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+        
     def get_vpc_peering_connection(self, vpc_peering_connection_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_vpc_peering_connections(

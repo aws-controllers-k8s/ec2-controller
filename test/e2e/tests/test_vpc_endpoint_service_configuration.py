@@ -50,7 +50,7 @@ def simple_vpc_endpoint_service_configuration(request):
     test_resource_values["PRIVATE_DNS_NAME"] = ""
     test_resource_values["NETWORK_LOAD_BALANCER_ARN_SET"] = nlb.arn
     test_resource_values["SUPPORTED_IP_ADDRESS_TYPE_SET"] = supported_ip_address_types
-    test_resource_values["ALLOW_PRINCIPAL"] = "arn:aws:iam::111111111111:root"
+    test_resource_values["ALLOWED_PRINCIPAL"] = "arn:aws:iam::111111111111:root"
 
 
     marker = request.node.get_closest_marker("resource_data")
@@ -106,6 +106,10 @@ class TestVpcEndpointServiceConfiguration:
         # Check VPC Endpoint Service exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc_endpoint_service_configuration(resource_id)
+
+        # Check that the allowedPrincipal is properly set
+        allowed_principals = ec2_validator.get_vpc_endpoint_service_permissions(resource_id)
+        assert allowed_principals[0] == "arn:aws:iam::111111111111:root"
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
