@@ -1,11 +1,9 @@
 
 	// Only continue if the VPC Endpoint Service is in 'Available' state
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "latest.ko.Status.ServiceState", *latest.ko.Status.ServiceState)
 	if *latest.ko.Status.ServiceState != "Available" {
 		return desired, requeueWaitNotAvailable
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult Tags", delta.DifferentAt("Spec.Tags"))
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
@@ -14,21 +12,52 @@
 		}
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult AllowedPrincipals", delta.DifferentAt("Spec.AllowedPrincipals"))
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
-		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "Found difference at Spec.AllowedPrincipals")
 		var listOfPrincipalsToAdd []*string
-		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
-			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
-				if *desiredPrincipal == *latestPrincipal {
-					// Principal already in Allow List, skip
-					continue
+		var listOfPrincipalsToRemove []*string
+
+		// If the latest list of principals is empty, we want to add all principals
+		if len(latest.ko.Spec.AllowedPrincipals) == 0 && len(desired.ko.Spec.AllowedPrincipals) > 0 {
+			listOfPrincipalsToAdd = desired.ko.Spec.AllowedPrincipals
+
+			// If the desired list of principals is empty, we want to remove all principals
+		} else if len(desired.ko.Spec.AllowedPrincipals) == 0 && len(latest.ko.Spec.AllowedPrincipals) > 0 {
+			listOfPrincipalsToRemove = latest.ko.Spec.AllowedPrincipals
+			// Otherwise, we'll compare the two lists and add/remove principals as needed
+		} else {
+			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
+				principalToAddAlreadyFound := false
+				for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
+					if *desiredPrincipal == *latestPrincipal {
+						// Principal already in Allow List, skip
+						principalToAddAlreadyFound = true
+						break
+					}
 				}
-				// Principal is not in the Allow List, add it to the list of those to add
-				listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
+				if !principalToAddAlreadyFound {
+					// Desired Principal is not in the Allowed List, add it to the list of those to add
+					listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
+				}
 			}
+
+			// Remove any principal that is not on the allowed list anymore
+			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
+				principalToRemoveAlreadyFound := false
+				for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
+					if *desiredPrincipal == *latestPrincipal {
+						// Principal still in Allow List, skip
+						principalToRemoveAlreadyFound = true
+						break
+					}
+				}
+				if !principalToRemoveAlreadyFound {
+					// Latest Principal is not in the Allowed List, add it to the list of those to remove
+					listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
+				}
+			}
+
 		}
-		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToAdd", listOfPrincipalsToAdd)
+
 		// Make the AWS API call to add the principals
 		if len(listOfPrincipalsToAdd) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
@@ -38,23 +67,10 @@
 			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
 			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 			if err != nil {
-				return nil, err
+				return desired, err
 			}
 		}
 
-		// Remove any principal that is not on the allowed list anymore
-		var listOfPrincipalsToRemove []*string
-		for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
-			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
-				if *desiredPrincipal == *latestPrincipal {
-					// Principal still in Allow List, skip
-					continue
-				}
-				// Principal is not in the Allow List, add it to the list of those to remove
-				listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
-			}
-		}
-		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToRemove", listOfPrincipalsToRemove)
 		// Make the AWS API call to remove the principals
 		if len(listOfPrincipalsToRemove) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
@@ -64,7 +80,7 @@
 			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
 			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 			if err != nil {
-				return nil, err
+				return desired, err
 			}
 		}
 	}

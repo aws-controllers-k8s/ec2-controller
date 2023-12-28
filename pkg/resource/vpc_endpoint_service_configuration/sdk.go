@@ -234,15 +234,31 @@ func (rm *resourceManager) sdkFind(
 
 	rm.setStatusDefaults(ko)
 
-	if r.ko.Spec.AllowedPrincipals != nil {
-		for i := range r.ko.Spec.AllowedPrincipals {
-			f0 := r.ko.Spec.AllowedPrincipals[i]
-			ko.Spec.AllowedPrincipals[i] = f0
+	permInput := &svcsdk.DescribeVpcEndpointServicePermissionsInput{
+		ServiceId: ko.Status.ServiceID,
+	}
+	var permResp *svcsdk.DescribeVpcEndpointServicePermissionsOutput
+	permResp, err = rm.sdkapi.DescribeVpcEndpointServicePermissionsWithContext(ctx, permInput)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpointServicePermissions", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+			return nil, ackerr.NotFound
 		}
+		return nil, err
+	}
+
+	if permResp.AllowedPrincipals != nil {
+		f0 := []*string{}
+		for _, elem := range permResp.AllowedPrincipals {
+			if elem.Principal != nil {
+				f0 = append(f0, elem.Principal)
+			}
+		}
+		ko.Spec.AllowedPrincipals = f0
 	} else {
 		ko.Spec.AllowedPrincipals = nil
 	}
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkFind", "ko.Spec.AllowedPrincipals", ko.Spec.AllowedPrincipals)
+
 	return &resource{ko}, nil
 }
 
@@ -495,12 +511,10 @@ func (rm *resourceManager) sdkUpdate(
 	}()
 
 	// Only continue if the VPC Endpoint Service is in 'Available' state
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "latest.ko.Status.ServiceState", *latest.ko.Status.ServiceState)
 	if *latest.ko.Status.ServiceState != "Available" {
 		return desired, requeueWaitNotAvailable
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult Tags", delta.DifferentAt("Spec.Tags"))
 	if delta.DifferentAt("Spec.Tags") {
 		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
@@ -509,21 +523,52 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
-	rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "deltaResult AllowedPrincipals", delta.DifferentAt("Spec.AllowedPrincipals"))
 	if delta.DifferentAt("Spec.AllowedPrincipals") {
-		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "Found difference at Spec.AllowedPrincipals")
 		var listOfPrincipalsToAdd []*string
-		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
-			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
-				if *desiredPrincipal == *latestPrincipal {
-					// Principal already in Allow List, skip
-					continue
+		var listOfPrincipalsToRemove []*string
+
+		// If the latest list of principals is empty, we want to add all principals
+		if len(latest.ko.Spec.AllowedPrincipals) == 0 && len(desired.ko.Spec.AllowedPrincipals) > 0 {
+			listOfPrincipalsToAdd = desired.ko.Spec.AllowedPrincipals
+
+			// If the desired list of principals is empty, we want to remove all principals
+		} else if len(desired.ko.Spec.AllowedPrincipals) == 0 && len(latest.ko.Spec.AllowedPrincipals) > 0 {
+			listOfPrincipalsToRemove = latest.ko.Spec.AllowedPrincipals
+			// Otherwise, we'll compare the two lists and add/remove principals as needed
+		} else {
+			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
+				principalToAddAlreadyFound := false
+				for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
+					if *desiredPrincipal == *latestPrincipal {
+						// Principal already in Allow List, skip
+						principalToAddAlreadyFound = true
+						break
+					}
 				}
-				// Principal is not in the Allow List, add it to the list of those to add
-				listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
+				if !principalToAddAlreadyFound {
+					// Desired Principal is not in the Allowed List, add it to the list of those to add
+					listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
+				}
 			}
+
+			// Remove any principal that is not on the allowed list anymore
+			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
+				principalToRemoveAlreadyFound := false
+				for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
+					if *desiredPrincipal == *latestPrincipal {
+						// Principal still in Allow List, skip
+						principalToRemoveAlreadyFound = true
+						break
+					}
+				}
+				if !principalToRemoveAlreadyFound {
+					// Latest Principal is not in the Allowed List, add it to the list of those to remove
+					listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
+				}
+			}
+
 		}
-		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToAdd", listOfPrincipalsToAdd)
+
 		// Make the AWS API call to add the principals
 		if len(listOfPrincipalsToAdd) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
@@ -533,23 +578,10 @@ func (rm *resourceManager) sdkUpdate(
 			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
 			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 			if err != nil {
-				return nil, err
+				return desired, err
 			}
 		}
 
-		// Remove any principal that is not on the allowed list anymore
-		var listOfPrincipalsToRemove []*string
-		for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
-			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
-				if *desiredPrincipal == *latestPrincipal {
-					// Principal still in Allow List, skip
-					continue
-				}
-				// Principal is not in the Allow List, add it to the list of those to remove
-				listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
-			}
-		}
-		rlog.Debug("AAAAAAAAAAAAAAAAAAA sdkUpdate", "listOfPrincipalsToRemove", listOfPrincipalsToRemove)
 		// Make the AWS API call to remove the principals
 		if len(listOfPrincipalsToRemove) > 0 {
 			modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
@@ -559,7 +591,7 @@ func (rm *resourceManager) sdkUpdate(
 			_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
 			rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 			if err != nil {
-				return nil, err
+				return desired, err
 			}
 		}
 	}
