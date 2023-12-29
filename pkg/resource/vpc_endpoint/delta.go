@@ -54,13 +54,6 @@ func newResourceDelta(
 				delta.Add("Spec.DNSOptions.DNSRecordIPType", a.ko.Spec.DNSOptions.DNSRecordIPType, b.ko.Spec.DNSOptions.DNSRecordIPType)
 			}
 		}
-		if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint, b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint) {
-			delta.Add("Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint", a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint, b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint)
-		} else if a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != nil && b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != nil {
-			if *a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != *b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint {
-				delta.Add("Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint", a.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint, b.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint)
-			}
-		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType) {
 		delta.Add("Spec.IPAddressType", a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType)
@@ -108,13 +101,6 @@ func newResourceDelta(
 	} else if a.ko.Spec.ServiceName != nil && b.ko.Spec.ServiceName != nil {
 		if *a.ko.Spec.ServiceName != *b.ko.Spec.ServiceName {
 			delta.Add("Spec.ServiceName", a.ko.Spec.ServiceName, b.ko.Spec.ServiceName)
-		}
-	}
-	if len(a.ko.Spec.SubnetConfigurations) != len(b.ko.Spec.SubnetConfigurations) {
-		delta.Add("Spec.SubnetConfigurations", a.ko.Spec.SubnetConfigurations, b.ko.Spec.SubnetConfigurations)
-	} else if len(a.ko.Spec.SubnetConfigurations) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.SubnetConfigurations, b.ko.Spec.SubnetConfigurations) {
-			delta.Add("Spec.SubnetConfigurations", a.ko.Spec.SubnetConfigurations, b.ko.Spec.SubnetConfigurations)
 		}
 	}
 	if len(a.ko.Spec.SubnetIDs) != len(b.ko.Spec.SubnetIDs) {

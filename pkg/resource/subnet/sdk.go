@@ -514,23 +514,11 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.CIDRBlock != nil {
 		res.SetCidrBlock(*r.ko.Spec.CIDRBlock)
 	}
-	if r.ko.Spec.IPv4IPAMPoolID != nil {
-		res.SetIpv4IpamPoolId(*r.ko.Spec.IPv4IPAMPoolID)
-	}
-	if r.ko.Spec.IPv4NetmaskLength != nil {
-		res.SetIpv4NetmaskLength(*r.ko.Spec.IPv4NetmaskLength)
-	}
 	if r.ko.Spec.IPv6CIDRBlock != nil {
 		res.SetIpv6CidrBlock(*r.ko.Spec.IPv6CIDRBlock)
 	}
-	if r.ko.Spec.IPv6IPAMPoolID != nil {
-		res.SetIpv6IpamPoolId(*r.ko.Spec.IPv6IPAMPoolID)
-	}
 	if r.ko.Spec.IPv6Native != nil {
 		res.SetIpv6Native(*r.ko.Spec.IPv6Native)
-	}
-	if r.ko.Spec.IPv6NetmaskLength != nil {
-		res.SetIpv6NetmaskLength(*r.ko.Spec.IPv6NetmaskLength)
 	}
 	if r.ko.Spec.OutpostARN != nil {
 		res.SetOutpostArn(*r.ko.Spec.OutpostARN)

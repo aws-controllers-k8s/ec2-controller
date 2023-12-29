@@ -41,9 +41,10 @@ spec:
               \n Describes a security group."
             properties:
               description:
-                description: "A description for the security group. \n Constraints:
-                  Up to 255 characters in length \n Valid characters: a-z, A-Z, 0-9,
-                  spaces, and ._-:/()#,@[]+=&;{}!$*"
+                description: "A description for the security group. This is informational
+                  only. \n Constraints: Up to 255 characters in length \n Constraints
+                  for EC2-Classic: ASCII characters \n Constraints for EC2-VPC: a-z,
+                  A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*"
                 type: string
               egressRules:
                 items:
@@ -67,7 +68,7 @@ spec:
                       type: array
                     ipv6Ranges:
                       items:
-                        description: Describes an IPv6 range.
+                        description: '[EC2-VPC only] Describes an IPv6 range.'
                         properties:
                           cidrIPv6:
                             type: string
@@ -90,8 +91,12 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: Describes a security group and Amazon Web Services
-                          account ID pair.
+                        description: "Describes a security group and Amazon Web Services
+                          account ID pair. \n We are retiring EC2-Classic on August
+                          15, 2022. We recommend that you migrate from EC2-Classic
+                          to a VPC. For more information, see Migrate from EC2-Classic
+                          to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+                          in the Amazon Elastic Compute Cloud User Guide."
                         properties:
                           description:
                             type: string
@@ -133,7 +138,7 @@ spec:
                       type: array
                     ipv6Ranges:
                       items:
-                        description: Describes an IPv6 range.
+                        description: '[EC2-VPC only] Describes an IPv6 range.'
                         properties:
                           cidrIPv6:
                             type: string
@@ -156,8 +161,12 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: Describes a security group and Amazon Web Services
-                          account ID pair.
+                        description: "Describes a security group and Amazon Web Services
+                          account ID pair. \n We are retiring EC2-Classic on August
+                          15, 2022. We recommend that you migrate from EC2-Classic
+                          to a VPC. For more information, see Migrate from EC2-Classic
+                          to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+                          in the Amazon Elastic Compute Cloud User Guide."
                         properties:
                           description:
                             type: string
@@ -179,8 +188,9 @@ spec:
                 type: array
               name:
                 description: "The name of the security group. \n Constraints: Up to
-                  255 characters in length. Cannot start with sg-. \n Valid characters:
-                  a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*"
+                  255 characters in length. Cannot start with sg-. \n Constraints
+                  for EC2-Classic: ASCII characters \n Constraints for EC2-VPC: a-z,
+                  A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*"
                 type: string
               tags:
                 description: The tags. The value parameter is required, but if you
@@ -196,7 +206,7 @@ spec:
                   type: object
                 type: array
               vpcID:
-                description: The ID of the VPC. Required for a nondefault VPC.
+                description: '[EC2-VPC] The ID of the VPC. Required for EC2-VPC.'
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around

@@ -34,23 +34,7 @@ type NATGatewaySpec struct {
 	// Indicates whether the NAT gateway supports public or private connectivity.
 	// The default is public connectivity.
 	ConnectivityType *string `json:"connectivityType,omitempty"`
-	// The private IPv4 address to assign to the NAT gateway. If you don't provide
-	// an address, a private IPv4 address will be automatically assigned.
-	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
-	// Secondary EIP allocation IDs. For more information, see Create a NAT gateway
-	// (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html#nat-gateway-creating)
-	// in the Amazon VPC User Guide.
-	SecondaryAllocationIDs []*string `json:"secondaryAllocationIDs,omitempty"`
-	// [Private NAT gateway only] The number of secondary private IPv4 addresses
-	// you want to assign to the NAT gateway. For more information about secondary
-	// addresses, see Create a NAT gateway (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html#nat-gateway-creating)
-	// in the Amazon VPC User Guide.
-	SecondaryPrivateIPAddressCount *int64 `json:"secondaryPrivateIPAddressCount,omitempty"`
-	// Secondary private IPv4 addresses. For more information about secondary addresses,
-	// see Create a NAT gateway (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html#nat-gateway-creating)
-	// in the Amazon VPC User Guide.
-	SecondaryPrivateIPAddresses []*string `json:"secondaryPrivateIPAddresses,omitempty"`
-	// The ID of the subnet in which to create the NAT gateway.
+	// The subnet in which to create the NAT gateway.
 	SubnetID  *string                                  `json:"subnetID,omitempty"`
 	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag

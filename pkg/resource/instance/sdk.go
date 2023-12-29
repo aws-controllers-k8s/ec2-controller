@@ -150,9 +150,6 @@ func (rm *resourceManager) sdkFind(
 			}
 			if elem.CpuOptions != nil {
 				f6 := &svcapitypes.CPUOptionsRequest{}
-				if elem.CpuOptions.AmdSevSnp != nil {
-					f6.AmdSevSnp = elem.CpuOptions.AmdSevSnp
-				}
 				if elem.CpuOptions.CoreCount != nil {
 					f6.CoreCount = elem.CpuOptions.CoreCount
 				}
@@ -163,57 +160,52 @@ func (rm *resourceManager) sdkFind(
 			} else {
 				ko.Spec.CPUOptions = nil
 			}
-			if elem.CurrentInstanceBootMode != nil {
-				ko.Status.CurrentInstanceBootMode = elem.CurrentInstanceBootMode
-			} else {
-				ko.Status.CurrentInstanceBootMode = nil
-			}
 			if elem.EbsOptimized != nil {
 				ko.Spec.EBSOptimized = elem.EbsOptimized
 			} else {
 				ko.Spec.EBSOptimized = nil
 			}
 			if elem.ElasticGpuAssociations != nil {
-				f9 := []*svcapitypes.ElasticGPUAssociation{}
-				for _, f9iter := range elem.ElasticGpuAssociations {
-					f9elem := &svcapitypes.ElasticGPUAssociation{}
-					if f9iter.ElasticGpuAssociationId != nil {
-						f9elem.ElasticGPUAssociationID = f9iter.ElasticGpuAssociationId
+				f8 := []*svcapitypes.ElasticGPUAssociation{}
+				for _, f8iter := range elem.ElasticGpuAssociations {
+					f8elem := &svcapitypes.ElasticGPUAssociation{}
+					if f8iter.ElasticGpuAssociationId != nil {
+						f8elem.ElasticGPUAssociationID = f8iter.ElasticGpuAssociationId
 					}
-					if f9iter.ElasticGpuAssociationState != nil {
-						f9elem.ElasticGPUAssociationState = f9iter.ElasticGpuAssociationState
+					if f8iter.ElasticGpuAssociationState != nil {
+						f8elem.ElasticGPUAssociationState = f8iter.ElasticGpuAssociationState
 					}
-					if f9iter.ElasticGpuAssociationTime != nil {
-						f9elem.ElasticGPUAssociationTime = f9iter.ElasticGpuAssociationTime
+					if f8iter.ElasticGpuAssociationTime != nil {
+						f8elem.ElasticGPUAssociationTime = f8iter.ElasticGpuAssociationTime
 					}
-					if f9iter.ElasticGpuId != nil {
-						f9elem.ElasticGPUID = f9iter.ElasticGpuId
+					if f8iter.ElasticGpuId != nil {
+						f8elem.ElasticGPUID = f8iter.ElasticGpuId
 					}
-					f9 = append(f9, f9elem)
+					f8 = append(f8, f8elem)
 				}
-				ko.Status.ElasticGPUAssociations = f9
+				ko.Status.ElasticGPUAssociations = f8
 			} else {
 				ko.Status.ElasticGPUAssociations = nil
 			}
 			if elem.ElasticInferenceAcceleratorAssociations != nil {
-				f10 := []*svcapitypes.ElasticInferenceAcceleratorAssociation{}
-				for _, f10iter := range elem.ElasticInferenceAcceleratorAssociations {
-					f10elem := &svcapitypes.ElasticInferenceAcceleratorAssociation{}
-					if f10iter.ElasticInferenceAcceleratorArn != nil {
-						f10elem.ElasticInferenceAcceleratorARN = f10iter.ElasticInferenceAcceleratorArn
+				f9 := []*svcapitypes.ElasticInferenceAcceleratorAssociation{}
+				for _, f9iter := range elem.ElasticInferenceAcceleratorAssociations {
+					f9elem := &svcapitypes.ElasticInferenceAcceleratorAssociation{}
+					if f9iter.ElasticInferenceAcceleratorArn != nil {
+						f9elem.ElasticInferenceAcceleratorARN = f9iter.ElasticInferenceAcceleratorArn
 					}
-					if f10iter.ElasticInferenceAcceleratorAssociationId != nil {
-						f10elem.ElasticInferenceAcceleratorAssociationID = f10iter.ElasticInferenceAcceleratorAssociationId
+					if f9iter.ElasticInferenceAcceleratorAssociationId != nil {
+						f9elem.ElasticInferenceAcceleratorAssociationID = f9iter.ElasticInferenceAcceleratorAssociationId
 					}
-					if f10iter.ElasticInferenceAcceleratorAssociationState != nil {
-						f10elem.ElasticInferenceAcceleratorAssociationState = f10iter.ElasticInferenceAcceleratorAssociationState
+					if f9iter.ElasticInferenceAcceleratorAssociationState != nil {
+						f9elem.ElasticInferenceAcceleratorAssociationState = f9iter.ElasticInferenceAcceleratorAssociationState
 					}
-					if f10iter.ElasticInferenceAcceleratorAssociationTime != nil {
-						f10elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f10iter.ElasticInferenceAcceleratorAssociationTime}
+					if f9iter.ElasticInferenceAcceleratorAssociationTime != nil {
+						f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f9iter.ElasticInferenceAcceleratorAssociationTime}
 					}
-					f10 = append(f10, f10elem)
+					f9 = append(f9, f9elem)
 				}
-				ko.Status.ElasticInferenceAcceleratorAssociations = f10
+				ko.Status.ElasticInferenceAcceleratorAssociations = f9
 			} else {
 				ko.Status.ElasticInferenceAcceleratorAssociations = nil
 			}
@@ -223,20 +215,20 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.ENASupport = nil
 			}
 			if elem.EnclaveOptions != nil {
-				f12 := &svcapitypes.EnclaveOptionsRequest{}
+				f11 := &svcapitypes.EnclaveOptionsRequest{}
 				if elem.EnclaveOptions.Enabled != nil {
-					f12.Enabled = elem.EnclaveOptions.Enabled
+					f11.Enabled = elem.EnclaveOptions.Enabled
 				}
-				ko.Spec.EnclaveOptions = f12
+				ko.Spec.EnclaveOptions = f11
 			} else {
 				ko.Spec.EnclaveOptions = nil
 			}
 			if elem.HibernationOptions != nil {
-				f13 := &svcapitypes.HibernationOptionsRequest{}
+				f12 := &svcapitypes.HibernationOptionsRequest{}
 				if elem.HibernationOptions.Configured != nil {
-					f13.Configured = elem.HibernationOptions.Configured
+					f12.Configured = elem.HibernationOptions.Configured
 				}
-				ko.Spec.HibernationOptions = f13
+				ko.Spec.HibernationOptions = f12
 			} else {
 				ko.Spec.HibernationOptions = nil
 			}
@@ -246,11 +238,11 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.Hypervisor = nil
 			}
 			if elem.IamInstanceProfile != nil {
-				f15 := &svcapitypes.IAMInstanceProfileSpecification{}
+				f14 := &svcapitypes.IAMInstanceProfileSpecification{}
 				if elem.IamInstanceProfile.Arn != nil {
-					f15.ARN = elem.IamInstanceProfile.Arn
+					f14.ARN = elem.IamInstanceProfile.Arn
 				}
-				ko.Spec.IAMInstanceProfile = f15
+				ko.Spec.IAMInstanceProfile = f14
 			} else {
 				ko.Spec.IAMInstanceProfile = nil
 			}
@@ -295,126 +287,123 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.LaunchTime = nil
 			}
 			if elem.Licenses != nil {
-				f24 := []*svcapitypes.LicenseConfiguration{}
-				for _, f24iter := range elem.Licenses {
-					f24elem := &svcapitypes.LicenseConfiguration{}
-					if f24iter.LicenseConfigurationArn != nil {
-						f24elem.LicenseConfigurationARN = f24iter.LicenseConfigurationArn
+				f23 := []*svcapitypes.LicenseConfiguration{}
+				for _, f23iter := range elem.Licenses {
+					f23elem := &svcapitypes.LicenseConfiguration{}
+					if f23iter.LicenseConfigurationArn != nil {
+						f23elem.LicenseConfigurationARN = f23iter.LicenseConfigurationArn
 					}
-					f24 = append(f24, f24elem)
+					f23 = append(f23, f23elem)
 				}
-				ko.Status.Licenses = f24
+				ko.Status.Licenses = f23
 			} else {
 				ko.Status.Licenses = nil
 			}
 			if elem.MaintenanceOptions != nil {
-				f25 := &svcapitypes.InstanceMaintenanceOptionsRequest{}
+				f24 := &svcapitypes.InstanceMaintenanceOptionsRequest{}
 				if elem.MaintenanceOptions.AutoRecovery != nil {
-					f25.AutoRecovery = elem.MaintenanceOptions.AutoRecovery
+					f24.AutoRecovery = elem.MaintenanceOptions.AutoRecovery
 				}
-				ko.Spec.MaintenanceOptions = f25
+				ko.Spec.MaintenanceOptions = f24
 			} else {
 				ko.Spec.MaintenanceOptions = nil
 			}
 			if elem.MetadataOptions != nil {
-				f26 := &svcapitypes.InstanceMetadataOptionsRequest{}
+				f25 := &svcapitypes.InstanceMetadataOptionsRequest{}
 				if elem.MetadataOptions.HttpEndpoint != nil {
-					f26.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+					f25.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
 				}
 				if elem.MetadataOptions.HttpProtocolIpv6 != nil {
-					f26.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+					f25.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
 				}
 				if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-					f26.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+					f25.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
 				}
 				if elem.MetadataOptions.HttpTokens != nil {
-					f26.HTTPTokens = elem.MetadataOptions.HttpTokens
+					f25.HTTPTokens = elem.MetadataOptions.HttpTokens
 				}
 				if elem.MetadataOptions.InstanceMetadataTags != nil {
-					f26.InstanceMetadataTags = elem.MetadataOptions.InstanceMetadataTags
+					f25.InstanceMetadataTags = elem.MetadataOptions.InstanceMetadataTags
 				}
-				ko.Spec.MetadataOptions = f26
+				ko.Spec.MetadataOptions = f25
 			} else {
 				ko.Spec.MetadataOptions = nil
 			}
 			if elem.Monitoring != nil {
-				f27 := &svcapitypes.RunInstancesMonitoringEnabled{}
-				ko.Spec.Monitoring = f27
+				f26 := &svcapitypes.RunInstancesMonitoringEnabled{}
+				ko.Spec.Monitoring = f26
 			} else {
 				ko.Spec.Monitoring = nil
 			}
 			if elem.NetworkInterfaces != nil {
-				f28 := []*svcapitypes.InstanceNetworkInterfaceSpecification{}
-				for _, f28iter := range elem.NetworkInterfaces {
-					f28elem := &svcapitypes.InstanceNetworkInterfaceSpecification{}
-					if f28iter.Description != nil {
-						f28elem.Description = f28iter.Description
+				f27 := []*svcapitypes.InstanceNetworkInterfaceSpecification{}
+				for _, f27iter := range elem.NetworkInterfaces {
+					f27elem := &svcapitypes.InstanceNetworkInterfaceSpecification{}
+					if f27iter.Description != nil {
+						f27elem.Description = f27iter.Description
 					}
-					if f28iter.InterfaceType != nil {
-						f28elem.InterfaceType = f28iter.InterfaceType
+					if f27iter.InterfaceType != nil {
+						f27elem.InterfaceType = f27iter.InterfaceType
 					}
-					if f28iter.Ipv4Prefixes != nil {
-						f28elemf6 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
-						for _, f28elemf6iter := range f28iter.Ipv4Prefixes {
-							f28elemf6elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
-							if f28elemf6iter.Ipv4Prefix != nil {
-								f28elemf6elem.IPv4Prefix = f28elemf6iter.Ipv4Prefix
+					if f27iter.Ipv4Prefixes != nil {
+						f27elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+						for _, f27elemf5iter := range f27iter.Ipv4Prefixes {
+							f27elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+							if f27elemf5iter.Ipv4Prefix != nil {
+								f27elemf5elem.IPv4Prefix = f27elemf5iter.Ipv4Prefix
 							}
-							f28elemf6 = append(f28elemf6, f28elemf6elem)
+							f27elemf5 = append(f27elemf5, f27elemf5elem)
 						}
-						f28elem.IPv4Prefixes = f28elemf6
+						f27elem.IPv4Prefixes = f27elemf5
 					}
-					if f28iter.Ipv6Addresses != nil {
-						f28elemf7 := []*svcapitypes.InstanceIPv6Address{}
-						for _, f28elemf7iter := range f28iter.Ipv6Addresses {
-							f28elemf7elem := &svcapitypes.InstanceIPv6Address{}
-							if f28elemf7iter.Ipv6Address != nil {
-								f28elemf7elem.IPv6Address = f28elemf7iter.Ipv6Address
+					if f27iter.Ipv6Addresses != nil {
+						f27elemf6 := []*svcapitypes.InstanceIPv6Address{}
+						for _, f27elemf6iter := range f27iter.Ipv6Addresses {
+							f27elemf6elem := &svcapitypes.InstanceIPv6Address{}
+							if f27elemf6iter.Ipv6Address != nil {
+								f27elemf6elem.IPv6Address = f27elemf6iter.Ipv6Address
 							}
-							if f28elemf7iter.IsPrimaryIpv6 != nil {
-								f28elemf7elem.IsPrimaryIPv6 = f28elemf7iter.IsPrimaryIpv6
-							}
-							f28elemf7 = append(f28elemf7, f28elemf7elem)
+							f27elemf6 = append(f27elemf6, f27elemf6elem)
 						}
-						f28elem.IPv6Addresses = f28elemf7
+						f27elem.IPv6Addresses = f27elemf6
 					}
-					if f28iter.Ipv6Prefixes != nil {
-						f28elemf8 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
-						for _, f28elemf8iter := range f28iter.Ipv6Prefixes {
-							f28elemf8elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
-							if f28elemf8iter.Ipv6Prefix != nil {
-								f28elemf8elem.IPv6Prefix = f28elemf8iter.Ipv6Prefix
+					if f27iter.Ipv6Prefixes != nil {
+						f27elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+						for _, f27elemf7iter := range f27iter.Ipv6Prefixes {
+							f27elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+							if f27elemf7iter.Ipv6Prefix != nil {
+								f27elemf7elem.IPv6Prefix = f27elemf7iter.Ipv6Prefix
 							}
-							f28elemf8 = append(f28elemf8, f28elemf8elem)
+							f27elemf7 = append(f27elemf7, f27elemf7elem)
 						}
-						f28elem.IPv6Prefixes = f28elemf8
+						f27elem.IPv6Prefixes = f27elemf7
 					}
-					if f28iter.NetworkInterfaceId != nil {
-						f28elem.NetworkInterfaceID = f28iter.NetworkInterfaceId
+					if f27iter.NetworkInterfaceId != nil {
+						f27elem.NetworkInterfaceID = f27iter.NetworkInterfaceId
 					}
-					if f28iter.PrivateIpAddress != nil {
-						f28elem.PrivateIPAddress = f28iter.PrivateIpAddress
+					if f27iter.PrivateIpAddress != nil {
+						f27elem.PrivateIPAddress = f27iter.PrivateIpAddress
 					}
-					if f28iter.PrivateIpAddresses != nil {
-						f28elemf14 := []*svcapitypes.PrivateIPAddressSpecification{}
-						for _, f28elemf14iter := range f28iter.PrivateIpAddresses {
-							f28elemf14elem := &svcapitypes.PrivateIPAddressSpecification{}
-							if f28elemf14iter.Primary != nil {
-								f28elemf14elem.Primary = f28elemf14iter.Primary
+					if f27iter.PrivateIpAddresses != nil {
+						f27elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
+						for _, f27elemf13iter := range f27iter.PrivateIpAddresses {
+							f27elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
+							if f27elemf13iter.Primary != nil {
+								f27elemf13elem.Primary = f27elemf13iter.Primary
 							}
-							if f28elemf14iter.PrivateIpAddress != nil {
-								f28elemf14elem.PrivateIPAddress = f28elemf14iter.PrivateIpAddress
+							if f27elemf13iter.PrivateIpAddress != nil {
+								f27elemf13elem.PrivateIPAddress = f27elemf13iter.PrivateIpAddress
 							}
-							f28elemf14 = append(f28elemf14, f28elemf14elem)
+							f27elemf13 = append(f27elemf13, f27elemf13elem)
 						}
-						f28elem.PrivateIPAddresses = f28elemf14
+						f27elem.PrivateIPAddresses = f27elemf13
 					}
-					if f28iter.SubnetId != nil {
-						f28elem.SubnetID = f28iter.SubnetId
+					if f27iter.SubnetId != nil {
+						f27elem.SubnetID = f27iter.SubnetId
 					}
-					f28 = append(f28, f28elem)
+					f27 = append(f27, f27elem)
 				}
-				ko.Spec.NetworkInterfaces = f28
+				ko.Spec.NetworkInterfaces = f27
 			} else {
 				ko.Spec.NetworkInterfaces = nil
 			}
@@ -424,35 +413,32 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.OutpostARN = nil
 			}
 			if elem.Placement != nil {
-				f30 := &svcapitypes.Placement{}
+				f29 := &svcapitypes.Placement{}
 				if elem.Placement.Affinity != nil {
-					f30.Affinity = elem.Placement.Affinity
+					f29.Affinity = elem.Placement.Affinity
 				}
 				if elem.Placement.AvailabilityZone != nil {
-					f30.AvailabilityZone = elem.Placement.AvailabilityZone
-				}
-				if elem.Placement.GroupId != nil {
-					f30.GroupID = elem.Placement.GroupId
+					f29.AvailabilityZone = elem.Placement.AvailabilityZone
 				}
 				if elem.Placement.GroupName != nil {
-					f30.GroupName = elem.Placement.GroupName
+					f29.GroupName = elem.Placement.GroupName
 				}
 				if elem.Placement.HostId != nil {
-					f30.HostID = elem.Placement.HostId
+					f29.HostID = elem.Placement.HostId
 				}
 				if elem.Placement.HostResourceGroupArn != nil {
-					f30.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
+					f29.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 				}
 				if elem.Placement.PartitionNumber != nil {
-					f30.PartitionNumber = elem.Placement.PartitionNumber
+					f29.PartitionNumber = elem.Placement.PartitionNumber
 				}
 				if elem.Placement.SpreadDomain != nil {
-					f30.SpreadDomain = elem.Placement.SpreadDomain
+					f29.SpreadDomain = elem.Placement.SpreadDomain
 				}
 				if elem.Placement.Tenancy != nil {
-					f30.Tenancy = elem.Placement.Tenancy
+					f29.Tenancy = elem.Placement.Tenancy
 				}
-				ko.Spec.Placement = f30
+				ko.Spec.Placement = f29
 			} else {
 				ko.Spec.Placement = nil
 			}
@@ -472,17 +458,17 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.PrivateDNSName = nil
 			}
 			if elem.PrivateDnsNameOptions != nil {
-				f34 := &svcapitypes.PrivateDNSNameOptionsRequest{}
+				f33 := &svcapitypes.PrivateDNSNameOptionsRequest{}
 				if elem.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord != nil {
-					f34.EnableResourceNameDNSAAAARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord
+					f33.EnableResourceNameDNSAAAARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord
 				}
 				if elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord != nil {
-					f34.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord
+					f33.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord
 				}
 				if elem.PrivateDnsNameOptions.HostnameType != nil {
-					f34.HostnameType = elem.PrivateDnsNameOptions.HostnameType
+					f33.HostnameType = elem.PrivateDnsNameOptions.HostnameType
 				}
-				ko.Spec.PrivateDNSNameOptions = f34
+				ko.Spec.PrivateDNSNameOptions = f33
 			} else {
 				ko.Spec.PrivateDNSNameOptions = nil
 			}
@@ -492,18 +478,18 @@ func (rm *resourceManager) sdkFind(
 				ko.Spec.PrivateIPAddress = nil
 			}
 			if elem.ProductCodes != nil {
-				f36 := []*svcapitypes.ProductCode{}
-				for _, f36iter := range elem.ProductCodes {
-					f36elem := &svcapitypes.ProductCode{}
-					if f36iter.ProductCodeId != nil {
-						f36elem.ProductCodeID = f36iter.ProductCodeId
+				f35 := []*svcapitypes.ProductCode{}
+				for _, f35iter := range elem.ProductCodes {
+					f35elem := &svcapitypes.ProductCode{}
+					if f35iter.ProductCodeId != nil {
+						f35elem.ProductCodeID = f35iter.ProductCodeId
 					}
-					if f36iter.ProductCodeType != nil {
-						f36elem.ProductCodeType = f36iter.ProductCodeType
+					if f35iter.ProductCodeType != nil {
+						f35elem.ProductCodeType = f35iter.ProductCodeType
 					}
-					f36 = append(f36, f36elem)
+					f35 = append(f35, f35elem)
 				}
-				ko.Status.ProductCodes = f36
+				ko.Status.ProductCodes = f35
 			} else {
 				ko.Status.ProductCodes = nil
 			}
@@ -533,13 +519,13 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.RootDeviceType = nil
 			}
 			if elem.SecurityGroups != nil {
-				f42 := []*string{}
-				for _, f42iter := range elem.SecurityGroups {
-					var f42elem string
-					f42elem = *f42iter.GroupName
-					f42 = append(f42, &f42elem)
+				f41 := []*string{}
+				for _, f41iter := range elem.SecurityGroups {
+					var f41elem string
+					f41elem = *f41iter.GroupName
+					f41 = append(f41, &f41elem)
 				}
-				ko.Spec.SecurityGroups = f42
+				ko.Spec.SecurityGroups = f41
 			} else {
 				ko.Spec.SecurityGroups = nil
 			}
@@ -559,26 +545,26 @@ func (rm *resourceManager) sdkFind(
 				ko.Status.SRIOVNetSupport = nil
 			}
 			if elem.State != nil {
-				f46 := &svcapitypes.InstanceState{}
+				f45 := &svcapitypes.InstanceState{}
 				if elem.State.Code != nil {
-					f46.Code = elem.State.Code
+					f45.Code = elem.State.Code
 				}
 				if elem.State.Name != nil {
-					f46.Name = elem.State.Name
+					f45.Name = elem.State.Name
 				}
-				ko.Status.State = f46
+				ko.Status.State = f45
 			} else {
 				ko.Status.State = nil
 			}
 			if elem.StateReason != nil {
-				f47 := &svcapitypes.StateReason{}
+				f46 := &svcapitypes.StateReason{}
 				if elem.StateReason.Code != nil {
-					f47.Code = elem.StateReason.Code
+					f46.Code = elem.StateReason.Code
 				}
 				if elem.StateReason.Message != nil {
-					f47.Message = elem.StateReason.Message
+					f46.Message = elem.StateReason.Message
 				}
-				ko.Status.StateReason = f47
+				ko.Status.StateReason = f46
 			} else {
 				ko.Status.StateReason = nil
 			}
@@ -593,18 +579,18 @@ func (rm *resourceManager) sdkFind(
 				ko.Spec.SubnetID = nil
 			}
 			if elem.Tags != nil {
-				f50 := []*svcapitypes.Tag{}
-				for _, f50iter := range elem.Tags {
-					f50elem := &svcapitypes.Tag{}
-					if f50iter.Key != nil {
-						f50elem.Key = f50iter.Key
+				f49 := []*svcapitypes.Tag{}
+				for _, f49iter := range elem.Tags {
+					f49elem := &svcapitypes.Tag{}
+					if f49iter.Key != nil {
+						f49elem.Key = f49iter.Key
 					}
-					if f50iter.Value != nil {
-						f50elem.Value = f50iter.Value
+					if f49iter.Value != nil {
+						f49elem.Value = f49iter.Value
 					}
-					f50 = append(f50, f50elem)
+					f49 = append(f49, f49elem)
 				}
-				ko.Spec.Tags = f50
+				ko.Spec.Tags = f49
 			} else {
 				ko.Spec.Tags = nil
 			}
@@ -772,9 +758,6 @@ func (rm *resourceManager) sdkCreate(
 		}
 		if elem.CpuOptions != nil {
 			f6 := &svcapitypes.CPUOptionsRequest{}
-			if elem.CpuOptions.AmdSevSnp != nil {
-				f6.AmdSevSnp = elem.CpuOptions.AmdSevSnp
-			}
 			if elem.CpuOptions.CoreCount != nil {
 				f6.CoreCount = elem.CpuOptions.CoreCount
 			}
@@ -785,57 +768,52 @@ func (rm *resourceManager) sdkCreate(
 		} else {
 			ko.Spec.CPUOptions = nil
 		}
-		if elem.CurrentInstanceBootMode != nil {
-			ko.Status.CurrentInstanceBootMode = elem.CurrentInstanceBootMode
-		} else {
-			ko.Status.CurrentInstanceBootMode = nil
-		}
 		if elem.EbsOptimized != nil {
 			ko.Spec.EBSOptimized = elem.EbsOptimized
 		} else {
 			ko.Spec.EBSOptimized = nil
 		}
 		if elem.ElasticGpuAssociations != nil {
-			f9 := []*svcapitypes.ElasticGPUAssociation{}
-			for _, f9iter := range elem.ElasticGpuAssociations {
-				f9elem := &svcapitypes.ElasticGPUAssociation{}
-				if f9iter.ElasticGpuAssociationId != nil {
-					f9elem.ElasticGPUAssociationID = f9iter.ElasticGpuAssociationId
+			f8 := []*svcapitypes.ElasticGPUAssociation{}
+			for _, f8iter := range elem.ElasticGpuAssociations {
+				f8elem := &svcapitypes.ElasticGPUAssociation{}
+				if f8iter.ElasticGpuAssociationId != nil {
+					f8elem.ElasticGPUAssociationID = f8iter.ElasticGpuAssociationId
 				}
-				if f9iter.ElasticGpuAssociationState != nil {
-					f9elem.ElasticGPUAssociationState = f9iter.ElasticGpuAssociationState
+				if f8iter.ElasticGpuAssociationState != nil {
+					f8elem.ElasticGPUAssociationState = f8iter.ElasticGpuAssociationState
 				}
-				if f9iter.ElasticGpuAssociationTime != nil {
-					f9elem.ElasticGPUAssociationTime = f9iter.ElasticGpuAssociationTime
+				if f8iter.ElasticGpuAssociationTime != nil {
+					f8elem.ElasticGPUAssociationTime = f8iter.ElasticGpuAssociationTime
 				}
-				if f9iter.ElasticGpuId != nil {
-					f9elem.ElasticGPUID = f9iter.ElasticGpuId
+				if f8iter.ElasticGpuId != nil {
+					f8elem.ElasticGPUID = f8iter.ElasticGpuId
 				}
-				f9 = append(f9, f9elem)
+				f8 = append(f8, f8elem)
 			}
-			ko.Status.ElasticGPUAssociations = f9
+			ko.Status.ElasticGPUAssociations = f8
 		} else {
 			ko.Status.ElasticGPUAssociations = nil
 		}
 		if elem.ElasticInferenceAcceleratorAssociations != nil {
-			f10 := []*svcapitypes.ElasticInferenceAcceleratorAssociation{}
-			for _, f10iter := range elem.ElasticInferenceAcceleratorAssociations {
-				f10elem := &svcapitypes.ElasticInferenceAcceleratorAssociation{}
-				if f10iter.ElasticInferenceAcceleratorArn != nil {
-					f10elem.ElasticInferenceAcceleratorARN = f10iter.ElasticInferenceAcceleratorArn
+			f9 := []*svcapitypes.ElasticInferenceAcceleratorAssociation{}
+			for _, f9iter := range elem.ElasticInferenceAcceleratorAssociations {
+				f9elem := &svcapitypes.ElasticInferenceAcceleratorAssociation{}
+				if f9iter.ElasticInferenceAcceleratorArn != nil {
+					f9elem.ElasticInferenceAcceleratorARN = f9iter.ElasticInferenceAcceleratorArn
 				}
-				if f10iter.ElasticInferenceAcceleratorAssociationId != nil {
-					f10elem.ElasticInferenceAcceleratorAssociationID = f10iter.ElasticInferenceAcceleratorAssociationId
+				if f9iter.ElasticInferenceAcceleratorAssociationId != nil {
+					f9elem.ElasticInferenceAcceleratorAssociationID = f9iter.ElasticInferenceAcceleratorAssociationId
 				}
-				if f10iter.ElasticInferenceAcceleratorAssociationState != nil {
-					f10elem.ElasticInferenceAcceleratorAssociationState = f10iter.ElasticInferenceAcceleratorAssociationState
+				if f9iter.ElasticInferenceAcceleratorAssociationState != nil {
+					f9elem.ElasticInferenceAcceleratorAssociationState = f9iter.ElasticInferenceAcceleratorAssociationState
 				}
-				if f10iter.ElasticInferenceAcceleratorAssociationTime != nil {
-					f10elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f10iter.ElasticInferenceAcceleratorAssociationTime}
+				if f9iter.ElasticInferenceAcceleratorAssociationTime != nil {
+					f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f9iter.ElasticInferenceAcceleratorAssociationTime}
 				}
-				f10 = append(f10, f10elem)
+				f9 = append(f9, f9elem)
 			}
-			ko.Status.ElasticInferenceAcceleratorAssociations = f10
+			ko.Status.ElasticInferenceAcceleratorAssociations = f9
 		} else {
 			ko.Status.ElasticInferenceAcceleratorAssociations = nil
 		}
@@ -845,20 +823,20 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.ENASupport = nil
 		}
 		if elem.EnclaveOptions != nil {
-			f12 := &svcapitypes.EnclaveOptionsRequest{}
+			f11 := &svcapitypes.EnclaveOptionsRequest{}
 			if elem.EnclaveOptions.Enabled != nil {
-				f12.Enabled = elem.EnclaveOptions.Enabled
+				f11.Enabled = elem.EnclaveOptions.Enabled
 			}
-			ko.Spec.EnclaveOptions = f12
+			ko.Spec.EnclaveOptions = f11
 		} else {
 			ko.Spec.EnclaveOptions = nil
 		}
 		if elem.HibernationOptions != nil {
-			f13 := &svcapitypes.HibernationOptionsRequest{}
+			f12 := &svcapitypes.HibernationOptionsRequest{}
 			if elem.HibernationOptions.Configured != nil {
-				f13.Configured = elem.HibernationOptions.Configured
+				f12.Configured = elem.HibernationOptions.Configured
 			}
-			ko.Spec.HibernationOptions = f13
+			ko.Spec.HibernationOptions = f12
 		} else {
 			ko.Spec.HibernationOptions = nil
 		}
@@ -868,11 +846,11 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.Hypervisor = nil
 		}
 		if elem.IamInstanceProfile != nil {
-			f15 := &svcapitypes.IAMInstanceProfileSpecification{}
+			f14 := &svcapitypes.IAMInstanceProfileSpecification{}
 			if elem.IamInstanceProfile.Arn != nil {
-				f15.ARN = elem.IamInstanceProfile.Arn
+				f14.ARN = elem.IamInstanceProfile.Arn
 			}
-			ko.Spec.IAMInstanceProfile = f15
+			ko.Spec.IAMInstanceProfile = f14
 		} else {
 			ko.Spec.IAMInstanceProfile = nil
 		}
@@ -917,126 +895,123 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.LaunchTime = nil
 		}
 		if elem.Licenses != nil {
-			f24 := []*svcapitypes.LicenseConfiguration{}
-			for _, f24iter := range elem.Licenses {
-				f24elem := &svcapitypes.LicenseConfiguration{}
-				if f24iter.LicenseConfigurationArn != nil {
-					f24elem.LicenseConfigurationARN = f24iter.LicenseConfigurationArn
+			f23 := []*svcapitypes.LicenseConfiguration{}
+			for _, f23iter := range elem.Licenses {
+				f23elem := &svcapitypes.LicenseConfiguration{}
+				if f23iter.LicenseConfigurationArn != nil {
+					f23elem.LicenseConfigurationARN = f23iter.LicenseConfigurationArn
 				}
-				f24 = append(f24, f24elem)
+				f23 = append(f23, f23elem)
 			}
-			ko.Status.Licenses = f24
+			ko.Status.Licenses = f23
 		} else {
 			ko.Status.Licenses = nil
 		}
 		if elem.MaintenanceOptions != nil {
-			f25 := &svcapitypes.InstanceMaintenanceOptionsRequest{}
+			f24 := &svcapitypes.InstanceMaintenanceOptionsRequest{}
 			if elem.MaintenanceOptions.AutoRecovery != nil {
-				f25.AutoRecovery = elem.MaintenanceOptions.AutoRecovery
+				f24.AutoRecovery = elem.MaintenanceOptions.AutoRecovery
 			}
-			ko.Spec.MaintenanceOptions = f25
+			ko.Spec.MaintenanceOptions = f24
 		} else {
 			ko.Spec.MaintenanceOptions = nil
 		}
 		if elem.MetadataOptions != nil {
-			f26 := &svcapitypes.InstanceMetadataOptionsRequest{}
+			f25 := &svcapitypes.InstanceMetadataOptionsRequest{}
 			if elem.MetadataOptions.HttpEndpoint != nil {
-				f26.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+				f25.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
 			}
 			if elem.MetadataOptions.HttpProtocolIpv6 != nil {
-				f26.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+				f25.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
 			}
 			if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-				f26.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+				f25.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
 			}
 			if elem.MetadataOptions.HttpTokens != nil {
-				f26.HTTPTokens = elem.MetadataOptions.HttpTokens
+				f25.HTTPTokens = elem.MetadataOptions.HttpTokens
 			}
 			if elem.MetadataOptions.InstanceMetadataTags != nil {
-				f26.InstanceMetadataTags = elem.MetadataOptions.InstanceMetadataTags
+				f25.InstanceMetadataTags = elem.MetadataOptions.InstanceMetadataTags
 			}
-			ko.Spec.MetadataOptions = f26
+			ko.Spec.MetadataOptions = f25
 		} else {
 			ko.Spec.MetadataOptions = nil
 		}
 		if elem.Monitoring != nil {
-			f27 := &svcapitypes.RunInstancesMonitoringEnabled{}
-			ko.Spec.Monitoring = f27
+			f26 := &svcapitypes.RunInstancesMonitoringEnabled{}
+			ko.Spec.Monitoring = f26
 		} else {
 			ko.Spec.Monitoring = nil
 		}
 		if elem.NetworkInterfaces != nil {
-			f28 := []*svcapitypes.InstanceNetworkInterfaceSpecification{}
-			for _, f28iter := range elem.NetworkInterfaces {
-				f28elem := &svcapitypes.InstanceNetworkInterfaceSpecification{}
-				if f28iter.Description != nil {
-					f28elem.Description = f28iter.Description
+			f27 := []*svcapitypes.InstanceNetworkInterfaceSpecification{}
+			for _, f27iter := range elem.NetworkInterfaces {
+				f27elem := &svcapitypes.InstanceNetworkInterfaceSpecification{}
+				if f27iter.Description != nil {
+					f27elem.Description = f27iter.Description
 				}
-				if f28iter.InterfaceType != nil {
-					f28elem.InterfaceType = f28iter.InterfaceType
+				if f27iter.InterfaceType != nil {
+					f27elem.InterfaceType = f27iter.InterfaceType
 				}
-				if f28iter.Ipv4Prefixes != nil {
-					f28elemf6 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
-					for _, f28elemf6iter := range f28iter.Ipv4Prefixes {
-						f28elemf6elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
-						if f28elemf6iter.Ipv4Prefix != nil {
-							f28elemf6elem.IPv4Prefix = f28elemf6iter.Ipv4Prefix
+				if f27iter.Ipv4Prefixes != nil {
+					f27elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+					for _, f27elemf5iter := range f27iter.Ipv4Prefixes {
+						f27elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+						if f27elemf5iter.Ipv4Prefix != nil {
+							f27elemf5elem.IPv4Prefix = f27elemf5iter.Ipv4Prefix
 						}
-						f28elemf6 = append(f28elemf6, f28elemf6elem)
+						f27elemf5 = append(f27elemf5, f27elemf5elem)
 					}
-					f28elem.IPv4Prefixes = f28elemf6
+					f27elem.IPv4Prefixes = f27elemf5
 				}
-				if f28iter.Ipv6Addresses != nil {
-					f28elemf7 := []*svcapitypes.InstanceIPv6Address{}
-					for _, f28elemf7iter := range f28iter.Ipv6Addresses {
-						f28elemf7elem := &svcapitypes.InstanceIPv6Address{}
-						if f28elemf7iter.Ipv6Address != nil {
-							f28elemf7elem.IPv6Address = f28elemf7iter.Ipv6Address
+				if f27iter.Ipv6Addresses != nil {
+					f27elemf6 := []*svcapitypes.InstanceIPv6Address{}
+					for _, f27elemf6iter := range f27iter.Ipv6Addresses {
+						f27elemf6elem := &svcapitypes.InstanceIPv6Address{}
+						if f27elemf6iter.Ipv6Address != nil {
+							f27elemf6elem.IPv6Address = f27elemf6iter.Ipv6Address
 						}
-						if f28elemf7iter.IsPrimaryIpv6 != nil {
-							f28elemf7elem.IsPrimaryIPv6 = f28elemf7iter.IsPrimaryIpv6
-						}
-						f28elemf7 = append(f28elemf7, f28elemf7elem)
+						f27elemf6 = append(f27elemf6, f27elemf6elem)
 					}
-					f28elem.IPv6Addresses = f28elemf7
+					f27elem.IPv6Addresses = f27elemf6
 				}
-				if f28iter.Ipv6Prefixes != nil {
-					f28elemf8 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
-					for _, f28elemf8iter := range f28iter.Ipv6Prefixes {
-						f28elemf8elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
-						if f28elemf8iter.Ipv6Prefix != nil {
-							f28elemf8elem.IPv6Prefix = f28elemf8iter.Ipv6Prefix
+				if f27iter.Ipv6Prefixes != nil {
+					f27elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+					for _, f27elemf7iter := range f27iter.Ipv6Prefixes {
+						f27elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+						if f27elemf7iter.Ipv6Prefix != nil {
+							f27elemf7elem.IPv6Prefix = f27elemf7iter.Ipv6Prefix
 						}
-						f28elemf8 = append(f28elemf8, f28elemf8elem)
+						f27elemf7 = append(f27elemf7, f27elemf7elem)
 					}
-					f28elem.IPv6Prefixes = f28elemf8
+					f27elem.IPv6Prefixes = f27elemf7
 				}
-				if f28iter.NetworkInterfaceId != nil {
-					f28elem.NetworkInterfaceID = f28iter.NetworkInterfaceId
+				if f27iter.NetworkInterfaceId != nil {
+					f27elem.NetworkInterfaceID = f27iter.NetworkInterfaceId
 				}
-				if f28iter.PrivateIpAddress != nil {
-					f28elem.PrivateIPAddress = f28iter.PrivateIpAddress
+				if f27iter.PrivateIpAddress != nil {
+					f27elem.PrivateIPAddress = f27iter.PrivateIpAddress
 				}
-				if f28iter.PrivateIpAddresses != nil {
-					f28elemf14 := []*svcapitypes.PrivateIPAddressSpecification{}
-					for _, f28elemf14iter := range f28iter.PrivateIpAddresses {
-						f28elemf14elem := &svcapitypes.PrivateIPAddressSpecification{}
-						if f28elemf14iter.Primary != nil {
-							f28elemf14elem.Primary = f28elemf14iter.Primary
+				if f27iter.PrivateIpAddresses != nil {
+					f27elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
+					for _, f27elemf13iter := range f27iter.PrivateIpAddresses {
+						f27elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
+						if f27elemf13iter.Primary != nil {
+							f27elemf13elem.Primary = f27elemf13iter.Primary
 						}
-						if f28elemf14iter.PrivateIpAddress != nil {
-							f28elemf14elem.PrivateIPAddress = f28elemf14iter.PrivateIpAddress
+						if f27elemf13iter.PrivateIpAddress != nil {
+							f27elemf13elem.PrivateIPAddress = f27elemf13iter.PrivateIpAddress
 						}
-						f28elemf14 = append(f28elemf14, f28elemf14elem)
+						f27elemf13 = append(f27elemf13, f27elemf13elem)
 					}
-					f28elem.PrivateIPAddresses = f28elemf14
+					f27elem.PrivateIPAddresses = f27elemf13
 				}
-				if f28iter.SubnetId != nil {
-					f28elem.SubnetID = f28iter.SubnetId
+				if f27iter.SubnetId != nil {
+					f27elem.SubnetID = f27iter.SubnetId
 				}
-				f28 = append(f28, f28elem)
+				f27 = append(f27, f27elem)
 			}
-			ko.Spec.NetworkInterfaces = f28
+			ko.Spec.NetworkInterfaces = f27
 		} else {
 			ko.Spec.NetworkInterfaces = nil
 		}
@@ -1046,35 +1021,32 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.OutpostARN = nil
 		}
 		if elem.Placement != nil {
-			f30 := &svcapitypes.Placement{}
+			f29 := &svcapitypes.Placement{}
 			if elem.Placement.Affinity != nil {
-				f30.Affinity = elem.Placement.Affinity
+				f29.Affinity = elem.Placement.Affinity
 			}
 			if elem.Placement.AvailabilityZone != nil {
-				f30.AvailabilityZone = elem.Placement.AvailabilityZone
-			}
-			if elem.Placement.GroupId != nil {
-				f30.GroupID = elem.Placement.GroupId
+				f29.AvailabilityZone = elem.Placement.AvailabilityZone
 			}
 			if elem.Placement.GroupName != nil {
-				f30.GroupName = elem.Placement.GroupName
+				f29.GroupName = elem.Placement.GroupName
 			}
 			if elem.Placement.HostId != nil {
-				f30.HostID = elem.Placement.HostId
+				f29.HostID = elem.Placement.HostId
 			}
 			if elem.Placement.HostResourceGroupArn != nil {
-				f30.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
+				f29.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 			}
 			if elem.Placement.PartitionNumber != nil {
-				f30.PartitionNumber = elem.Placement.PartitionNumber
+				f29.PartitionNumber = elem.Placement.PartitionNumber
 			}
 			if elem.Placement.SpreadDomain != nil {
-				f30.SpreadDomain = elem.Placement.SpreadDomain
+				f29.SpreadDomain = elem.Placement.SpreadDomain
 			}
 			if elem.Placement.Tenancy != nil {
-				f30.Tenancy = elem.Placement.Tenancy
+				f29.Tenancy = elem.Placement.Tenancy
 			}
-			ko.Spec.Placement = f30
+			ko.Spec.Placement = f29
 		} else {
 			ko.Spec.Placement = nil
 		}
@@ -1094,17 +1066,17 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.PrivateDNSName = nil
 		}
 		if elem.PrivateDnsNameOptions != nil {
-			f34 := &svcapitypes.PrivateDNSNameOptionsRequest{}
+			f33 := &svcapitypes.PrivateDNSNameOptionsRequest{}
 			if elem.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord != nil {
-				f34.EnableResourceNameDNSAAAARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord
+				f33.EnableResourceNameDNSAAAARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord
 			}
 			if elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord != nil {
-				f34.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord
+				f33.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord
 			}
 			if elem.PrivateDnsNameOptions.HostnameType != nil {
-				f34.HostnameType = elem.PrivateDnsNameOptions.HostnameType
+				f33.HostnameType = elem.PrivateDnsNameOptions.HostnameType
 			}
-			ko.Spec.PrivateDNSNameOptions = f34
+			ko.Spec.PrivateDNSNameOptions = f33
 		} else {
 			ko.Spec.PrivateDNSNameOptions = nil
 		}
@@ -1114,18 +1086,18 @@ func (rm *resourceManager) sdkCreate(
 			ko.Spec.PrivateIPAddress = nil
 		}
 		if elem.ProductCodes != nil {
-			f36 := []*svcapitypes.ProductCode{}
-			for _, f36iter := range elem.ProductCodes {
-				f36elem := &svcapitypes.ProductCode{}
-				if f36iter.ProductCodeId != nil {
-					f36elem.ProductCodeID = f36iter.ProductCodeId
+			f35 := []*svcapitypes.ProductCode{}
+			for _, f35iter := range elem.ProductCodes {
+				f35elem := &svcapitypes.ProductCode{}
+				if f35iter.ProductCodeId != nil {
+					f35elem.ProductCodeID = f35iter.ProductCodeId
 				}
-				if f36iter.ProductCodeType != nil {
-					f36elem.ProductCodeType = f36iter.ProductCodeType
+				if f35iter.ProductCodeType != nil {
+					f35elem.ProductCodeType = f35iter.ProductCodeType
 				}
-				f36 = append(f36, f36elem)
+				f35 = append(f35, f35elem)
 			}
-			ko.Status.ProductCodes = f36
+			ko.Status.ProductCodes = f35
 		} else {
 			ko.Status.ProductCodes = nil
 		}
@@ -1155,13 +1127,13 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.RootDeviceType = nil
 		}
 		if elem.SecurityGroups != nil {
-			f42 := []*string{}
-			for _, f42iter := range elem.SecurityGroups {
-				var f42elem string
-				f42elem = *f42iter.GroupName
-				f42 = append(f42, &f42elem)
+			f41 := []*string{}
+			for _, f41iter := range elem.SecurityGroups {
+				var f41elem string
+				f41elem = *f41iter.GroupName
+				f41 = append(f41, &f41elem)
 			}
-			ko.Spec.SecurityGroups = f42
+			ko.Spec.SecurityGroups = f41
 		} else {
 			ko.Spec.SecurityGroups = nil
 		}
@@ -1181,26 +1153,26 @@ func (rm *resourceManager) sdkCreate(
 			ko.Status.SRIOVNetSupport = nil
 		}
 		if elem.State != nil {
-			f46 := &svcapitypes.InstanceState{}
+			f45 := &svcapitypes.InstanceState{}
 			if elem.State.Code != nil {
-				f46.Code = elem.State.Code
+				f45.Code = elem.State.Code
 			}
 			if elem.State.Name != nil {
-				f46.Name = elem.State.Name
+				f45.Name = elem.State.Name
 			}
-			ko.Status.State = f46
+			ko.Status.State = f45
 		} else {
 			ko.Status.State = nil
 		}
 		if elem.StateReason != nil {
-			f47 := &svcapitypes.StateReason{}
+			f46 := &svcapitypes.StateReason{}
 			if elem.StateReason.Code != nil {
-				f47.Code = elem.StateReason.Code
+				f46.Code = elem.StateReason.Code
 			}
 			if elem.StateReason.Message != nil {
-				f47.Message = elem.StateReason.Message
+				f46.Message = elem.StateReason.Message
 			}
-			ko.Status.StateReason = f47
+			ko.Status.StateReason = f46
 		} else {
 			ko.Status.StateReason = nil
 		}
@@ -1215,18 +1187,18 @@ func (rm *resourceManager) sdkCreate(
 			ko.Spec.SubnetID = nil
 		}
 		if elem.Tags != nil {
-			f50 := []*svcapitypes.Tag{}
-			for _, f50iter := range elem.Tags {
-				f50elem := &svcapitypes.Tag{}
-				if f50iter.Key != nil {
-					f50elem.Key = f50iter.Key
+			f49 := []*svcapitypes.Tag{}
+			for _, f49iter := range elem.Tags {
+				f49elem := &svcapitypes.Tag{}
+				if f49iter.Key != nil {
+					f49elem.Key = f49iter.Key
 				}
-				if f50iter.Value != nil {
-					f50elem.Value = f50iter.Value
+				if f49iter.Value != nil {
+					f49elem.Value = f49iter.Value
 				}
-				f50 = append(f50, f50elem)
+				f49 = append(f49, f49elem)
 			}
-			ko.Spec.Tags = f50
+			ko.Spec.Tags = f49
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -1347,9 +1319,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.CPUOptions != nil {
 		f2 := &svcsdk.CpuOptionsRequest{}
-		if r.ko.Spec.CPUOptions.AmdSevSnp != nil {
-			f2.SetAmdSevSnp(*r.ko.Spec.CPUOptions.AmdSevSnp)
-		}
 		if r.ko.Spec.CPUOptions.CoreCount != nil {
 			f2.SetCoreCount(*r.ko.Spec.CPUOptions.CoreCount)
 		}
@@ -1399,32 +1368,29 @@ func (rm *resourceManager) newCreateRequestPayload(
 		}
 		res.SetElasticInferenceAccelerators(f8)
 	}
-	if r.ko.Spec.EnablePrimaryIPv6 != nil {
-		res.SetEnablePrimaryIpv6(*r.ko.Spec.EnablePrimaryIPv6)
-	}
 	if r.ko.Spec.EnclaveOptions != nil {
-		f10 := &svcsdk.EnclaveOptionsRequest{}
+		f9 := &svcsdk.EnclaveOptionsRequest{}
 		if r.ko.Spec.EnclaveOptions.Enabled != nil {
-			f10.SetEnabled(*r.ko.Spec.EnclaveOptions.Enabled)
+			f9.SetEnabled(*r.ko.Spec.EnclaveOptions.Enabled)
 		}
-		res.SetEnclaveOptions(f10)
+		res.SetEnclaveOptions(f9)
 	}
 	if r.ko.Spec.HibernationOptions != nil {
-		f11 := &svcsdk.HibernationOptionsRequest{}
+		f10 := &svcsdk.HibernationOptionsRequest{}
 		if r.ko.Spec.HibernationOptions.Configured != nil {
-			f11.SetConfigured(*r.ko.Spec.HibernationOptions.Configured)
+			f10.SetConfigured(*r.ko.Spec.HibernationOptions.Configured)
 		}
-		res.SetHibernationOptions(f11)
+		res.SetHibernationOptions(f10)
 	}
 	if r.ko.Spec.IAMInstanceProfile != nil {
-		f12 := &svcsdk.IamInstanceProfileSpecification{}
+		f11 := &svcsdk.IamInstanceProfileSpecification{}
 		if r.ko.Spec.IAMInstanceProfile.ARN != nil {
-			f12.SetArn(*r.ko.Spec.IAMInstanceProfile.ARN)
+			f11.SetArn(*r.ko.Spec.IAMInstanceProfile.ARN)
 		}
 		if r.ko.Spec.IAMInstanceProfile.Name != nil {
-			f12.SetName(*r.ko.Spec.IAMInstanceProfile.Name)
+			f11.SetName(*r.ko.Spec.IAMInstanceProfile.Name)
 		}
-		res.SetIamInstanceProfile(f12)
+		res.SetIamInstanceProfile(f11)
 	}
 	if r.ko.Spec.ImageID != nil {
 		res.SetImageId(*r.ko.Spec.ImageID)
@@ -1433,30 +1399,30 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetInstanceInitiatedShutdownBehavior(*r.ko.Spec.InstanceInitiatedShutdownBehavior)
 	}
 	if r.ko.Spec.InstanceMarketOptions != nil {
-		f15 := &svcsdk.InstanceMarketOptionsRequest{}
+		f14 := &svcsdk.InstanceMarketOptionsRequest{}
 		if r.ko.Spec.InstanceMarketOptions.MarketType != nil {
-			f15.SetMarketType(*r.ko.Spec.InstanceMarketOptions.MarketType)
+			f14.SetMarketType(*r.ko.Spec.InstanceMarketOptions.MarketType)
 		}
 		if r.ko.Spec.InstanceMarketOptions.SpotOptions != nil {
-			f15f1 := &svcsdk.SpotMarketOptions{}
+			f14f1 := &svcsdk.SpotMarketOptions{}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.BlockDurationMinutes != nil {
-				f15f1.SetBlockDurationMinutes(*r.ko.Spec.InstanceMarketOptions.SpotOptions.BlockDurationMinutes)
+				f14f1.SetBlockDurationMinutes(*r.ko.Spec.InstanceMarketOptions.SpotOptions.BlockDurationMinutes)
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior != nil {
-				f15f1.SetInstanceInterruptionBehavior(*r.ko.Spec.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior)
+				f14f1.SetInstanceInterruptionBehavior(*r.ko.Spec.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior)
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.MaxPrice != nil {
-				f15f1.SetMaxPrice(*r.ko.Spec.InstanceMarketOptions.SpotOptions.MaxPrice)
+				f14f1.SetMaxPrice(*r.ko.Spec.InstanceMarketOptions.SpotOptions.MaxPrice)
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.SpotInstanceType != nil {
-				f15f1.SetSpotInstanceType(*r.ko.Spec.InstanceMarketOptions.SpotOptions.SpotInstanceType)
+				f14f1.SetSpotInstanceType(*r.ko.Spec.InstanceMarketOptions.SpotOptions.SpotInstanceType)
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.ValidUntil != nil {
-				f15f1.SetValidUntil(r.ko.Spec.InstanceMarketOptions.SpotOptions.ValidUntil.Time)
+				f14f1.SetValidUntil(r.ko.Spec.InstanceMarketOptions.SpotOptions.ValidUntil.Time)
 			}
-			f15.SetSpotOptions(f15f1)
+			f14.SetSpotOptions(f14f1)
 		}
-		res.SetInstanceMarketOptions(f15)
+		res.SetInstanceMarketOptions(f14)
 	}
 	if r.ko.Spec.InstanceType != nil {
 		res.SetInstanceType(*r.ko.Spec.InstanceType)
@@ -1465,18 +1431,15 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetIpv6AddressCount(*r.ko.Spec.IPv6AddressCount)
 	}
 	if r.ko.Spec.IPv6Addresses != nil {
-		f18 := []*svcsdk.InstanceIpv6Address{}
-		for _, f18iter := range r.ko.Spec.IPv6Addresses {
-			f18elem := &svcsdk.InstanceIpv6Address{}
-			if f18iter.IPv6Address != nil {
-				f18elem.SetIpv6Address(*f18iter.IPv6Address)
+		f17 := []*svcsdk.InstanceIpv6Address{}
+		for _, f17iter := range r.ko.Spec.IPv6Addresses {
+			f17elem := &svcsdk.InstanceIpv6Address{}
+			if f17iter.IPv6Address != nil {
+				f17elem.SetIpv6Address(*f17iter.IPv6Address)
 			}
-			if f18iter.IsPrimaryIPv6 != nil {
-				f18elem.SetIsPrimaryIpv6(*f18iter.IsPrimaryIPv6)
-			}
-			f18 = append(f18, f18elem)
+			f17 = append(f17, f17elem)
 		}
-		res.SetIpv6Addresses(f18)
+		res.SetIpv6Addresses(f17)
 	}
 	if r.ko.Spec.KernelID != nil {
 		res.SetKernelId(*r.ko.Spec.KernelID)
@@ -1485,237 +1448,201 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetKeyName(*r.ko.Spec.KeyName)
 	}
 	if r.ko.Spec.LaunchTemplate != nil {
-		f21 := &svcsdk.LaunchTemplateSpecification{}
+		f20 := &svcsdk.LaunchTemplateSpecification{}
 		if r.ko.Spec.LaunchTemplate.LaunchTemplateID != nil {
-			f21.SetLaunchTemplateId(*r.ko.Spec.LaunchTemplate.LaunchTemplateID)
+			f20.SetLaunchTemplateId(*r.ko.Spec.LaunchTemplate.LaunchTemplateID)
 		}
 		if r.ko.Spec.LaunchTemplate.LaunchTemplateName != nil {
-			f21.SetLaunchTemplateName(*r.ko.Spec.LaunchTemplate.LaunchTemplateName)
+			f20.SetLaunchTemplateName(*r.ko.Spec.LaunchTemplate.LaunchTemplateName)
 		}
 		if r.ko.Spec.LaunchTemplate.Version != nil {
-			f21.SetVersion(*r.ko.Spec.LaunchTemplate.Version)
+			f20.SetVersion(*r.ko.Spec.LaunchTemplate.Version)
 		}
-		res.SetLaunchTemplate(f21)
+		res.SetLaunchTemplate(f20)
 	}
 	if r.ko.Spec.LicenseSpecifications != nil {
-		f22 := []*svcsdk.LicenseConfigurationRequest{}
-		for _, f22iter := range r.ko.Spec.LicenseSpecifications {
-			f22elem := &svcsdk.LicenseConfigurationRequest{}
-			if f22iter.LicenseConfigurationARN != nil {
-				f22elem.SetLicenseConfigurationArn(*f22iter.LicenseConfigurationARN)
+		f21 := []*svcsdk.LicenseConfigurationRequest{}
+		for _, f21iter := range r.ko.Spec.LicenseSpecifications {
+			f21elem := &svcsdk.LicenseConfigurationRequest{}
+			if f21iter.LicenseConfigurationARN != nil {
+				f21elem.SetLicenseConfigurationArn(*f21iter.LicenseConfigurationARN)
 			}
-			f22 = append(f22, f22elem)
+			f21 = append(f21, f21elem)
 		}
-		res.SetLicenseSpecifications(f22)
+		res.SetLicenseSpecifications(f21)
 	}
 	if r.ko.Spec.MaintenanceOptions != nil {
-		f23 := &svcsdk.InstanceMaintenanceOptionsRequest{}
+		f22 := &svcsdk.InstanceMaintenanceOptionsRequest{}
 		if r.ko.Spec.MaintenanceOptions.AutoRecovery != nil {
-			f23.SetAutoRecovery(*r.ko.Spec.MaintenanceOptions.AutoRecovery)
+			f22.SetAutoRecovery(*r.ko.Spec.MaintenanceOptions.AutoRecovery)
 		}
-		res.SetMaintenanceOptions(f23)
+		res.SetMaintenanceOptions(f22)
 	}
 	res.SetMaxCount(1)
 	if r.ko.Spec.MetadataOptions != nil {
-		f25 := &svcsdk.InstanceMetadataOptionsRequest{}
+		f24 := &svcsdk.InstanceMetadataOptionsRequest{}
 		if r.ko.Spec.MetadataOptions.HTTPEndpoint != nil {
-			f25.SetHttpEndpoint(*r.ko.Spec.MetadataOptions.HTTPEndpoint)
+			f24.SetHttpEndpoint(*r.ko.Spec.MetadataOptions.HTTPEndpoint)
 		}
 		if r.ko.Spec.MetadataOptions.HTTPProtocolIPv6 != nil {
-			f25.SetHttpProtocolIpv6(*r.ko.Spec.MetadataOptions.HTTPProtocolIPv6)
+			f24.SetHttpProtocolIpv6(*r.ko.Spec.MetadataOptions.HTTPProtocolIPv6)
 		}
 		if r.ko.Spec.MetadataOptions.HTTPPutResponseHopLimit != nil {
-			f25.SetHttpPutResponseHopLimit(*r.ko.Spec.MetadataOptions.HTTPPutResponseHopLimit)
+			f24.SetHttpPutResponseHopLimit(*r.ko.Spec.MetadataOptions.HTTPPutResponseHopLimit)
 		}
 		if r.ko.Spec.MetadataOptions.HTTPTokens != nil {
-			f25.SetHttpTokens(*r.ko.Spec.MetadataOptions.HTTPTokens)
+			f24.SetHttpTokens(*r.ko.Spec.MetadataOptions.HTTPTokens)
 		}
 		if r.ko.Spec.MetadataOptions.InstanceMetadataTags != nil {
-			f25.SetInstanceMetadataTags(*r.ko.Spec.MetadataOptions.InstanceMetadataTags)
+			f24.SetInstanceMetadataTags(*r.ko.Spec.MetadataOptions.InstanceMetadataTags)
 		}
-		res.SetMetadataOptions(f25)
+		res.SetMetadataOptions(f24)
 	}
 	res.SetMinCount(1)
 	if r.ko.Spec.Monitoring != nil {
-		f27 := &svcsdk.RunInstancesMonitoringEnabled{}
+		f26 := &svcsdk.RunInstancesMonitoringEnabled{}
 		if r.ko.Spec.Monitoring.Enabled != nil {
-			f27.SetEnabled(*r.ko.Spec.Monitoring.Enabled)
+			f26.SetEnabled(*r.ko.Spec.Monitoring.Enabled)
 		}
-		res.SetMonitoring(f27)
+		res.SetMonitoring(f26)
 	}
 	if r.ko.Spec.NetworkInterfaces != nil {
-		f28 := []*svcsdk.InstanceNetworkInterfaceSpecification{}
-		for _, f28iter := range r.ko.Spec.NetworkInterfaces {
-			f28elem := &svcsdk.InstanceNetworkInterfaceSpecification{}
-			if f28iter.AssociateCarrierIPAddress != nil {
-				f28elem.SetAssociateCarrierIpAddress(*f28iter.AssociateCarrierIPAddress)
+		f27 := []*svcsdk.InstanceNetworkInterfaceSpecification{}
+		for _, f27iter := range r.ko.Spec.NetworkInterfaces {
+			f27elem := &svcsdk.InstanceNetworkInterfaceSpecification{}
+			if f27iter.AssociateCarrierIPAddress != nil {
+				f27elem.SetAssociateCarrierIpAddress(*f27iter.AssociateCarrierIPAddress)
 			}
-			if f28iter.AssociatePublicIPAddress != nil {
-				f28elem.SetAssociatePublicIpAddress(*f28iter.AssociatePublicIPAddress)
+			if f27iter.AssociatePublicIPAddress != nil {
+				f27elem.SetAssociatePublicIpAddress(*f27iter.AssociatePublicIPAddress)
 			}
-			if f28iter.ConnectionTrackingSpecification != nil {
-				f28elemf2 := &svcsdk.ConnectionTrackingSpecificationRequest{}
-				if f28iter.ConnectionTrackingSpecification.TCPEstablishedTimeout != nil {
-					f28elemf2.SetTcpEstablishedTimeout(*f28iter.ConnectionTrackingSpecification.TCPEstablishedTimeout)
-				}
-				if f28iter.ConnectionTrackingSpecification.UDPStreamTimeout != nil {
-					f28elemf2.SetUdpStreamTimeout(*f28iter.ConnectionTrackingSpecification.UDPStreamTimeout)
-				}
-				if f28iter.ConnectionTrackingSpecification.UDPTimeout != nil {
-					f28elemf2.SetUdpTimeout(*f28iter.ConnectionTrackingSpecification.UDPTimeout)
-				}
-				f28elem.SetConnectionTrackingSpecification(f28elemf2)
+			if f27iter.DeleteOnTermination != nil {
+				f27elem.SetDeleteOnTermination(*f27iter.DeleteOnTermination)
 			}
-			if f28iter.DeleteOnTermination != nil {
-				f28elem.SetDeleteOnTermination(*f28iter.DeleteOnTermination)
+			if f27iter.Description != nil {
+				f27elem.SetDescription(*f27iter.Description)
 			}
-			if f28iter.Description != nil {
-				f28elem.SetDescription(*f28iter.Description)
+			if f27iter.DeviceIndex != nil {
+				f27elem.SetDeviceIndex(*f27iter.DeviceIndex)
 			}
-			if f28iter.DeviceIndex != nil {
-				f28elem.SetDeviceIndex(*f28iter.DeviceIndex)
+			if f27iter.InterfaceType != nil {
+				f27elem.SetInterfaceType(*f27iter.InterfaceType)
 			}
-			if f28iter.ENASrdSpecification != nil {
-				f28elemf6 := &svcsdk.EnaSrdSpecificationRequest{}
-				if f28iter.ENASrdSpecification.ENASrdEnabled != nil {
-					f28elemf6.SetEnaSrdEnabled(*f28iter.ENASrdSpecification.ENASrdEnabled)
-				}
-				if f28iter.ENASrdSpecification.ENASrdUDPSpecification != nil {
-					f28elemf6f1 := &svcsdk.EnaSrdUdpSpecificationRequest{}
-					if f28iter.ENASrdSpecification.ENASrdUDPSpecification.ENASrdUDPEnabled != nil {
-						f28elemf6f1.SetEnaSrdUdpEnabled(*f28iter.ENASrdSpecification.ENASrdUDPSpecification.ENASrdUDPEnabled)
+			if f27iter.IPv4PrefixCount != nil {
+				f27elem.SetIpv4PrefixCount(*f27iter.IPv4PrefixCount)
+			}
+			if f27iter.IPv4Prefixes != nil {
+				f27elemf7 := []*svcsdk.Ipv4PrefixSpecificationRequest{}
+				for _, f27elemf7iter := range f27iter.IPv4Prefixes {
+					f27elemf7elem := &svcsdk.Ipv4PrefixSpecificationRequest{}
+					if f27elemf7iter.IPv4Prefix != nil {
+						f27elemf7elem.SetIpv4Prefix(*f27elemf7iter.IPv4Prefix)
 					}
-					f28elemf6.SetEnaSrdUdpSpecification(f28elemf6f1)
+					f27elemf7 = append(f27elemf7, f27elemf7elem)
 				}
-				f28elem.SetEnaSrdSpecification(f28elemf6)
+				f27elem.SetIpv4Prefixes(f27elemf7)
 			}
-			if f28iter.InterfaceType != nil {
-				f28elem.SetInterfaceType(*f28iter.InterfaceType)
+			if f27iter.IPv6AddressCount != nil {
+				f27elem.SetIpv6AddressCount(*f27iter.IPv6AddressCount)
 			}
-			if f28iter.IPv4PrefixCount != nil {
-				f28elem.SetIpv4PrefixCount(*f28iter.IPv4PrefixCount)
-			}
-			if f28iter.IPv4Prefixes != nil {
-				f28elemf9 := []*svcsdk.Ipv4PrefixSpecificationRequest{}
-				for _, f28elemf9iter := range f28iter.IPv4Prefixes {
-					f28elemf9elem := &svcsdk.Ipv4PrefixSpecificationRequest{}
-					if f28elemf9iter.IPv4Prefix != nil {
-						f28elemf9elem.SetIpv4Prefix(*f28elemf9iter.IPv4Prefix)
+			if f27iter.IPv6Addresses != nil {
+				f27elemf9 := []*svcsdk.InstanceIpv6Address{}
+				for _, f27elemf9iter := range f27iter.IPv6Addresses {
+					f27elemf9elem := &svcsdk.InstanceIpv6Address{}
+					if f27elemf9iter.IPv6Address != nil {
+						f27elemf9elem.SetIpv6Address(*f27elemf9iter.IPv6Address)
 					}
-					f28elemf9 = append(f28elemf9, f28elemf9elem)
+					f27elemf9 = append(f27elemf9, f27elemf9elem)
 				}
-				f28elem.SetIpv4Prefixes(f28elemf9)
+				f27elem.SetIpv6Addresses(f27elemf9)
 			}
-			if f28iter.IPv6AddressCount != nil {
-				f28elem.SetIpv6AddressCount(*f28iter.IPv6AddressCount)
+			if f27iter.IPv6PrefixCount != nil {
+				f27elem.SetIpv6PrefixCount(*f27iter.IPv6PrefixCount)
 			}
-			if f28iter.IPv6Addresses != nil {
-				f28elemf11 := []*svcsdk.InstanceIpv6Address{}
-				for _, f28elemf11iter := range f28iter.IPv6Addresses {
-					f28elemf11elem := &svcsdk.InstanceIpv6Address{}
-					if f28elemf11iter.IPv6Address != nil {
-						f28elemf11elem.SetIpv6Address(*f28elemf11iter.IPv6Address)
+			if f27iter.IPv6Prefixes != nil {
+				f27elemf11 := []*svcsdk.Ipv6PrefixSpecificationRequest{}
+				for _, f27elemf11iter := range f27iter.IPv6Prefixes {
+					f27elemf11elem := &svcsdk.Ipv6PrefixSpecificationRequest{}
+					if f27elemf11iter.IPv6Prefix != nil {
+						f27elemf11elem.SetIpv6Prefix(*f27elemf11iter.IPv6Prefix)
 					}
-					if f28elemf11iter.IsPrimaryIPv6 != nil {
-						f28elemf11elem.SetIsPrimaryIpv6(*f28elemf11iter.IsPrimaryIPv6)
-					}
-					f28elemf11 = append(f28elemf11, f28elemf11elem)
+					f27elemf11 = append(f27elemf11, f27elemf11elem)
 				}
-				f28elem.SetIpv6Addresses(f28elemf11)
+				f27elem.SetIpv6Prefixes(f27elemf11)
 			}
-			if f28iter.IPv6PrefixCount != nil {
-				f28elem.SetIpv6PrefixCount(*f28iter.IPv6PrefixCount)
+			if f27iter.NetworkCardIndex != nil {
+				f27elem.SetNetworkCardIndex(*f27iter.NetworkCardIndex)
 			}
-			if f28iter.IPv6Prefixes != nil {
-				f28elemf13 := []*svcsdk.Ipv6PrefixSpecificationRequest{}
-				for _, f28elemf13iter := range f28iter.IPv6Prefixes {
-					f28elemf13elem := &svcsdk.Ipv6PrefixSpecificationRequest{}
-					if f28elemf13iter.IPv6Prefix != nil {
-						f28elemf13elem.SetIpv6Prefix(*f28elemf13iter.IPv6Prefix)
+			if f27iter.NetworkInterfaceID != nil {
+				f27elem.SetNetworkInterfaceId(*f27iter.NetworkInterfaceID)
+			}
+			if f27iter.PrivateIPAddress != nil {
+				f27elem.SetPrivateIpAddress(*f27iter.PrivateIPAddress)
+			}
+			if f27iter.PrivateIPAddresses != nil {
+				f27elemf15 := []*svcsdk.PrivateIpAddressSpecification{}
+				for _, f27elemf15iter := range f27iter.PrivateIPAddresses {
+					f27elemf15elem := &svcsdk.PrivateIpAddressSpecification{}
+					if f27elemf15iter.Primary != nil {
+						f27elemf15elem.SetPrimary(*f27elemf15iter.Primary)
 					}
-					f28elemf13 = append(f28elemf13, f28elemf13elem)
+					if f27elemf15iter.PrivateIPAddress != nil {
+						f27elemf15elem.SetPrivateIpAddress(*f27elemf15iter.PrivateIPAddress)
+					}
+					f27elemf15 = append(f27elemf15, f27elemf15elem)
 				}
-				f28elem.SetIpv6Prefixes(f28elemf13)
+				f27elem.SetPrivateIpAddresses(f27elemf15)
 			}
-			if f28iter.NetworkCardIndex != nil {
-				f28elem.SetNetworkCardIndex(*f28iter.NetworkCardIndex)
+			if f27iter.SecondaryPrivateIPAddressCount != nil {
+				f27elem.SetSecondaryPrivateIpAddressCount(*f27iter.SecondaryPrivateIPAddressCount)
 			}
-			if f28iter.NetworkInterfaceID != nil {
-				f28elem.SetNetworkInterfaceId(*f28iter.NetworkInterfaceID)
+			if f27iter.SubnetID != nil {
+				f27elem.SetSubnetId(*f27iter.SubnetID)
 			}
-			if f28iter.PrimaryIPv6 != nil {
-				f28elem.SetPrimaryIpv6(*f28iter.PrimaryIPv6)
-			}
-			if f28iter.PrivateIPAddress != nil {
-				f28elem.SetPrivateIpAddress(*f28iter.PrivateIPAddress)
-			}
-			if f28iter.PrivateIPAddresses != nil {
-				f28elemf18 := []*svcsdk.PrivateIpAddressSpecification{}
-				for _, f28elemf18iter := range f28iter.PrivateIPAddresses {
-					f28elemf18elem := &svcsdk.PrivateIpAddressSpecification{}
-					if f28elemf18iter.Primary != nil {
-						f28elemf18elem.SetPrimary(*f28elemf18iter.Primary)
-					}
-					if f28elemf18iter.PrivateIPAddress != nil {
-						f28elemf18elem.SetPrivateIpAddress(*f28elemf18iter.PrivateIPAddress)
-					}
-					f28elemf18 = append(f28elemf18, f28elemf18elem)
-				}
-				f28elem.SetPrivateIpAddresses(f28elemf18)
-			}
-			if f28iter.SecondaryPrivateIPAddressCount != nil {
-				f28elem.SetSecondaryPrivateIpAddressCount(*f28iter.SecondaryPrivateIPAddressCount)
-			}
-			if f28iter.SubnetID != nil {
-				f28elem.SetSubnetId(*f28iter.SubnetID)
-			}
-			f28 = append(f28, f28elem)
+			f27 = append(f27, f27elem)
 		}
-		res.SetNetworkInterfaces(f28)
+		res.SetNetworkInterfaces(f27)
 	}
 	if r.ko.Spec.Placement != nil {
-		f29 := &svcsdk.Placement{}
+		f28 := &svcsdk.Placement{}
 		if r.ko.Spec.Placement.Affinity != nil {
-			f29.SetAffinity(*r.ko.Spec.Placement.Affinity)
+			f28.SetAffinity(*r.ko.Spec.Placement.Affinity)
 		}
 		if r.ko.Spec.Placement.AvailabilityZone != nil {
-			f29.SetAvailabilityZone(*r.ko.Spec.Placement.AvailabilityZone)
-		}
-		if r.ko.Spec.Placement.GroupID != nil {
-			f29.SetGroupId(*r.ko.Spec.Placement.GroupID)
+			f28.SetAvailabilityZone(*r.ko.Spec.Placement.AvailabilityZone)
 		}
 		if r.ko.Spec.Placement.GroupName != nil {
-			f29.SetGroupName(*r.ko.Spec.Placement.GroupName)
+			f28.SetGroupName(*r.ko.Spec.Placement.GroupName)
 		}
 		if r.ko.Spec.Placement.HostID != nil {
-			f29.SetHostId(*r.ko.Spec.Placement.HostID)
+			f28.SetHostId(*r.ko.Spec.Placement.HostID)
 		}
 		if r.ko.Spec.Placement.HostResourceGroupARN != nil {
-			f29.SetHostResourceGroupArn(*r.ko.Spec.Placement.HostResourceGroupARN)
+			f28.SetHostResourceGroupArn(*r.ko.Spec.Placement.HostResourceGroupARN)
 		}
 		if r.ko.Spec.Placement.PartitionNumber != nil {
-			f29.SetPartitionNumber(*r.ko.Spec.Placement.PartitionNumber)
+			f28.SetPartitionNumber(*r.ko.Spec.Placement.PartitionNumber)
 		}
 		if r.ko.Spec.Placement.SpreadDomain != nil {
-			f29.SetSpreadDomain(*r.ko.Spec.Placement.SpreadDomain)
+			f28.SetSpreadDomain(*r.ko.Spec.Placement.SpreadDomain)
 		}
 		if r.ko.Spec.Placement.Tenancy != nil {
-			f29.SetTenancy(*r.ko.Spec.Placement.Tenancy)
+			f28.SetTenancy(*r.ko.Spec.Placement.Tenancy)
 		}
-		res.SetPlacement(f29)
+		res.SetPlacement(f28)
 	}
 	if r.ko.Spec.PrivateDNSNameOptions != nil {
-		f30 := &svcsdk.PrivateDnsNameOptionsRequest{}
+		f29 := &svcsdk.PrivateDnsNameOptionsRequest{}
 		if r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord != nil {
-			f30.SetEnableResourceNameDnsAAAARecord(*r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord)
+			f29.SetEnableResourceNameDnsAAAARecord(*r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord)
 		}
 		if r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord != nil {
-			f30.SetEnableResourceNameDnsARecord(*r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord)
+			f29.SetEnableResourceNameDnsARecord(*r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord)
 		}
 		if r.ko.Spec.PrivateDNSNameOptions.HostnameType != nil {
-			f30.SetHostnameType(*r.ko.Spec.PrivateDNSNameOptions.HostnameType)
+			f29.SetHostnameType(*r.ko.Spec.PrivateDNSNameOptions.HostnameType)
 		}
-		res.SetPrivateDnsNameOptions(f30)
+		res.SetPrivateDnsNameOptions(f29)
 	}
 	if r.ko.Spec.PrivateIPAddress != nil {
 		res.SetPrivateIpAddress(*r.ko.Spec.PrivateIPAddress)
@@ -1724,22 +1651,22 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.SetRamdiskId(*r.ko.Spec.RAMDiskID)
 	}
 	if r.ko.Spec.SecurityGroupIDs != nil {
+		f32 := []*string{}
+		for _, f32iter := range r.ko.Spec.SecurityGroupIDs {
+			var f32elem string
+			f32elem = *f32iter
+			f32 = append(f32, &f32elem)
+		}
+		res.SetSecurityGroupIds(f32)
+	}
+	if r.ko.Spec.SecurityGroups != nil {
 		f33 := []*string{}
-		for _, f33iter := range r.ko.Spec.SecurityGroupIDs {
+		for _, f33iter := range r.ko.Spec.SecurityGroups {
 			var f33elem string
 			f33elem = *f33iter
 			f33 = append(f33, &f33elem)
 		}
-		res.SetSecurityGroupIds(f33)
-	}
-	if r.ko.Spec.SecurityGroups != nil {
-		f34 := []*string{}
-		for _, f34iter := range r.ko.Spec.SecurityGroups {
-			var f34elem string
-			f34elem = *f34iter
-			f34 = append(f34, &f34elem)
-		}
-		res.SetSecurityGroups(f34)
+		res.SetSecurityGroups(f33)
 	}
 	if r.ko.Spec.SubnetID != nil {
 		res.SetSubnetId(*r.ko.Spec.SubnetID)

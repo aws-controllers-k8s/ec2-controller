@@ -107,8 +107,6 @@ spec:
                   see Optimize CPU options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html)
                   in the Amazon EC2 User Guide.
                 properties:
-                  amdSevSnp:
-                    type: string
                   coreCount:
                     format: int64
                     type: integer
@@ -167,15 +165,7 @@ spec:
                   instance. Elastic inference accelerators are a resource you can
                   attach to your Amazon EC2 instances to accelerate your Deep Learning
                   (DL) inference workloads. \n You cannot specify accelerators from
-                  different generations in the same request. \n Starting April 15,
-                  2023, Amazon Web Services will not onboard new customers to Amazon
-                  Elastic Inference (EI), and will help current customers migrate
-                  their workloads to options that offer better price and performance.
-                  After April 15, 2023, new customers will not be able to launch instances
-                  with Amazon EI accelerators in Amazon SageMaker, Amazon ECS, or
-                  Amazon EC2. However, customers who have used Amazon EI at least
-                  once during the past 30-day period are considered current customers
-                  and will be able to continue using the service."
+                  different generations in the same request."
                 items:
                   description: Describes an elastic inference accelerator.
                   properties:
@@ -186,23 +176,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              enablePrimaryIPv6:
-                description: If you’re launching an instance into a dual-stack or
-                  IPv6-only subnet, you can enable assigning a primary IPv6 address.
-                  A primary IPv6 address is an IPv6 GUA address associated with an
-                  ENI that you have enabled to use a primary IPv6 address. Use this
-                  option if an instance relies on its IPv6 address not changing. When
-                  you launch the instance, Amazon Web Services will automatically
-                  assign an IPv6 address associated with the ENI attached to your
-                  instance to be the primary IPv6 address. Once you enable an IPv6
-                  GUA address to be a primary IPv6, you cannot disable it. When you
-                  enable an IPv6 GUA address to be a primary IPv6, the first IPv6
-                  GUA will be made the primary IPv6 address until the instance is
-                  terminated or the network interface is detached. If you have multiple
-                  IPv6 addresses associated with an ENI attached to your instance
-                  and you enable a primary IPv6 address, the first IPv6 GUA address
-                  associated with the ENI becomes the primary IPv6 address.
-                type: boolean
               enclaveOptions:
                 description: "Indicates whether the instance is enabled for Amazon
                   Web Services Nitro Enclaves. For more information, see What is Amazon
@@ -216,8 +189,6 @@ spec:
                 type: object
               hibernationOptions:
                 description: "Indicates whether an instance is enabled for hibernation.
-                  This parameter is valid only if the instance meets the hibernation
-                  prerequisites (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html).
                   For more information, see Hibernate your instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
                   in the Amazon EC2 User Guide. \n You can't enable hibernation and
                   Amazon Web Services Nitro Enclaves on the same instance."
@@ -269,34 +240,32 @@ spec:
                     type: object
                 type: object
               instanceType:
-                description: The instance type. For more information, see Instance
+                description: "The instance type. For more information, see Instance
                   types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
-                  in the Amazon EC2 User Guide.
+                  in the Amazon EC2 User Guide. \n Default: m1.small"
                 type: string
               ipv6AddressCount:
-                description: "The number of IPv6 addresses to associate with the primary
-                  network interface. Amazon EC2 chooses the IPv6 addresses from the
-                  range of your subnet. You cannot specify this option and the option
-                  to assign specific IPv6 addresses in the same request. You can specify
-                  this option if you've specified a minimum number of instances to
-                  launch. \n You cannot specify this option and the network interfaces
-                  option in the same request."
+                description: "[EC2-VPC] The number of IPv6 addresses to associate
+                  with the primary network interface. Amazon EC2 chooses the IPv6
+                  addresses from the range of your subnet. You cannot specify this
+                  option and the option to assign specific IPv6 addresses in the same
+                  request. You can specify this option if you've specified a minimum
+                  number of instances to launch. \n You cannot specify this option
+                  and the network interfaces option in the same request."
                 format: int64
                 type: integer
               ipv6Addresses:
-                description: "The IPv6 addresses from the range of the subnet to associate
-                  with the primary network interface. You cannot specify this option
-                  and the option to assign a number of IPv6 addresses in the same
-                  request. You cannot specify this option if you've specified a minimum
-                  number of instances to launch. \n You cannot specify this option
-                  and the network interfaces option in the same request."
+                description: "[EC2-VPC] The IPv6 addresses from the range of the subnet
+                  to associate with the primary network interface. You cannot specify
+                  this option and the option to assign a number of IPv6 addresses
+                  in the same request. You cannot specify this option if you've specified
+                  a minimum number of instances to launch. \n You cannot specify this
+                  option and the network interfaces option in the same request."
                 items:
                   description: Describes an IPv6 address.
                   properties:
                     ipv6Address:
                       type: string
-                    isPrimaryIPv6:
-                      type: boolean
                   type: object
                 type: array
               kernelID:
@@ -397,23 +366,6 @@ spec:
                       type: boolean
                     associatePublicIPAddress:
                       type: boolean
-                    connectionTrackingSpecification:
-                      description: A security group connection tracking specification
-                        request that enables you to set the idle timeout for connection
-                        tracking on an Elastic network interface. For more information,
-                        see Connection tracking timeouts (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-connection-tracking.html#connection-tracking-timeouts)
-                        in the Amazon Elastic Compute Cloud User Guide.
-                      properties:
-                        tcpEstablishedTimeout:
-                          format: int64
-                          type: integer
-                        udpStreamTimeout:
-                          format: int64
-                          type: integer
-                        udpTimeout:
-                          format: int64
-                          type: integer
-                      type: object
                     deleteOnTermination:
                       type: boolean
                     description:
@@ -421,20 +373,6 @@ spec:
                     deviceIndex:
                       format: int64
                       type: integer
-                    enaSrdSpecification:
-                      description: Launch instances with ENA Express settings configured
-                        from your launch template.
-                      properties:
-                        enaSrdEnabled:
-                          type: boolean
-                        enaSrdUDPSpecification:
-                          description: Configures ENA Express for UDP network traffic
-                            from your launch template.
-                          properties:
-                            enaSrdUDPEnabled:
-                              type: boolean
-                          type: object
-                      type: object
                     interfaceType:
                       type: string
                     ipv4PrefixCount:
@@ -458,8 +396,6 @@ spec:
                         properties:
                           ipv6Address:
                             type: string
-                          isPrimaryIPv6:
-                            type: boolean
                         type: object
                       type: array
                     ipv6PrefixCount:
@@ -479,8 +415,6 @@ spec:
                       type: integer
                     networkInterfaceID:
                       type: string
-                    primaryIPv6:
-                      type: boolean
                     privateIPAddress:
                       type: string
                     privateIPAddresses:
@@ -508,8 +442,6 @@ spec:
                     type: string
                   availabilityZone:
                     type: string
-                  groupID:
-                    type: string
                   groupName:
                     type: string
                   hostID:
@@ -526,8 +458,7 @@ spec:
                 type: object
               privateDNSNameOptions:
                 description: The options for the instance hostname. The default values
-                  are inherited from the subnet. Applies only if creating a network
-                  interface, not attaching an existing one.
+                  are inherited from the subnet.
                 properties:
                   enableResourceNameDNSAAAARecord:
                     type: boolean
@@ -537,14 +468,14 @@ spec:
                     type: string
                 type: object
               privateIPAddress:
-                description: "The primary IPv4 address. You must specify a value from
-                  the IPv4 address range of the subnet. \n Only one private IP address
-                  can be designated as primary. You can't specify this option if you've
-                  specified the option to designate a private IP address as the primary
-                  IP address in a network interface specification. You cannot specify
-                  this option if you're launching more than one instance in the request.
-                  \n You cannot specify this option and the network interfaces option
-                  in the same request."
+                description: "[EC2-VPC] The primary IPv4 address. You must specify
+                  a value from the IPv4 address range of the subnet. \n Only one private
+                  IP address can be designated as primary. You can't specify this
+                  option if you've specified the option to designate a private IP
+                  address as the primary IP address in a network interface specification.
+                  You cannot specify this option if you're launching more than one
+                  instance in the request. \n You cannot specify this option and the
+                  network interfaces option in the same request."
                 type: string
               ramDiskID:
                 description: "The ID of the RAM disk to select. Some kernels require
@@ -565,17 +496,18 @@ spec:
                   type: string
                 type: array
               securityGroups:
-                description: "[Default VPC] The names of the security groups. \n If
-                  you specify a network interface, you must specify any security groups
-                  as part of the network interface. \n Default: Amazon EC2 uses the
-                  default security group."
+                description: "[EC2-Classic, default VPC] The names of the security
+                  groups. For a nondefault VPC, you must use security group IDs instead.
+                  \n If you specify a network interface, you must specify any security
+                  groups as part of the network interface. \n Default: Amazon EC2
+                  uses the default security group."
                 items:
                   type: string
                 type: array
               subnetID:
-                description: "The ID of the subnet to launch the instance into. \n
-                  If you specify a network interface, you must specify any subnets
-                  as part of the network interface."
+                description: "[EC2-VPC] The ID of the subnet to launch the instance
+                  into. \n If you specify a network interface, you must specify any
+                  subnets as part of the network interface."
                 type: string
               tags:
                 description: The tags. The value parameter is required, but if you
@@ -640,13 +572,9 @@ spec:
                 description: The architecture of the image.
                 type: string
               bootMode:
-                description: "The boot mode that was specified by the AMI. If the
-                  value is uefi-preferred, the AMI supports both UEFI and Legacy BIOS.
-                  The currentInstanceBootMode parameter is the boot mode that is used
-                  to boot the instance at launch or start. \n The operating system
-                  contained in the AMI must be configured to support the specified
-                  boot mode. \n For more information, see Boot modes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html)
-                  in the Amazon EC2 User Guide."
+                description: The boot mode of the instance. For more information,
+                  see Boot modes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html)
+                  in the Amazon EC2 User Guide.
                 type: string
               capacityReservationID:
                 description: The ID of the Capacity Reservation.
@@ -684,11 +612,6 @@ spec:
                   - type
                   type: object
                 type: array
-              currentInstanceBootMode:
-                description: The boot mode that is used to boot the instance at launch
-                  or start. For more information, see Boot modes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html)
-                  in the Amazon EC2 User Guide.
-                type: string
               elasticGPUAssociations:
                 description: The Elastic GPU associated with the instance.
                 items:
@@ -757,8 +680,8 @@ spec:
                 description: The Amazon Resource Name (ARN) of the Outpost.
                 type: string
               platform:
-                description: The platform. This value is windows for Windows instances;
-                  otherwise, it is empty.
+                description: The value is Windows for Windows instances; otherwise
+                  blank.
                 type: string
               platformDetails:
                 description: The platform details value for the instance. For more
@@ -766,14 +689,14 @@ spec:
                   in the Amazon EC2 User Guide.
                 type: string
               privateDNSName:
-                description: "[IPv4 only] The private DNS hostname name assigned to
+                description: "(IPv4 only) The private DNS hostname name assigned to
                   the instance. This DNS hostname can only be used inside the Amazon
                   EC2 network. This name is not available until the instance enters
-                  the running state. \n The Amazon-provided DNS server resolves Amazon-provided
-                  private DNS hostnames if you've enabled DNS resolution and DNS hostnames
-                  in your VPC. If you are not using the Amazon-provided DNS server
-                  in your VPC, your custom domain name servers must resolve the hostname
-                  as appropriate."
+                  the running state. \n [EC2-VPC] The Amazon-provided DNS server resolves
+                  Amazon-provided private DNS hostnames if you've enabled DNS resolution
+                  and DNS hostnames in your VPC. If you are not using the Amazon-provided
+                  DNS server in your VPC, your custom domain name servers must resolve
+                  the hostname as appropriate."
                 type: string
               productCodes:
                 description: The product codes attached to this instance, if applicable.
@@ -787,10 +710,10 @@ spec:
                   type: object
                 type: array
               publicDNSName:
-                description: '[IPv4 only] The public DNS name assigned to the instance.
+                description: (IPv4 only) The public DNS name assigned to the instance.
                   This name is not available until the instance enters the running
-                  state. This name is only available if you''ve enabled DNS hostnames
-                  for your VPC.'
+                  state. For EC2-VPC, this name is only available if you've enabled
+                  DNS hostnames for your VPC.
                 type: string
               publicIPAddress:
                 description: "The public IPv4 address, or the Carrier IP address assigned
@@ -856,7 +779,8 @@ spec:
                 description: The virtualization type of the instance.
                 type: string
               vpcID:
-                description: The ID of the VPC in which the instance is running.
+                description: '[EC2-VPC] The ID of the VPC in which the instance is
+                  running.'
                 type: string
             type: object
         type: object

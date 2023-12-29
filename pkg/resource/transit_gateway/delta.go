@@ -96,13 +96,6 @@ func newResourceDelta(
 				delta.Add("Spec.Options.MulticastSupport", a.ko.Spec.Options.MulticastSupport, b.ko.Spec.Options.MulticastSupport)
 			}
 		}
-		if ackcompare.HasNilDifference(a.ko.Spec.Options.SecurityGroupReferencingSupport, b.ko.Spec.Options.SecurityGroupReferencingSupport) {
-			delta.Add("Spec.Options.SecurityGroupReferencingSupport", a.ko.Spec.Options.SecurityGroupReferencingSupport, b.ko.Spec.Options.SecurityGroupReferencingSupport)
-		} else if a.ko.Spec.Options.SecurityGroupReferencingSupport != nil && b.ko.Spec.Options.SecurityGroupReferencingSupport != nil {
-			if *a.ko.Spec.Options.SecurityGroupReferencingSupport != *b.ko.Spec.Options.SecurityGroupReferencingSupport {
-				delta.Add("Spec.Options.SecurityGroupReferencingSupport", a.ko.Spec.Options.SecurityGroupReferencingSupport, b.ko.Spec.Options.SecurityGroupReferencingSupport)
-			}
-		}
 		if len(a.ko.Spec.Options.TransitGatewayCIDRBlocks) != len(b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
 			delta.Add("Spec.Options.TransitGatewayCIDRBlocks", a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks)
 		} else if len(a.ko.Spec.Options.TransitGatewayCIDRBlocks) > 0 {

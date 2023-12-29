@@ -48,8 +48,6 @@ spec:
                 properties:
                   dnsRecordIPType:
                     type: string
-                  privateDNSOnlyForInboundResolverEndpoint:
-                    type: boolean
                 type: object
               ipAddressType:
                 description: The IP address type for the endpoint.
@@ -74,7 +72,7 @@ spec:
                   ModifyVpcAttribute to set the VPC attributes. \n Default: true"
                 type: boolean
               routeTableIDs:
-                description: (Gateway endpoint) The route table IDs.
+                description: (Gateway endpoint) One or more route table IDs.
                 items:
                   type: string
                 type: array
@@ -95,9 +93,8 @@ spec:
                   type: object
                 type: array
               securityGroupIDs:
-                description: (Interface endpoint) The IDs of the security groups to
-                  associate with the endpoint network interfaces. If this parameter
-                  is not specified, we use the default security group for the VPC.
+                description: (Interface endpoint) The ID of one or more security groups
+                  to associate with the endpoint network interface.
                 items:
                   type: string
                 type: array
@@ -118,25 +115,15 @@ spec:
                   type: object
                 type: array
               serviceName:
-                description: The name of the endpoint service.
+                description: The service name. To get a list of available services,
+                  use the DescribeVpcEndpointServices request, or get the name from
+                  the service provider.
                 type: string
-              subnetConfigurations:
-                description: The subnet configurations for the endpoint.
-                items:
-                  description: Describes the configuration of a subnet for a VPC endpoint.
-                  properties:
-                    ipv4:
-                      type: string
-                    ipv6:
-                      type: string
-                    subnetID:
-                      type: string
-                  type: object
-                type: array
               subnetIDs:
-                description: (Interface and Gateway Load Balancer endpoints) The IDs
-                  of the subnets in which to create endpoint network interfaces. For
-                  a Gateway Load Balancer endpoint, you can specify only one subnet.
+                description: (Interface and Gateway Load Balancer endpoints) The ID
+                  of one or more subnets in which to create an endpoint network interface.
+                  For a Gateway Load Balancer endpoint, you can specify one subnet
+                  only.
                 items:
                   type: string
                 type: array
@@ -173,7 +160,7 @@ spec:
                 description: "The type of endpoint. \n Default: Gateway"
                 type: string
               vpcID:
-                description: The ID of the VPC.
+                description: The ID of the VPC in which the endpoint will be used.
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -291,7 +278,8 @@ spec:
                     type: string
                 type: object
               networkInterfaceIDs:
-                description: (Interface endpoint) The network interfaces for the endpoint.
+                description: (Interface endpoint) One or more network interfaces for
+                  the endpoint.
                 items:
                   type: string
                 type: array

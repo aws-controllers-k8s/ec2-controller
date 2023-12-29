@@ -114,9 +114,6 @@ func (rm *resourceManager) sdkFind(
 			if elem.DnsOptions.DnsRecordIpType != nil {
 				f2.DNSRecordIPType = elem.DnsOptions.DnsRecordIpType
 			}
-			if elem.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint != nil {
-				f2.PrivateDNSOnlyForInboundResolverEndpoint = elem.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
-			}
 			ko.Spec.DNSOptions = f2
 		} else {
 			ko.Spec.DNSOptions = nil
@@ -340,9 +337,6 @@ func (rm *resourceManager) sdkCreate(
 		if resp.VpcEndpoint.DnsOptions.DnsRecordIpType != nil {
 			f2.DNSRecordIPType = resp.VpcEndpoint.DnsOptions.DnsRecordIpType
 		}
-		if resp.VpcEndpoint.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint != nil {
-			f2.PrivateDNSOnlyForInboundResolverEndpoint = resp.VpcEndpoint.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
-		}
 		ko.Spec.DNSOptions = f2
 	} else {
 		ko.Spec.DNSOptions = nil
@@ -492,9 +486,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 		if r.ko.Spec.DNSOptions.DNSRecordIPType != nil {
 			f0.SetDnsRecordIpType(*r.ko.Spec.DNSOptions.DNSRecordIPType)
 		}
-		if r.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint != nil {
-			f0.SetPrivateDnsOnlyForInboundResolverEndpoint(*r.ko.Spec.DNSOptions.PrivateDNSOnlyForInboundResolverEndpoint)
-		}
 		res.SetDnsOptions(f0)
 	}
 	if r.ko.Spec.IPAddressType != nil {
@@ -527,31 +518,14 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.ServiceName != nil {
 		res.SetServiceName(*r.ko.Spec.ServiceName)
 	}
-	if r.ko.Spec.SubnetConfigurations != nil {
-		f7 := []*svcsdk.SubnetConfiguration{}
-		for _, f7iter := range r.ko.Spec.SubnetConfigurations {
-			f7elem := &svcsdk.SubnetConfiguration{}
-			if f7iter.IPv4 != nil {
-				f7elem.SetIpv4(*f7iter.IPv4)
-			}
-			if f7iter.IPv6 != nil {
-				f7elem.SetIpv6(*f7iter.IPv6)
-			}
-			if f7iter.SubnetID != nil {
-				f7elem.SetSubnetId(*f7iter.SubnetID)
-			}
-			f7 = append(f7, f7elem)
-		}
-		res.SetSubnetConfigurations(f7)
-	}
 	if r.ko.Spec.SubnetIDs != nil {
-		f8 := []*string{}
-		for _, f8iter := range r.ko.Spec.SubnetIDs {
-			var f8elem string
-			f8elem = *f8iter
-			f8 = append(f8, &f8elem)
+		f7 := []*string{}
+		for _, f7iter := range r.ko.Spec.SubnetIDs {
+			var f7elem string
+			f7elem = *f7iter
+			f7 = append(f7, &f7elem)
 		}
-		res.SetSubnetIds(f8)
+		res.SetSubnetIds(f7)
 	}
 	if r.ko.Spec.VPCEndpointType != nil {
 		res.SetVpcEndpointType(*r.ko.Spec.VPCEndpointType)

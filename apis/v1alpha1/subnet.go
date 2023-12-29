@@ -33,7 +33,8 @@ type SubnetSpec struct {
 	//
 	// To create a subnet in a Local Zone, set this value to the Local Zone ID,
 	// for example us-west-2-lax-1a. For information about the Regions that support
-	// Local Zones, see Local Zones locations (http://aws.amazon.com/about-aws/global-infrastructure/localzones/locations/).
+	// Local Zones, see Available Regions (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
+	// in the Amazon Elastic Compute Cloud User Guide.
 	//
 	// To create a subnet in an Outpost, set this value to the Availability Zone
 	// for the Outpost and specify the Outpost ARN.
@@ -51,20 +52,14 @@ type SubnetSpec struct {
 	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
 	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
 	HostnameType                    *string `json:"hostnameType,omitempty"`
-	// An IPv4 IPAM pool ID for the subnet.
-	IPv4IPAMPoolID *string `json:"ipv4IPAMPoolID,omitempty"`
-	// An IPv4 netmask length for the subnet.
-	IPv4NetmaskLength *int64 `json:"ipv4NetmaskLength,omitempty"`
-	// The IPv6 network range for the subnet, in CIDR notation. This parameter is
-	// required for an IPv6 only subnet.
+	// The IPv6 network range for the subnet, in CIDR notation. The subnet size
+	// must use a /64 prefix length.
+	//
+	// This parameter is required for an IPv6 only subnet.
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
-	// An IPv6 IPAM pool ID for the subnet.
-	IPv6IPAMPoolID *string `json:"ipv6IPAMPoolID,omitempty"`
 	// Indicates whether to create an IPv6 only subnet.
-	IPv6Native *bool `json:"ipv6Native,omitempty"`
-	// An IPv6 netmask length for the subnet.
-	IPv6NetmaskLength   *int64 `json:"ipv6NetmaskLength,omitempty"`
-	MapPublicIPOnLaunch *bool  `json:"mapPublicIPOnLaunch,omitempty"`
+	IPv6Native          *bool `json:"ipv6Native,omitempty"`
+	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
 	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
 	// ARN, you must also specify the Availability Zone of the Outpost subnet.
 	OutpostARN     *string                                    `json:"outpostARN,omitempty"`

@@ -44,13 +44,6 @@ func newResourceDelta(
 	}
 	compareTags(delta, a, b)
 
-	if ackcompare.HasNilDifference(a.ko.Spec.DeliverCrossAccountRole, b.ko.Spec.DeliverCrossAccountRole) {
-		delta.Add("Spec.DeliverCrossAccountRole", a.ko.Spec.DeliverCrossAccountRole, b.ko.Spec.DeliverCrossAccountRole)
-	} else if a.ko.Spec.DeliverCrossAccountRole != nil && b.ko.Spec.DeliverCrossAccountRole != nil {
-		if *a.ko.Spec.DeliverCrossAccountRole != *b.ko.Spec.DeliverCrossAccountRole {
-			delta.Add("Spec.DeliverCrossAccountRole", a.ko.Spec.DeliverCrossAccountRole, b.ko.Spec.DeliverCrossAccountRole)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.DeliverLogsPermissionARN, b.ko.Spec.DeliverLogsPermissionARN) {
 		delta.Add("Spec.DeliverLogsPermissionARN", a.ko.Spec.DeliverLogsPermissionARN, b.ko.Spec.DeliverLogsPermissionARN)
 	} else if a.ko.Spec.DeliverLogsPermissionARN != nil && b.ko.Spec.DeliverLogsPermissionARN != nil {

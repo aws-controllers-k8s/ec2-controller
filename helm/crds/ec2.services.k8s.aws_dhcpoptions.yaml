@@ -38,7 +38,7 @@ spec:
             type: object
           spec:
             description: "DhcpOptionsSpec defines the desired state of DhcpOptions.
-              \n The set of DHCP options."
+              \n Describes a set of DHCP options."
             properties:
               dhcpConfigurations:
                 description: A DHCP configuration option.

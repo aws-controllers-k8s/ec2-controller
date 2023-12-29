@@ -83,13 +83,6 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.CPUOptions, b.ko.Spec.CPUOptions) {
 		delta.Add("Spec.CPUOptions", a.ko.Spec.CPUOptions, b.ko.Spec.CPUOptions)
 	} else if a.ko.Spec.CPUOptions != nil && b.ko.Spec.CPUOptions != nil {
-		if ackcompare.HasNilDifference(a.ko.Spec.CPUOptions.AmdSevSnp, b.ko.Spec.CPUOptions.AmdSevSnp) {
-			delta.Add("Spec.CPUOptions.AmdSevSnp", a.ko.Spec.CPUOptions.AmdSevSnp, b.ko.Spec.CPUOptions.AmdSevSnp)
-		} else if a.ko.Spec.CPUOptions.AmdSevSnp != nil && b.ko.Spec.CPUOptions.AmdSevSnp != nil {
-			if *a.ko.Spec.CPUOptions.AmdSevSnp != *b.ko.Spec.CPUOptions.AmdSevSnp {
-				delta.Add("Spec.CPUOptions.AmdSevSnp", a.ko.Spec.CPUOptions.AmdSevSnp, b.ko.Spec.CPUOptions.AmdSevSnp)
-			}
-		}
 		if ackcompare.HasNilDifference(a.ko.Spec.CPUOptions.CoreCount, b.ko.Spec.CPUOptions.CoreCount) {
 			delta.Add("Spec.CPUOptions.CoreCount", a.ko.Spec.CPUOptions.CoreCount, b.ko.Spec.CPUOptions.CoreCount)
 		} else if a.ko.Spec.CPUOptions.CoreCount != nil && b.ko.Spec.CPUOptions.CoreCount != nil {
@@ -149,13 +142,6 @@ func newResourceDelta(
 	} else if len(a.ko.Spec.ElasticInferenceAccelerators) > 0 {
 		if !reflect.DeepEqual(a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators) {
 			delta.Add("Spec.ElasticInferenceAccelerators", a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators)
-		}
-	}
-	if ackcompare.HasNilDifference(a.ko.Spec.EnablePrimaryIPv6, b.ko.Spec.EnablePrimaryIPv6) {
-		delta.Add("Spec.EnablePrimaryIPv6", a.ko.Spec.EnablePrimaryIPv6, b.ko.Spec.EnablePrimaryIPv6)
-	} else if a.ko.Spec.EnablePrimaryIPv6 != nil && b.ko.Spec.EnablePrimaryIPv6 != nil {
-		if *a.ko.Spec.EnablePrimaryIPv6 != *b.ko.Spec.EnablePrimaryIPv6 {
-			delta.Add("Spec.EnablePrimaryIPv6", a.ko.Spec.EnablePrimaryIPv6, b.ko.Spec.EnablePrimaryIPv6)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EnclaveOptions, b.ko.Spec.EnclaveOptions) {
@@ -426,13 +412,6 @@ func newResourceDelta(
 		} else if a.ko.Spec.Placement.AvailabilityZone != nil && b.ko.Spec.Placement.AvailabilityZone != nil {
 			if *a.ko.Spec.Placement.AvailabilityZone != *b.ko.Spec.Placement.AvailabilityZone {
 				delta.Add("Spec.Placement.AvailabilityZone", a.ko.Spec.Placement.AvailabilityZone, b.ko.Spec.Placement.AvailabilityZone)
-			}
-		}
-		if ackcompare.HasNilDifference(a.ko.Spec.Placement.GroupID, b.ko.Spec.Placement.GroupID) {
-			delta.Add("Spec.Placement.GroupID", a.ko.Spec.Placement.GroupID, b.ko.Spec.Placement.GroupID)
-		} else if a.ko.Spec.Placement.GroupID != nil && b.ko.Spec.Placement.GroupID != nil {
-			if *a.ko.Spec.Placement.GroupID != *b.ko.Spec.Placement.GroupID {
-				delta.Add("Spec.Placement.GroupID", a.ko.Spec.Placement.GroupID, b.ko.Spec.Placement.GroupID)
 			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.Placement.GroupName, b.ko.Spec.Placement.GroupName) {
