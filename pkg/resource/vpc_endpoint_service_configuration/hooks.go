@@ -21,6 +21,7 @@ import (
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
@@ -124,6 +125,38 @@ func (rm *resourceManager) syncAllowedPrincipals(
 		}
 	}
 	return desired, nil
+}
+
+// Sets additional fields (not covered by CREATE Op) on the resource's object
+func (rm *resourceManager) setAdditionalFields(
+	ctx context.Context,
+	ko *svcapitypes.VPCEndpointServiceConfiguration,
+) (latest *resource, err error) {
+
+	permInput := &svcsdk.DescribeVpcEndpointServicePermissionsInput{
+		ServiceId: ko.Status.ServiceID,
+	}
+	var permResp *svcsdk.DescribeVpcEndpointServicePermissionsOutput
+	permResp, err = rm.sdkapi.DescribeVpcEndpointServicePermissionsWithContext(ctx, permInput)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpointServicePermissions", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+			return nil, ackerr.NotFound
+		}
+		return nil, err
+	}
+
+	if permResp.AllowedPrincipals != nil {
+		f0 := []*string{}
+		for _, elem := range permResp.AllowedPrincipals {
+			if elem.Principal != nil {
+				f0 = append(f0, elem.Principal)
+			}
+		}
+		ko.Spec.AllowedPrincipals = f0
+	} else {
+		ko.Spec.AllowedPrincipals = nil
+	}
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
