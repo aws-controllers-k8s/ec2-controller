@@ -122,9 +122,9 @@ class TestVpcEndpointServiceConfiguration:
         k8s.patch_custom_resource(ref, update_allowed_principals_payload)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
         
-        # Check that the allowedPrincipal is properly set
+        # Check that the allowedPrincipal is no longer set
         allowed_principals = ec2_validator.get_vpc_endpoint_service_permissions(resource_id)
-        assert len(allowed_principals) == 0
+        assert allowed_principals is None
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
