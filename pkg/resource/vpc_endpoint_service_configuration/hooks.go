@@ -157,6 +157,8 @@ func (rm *resourceManager) setAdditionalFields(
 	} else {
 		ko.Spec.AllowedPrincipals = nil
 	}
+
+	return &resource{ko}, nil
 }
 
 // syncTags used to keep tags in sync by calling Create and Delete API's
