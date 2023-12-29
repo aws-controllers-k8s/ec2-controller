@@ -51,14 +51,26 @@ func newResourceDelta(
 			delta.Add("Spec.AcceptanceRequired", a.ko.Spec.AcceptanceRequired, b.ko.Spec.AcceptanceRequired)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPrincipals, b.ko.Spec.AllowedPrincipals) {
+	if len(a.ko.Spec.AllowedPrincipals) != len(b.ko.Spec.AllowedPrincipals) {
 		delta.Add("Spec.AllowedPrincipals", a.ko.Spec.AllowedPrincipals, b.ko.Spec.AllowedPrincipals)
+	} else if len(a.ko.Spec.AllowedPrincipals) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPrincipals, b.ko.Spec.AllowedPrincipals) {
+			delta.Add("Spec.AllowedPrincipals", a.ko.Spec.AllowedPrincipals, b.ko.Spec.AllowedPrincipals)
+		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs) {
+	if len(a.ko.Spec.GatewayLoadBalancerARNs) != len(b.ko.Spec.GatewayLoadBalancerARNs) {
 		delta.Add("Spec.GatewayLoadBalancerARNs", a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs)
+	} else if len(a.ko.Spec.GatewayLoadBalancerARNs) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs) {
+			delta.Add("Spec.GatewayLoadBalancerARNs", a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs)
+		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs) {
+	if len(a.ko.Spec.NetworkLoadBalancerARNs) != len(b.ko.Spec.NetworkLoadBalancerARNs) {
 		delta.Add("Spec.NetworkLoadBalancerARNs", a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs)
+	} else if len(a.ko.Spec.NetworkLoadBalancerARNs) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs) {
+			delta.Add("Spec.NetworkLoadBalancerARNs", a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSName, b.ko.Spec.PrivateDNSName) {
 		delta.Add("Spec.PrivateDNSName", a.ko.Spec.PrivateDNSName, b.ko.Spec.PrivateDNSName)
@@ -67,8 +79,12 @@ func newResourceDelta(
 			delta.Add("Spec.PrivateDNSName", a.ko.Spec.PrivateDNSName, b.ko.Spec.PrivateDNSName)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes) {
+	if len(a.ko.Spec.SupportedIPAddressTypes) != len(b.ko.Spec.SupportedIPAddressTypes) {
 		delta.Add("Spec.SupportedIPAddressTypes", a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes)
+	} else if len(a.ko.Spec.SupportedIPAddressTypes) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes) {
+			delta.Add("Spec.SupportedIPAddressTypes", a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes)
+		}
 	}
 
 	return delta

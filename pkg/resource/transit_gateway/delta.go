@@ -103,8 +103,12 @@ func newResourceDelta(
 				delta.Add("Spec.Options.SecurityGroupReferencingSupport", a.ko.Spec.Options.SecurityGroupReferencingSupport, b.ko.Spec.Options.SecurityGroupReferencingSupport)
 			}
 		}
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
+		if len(a.ko.Spec.Options.TransitGatewayCIDRBlocks) != len(b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
 			delta.Add("Spec.Options.TransitGatewayCIDRBlocks", a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks)
+		} else if len(a.ko.Spec.Options.TransitGatewayCIDRBlocks) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
+				delta.Add("Spec.Options.TransitGatewayCIDRBlocks", a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport) {
 			delta.Add("Spec.Options.VPNECMPSupport", a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport)
