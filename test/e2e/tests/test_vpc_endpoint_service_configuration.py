@@ -111,6 +111,21 @@ class TestVpcEndpointServiceConfiguration:
         allowed_principals = ec2_validator.get_vpc_endpoint_service_permissions(resource_id)
         assert allowed_principals[0]["Principal"] == "arn:aws:iam::111111111111:root"
 
+        # Payload used to remove the Principal
+        update_allowed_principals_payload = {
+            "spec": {
+                "allowedPrincipals": []
+            }
+        }
+
+        # Patch the VPCPeeringConnection with the payload
+        k8s.patch_custom_resource(ref, update_allowed_principals_payload)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        
+        # Check that the allowedPrincipal is properly set
+        allowed_principals = ec2_validator.get_vpc_endpoint_service_permissions(resource_id)
+        assert len(allowed_principals) == 0
+
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
