@@ -30,7 +30,7 @@ def service_bootstrap() -> Resources:
         FlowLogsBucket=Bucket(
             "ack-ec2-controller-flow-log-tests",
         ),
-        NLB=NetworkLoadBalancer("e2e-vpc-ep-service-test")
+        NetworkLoadBalancer=NetworkLoadBalancer("e2e-vpc-ep-service-test")
     )
 
     try:
