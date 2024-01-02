@@ -24,6 +24,7 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -58,73 +59,63 @@ func (rm *resourceManager) syncAllowedPrincipals(
 		exit(err)
 	}(err)
 
-	var listOfPrincipalsToAdd []*string
-	var listOfPrincipalsToRemove []*string
+	toAdd := []*string{}
+	toDelete := []*string{}
 
-	// If the latest list of principals is empty, we want to add all principals
-	if len(latest.ko.Spec.AllowedPrincipals) == 0 && len(desired.ko.Spec.AllowedPrincipals) > 0 {
-		listOfPrincipalsToAdd = desired.ko.Spec.AllowedPrincipals
+	currentlyAllowedPrincipals := latest.ko.Spec.AllowedPrincipals
+	desiredAllowedPrincipals := desired.ko.Spec.AllowedPrincipals
 
-		// If the desired list of principals is empty, we want to remove all principals
-	} else if len(desired.ko.Spec.AllowedPrincipals) == 0 && len(latest.ko.Spec.AllowedPrincipals) > 0 {
-		listOfPrincipalsToRemove = latest.ko.Spec.AllowedPrincipals
-		// Otherwise, we'll compare the two lists and add/remove principals as needed
-	} else {
-		// Add any 'desired' principal that is not on the allowed list
-		for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
-			principalToAddAlreadyFound := false
-			for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
-				if *desiredPrincipal == *latestPrincipal {
-					// Principal already in Allow List, skip
-					principalToAddAlreadyFound = true
-					break
-				}
-			}
-			if !principalToAddAlreadyFound {
-				// Desired Principal is not in the Allowed List, add it to the list of those to add
-				listOfPrincipalsToAdd = append(listOfPrincipalsToAdd, desiredPrincipal)
-			}
+	// Check if any desired allowed principals need to be added
+	for _, p := range desiredAllowedPrincipals {
+		if !ackutil.InStringPs(*p, currentlyAllowedPrincipals) {
+			toAdd = append(toAdd, p)
 		}
-
-		// Remove any 'latest' principal that is not on the allowed list anymore
-		for _, latestPrincipal := range latest.ko.Spec.AllowedPrincipals {
-			principalToRemoveAlreadyFound := false
-			for _, desiredPrincipal := range desired.ko.Spec.AllowedPrincipals {
-				if *desiredPrincipal == *latestPrincipal {
-					// Principal still in Allow List, skip
-					principalToRemoveAlreadyFound = true
-					break
-				}
-			}
-			if !principalToRemoveAlreadyFound {
-				// Latest Principal is not in the Allowed List, add it to the list of those to remove
-				listOfPrincipalsToRemove = append(listOfPrincipalsToRemove, latestPrincipal)
-			}
-		}
-
 	}
 
-	// Make the AWS API call to update the allowed principals
-	if len(listOfPrincipalsToAdd) > 0 || len(listOfPrincipalsToRemove) > 0 {
+	// Check if any currently allowed principals need to be deleted
+	for _, p := range currentlyAllowedPrincipals {
+		if !ackutil.InStringPs(*p, desiredAllowedPrincipals) {
+			toDelete = append(toDelete, p)
+		}
+	}
+
+	// Modify the allowed principals
+	rlog.Debug("Syncing Allowed Principals", "toAdd", toAdd, "toDelete", toDelete)
+	if err = rm.modifyAllowedPrincipals(ctx, latest, toAdd, toDelete); err != nil {
+		return desired, err
+	}
+
+	return desired, nil
+}
+
+// Makes the AWS API call 'ModifyVpcEndpointServicePermissions' to add and/or remove the allowed principals
+func (rm *resourceManager) modifyAllowedPrincipals(
+	ctx context.Context,
+	latest *resource,
+	toAdd []*string,
+	toDelete []*string,
+) (err error) {
+	if len(toAdd) > 0 || len(toDelete) > 0 {
 		modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
 			ServiceId: latest.ko.Status.ServiceID,
 		}
 
-		if len(listOfPrincipalsToAdd) > 0 {
-			modifyPermissionsInput.AddAllowedPrincipals = listOfPrincipalsToAdd
+		if len(toAdd) > 0 {
+			modifyPermissionsInput.AddAllowedPrincipals = toAdd
 		}
 
-		if len(listOfPrincipalsToRemove) > 0 {
-			modifyPermissionsInput.RemoveAllowedPrincipals = listOfPrincipalsToRemove
+		if len(toDelete) > 0 {
+			modifyPermissionsInput.RemoveAllowedPrincipals = toDelete
 		}
 
-		_, err := rm.sdkapi.ModifyVpcEndpointServicePermissions(modifyPermissionsInput)
+		_, err := rm.sdkapi.ModifyVpcEndpointServicePermissionsWithContext(ctx, modifyPermissionsInput)
 		rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 		if err != nil {
-			return desired, err
+			return err
 		}
 	}
-	return desired, nil
+
+	return nil
 }
 
 // Sets additional fields (not covered by CREATE Op) on the resource's object
