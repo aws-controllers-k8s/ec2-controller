@@ -21,7 +21,7 @@ import logging
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
-from acktest.bootstrapping.elbv2 import NetworkLoadBalancer
+from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
@@ -37,9 +37,7 @@ MODIFY_WAIT_AFTER_SECONDS = 5
 @pytest.fixture
 def simple_vpc_endpoint_service_configuration(request):
     test_resource_values = REPLACEMENT_VALUES.copy()
-    
-    nlb = NetworkLoadBalancer("vpc-ep-service-test")
-    nlb.bootstrap()
+    resources = get_bootstrap_resources()
 
     supported_ip_address_types = "ipv4"
 
@@ -48,7 +46,7 @@ def simple_vpc_endpoint_service_configuration(request):
     test_resource_values["VPC_ENDPOINT_SERVICE_NAME"] = resource_name
     test_resource_values["ACCEPTANCE_REQUIRED"] = "False"
     test_resource_values["PRIVATE_DNS_NAME"] = ""
-    test_resource_values["NETWORK_LOAD_BALANCER_ARN_SET"] = nlb.arn
+    test_resource_values["NETWORK_LOAD_BALANCER_ARN_SET"] = resources.NLB.arn
     test_resource_values["SUPPORTED_IP_ADDRESS_TYPE_SET"] = supported_ip_address_types
     test_resource_values["ALLOWED_PRINCIPAL"] = "arn:aws:iam::111111111111:root"
 
@@ -88,10 +86,6 @@ def simple_vpc_endpoint_service_configuration(request):
         assert deleted
     except:
         pass
-
-    finally:
-        nlb.cleanup()
-
     
 @service_marker
 @pytest.mark.canary

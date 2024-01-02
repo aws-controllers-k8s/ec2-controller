@@ -16,6 +16,7 @@
 import logging
 
 from acktest.bootstrapping import Resources, BootstrapFailureException
+from acktest.bootstrapping.elbv2 import NetworkLoadBalancer
 from acktest.bootstrapping.vpc import VPC
 from acktest.bootstrapping.s3 import Bucket
 from e2e import bootstrap_directory
@@ -29,6 +30,7 @@ def service_bootstrap() -> Resources:
         FlowLogsBucket=Bucket(
             "ack-ec2-controller-flow-log-tests",
         ),
+        NLB=NetworkLoadBalancer("e2e-vpc-ep-service-test")
     )
 
     try:
