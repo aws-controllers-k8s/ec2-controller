@@ -126,7 +126,9 @@ func (rm *resourceManager) setAdditionalFields(
 	ctx context.Context,
 	ko *svcapitypes.VPCEndpointServiceConfiguration,
 ) (latest *resource, err error) {
-
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.setAdditionalFields")
+	defer func(err error) { exit(err) }(err)
 	permInput := &svcsdk.DescribeVpcEndpointServicePermissionsInput{
 		ServiceId: ko.Status.ServiceID,
 	}
