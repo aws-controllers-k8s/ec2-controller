@@ -54,7 +54,7 @@ func (rm *resourceManager) syncAllowedPrincipals(
 	latest *resource,
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("updateAllowedPrincipals")
+	exit := rlog.Trace("syncAllowedPrincipals")
 	defer func(err error) {
 		exit(err)
 	}(err)
