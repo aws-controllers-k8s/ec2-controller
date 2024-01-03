@@ -94,7 +94,7 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 	latest *resource,
 	toAdd []*string,
 	toDelete []*string,
-) error {
+) (err error) {
     rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("modifyAllowedPrincipals")
 	defer func(err error) {
@@ -112,7 +112,7 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 		modifyPermissionsInput.RemoveAllowedPrincipals = toDelete
 	}
 
-	_, err := rm.sdkapi.ModifyVpcEndpointServicePermissionsWithContext(ctx, modifyPermissionsInput)
+	_, err = rm.sdkapi.ModifyVpcEndpointServicePermissionsWithContext(ctx, modifyPermissionsInput)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 	if err != nil {
 		return err
