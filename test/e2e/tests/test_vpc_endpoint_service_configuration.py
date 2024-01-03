@@ -46,7 +46,7 @@ def simple_vpc_endpoint_service_configuration(request):
     test_resource_values["VPC_ENDPOINT_SERVICE_NAME"] = resource_name
     test_resource_values["ACCEPTANCE_REQUIRED"] = "False"
     test_resource_values["PRIVATE_DNS_NAME"] = ""
-    test_resource_values["NETWORK_LOAD_BALANCER_ARN_SET"] = resources.NLB.arn
+    test_resource_values["NETWORK_LOAD_BALANCER_ARN_SET"] = resources.NetworkLoadBalancer.arn
     test_resource_values["SUPPORTED_IP_ADDRESS_TYPE_SET"] = supported_ip_address_types
     test_resource_values["ALLOWED_PRINCIPAL"] = "arn:aws:iam::111111111111:root"
 
