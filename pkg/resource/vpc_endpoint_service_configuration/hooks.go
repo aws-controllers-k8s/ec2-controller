@@ -95,6 +95,11 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 	toAdd []*string,
 	toDelete []*string,
 ) (err error) {
+    rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("modifyAllowedPrincipals")
+	defer func(err error) {
+		exit(err)
+	}(err)
 	if len(toAdd) > 0 || len(toDelete) > 0 {
 		modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
 			ServiceId: latest.ko.Status.ServiceID,
