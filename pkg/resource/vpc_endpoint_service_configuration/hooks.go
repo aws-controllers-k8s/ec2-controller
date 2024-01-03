@@ -100,24 +100,22 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 	defer func(err error) {
 		exit(err)
 	}(err)
-	if len(toAdd) > 0 || len(toDelete) > 0 {
-		modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
-			ServiceId: latest.ko.Status.ServiceID,
-		}
+	modifyPermissionsInput := &svcsdk.ModifyVpcEndpointServicePermissionsInput{
+		ServiceId: latest.ko.Status.ServiceID,
+	}
 
-		if len(toAdd) > 0 {
-			modifyPermissionsInput.AddAllowedPrincipals = toAdd
-		}
+	if len(toAdd) > 0 {
+		modifyPermissionsInput.AddAllowedPrincipals = toAdd
+	}
 
-		if len(toDelete) > 0 {
-			modifyPermissionsInput.RemoveAllowedPrincipals = toDelete
-		}
+	if len(toDelete) > 0 {
+		modifyPermissionsInput.RemoveAllowedPrincipals = toDelete
+	}
 
-		_, err := rm.sdkapi.ModifyVpcEndpointServicePermissionsWithContext(ctx, modifyPermissionsInput)
-		rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
-		if err != nil {
-			return err
-		}
+	_, err := rm.sdkapi.ModifyVpcEndpointServicePermissionsWithContext(ctx, modifyPermissionsInput)
+	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
+	if err != nil {
+		return err
 	}
 
 	return nil
