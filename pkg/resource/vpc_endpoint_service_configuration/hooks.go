@@ -95,7 +95,7 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 	toAdd []*string,
 	toDelete []*string,
 ) (err error) {
-    rlog := ackrtlog.FromContext(ctx)
+	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("modifyAllowedPrincipals")
 	defer func(err error) {
 		exit(err)

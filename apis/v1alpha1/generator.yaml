@@ -39,9 +39,6 @@ ignore:
     - CreateVpcEndpointServiceConfigurationInput.ClientToken
     - CreateVpcEndpointServiceConfigurationInput.DryRun
     - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
-    - CreateVpcEndpointServiceConfigurationInput.ClientToken
-    - CreateVpcEndpointServiceConfigurationInput.DryRun
-    - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
     - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
@@ -136,7 +133,6 @@ ignore:
     - VerifiedAccessTrustProvider
     - Volume
     - VpcEndpointConnectionNotification
-    #- VpcEndpointServiceConfiguration
     #- VpcEndpointServiceConfiguration
     #- VpcEndpoint
     #- Vpc
