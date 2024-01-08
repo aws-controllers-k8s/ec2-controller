@@ -289,6 +289,26 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - vpcendpointserviceconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcendpointserviceconfigurations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
   - vpcpeeringconnections
   verbs:
   - create
