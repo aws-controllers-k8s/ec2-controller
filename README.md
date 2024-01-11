@@ -1,4 +1,4 @@
-# ACK service controller for Amazon Elastic Compute Cloud (EC2)
+# Test ACK service controller for Amazon Elastic Compute Cloud (EC2)
 
 This repository contains source code for the AWS Controllers for Kubernetes
 (ACK) service controller for Amazon EC2.
