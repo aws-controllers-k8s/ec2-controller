@@ -46,3 +46,374 @@ If release name contains chart name it will be used as a full name.
 {{- define "aws.credentials.path" -}}
 {{- printf "%s/%s" (include "aws.credentials.secret_mount_path" .) .Values.aws.credentials.secretKey -}}
 {{- end -}}
+
+{{/* The rules a of ClusterRole or Role */}}
+{{- define "controller-role-rules" }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - dhcpoptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - dhcpoptions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - elasticipaddresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - elasticipaddresses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - flowlogs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - flowlogs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - instances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - instances/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - internetgateways
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - internetgateways/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - natgateways
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - natgateways/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - networkacls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - networkacls/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - routetables
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - routetables/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - securitygroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - securitygroups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - subnets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - subnets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - transitgateways
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - transitgateways/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcendpoints
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcendpoints/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcendpointserviceconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcendpointserviceconfigurations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcpeeringconnections
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcpeeringconnections/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ec2.services.k8s.aws
+  resources:
+  - vpcs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - services.k8s.aws
+  resources:
+  - adoptedresources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - services.k8s.aws
+  resources:
+  - adoptedresources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - services.k8s.aws
+  resources:
+  - fieldexports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - services.k8s.aws
+  resources:
+  - fieldexports/status
+  verbs:
+  - get
+  - patch
+  - update
+{{- end }}
