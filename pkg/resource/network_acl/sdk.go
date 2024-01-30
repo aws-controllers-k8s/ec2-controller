@@ -415,6 +415,13 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
+
+	if r.ko.Spec.Associations != nil {
+		if err := rm.syncAssociation(ctx, nil, r); err != nil {
+			return nil, err
+		}
+	}
+
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err
