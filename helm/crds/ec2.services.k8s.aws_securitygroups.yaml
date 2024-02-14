@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: securitygroups.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
@@ -25,26 +24,41 @@ spec:
         description: SecurityGroup is the Schema for the SecurityGroups API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           spec:
-            description: "SecurityGroupSpec defines the desired state of SecurityGroup.
-              \n Describes a security group."
+            description: |-
+              SecurityGroupSpec defines the desired state of SecurityGroup.
+
+
+              Describes a security group.
             properties:
               description:
-                description: "A description for the security group. This is informational
-                  only. \n Constraints: Up to 255 characters in length \n Constraints
-                  for EC2-Classic: ASCII characters \n Constraints for EC2-VPC: a-z,
-                  A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*"
+                description: |-
+                  A description for the security group. This is informational only.
+
+
+                  Constraints: Up to 255 characters in length
+
+
+                  Constraints for EC2-Classic: ASCII characters
+
+
+                  Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
                 type: string
               egressRules:
                 items:
@@ -91,12 +105,14 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: "Describes a security group and Amazon Web Services
-                          account ID pair. \n We are retiring EC2-Classic on August
-                          15, 2022. We recommend that you migrate from EC2-Classic
-                          to a VPC. For more information, see Migrate from EC2-Classic
+                        description: |-
+                          Describes a security group and Amazon Web Services account ID pair.
+
+
+                          We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+                          from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
                           to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
-                          in the Amazon Elastic Compute Cloud User Guide."
+                          in the Amazon Elastic Compute Cloud User Guide.
                         properties:
                           description:
                             type: string
@@ -161,12 +177,14 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: "Describes a security group and Amazon Web Services
-                          account ID pair. \n We are retiring EC2-Classic on August
-                          15, 2022. We recommend that you migrate from EC2-Classic
-                          to a VPC. For more information, see Migrate from EC2-Classic
+                        description: |-
+                          Describes a security group and Amazon Web Services account ID pair.
+
+
+                          We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+                          from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
                           to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
-                          in the Amazon Elastic Compute Cloud User Guide."
+                          in the Amazon Elastic Compute Cloud User Guide.
                         properties:
                           description:
                             type: string
@@ -187,15 +205,23 @@ spec:
                   type: object
                 type: array
               name:
-                description: "The name of the security group. \n Constraints: Up to
-                  255 characters in length. Cannot start with sg-. \n Constraints
-                  for EC2-Classic: ASCII characters \n Constraints for EC2-VPC: a-z,
-                  A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*"
+                description: |-
+                  The name of the security group.
+
+
+                  Constraints: Up to 255 characters in length. Cannot start with sg-.
+
+
+                  Constraints for EC2-Classic: ASCII characters
+
+
+                  Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
                 type: string
               tags:
-                description: The tags. The value parameter is required, but if you
-                  don't want the tag to have a value, specify the parameter with no
-                  value, and we set the value to an empty string.
+                description: |-
+                  The tags. The value parameter is required, but if you don't want the tag
+                  to have a value, specify the parameter with no value, and we set the value
+                  to an empty string.
                 items:
                   description: Describes a tag.
                   properties:
@@ -210,12 +236,14 @@ spec:
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
-                  *AWSResourceReference type to provide more user friendly syntax
-                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\n\tfrom:\n\t
+                  \ name: my-api"
                 properties:
                   from:
-                    description: AWSResourceReference provides all the values necessary
-                      to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
                     properties:
                       name:
                         type: string
@@ -229,24 +257,26 @@ spec:
             description: SecurityGroupStatus defines the observed state of SecurityGroup
             properties:
               ackResourceMetadata:
-                description: All CRs managed by ACK have a common `Status.ACKResourceMetadata`
-                  member that is used to contain resource sync state, account ownership,
+                description: |-
+                  All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
+                  that is used to contain resource sync state, account ownership,
                   constructed ARN for the resource
                 properties:
                   arn:
-                    description: 'ARN is the Amazon Resource Name for the resource.
-                      This is a globally-unique identifier and is set only by the
-                      ACK service controller once the controller has orchestrated
-                      the creation of the resource OR when it has verified that an
-                      "adopted" resource (a resource where the ARN annotation was
-                      set by the Kubernetes user on the CR) exists and matches the
-                      supplied CR''s Spec field values. TODO(vijat@): Find a better
-                      strategy for resources that do not have ARN in CreateOutputResponse
-                      https://github.com/aws/aws-controllers-k8s/issues/270'
+                    description: |-
+                      ARN is the Amazon Resource Name for the resource. This is a
+                      globally-unique identifier and is set only by the ACK service controller
+                      once the controller has orchestrated the creation of the resource OR
+                      when it has verified that an "adopted" resource (a resource where the
+                      ARN annotation was set by the Kubernetes user on the CR) exists and
+                      matches the supplied CR's Spec field values.
+                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
+                      https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:
-                    description: OwnerAccountID is the AWS Account ID of the account
-                      that owns the backend AWS service API resource.
+                    description: |-
+                      OwnerAccountID is the AWS Account ID of the account that owns the
+                      backend AWS service API resource.
                     type: string
                   region:
                     description: Region is the AWS region in which the resource exists
@@ -257,14 +287,16 @@ spec:
                 - region
                 type: object
               conditions:
-                description: All CRS managed by ACK have a common `Status.Conditions`
-                  member that contains a collection of `ackv1alpha1.Condition` objects
-                  that describe the various terminal states of the CR and its backend
-                  AWS service API resource
+                description: |-
+                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  contains a collection of `ackv1alpha1.Condition` objects that describe
+                  the various terminal states of the CR and its backend AWS service API
+                  resource
                 items:
-                  description: Condition is the common struct used by all CRDs managed
-                    by ACK service controllers to indicate terminal states  of the
-                    CR and its backend AWS service API resource
+                  description: |-
+                    Condition is the common struct used by all CRDs managed by ACK service
+                    controllers to indicate terminal states  of the CR and its backend AWS
+                    service API resource
                   properties:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status

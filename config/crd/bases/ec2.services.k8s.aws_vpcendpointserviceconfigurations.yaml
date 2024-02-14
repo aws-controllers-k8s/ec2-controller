@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: vpcendpointserviceconfigurations.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
@@ -29,14 +28,19 @@ spec:
           API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -45,13 +49,15 @@ spec:
               of VpcEndpointServiceConfiguration.
             properties:
               acceptanceRequired:
-                description: Indicates whether requests from service consumers to
-                  create an endpoint to your service must be accepted manually.
+                description: |-
+                  Indicates whether requests from service consumers to create an endpoint to
+                  your service must be accepted manually.
                 type: boolean
               allowedPrincipals:
-                description: The Amazon Resource Names (ARN) of one or more principals.
-                  Permissions are granted to the principals in this list. To grant
-                  permissions to all principals, specify an asterisk (*).
+                description: |-
+                  The Amazon Resource Names (ARN) of one or more principals. Permissions are
+                  granted to the principals in this list. To grant permissions to all principals,
+                  specify an asterisk (*).
                 items:
                   type: string
                 type: array
@@ -62,14 +68,16 @@ spec:
                   type: string
                 type: array
               networkLoadBalancerARNs:
-                description: The Amazon Resource Names (ARNs) of one or more Network
-                  Load Balancers for your service.
+                description: |-
+                  The Amazon Resource Names (ARNs) of one or more Network Load Balancers for
+                  your service.
                 items:
                   type: string
                 type: array
               privateDNSName:
-                description: (Interface endpoint configuration) The private DNS name
-                  to assign to the VPC endpoint service.
+                description: |-
+                  (Interface endpoint configuration) The private DNS name to assign to the
+                  VPC endpoint service.
                 type: string
               supportedIPAddressTypes:
                 description: The supported IP address types. The possible values are
@@ -78,9 +86,10 @@ spec:
                   type: string
                 type: array
               tags:
-                description: The tags. The value parameter is required, but if you
-                  don't want the tag to have a value, specify the parameter with no
-                  value, and we set the value to an empty string.
+                description: |-
+                  The tags. The value parameter is required, but if you don't want the tag
+                  to have a value, specify the parameter with no value, and we set the value
+                  to an empty string.
                 items:
                   description: Describes a tag.
                   properties:
@@ -96,24 +105,26 @@ spec:
               state of VPCEndpointServiceConfiguration
             properties:
               ackResourceMetadata:
-                description: All CRs managed by ACK have a common `Status.ACKResourceMetadata`
-                  member that is used to contain resource sync state, account ownership,
+                description: |-
+                  All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
+                  that is used to contain resource sync state, account ownership,
                   constructed ARN for the resource
                 properties:
                   arn:
-                    description: 'ARN is the Amazon Resource Name for the resource.
-                      This is a globally-unique identifier and is set only by the
-                      ACK service controller once the controller has orchestrated
-                      the creation of the resource OR when it has verified that an
-                      "adopted" resource (a resource where the ARN annotation was
-                      set by the Kubernetes user on the CR) exists and matches the
-                      supplied CR''s Spec field values. TODO(vijat@): Find a better
-                      strategy for resources that do not have ARN in CreateOutputResponse
-                      https://github.com/aws/aws-controllers-k8s/issues/270'
+                    description: |-
+                      ARN is the Amazon Resource Name for the resource. This is a
+                      globally-unique identifier and is set only by the ACK service controller
+                      once the controller has orchestrated the creation of the resource OR
+                      when it has verified that an "adopted" resource (a resource where the
+                      ARN annotation was set by the Kubernetes user on the CR) exists and
+                      matches the supplied CR's Spec field values.
+                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
+                      https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:
-                    description: OwnerAccountID is the AWS Account ID of the account
-                      that owns the backend AWS service API resource.
+                    description: |-
+                      OwnerAccountID is the AWS Account ID of the account that owns the
+                      backend AWS service API resource.
                     type: string
                   region:
                     description: Region is the AWS region in which the resource exists
@@ -134,14 +145,16 @@ spec:
                   type: string
                 type: array
               conditions:
-                description: All CRS managed by ACK have a common `Status.Conditions`
-                  member that contains a collection of `ackv1alpha1.Condition` objects
-                  that describe the various terminal states of the CR and its backend
-                  AWS service API resource
+                description: |-
+                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  contains a collection of `ackv1alpha1.Condition` objects that describe
+                  the various terminal states of the CR and its backend AWS service API
+                  resource
                 items:
-                  description: Condition is the common struct used by all CRDs managed
-                    by ACK service controllers to indicate terminal states  of the
-                    CR and its backend AWS service API resource
+                  description: |-
+                    Condition is the common struct used by all CRDs managed by ACK service
+                    controllers to indicate terminal states  of the CR and its backend AWS
+                    service API resource
                   properties:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status
@@ -167,9 +180,9 @@ spec:
                   type: object
                 type: array
               managesVPCEndpoints:
-                description: Indicates whether the service manages its VPC endpoints.
-                  Management of the service VPC endpoints using the VPC endpoint API
-                  is restricted.
+                description: |-
+                  Indicates whether the service manages its VPC endpoints. Management of the
+                  service VPC endpoints using the VPC endpoint API is restricted.
                 type: boolean
               payerResponsibility:
                 description: The payer responsibility.
