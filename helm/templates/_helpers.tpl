@@ -44,7 +44,7 @@ If release name contains chart name it will be used as a full name.
 
 {{/* The path the shared credentials file is mounted */}}
 {{- define "ack-ec2-controller.aws.credentials.path" -}}
-{{- printf "%s/%s" (include "aws.credentials.secret_mount_path" .) .Values.aws.credentials.secretKey -}}
+{{- printf "%s/%s" (include "ack-ec2-controller.aws.credentials.secret_mount_path" .) .Values.aws.credentials.secretKey -}}
 {{- end -}}
 
 {{/* The rules a of ClusterRole or Role */}}
