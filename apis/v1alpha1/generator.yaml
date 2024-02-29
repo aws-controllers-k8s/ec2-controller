@@ -36,6 +36,9 @@ ignore:
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
+    - CreateVpcEndpointServiceConfigurationInput.ClientToken
+    - CreateVpcEndpointServiceConfigurationInput.DryRun
+    - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
     - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
@@ -62,6 +65,8 @@ ignore:
     - CarrierGateway
     - ClientVpnEndpoint
     - ClientVpnRoute
+    - CoipCidr
+    - CoipPool
     - CustomerGateway
     - DefaultSubnet
     - DefaultVpc
@@ -71,16 +76,20 @@ ignore:
     - FpgaImage
     - Image
     #- Instance
+    - InstanceConnectEndpoint
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
     - Ipam
     - IpamPool
+    - IpamResourceDiscovery
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
     - LaunchTemplate
+    - LocalGatewayRouteTable
     - LocalGatewayRouteTableVpcAssociation
+    - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
     - ManagedPrefixList
     #- NatGateway
@@ -118,9 +127,13 @@ ignore:
     - TransitGatewayRouteTableAnnouncement
     - TransitGatewayVpcAttachment
     #- TransitGateway
+    - VerifiedAccessEndpoint
+    - VerifiedAccessGroup
+    - VerifiedAccessInstance
+    - VerifiedAccessTrustProvider
     - Volume
     - VpcEndpointConnectionNotification
-    - VpcEndpointServiceConfiguration
+    #- VpcEndpointServiceConfiguration
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
@@ -152,6 +165,18 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpoint
+  CreateVpcEndpointServiceConfiguration:
+    output_wrapper_field_path: ServiceConfiguration
+  DeleteVpcEndpointServiceConfigurations:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpointServiceConfiguration
+  CreateVpcEndpointServiceConfiguration:
+    output_wrapper_field_path: ServiceConfiguration
+  DeleteVpcEndpointServiceConfigurations:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpointServiceConfiguration
   CreateFlowLogs:
     operation_type:
     - Create
@@ -792,6 +817,45 @@ resources:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateVPCEndpoint  
+  VpcEndpointServiceConfiguration:
+    fields:
+      AllowedPrincipals:
+        from:
+          operation: ModifyVpcEndpointServicePermissions
+          path: AddAllowedPrincipals
+      ServiceID:
+        is_primary_key: true
+        is_read_only: true
+        print:
+          path: Status.serviceID
+          name: ServiceID
+      ServiceState:
+        is_read_only: true
+        print:
+          path: Status.serviceState
+          name: ServiceState
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+        compare:
+          is_ignored: true
+    synced:
+      when:
+      - path: Status.ServiceState
+        in:
+        - available
+    hooks:
+      delta_pre_compare:
+        code: compareTags(delta, a, b)
+      sdk_delete_post_build_request:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_update_pre_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_read_many_post_set_output.go.tpl
   VpcPeeringConnection:
     fields:      
       VpcId:

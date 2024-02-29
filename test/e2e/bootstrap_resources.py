@@ -15,6 +15,7 @@ for them.
 """
 from dataclasses import dataclass
 from acktest.bootstrapping import Resources
+from acktest.bootstrapping.elbv2 import NetworkLoadBalancer
 from acktest.bootstrapping.s3 import Bucket
 from acktest.bootstrapping.vpc import VPC
 from e2e import bootstrap_directory
@@ -23,6 +24,7 @@ from e2e import bootstrap_directory
 class BootstrapResources(Resources):
     FlowLogsBucket: Bucket
     SharedTestVPC: VPC
+    NetworkLoadBalancer: NetworkLoadBalancer
 
 _bootstrap_resources = None
 

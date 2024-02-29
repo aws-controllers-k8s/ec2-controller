@@ -44,8 +44,12 @@ func newResourceDelta(
 	}
 	compareTags(delta, a, b)
 
-	if !reflect.DeepEqual(a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings) {
+	if len(a.ko.Spec.BlockDeviceMappings) != len(b.ko.Spec.BlockDeviceMappings) {
 		delta.Add("Spec.BlockDeviceMappings", a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings)
+	} else if len(a.ko.Spec.BlockDeviceMappings) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings) {
+			delta.Add("Spec.BlockDeviceMappings", a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CapacityReservationSpecification, b.ko.Spec.CapacityReservationSpecification) {
 		delta.Add("Spec.CapacityReservationSpecification", a.ko.Spec.CapacityReservationSpecification, b.ko.Spec.CapacityReservationSpecification)
@@ -126,11 +130,19 @@ func newResourceDelta(
 			delta.Add("Spec.EBSOptimized", a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification) {
+	if len(a.ko.Spec.ElasticGPUSpecification) != len(b.ko.Spec.ElasticGPUSpecification) {
 		delta.Add("Spec.ElasticGPUSpecification", a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification)
+	} else if len(a.ko.Spec.ElasticGPUSpecification) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification) {
+			delta.Add("Spec.ElasticGPUSpecification", a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification)
+		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators) {
+	if len(a.ko.Spec.ElasticInferenceAccelerators) != len(b.ko.Spec.ElasticInferenceAccelerators) {
 		delta.Add("Spec.ElasticInferenceAccelerators", a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators)
+	} else if len(a.ko.Spec.ElasticInferenceAccelerators) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators) {
+			delta.Add("Spec.ElasticInferenceAccelerators", a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EnclaveOptions, b.ko.Spec.EnclaveOptions) {
 		delta.Add("Spec.EnclaveOptions", a.ko.Spec.EnclaveOptions, b.ko.Spec.EnclaveOptions)
@@ -250,8 +262,12 @@ func newResourceDelta(
 			delta.Add("Spec.IPv6AddressCount", a.ko.Spec.IPv6AddressCount, b.ko.Spec.IPv6AddressCount)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses) {
+	if len(a.ko.Spec.IPv6Addresses) != len(b.ko.Spec.IPv6Addresses) {
 		delta.Add("Spec.IPv6Addresses", a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses)
+	} else if len(a.ko.Spec.IPv6Addresses) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses) {
+			delta.Add("Spec.IPv6Addresses", a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.KernelID, b.ko.Spec.KernelID) {
 		delta.Add("Spec.KernelID", a.ko.Spec.KernelID, b.ko.Spec.KernelID)
@@ -292,8 +308,12 @@ func newResourceDelta(
 			}
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications) {
+	if len(a.ko.Spec.LicenseSpecifications) != len(b.ko.Spec.LicenseSpecifications) {
 		delta.Add("Spec.LicenseSpecifications", a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications)
+	} else if len(a.ko.Spec.LicenseSpecifications) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications) {
+			delta.Add("Spec.LicenseSpecifications", a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.MaintenanceOptions, b.ko.Spec.MaintenanceOptions) {
 		delta.Add("Spec.MaintenanceOptions", a.ko.Spec.MaintenanceOptions, b.ko.Spec.MaintenanceOptions)
@@ -370,8 +390,12 @@ func newResourceDelta(
 			}
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces) {
+	if len(a.ko.Spec.NetworkInterfaces) != len(b.ko.Spec.NetworkInterfaces) {
 		delta.Add("Spec.NetworkInterfaces", a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces)
+	} else if len(a.ko.Spec.NetworkInterfaces) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces) {
+			delta.Add("Spec.NetworkInterfaces", a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Placement, b.ko.Spec.Placement) {
 		delta.Add("Spec.Placement", a.ko.Spec.Placement, b.ko.Spec.Placement)
@@ -472,11 +496,19 @@ func newResourceDelta(
 			delta.Add("Spec.RAMDiskID", a.ko.Spec.RAMDiskID, b.ko.Spec.RAMDiskID)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
+	if len(a.ko.Spec.SecurityGroupIDs) != len(b.ko.Spec.SecurityGroupIDs) {
 		delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
+	} else if len(a.ko.Spec.SecurityGroupIDs) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
+			delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
+		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroups, b.ko.Spec.SecurityGroups) {
+	if len(a.ko.Spec.SecurityGroups) != len(b.ko.Spec.SecurityGroups) {
 		delta.Add("Spec.SecurityGroups", a.ko.Spec.SecurityGroups, b.ko.Spec.SecurityGroups)
+	} else if len(a.ko.Spec.SecurityGroups) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroups, b.ko.Spec.SecurityGroups) {
+			delta.Add("Spec.SecurityGroups", a.ko.Spec.SecurityGroups, b.ko.Spec.SecurityGroups)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.SubnetID, b.ko.Spec.SubnetID) {
 		delta.Add("Spec.SubnetID", a.ko.Spec.SubnetID, b.ko.Spec.SubnetID)
