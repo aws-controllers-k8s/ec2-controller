@@ -548,6 +548,18 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+      IngressRules.UserIDGroupPairs.VPCID:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      IngressRules.UserIDGroupPairs.GroupID:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+      IngressRules.UserIDGroupPairs.GroupName:
+        references:
+          resource: SecurityGroup
+          path: Spec.Name
     renames:
       operations:
         CreateSecurityGroup:
