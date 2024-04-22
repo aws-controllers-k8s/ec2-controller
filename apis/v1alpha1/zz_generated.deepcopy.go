@@ -21483,6 +21483,11 @@ func (in *UserIDGroupPair) DeepCopyInto(out *UserIDGroupPair) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.GroupRef != nil {
+		in, out := &in.GroupRef, &out.GroupRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.PeeringStatus != nil {
 		in, out := &in.PeeringStatus, &out.PeeringStatus
 		*out = new(string)
@@ -21502,6 +21507,11 @@ func (in *UserIDGroupPair) DeepCopyInto(out *UserIDGroupPair) {
 		in, out := &in.VPCPeeringConnectionID, &out.VPCPeeringConnectionID
 		*out = new(string)
 		**out = **in
+	}
+	if in.VPCRef != nil {
+		in, out := &in.VPCRef, &out.VPCRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
