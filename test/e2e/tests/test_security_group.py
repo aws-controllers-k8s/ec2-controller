@@ -14,17 +14,17 @@
 """Integration tests for the SecurityGroup API.
 """
 
-import resource
-import pytest
-import time
 import logging
+import resource
+import time
 
+import pytest
 from acktest import tags
-from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
-from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
-from e2e.replacement_values import REPLACEMENT_VALUES
+from acktest.resources import random_suffix_name
+from e2e import CRD_GROUP, CRD_VERSION, load_ec2_resource, service_marker
 from e2e.bootstrap_resources import get_bootstrap_resources
+from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "securitygroups"
@@ -241,17 +241,36 @@ class TestSecurityGroup:
 
         # Add Egress rule via patch
         new_egress_rule = {
-                        "ipProtocol": "tcp",
-                        "fromPort": 25,
-                        "toPort": 25,
-                        "ipRanges": [
-                            {
-                                "cidrIP": "172.31.0.0/16",
-                                "description": "test egress"
-                            }
-                        ]
+            "ipProtocol": "tcp",
+            "fromPort": 25,
+            "toPort": 25,
+            "ipRanges": [
+                {
+                    "cidrIP": "172.31.0.0/16",
+                    "description": "test egress"
+                }
+            ]
         }
-        patch = {"spec": {"egressRules":[new_egress_rule]}}
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        # Add Egress rule via patch
+        new_egress_rule_with_sg_pair = {
+            "ipProtocol": "tcp",
+            "fromPort": 40,
+            "toPort": 40,
+            "ipRanges": [
+                {
+                    "cidrIP": "172.31.0.0/12",
+                    "description": "test egress"
+                }
+            ],
+            "userIdGroupPairs": [
+                {
+                    "description": "test userIdGroupPairs",
+                    "vpcID": test_vpc.vpc_id
+                }
+            ]
+        }
+        patch = {"spec": {"egressRules":[new_egress_rule, new_egress_rule_with_sg_pair]}}
         _ = k8s.patch_custom_resource(ref, patch)
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -261,14 +280,22 @@ class TestSecurityGroup:
 
         # Check ingress and egress rules exist
         sg_group = ec2_validator.get_security_group(resource_id)
-        assert len(sg_group["IpPermissions"]) == 1
-        assert len(sg_group["IpPermissionsEgress"]) == 1
+        assert len(sg_group["IpPermissions"]) == 2
+        assert len(sg_group["IpPermissionsEgress"]) == 2
         
         # Check egress rule data
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
         assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 25
         assert sg_group["IpPermissionsEgress"][0]["ToPort"] == 25
         assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"] == "test egress"
+
+        assert sg_group["IpPermissionsEgress"][1]["IpProtocol"] == "tcp"
+        assert sg_group["IpPermissionsEgress"][1]["FromPort"] == 40
+        assert sg_group["IpPermissionsEgress"][1]["ToPort"] == 40
+        assert sg_group["IpPermissionsEgress"][1]["IpRanges"][0]["Description"] == "test egress"
+        assert len(sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"]) == 1
+        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["Description"] == "test userIdGroupPairs"
+        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["GroupName"] == cr["spec"]["name"]
 
         # Remove Ingress rule
         patch = {"spec": {"ingressRules":[]}}
