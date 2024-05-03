@@ -262,10 +262,11 @@ class TestSecurityGroup:
                     "description": "test egress"
                 }
             ],
-            "userIdGroupPairs": [
+            "userIDGroupPairs": [
                 {
-                    "description": "test userIdGroupPairs",
-                    "vpcID": get_bootstrap_resources().SharedTestVPC.vpc_id
+                    "description": "test userIDGroupPairs",
+                    "vpcID": get_bootstrap_resources().SharedTestVPC.vpc_id,
+                    "userID": "1234"
                 }
             ]
         }

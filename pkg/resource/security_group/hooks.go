@@ -300,7 +300,7 @@ func (rm *resourceManager) createSecurityGroupRules(
 			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
 			// access them here.
 			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
-				userIDGroupPair.GroupName = r.ko.Spec.Name
+				userIDGroupPair.GroupId = r.ko.Status.ID
 			}
 		}
 		req := &svcsdk.AuthorizeSecurityGroupIngressInput{
@@ -322,7 +322,7 @@ func (rm *resourceManager) createSecurityGroupRules(
 			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
 			// access them here.
 			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
-				userIDGroupPair.GroupName = r.ko.Spec.Name
+				userIDGroupPair.GroupId = r.ko.Status.ID
 			}
 		}
 		req := &svcsdk.AuthorizeSecurityGroupEgressInput{
