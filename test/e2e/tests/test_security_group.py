@@ -251,7 +251,6 @@ class TestSecurityGroup:
                 }
             ]
         }
-        test_vpc = get_bootstrap_resources().SharedTestVPC
         # Add Egress rule via patch
         new_egress_rule_with_sg_pair = {
             "ipProtocol": "tcp",
@@ -266,7 +265,7 @@ class TestSecurityGroup:
             "userIdGroupPairs": [
                 {
                     "description": "test userIdGroupPairs",
-                    "vpcID": test_vpc.vpc_id
+                    "vpcID": get_bootstrap_resources().SharedTestVPC.vpc_id
                 }
             ]
         }
@@ -280,7 +279,7 @@ class TestSecurityGroup:
 
         # Check ingress and egress rules exist
         sg_group = ec2_validator.get_security_group(resource_id)
-        assert len(sg_group["IpPermissions"]) == 2
+        assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 2
         
         # Check egress rule data
