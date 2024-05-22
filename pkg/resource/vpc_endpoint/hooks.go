@@ -24,6 +24,25 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/describe_vpc_endpoints.html
+const (
+	StatusPendingAcceptance = "pendingAcceptance"
+	StatusPending           = "pending"
+	StatusAvailable         = "available"
+	StatusDeleting          = "deleting"
+	StatusDeleted           = "deleted"
+	StatusRejected          = "rejected"
+	StatusFailed            = "failed"
+)
+
+func vpcEndpointAvailable(r *resource) bool {
+	if r.ko.Status.State == nil {
+		return false
+	}
+	cs := *r.ko.Status.State
+	return cs == StatusAvailable
+}
+
 // addIDToDeleteRequest adds resource's Vpc Endpoint ID to DeleteRequest.
 // Return error to indicate to callers that the resource is not yet created.
 func addIDToDeleteRequest(r *resource,
