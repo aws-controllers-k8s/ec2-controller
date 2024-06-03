@@ -294,8 +294,8 @@ class TestSecurityGroup:
         assert sg_group["IpPermissionsEgress"][1]["ToPort"] == 40
         assert sg_group["IpPermissionsEgress"][1]["IpRanges"][0]["Description"] == "test egress"
         assert len(sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"]) == 1
-        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["Description"] == "test userIdGroupPairs"
-        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["GroupName"] == cr["spec"]["name"]
+        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["Description"] == "test userIDGroupPairs"
+        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["GroupId"] == resource_id
 
         # Remove Ingress rule
         patch = {"spec": {"ingressRules":[]}}
@@ -304,13 +304,12 @@ class TestSecurityGroup:
 
         # assert patched state
         cr = k8s.get_resource(ref)
-        assert len(cr['status']['rules']) == 1
+        assert len(cr['status']['rules']) == 3
 
         # Check ingress rule removed; egress rule remains
-        assert len(cr["status"]["rules"]) == 1
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 0
-        assert len(sg_group["IpPermissionsEgress"]) == 1
+        assert len(sg_group["IpPermissionsEgress"]) == 2
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
