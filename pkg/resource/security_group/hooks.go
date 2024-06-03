@@ -297,10 +297,15 @@ func (rm *resourceManager) createSecurityGroupRules(
 	for _, i := range ingress {
 		ipInput := rm.newIPPermission(*i)
 		for _, userIDGroupPair := range ipInput.UserIdGroupPairs {
+			// If not provided, we need to default the VPC and SecurityGroup IDs.
+			//
 			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
 			// access them here.
 			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
 				userIDGroupPair.GroupId = r.ko.Status.ID
+			}
+			if userIDGroupPair.VpcId == nil {
+				userIDGroupPair.VpcId = r.ko.Spec.VPCID
 			}
 		}
 		req := &svcsdk.AuthorizeSecurityGroupIngressInput{
@@ -319,10 +324,15 @@ func (rm *resourceManager) createSecurityGroupRules(
 	for _, e := range egress {
 		ipInput := rm.newIPPermission(*e)
 		for _, userIDGroupPair := range ipInput.UserIdGroupPairs {
+			// If not provided, we need to default the security group ID and vpc ID.
+			//
 			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
 			// access them here.
 			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
 				userIDGroupPair.GroupId = r.ko.Status.ID
+			}
+			if userIDGroupPair.VpcId == nil {
+				userIDGroupPair.VpcId = r.ko.Spec.VPCID
 			}
 		}
 		req := &svcsdk.AuthorizeSecurityGroupEgressInput{

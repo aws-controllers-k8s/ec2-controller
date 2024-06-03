@@ -107,9 +107,6 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 			if f1iter.GroupRef != nil && f1iter.GroupName != nil {
 				return ackerr.ResourceReferenceAndIDNotSupportedFor("IngressRules.UserIDGroupPairs.GroupName", "IngressRules.UserIDGroupPairs.GroupRef")
 			}
-			if f1iter.GroupRef == nil && f1iter.GroupName == nil {
-				return ackerr.ResourceReferenceOrIDRequiredFor("GroupName", "GroupRef")
-			}
 		}
 	}
 

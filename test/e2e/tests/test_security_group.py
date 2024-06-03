@@ -26,6 +26,7 @@ from e2e import CRD_GROUP, CRD_VERSION, load_ec2_resource, service_marker
 from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
+from acktest.aws.identity import get_account_id
 
 RESOURCE_PLURAL = "securitygroups"
 
@@ -265,8 +266,7 @@ class TestSecurityGroup:
             "userIDGroupPairs": [
                 {
                     "description": "test userIDGroupPairs",
-                    "vpcID": get_bootstrap_resources().SharedTestVPC.vpc_id,
-                    "userID": "1234"
+                    "userID": str(get_account_id())
                 }
             ]
         }
