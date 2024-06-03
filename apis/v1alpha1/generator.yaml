@@ -556,6 +556,7 @@ resources:
         references:
           resource: SecurityGroup
           path: Spec.Name
+        is_required: false
     renames:
       operations:
         CreateSecurityGroup:
