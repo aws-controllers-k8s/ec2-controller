@@ -51,6 +51,9 @@ func newResourceDelta(
 			delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
 		}
 	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 	} else if a.ko.Spec.VPCID != nil && b.ko.Spec.VPCID != nil {

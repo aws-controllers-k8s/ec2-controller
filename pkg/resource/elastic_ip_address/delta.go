@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.Address, b.ko.Spec.Address) {
 		delta.Add("Spec.Address", a.ko.Spec.Address, b.ko.Spec.Address)
@@ -71,6 +70,9 @@ func newResourceDelta(
 		if *a.ko.Spec.PublicIPv4Pool != *b.ko.Spec.PublicIPv4Pool {
 			delta.Add("Spec.PublicIPv4Pool", a.ko.Spec.PublicIPv4Pool, b.ko.Spec.PublicIPv4Pool)
 		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta
