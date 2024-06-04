@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AllocationID, b.ko.Spec.AllocationID) {
 		delta.Add("Spec.AllocationID", a.ko.Spec.AllocationID, b.ko.Spec.AllocationID)
@@ -70,6 +69,9 @@ func newResourceDelta(
 	}
 	if !reflect.DeepEqual(a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef) {
 		delta.Add("Spec.SubnetRef", a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef)
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta

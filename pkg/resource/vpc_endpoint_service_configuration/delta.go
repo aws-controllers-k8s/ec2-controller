@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AcceptanceRequired, b.ko.Spec.AcceptanceRequired) {
 		delta.Add("Spec.AcceptanceRequired", a.ko.Spec.AcceptanceRequired, b.ko.Spec.AcceptanceRequired)
@@ -85,6 +84,9 @@ func newResourceDelta(
 		if !ackcompare.SliceStringPEqual(a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes) {
 			delta.Add("Spec.SupportedIPAddressTypes", a.ko.Spec.SupportedIPAddressTypes, b.ko.Spec.SupportedIPAddressTypes)
 		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta
