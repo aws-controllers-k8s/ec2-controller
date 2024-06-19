@@ -8,4 +8,3 @@
 		// then assign resource's tags to maintain tag order
 		ko.Spec.Tags = r.ko.Spec.Tags
 	}
-    
