@@ -44,15 +44,21 @@ func (rm *resourceManager) syncRoutes(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 	toAdd := []*svcapitypes.CreateRouteInput{}
 	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	if latest != nil {
-		latest.ko.Spec.Routes = rm.excludeAwsRoute(latest.ko.Spec.Routes)
+		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(latest.ko.Spec.Routes)
+		if err != nil {
+			return err
+		}
 	}
 	if desired != nil {
-		desired.ko.Spec.Routes = rm.excludeAwsRoute(desired.ko.Spec.Routes)
+		desired.ko.Spec.Routes, err = rm.excludeAWSRoute(desired.ko.Spec.Routes)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
@@ -85,15 +91,15 @@ func (rm *resourceManager) syncRoutes(
 		}
 	}
 
-	for _, route := range toAdd {
-		rlog.Debug("adding route to route table")
-		if err = rm.createRoute(ctx, desired, *route); err != nil {
-			return err
-		}
-	}
 	for _, route := range toDelete {
 		rlog.Debug("deleting route from route table")
 		if err = rm.deleteRoute(ctx, latest, *route); err != nil {
+			return err
+		}
+	}
+	for _, route := range toAdd {
+		rlog.Debug("adding route to route table")
+		if err = rm.createRoute(ctx, desired, *route); err != nil {
 			return err
 		}
 	}
@@ -162,7 +168,7 @@ func (rm *resourceManager) createRoute(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.createRoute")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	input := rm.newCreateRouteInput(c)
 	// Routes should only be configurable for the
@@ -180,7 +186,7 @@ func (rm *resourceManager) deleteRoute(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.deleteRoute")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	input := rm.newDeleteRouteInput(c)
 	// Routes should only be configurable for the
@@ -199,7 +205,7 @@ func (rm *resourceManager) customUpdateRouteTable(
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateRouteTable")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	// Default `updated` to `desired` because it is likely
 	// EC2 `modify` APIs do NOT return output, only errors.
@@ -207,6 +213,16 @@ func (rm *resourceManager) customUpdateRouteTable(
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
+
+	if delta.DifferentAt("Spec.Tags") {
+		if err := tags.Sync(
+			ctx, rm.sdkapi, rm.metrics,
+			*latest.ko.Status.RouteTableID,
+			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+		); err != nil {
+			return nil, err
+		}
+	}
 
 	if delta.DifferentAt("Spec.Routes") {
 		if err := rm.syncRoutes(ctx, desired, latest); err != nil {
@@ -216,15 +232,6 @@ func (rm *resourceManager) customUpdateRouteTable(
 		// with the recently-updated data from the above `sync` call
 		updated, err = rm.sdkFind(ctx, desired)
 		if err != nil {
-			return nil, err
-		}
-	}
-
-	if delta.DifferentAt("Spec.Tags") {
-		if err := tags.Sync(
-			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.RouteTableID,
-			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
-		); err != nil {
 			return nil, err
 		}
 	}
@@ -287,9 +294,9 @@ func removeLocalRoute(
 	return ret
 }
 
-func (rm *resourceManager) excludeAwsRoute(
+func (rm *resourceManager) excludeAWSRoute(
 	routes []*svcapitypes.CreateRouteInput,
-) (ret []*svcapitypes.CreateRouteInput) {
+) (ret []*svcapitypes.CreateRouteInput, err error) {
 	ret = make([]*svcapitypes.CreateRouteInput, 0)
 	var prefixListIds []*string
 
@@ -300,20 +307,21 @@ func (rm *resourceManager) excludeAwsRoute(
 		return route.DestinationPrefixListID != nil
 	})
 
-	prefix_list_routes := lo.Filter(routes, func(route *svcapitypes.CreateRouteInput, index int) bool {
+	prefixListRoutes := lo.Filter(routes, func(route *svcapitypes.CreateRouteInput, index int) bool {
 		return route.DestinationPrefixListID != nil
 	})
 
-	prefixListIds = lo.Map(prefix_list_routes, func(route *svcapitypes.CreateRouteInput, _ int) *string {
+	prefixListIds = lo.Map(prefixListRoutes, func(route *svcapitypes.CreateRouteInput, _ int) *string {
 		return route.DestinationPrefixListID
-
 	})
 
-	var resp *svcsdk.DescribeManagedPrefixListsOutput
 	input := &svcsdk.DescribeManagedPrefixListsInput{}
 	input.PrefixListIds = prefixListIds
-	resp, _ = rm.sdkapi.DescribeManagedPrefixLists(input)
+	resp, err := rm.sdkapi.DescribeManagedPrefixLists(input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeManagedPrefixLists", nil)
+	if err != nil {
+		return ret, nil
+	}
 
 	m := lo.FilterMap(resp.PrefixLists, func(mpl *svcsdk.ManagedPrefixList, _ int) (string, bool) {
 		if strings.EqualFold(*mpl.OwnerId, "AWS") {
@@ -322,7 +330,7 @@ func (rm *resourceManager) excludeAwsRoute(
 		return "", false
 	})
 
-	filtered_routes := lo.FilterMap(prefix_list_routes, func(route *svcapitypes.CreateRouteInput, _ int) (*svcapitypes.CreateRouteInput, bool) {
+	filtered_routes := lo.FilterMap(prefixListRoutes, func(route *svcapitypes.CreateRouteInput, _ int) (*svcapitypes.CreateRouteInput, bool) {
 		found := lo.IndexOf(m, *route.DestinationPrefixListID)
 		if found == -1 {
 			return route, true
@@ -331,7 +339,7 @@ func (rm *resourceManager) excludeAwsRoute(
 	})
 	ret = append(ret, filtered_routes...)
 
-	return ret
+	return ret, nil
 }
 
 // updateTagSpecificationsInCreateRequest adds

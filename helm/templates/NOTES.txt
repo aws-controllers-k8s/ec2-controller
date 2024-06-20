@@ -1,4 +1,5 @@
 {{ .Chart.Name }} has been installed.
+
 This chart deploys "public.ecr.aws/aws-controllers-k8s/ec2-controller:1.2.12".
 
 Check its status by running:

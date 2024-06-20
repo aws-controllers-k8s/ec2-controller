@@ -39,7 +39,7 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateNetworkAcl")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	// Default `updated` to `desired` because it is likely
 	// EC2 `modify` APIs do NOT return output, only errors.
@@ -48,17 +48,17 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
-	if delta.DifferentAt("Spec.Entries") {
-		if err := rm.syncEntries(ctx, desired, latest); err != nil {
-			return nil, err
-		}
-	}
-
 	if delta.DifferentAt("Spec.Tags") {
 		if err := tags.Sync(
 			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.ID,
 			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 		); err != nil {
+			return nil, err
+		}
+	}
+
+	if delta.DifferentAt("Spec.Entries") {
+		if err := rm.syncEntries(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 	}
@@ -297,7 +297,8 @@ func (rm *resourceManager) syncEntries(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncEntries")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
+
 	toAdd := []*svcapitypes.NetworkACLEntry{}
 	toDelete := []*svcapitypes.NetworkACLEntry{}
 	toUpdate := []*svcapitypes.NetworkACLEntry{}
