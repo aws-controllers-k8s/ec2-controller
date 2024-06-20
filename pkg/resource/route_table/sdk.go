@@ -234,7 +234,6 @@ func (rm *resourceManager) sdkFind(
 		// then assign resource's tags to maintain tag order
 		ko.Spec.Tags = r.ko.Spec.Tags
 	}
-
 	return &resource{ko}, nil
 }
 
@@ -432,7 +431,8 @@ func (rm *resourceManager) sdkCreate(
 	if len(desired.ko.Spec.Routes) > 0 {
 		//desired routes are overwritten by RouteTable's default route
 		ko.Spec.Routes = append(ko.Spec.Routes, desired.ko.Spec.Routes...)
-		if err := rm.createRoutes(ctx, &resource{ko}); err != nil {
+		copy := ko.DeepCopy()
+		if err := rm.createRoutes(ctx, &resource{copy}); err != nil {
 			return nil, err
 		}
 	}
@@ -443,6 +443,7 @@ func (rm *resourceManager) sdkCreate(
 		// then assign desired tags to maintain tag order
 		ko.Spec.Tags = desired.ko.Spec.Tags
 	}
+
 	return &resource{ko}, nil
 }
 
