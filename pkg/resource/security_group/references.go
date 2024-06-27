@@ -149,7 +149,7 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_Grou
 				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return hasReferences, err
 				}
-				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = (*string)(obj.Status.ID)
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupName = (*string)(obj.Spec.Name)
 			}
 		}
 	}
