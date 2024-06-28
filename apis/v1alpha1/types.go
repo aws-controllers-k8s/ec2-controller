@@ -4585,7 +4585,7 @@ type UserIDGroupPair struct {
 	Description *string `json:"description,omitempty"`
 	GroupID     *string `json:"groupID,omitempty"`
 	GroupName   *string `json:"groupName,omitempty"`
-	// Reference field for GroupName
+	// Reference field for GroupID
 	GroupRef               *ackv1alpha1.AWSResourceReferenceWrapper `json:"groupRef,omitempty"`
 	PeeringStatus          *string                                  `json:"peeringStatus,omitempty"`
 	UserID                 *string                                  `json:"userID,omitempty"`

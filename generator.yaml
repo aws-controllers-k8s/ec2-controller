@@ -524,10 +524,10 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
-      IngressRules.UserIDGroupPairs.GroupName:
+      IngressRules.UserIDGroupPairs.GroupID:
         references:
           resource: SecurityGroup
-          path: Spec.Name
+          path: Status.ID
         is_required: false
     renames:
       operations:

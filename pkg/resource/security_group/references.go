@@ -40,7 +40,7 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 	for f0idx, f0iter := range ko.Spec.IngressRules {
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.GroupRef != nil {
-				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupName = nil
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = nil
 			}
 		}
 	}
@@ -77,7 +77,7 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_GroupName(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(ctx, apiReader, namespace, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -104,8 +104,8 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 
 	for _, f0iter := range ko.Spec.IngressRules {
 		for _, f1iter := range f0iter.UserIDGroupPairs {
-			if f1iter.GroupRef != nil && f1iter.GroupName != nil {
-				return ackerr.ResourceReferenceAndIDNotSupportedFor("IngressRules.UserIDGroupPairs.GroupName", "IngressRules.UserIDGroupPairs.GroupRef")
+			if f1iter.GroupRef != nil && f1iter.GroupID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("IngressRules.UserIDGroupPairs.GroupID", "IngressRules.UserIDGroupPairs.GroupRef")
 			}
 		}
 	}
@@ -127,11 +127,11 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 	return nil
 }
 
-// resolveReferenceForIngressRules_UserIDGroupPairs_GroupName reads the resource referenced
-// from IngressRules.UserIDGroupPairs.GroupRef field and sets the IngressRules.UserIDGroupPairs.GroupName
+// resolveReferenceForIngressRules_UserIDGroupPairs_GroupID reads the resource referenced
+// from IngressRules.UserIDGroupPairs.GroupRef field and sets the IngressRules.UserIDGroupPairs.GroupID
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
-func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_GroupName(
+func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
@@ -149,7 +149,7 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_Grou
 				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return hasReferences, err
 				}
-				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupName = (*string)(obj.Spec.Name)
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = (*string)(obj.Status.ID)
 			}
 		}
 	}
@@ -199,11 +199,11 @@ func getReferencedResourceState_SecurityGroup(
 			"SecurityGroup",
 			namespace, name)
 	}
-	if obj.Spec.Name == nil {
+	if obj.Status.ID == nil {
 		return ackerr.ResourceReferenceMissingTargetFieldFor(
 			"SecurityGroup",
 			namespace, name,
-			"Spec.Name")
+			"Status.ID")
 	}
 	return nil
 }
