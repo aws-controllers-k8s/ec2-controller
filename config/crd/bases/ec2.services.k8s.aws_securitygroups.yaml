@@ -121,7 +121,7 @@ spec:
                           groupName:
                             type: string
                           groupRef:
-                            description: Reference field for GroupName
+                            description: Reference field for GroupID
                             properties:
                               from:
                                 description: |-
@@ -217,7 +217,7 @@ spec:
                           groupName:
                             type: string
                           groupRef:
-                            description: Reference field for GroupName
+                            description: Reference field for GroupID
                             properties:
                               from:
                                 description: |-
