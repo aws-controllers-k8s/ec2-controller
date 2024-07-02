@@ -35,12 +35,12 @@ const (
 	StatusFailed            = "failed"
 )
 
-func vpcEndpointAvailable(r *resource) bool {
+func vpcEndpointPending(r *resource) bool {
 	if r.ko.Status.State == nil {
 		return false
 	}
 	cs := *r.ko.Status.State
-	return cs == StatusAvailable
+	return cs == StatusPending
 }
 
 // addIDToDeleteRequest adds resource's Vpc Endpoint ID to DeleteRequest.
