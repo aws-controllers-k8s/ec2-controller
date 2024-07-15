@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/ec2-controller
-  tag: 1.2.13
+  tag: 1.2.14
   pullPolicy: IfNotPresent
   pullSecrets: []
 
