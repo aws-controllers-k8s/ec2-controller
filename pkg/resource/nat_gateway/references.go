@@ -60,18 +60,17 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForAllocationID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForAllocationID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForSubnetID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForSubnetID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -104,7 +103,6 @@ func validateReferenceFields(ko *svcapitypes.NATGateway) error {
 func (rm *resourceManager) resolveReferenceForAllocationID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.NATGateway,
 ) (hasReferences bool, err error) {
 	if ko.Spec.AllocationRef != nil && ko.Spec.AllocationRef.From != nil {
@@ -112,6 +110,10 @@ func (rm *resourceManager) resolveReferenceForAllocationID(
 		arr := ko.Spec.AllocationRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: AllocationRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.ElasticIPAddress{}
 		if err := getReferencedResourceState_ElasticIPAddress(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -181,7 +183,6 @@ func getReferencedResourceState_ElasticIPAddress(
 func (rm *resourceManager) resolveReferenceForSubnetID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.NATGateway,
 ) (hasReferences bool, err error) {
 	if ko.Spec.SubnetRef != nil && ko.Spec.SubnetRef.From != nil {
@@ -189,6 +190,10 @@ func (rm *resourceManager) resolveReferenceForSubnetID(
 		arr := ko.Spec.SubnetRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SubnetRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.Subnet{}
 		if err := getReferencedResourceState_Subnet(ctx, apiReader, obj, *arr.Name, namespace); err != nil {

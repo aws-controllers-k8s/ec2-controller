@@ -60,18 +60,17 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForPeerVPCID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForPeerVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -101,7 +100,6 @@ func validateReferenceFields(ko *svcapitypes.VPCPeeringConnection) error {
 func (rm *resourceManager) resolveReferenceForPeerVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.VPCPeeringConnection,
 ) (hasReferences bool, err error) {
 	if ko.Spec.PeerVPCRef != nil && ko.Spec.PeerVPCRef.From != nil {
@@ -109,6 +107,10 @@ func (rm *resourceManager) resolveReferenceForPeerVPCID(
 		arr := ko.Spec.PeerVPCRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PeerVPCRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.VPC{}
 		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -178,7 +180,6 @@ func getReferencedResourceState_VPC(
 func (rm *resourceManager) resolveReferenceForVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.VPCPeeringConnection,
 ) (hasReferences bool, err error) {
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
@@ -186,6 +187,10 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 		arr := ko.Spec.VPCRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.VPC{}
 		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {

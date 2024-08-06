@@ -72,24 +72,23 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_VPCID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_VPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -134,7 +133,6 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.SecurityGroup,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.IngressRules {
@@ -144,6 +142,10 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_Grou
 				arr := f1iter.GroupRef.From
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.GroupRef")
+				}
+				namespace := ko.ObjectMeta.GetNamespace()
+				if arr.Namespace != nil && *arr.Namespace != "" {
+					namespace = *arr.Namespace
 				}
 				obj := &svcapitypes.SecurityGroup{}
 				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -215,7 +217,6 @@ func getReferencedResourceState_SecurityGroup(
 func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.SecurityGroup,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.IngressRules {
@@ -225,6 +226,10 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCI
 				arr := f1iter.VPCRef.From
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.VPCRef")
+				}
+				namespace := ko.ObjectMeta.GetNamespace()
+				if arr.Namespace != nil && *arr.Namespace != "" {
+					namespace = *arr.Namespace
 				}
 				obj := &svcapitypes.VPC{}
 				if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -296,7 +301,6 @@ func getReferencedResourceState_VPC(
 func (rm *resourceManager) resolveReferenceForVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.SecurityGroup,
 ) (hasReferences bool, err error) {
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
@@ -304,6 +308,10 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 		arr := ko.Spec.VPCRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.VPC{}
 		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {

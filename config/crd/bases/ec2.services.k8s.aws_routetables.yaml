@@ -74,6 +74,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            namespace:
+                              type: string
                           type: object
                       type: object
                     instanceID:
@@ -92,6 +94,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            namespace:
+                              type: string
                           type: object
                       type: object
                     networkInterfaceID:
@@ -108,6 +112,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            namespace:
+                              type: string
                           type: object
                       type: object
                     vpcEndpointID:
@@ -122,6 +128,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            namespace:
+                              type: string
                           type: object
                       type: object
                     vpcPeeringConnectionID:
@@ -135,6 +143,8 @@ spec:
                             k8s resource for finding the identifier(Id/ARN/Name)
                           properties:
                             name:
+                              type: string
+                            namespace:
                               type: string
                           type: object
                       type: object
@@ -169,6 +179,8 @@ spec:
                       k8s resource for finding the identifier(Id/ARN/Name)
                     properties:
                       name:
+                        type: string
+                      namespace:
                         type: string
                     type: object
                 type: object

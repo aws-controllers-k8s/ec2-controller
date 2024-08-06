@@ -60,18 +60,17 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForRouteTables(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForRouteTables(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -104,7 +103,6 @@ func validateReferenceFields(ko *svcapitypes.Subnet) error {
 func (rm *resourceManager) resolveReferenceForRouteTables(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.Subnet,
 ) (hasReferences bool, err error) {
 	for _, f0iter := range ko.Spec.RouteTableRefs {
@@ -113,6 +111,10 @@ func (rm *resourceManager) resolveReferenceForRouteTables(
 			arr := f0iter.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: RouteTableRefs")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.RouteTable{}
 			if err := getReferencedResourceState_RouteTable(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -186,7 +188,6 @@ func getReferencedResourceState_RouteTable(
 func (rm *resourceManager) resolveReferenceForVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.Subnet,
 ) (hasReferences bool, err error) {
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
@@ -194,6 +195,10 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 		arr := ko.Spec.VPCRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.VPC{}
 		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {

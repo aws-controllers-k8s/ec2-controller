@@ -86,42 +86,41 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
-	if fieldHasReferences, err := rm.resolveReferenceForRoutes_GatewayID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_GatewayID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForRoutes_NATGatewayID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_NATGatewayID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForRoutes_TransitGatewayID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_TransitGatewayID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCEndpointID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCEndpointID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCPeeringConnectionID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCPeeringConnectionID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
-	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -180,7 +179,6 @@ func validateReferenceFields(ko *svcapitypes.RouteTable) error {
 func (rm *resourceManager) resolveReferenceForRoutes_GatewayID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.RouteTable,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.Routes {
@@ -189,6 +187,10 @@ func (rm *resourceManager) resolveReferenceForRoutes_GatewayID(
 			arr := f0iter.GatewayRef.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.GatewayRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.InternetGateway{}
 			if err := getReferencedResourceState_InternetGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -259,7 +261,6 @@ func getReferencedResourceState_InternetGateway(
 func (rm *resourceManager) resolveReferenceForRoutes_NATGatewayID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.RouteTable,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.Routes {
@@ -268,6 +269,10 @@ func (rm *resourceManager) resolveReferenceForRoutes_NATGatewayID(
 			arr := f0iter.NATGatewayRef.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.NATGatewayRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.NATGateway{}
 			if err := getReferencedResourceState_NATGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -338,7 +343,6 @@ func getReferencedResourceState_NATGateway(
 func (rm *resourceManager) resolveReferenceForRoutes_TransitGatewayID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.RouteTable,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.Routes {
@@ -347,6 +351,10 @@ func (rm *resourceManager) resolveReferenceForRoutes_TransitGatewayID(
 			arr := f0iter.TransitGatewayRef.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.TransitGatewayRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.TransitGateway{}
 			if err := getReferencedResourceState_TransitGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -417,7 +425,6 @@ func getReferencedResourceState_TransitGateway(
 func (rm *resourceManager) resolveReferenceForRoutes_VPCEndpointID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.RouteTable,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.Routes {
@@ -426,6 +433,10 @@ func (rm *resourceManager) resolveReferenceForRoutes_VPCEndpointID(
 			arr := f0iter.VPCEndpointRef.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.VPCEndpointRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.VPCEndpoint{}
 			if err := getReferencedResourceState_VPCEndpoint(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -496,7 +507,6 @@ func getReferencedResourceState_VPCEndpoint(
 func (rm *resourceManager) resolveReferenceForRoutes_VPCPeeringConnectionID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.RouteTable,
 ) (hasReferences bool, err error) {
 	for f0idx, f0iter := range ko.Spec.Routes {
@@ -505,6 +515,10 @@ func (rm *resourceManager) resolveReferenceForRoutes_VPCPeeringConnectionID(
 			arr := f0iter.VPCPeeringConnectionRef.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.VPCPeeringConnectionRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.VPCPeeringConnection{}
 			if err := getReferencedResourceState_VPCPeeringConnection(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -575,7 +589,6 @@ func getReferencedResourceState_VPCPeeringConnection(
 func (rm *resourceManager) resolveReferenceForVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.RouteTable,
 ) (hasReferences bool, err error) {
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
@@ -583,6 +596,10 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 		arr := ko.Spec.VPCRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.VPC{}
 		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
