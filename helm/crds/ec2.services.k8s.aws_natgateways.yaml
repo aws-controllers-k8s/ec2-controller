@@ -70,6 +70,8 @@ spec:
                     properties:
                       name:
                         type: string
+                      namespace:
+                        type: string
                     type: object
                 type: object
               connectivityType:
@@ -92,6 +94,8 @@ spec:
                       k8s resource for finding the identifier(Id/ARN/Name)
                     properties:
                       name:
+                        type: string
+                      namespace:
                         type: string
                     type: object
                 type: object
