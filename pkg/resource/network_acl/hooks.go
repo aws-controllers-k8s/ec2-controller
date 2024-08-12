@@ -41,11 +41,6 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 	exit := rlog.Trace("rm.customUpdateNetworkAcl")
 	defer func(err error) { exit(err) }(err)
 
-	// Default `updated` to `desired` because it is likely
-	// EC2 `modify` APIs do NOT return output, only errors.
-	// If the `modify` calls (i.e. `sync`) do NOT return
-	// an error, then the update was successful and desired.Spec
-	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.Tags") {
@@ -68,10 +63,16 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 			return nil, err
 		}
 	}
-	updated, err = rm.sdkFind(ctx, desired)
+
+	latestResource, err := rm.sdkFind(ctx, desired)
 	if err != nil {
 		return nil, err
 	}
+
+	// The ec2 API can sometimes sort the entries in a different order than the
+	// ones we have in the desired spec. Hence, we need to conserve the order of
+	// entries in the desired spec.
+	updated.ko.Status = latestResource.ko.Status
 
 	return updated, nil
 }
