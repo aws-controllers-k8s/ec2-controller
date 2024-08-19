@@ -36,6 +36,7 @@ def simple_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.1.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
+    replacements["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = "True"
     replacements["TAG_KEY"] = "initialtagkey"
     replacements["TAG_VALUE"] = "initialtagvalue"
 
@@ -125,6 +126,7 @@ def ref_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
+    replacements["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = "True"
 
     # Load VPC CR
     vpc_1_resource_data = load_ec2_resource(
@@ -230,6 +232,7 @@ def peering_options_vpc_peering_connection(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "True"
     replacements["ENABLE_DNS_HOSTNAMES"] = "True"
+    replacements["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = "True"
 
     # Load VPC CR
     vpc_1_resource_data = load_ec2_resource(

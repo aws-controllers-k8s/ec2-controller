@@ -9,3 +9,9 @@
     if err != nil {
         return nil, err
     } 
+	sgDefaultRulesExist, err := rm.hasSecurityGroupDefaultRules(ctx, &resource{ko})
+	if err != nil {
+		return nil, err
+	} else {
+		ko.Status.SecurityGroupDefaultRulesExist = &sgDefaultRulesExist
+	}

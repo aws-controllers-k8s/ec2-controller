@@ -22939,6 +22939,11 @@ func (in *VPCSpec) DeepCopyInto(out *VPCSpec) {
 			}
 		}
 	}
+	if in.DisallowSecurityGroupDefaultRules != nil {
+		in, out := &in.DisallowSecurityGroupDefaultRules, &out.DisallowSecurityGroupDefaultRules
+		*out = new(bool)
+		**out = **in
+	}
 	if in.EnableDNSHostnames != nil {
 		in, out := &in.EnableDNSHostnames, &out.EnableDNSHostnames
 		*out = new(bool)
@@ -23066,6 +23071,11 @@ func (in *VPCStatus) DeepCopyInto(out *VPCStatus) {
 	if in.OwnerID != nil {
 		in, out := &in.OwnerID, &out.OwnerID
 		*out = new(string)
+		**out = **in
+	}
+	if in.SecurityGroupDefaultRulesExist != nil {
+		in, out := &in.SecurityGroupDefaultRulesExist, &out.SecurityGroupDefaultRulesExist
+		*out = new(bool)
 		**out = **in
 	}
 	if in.State != nil {

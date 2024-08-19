@@ -60,6 +60,8 @@ spec:
                 items:
                   type: string
                 type: array
+              disallowSecurityGroupDefaultRules:
+                type: boolean
               enableDNSHostnames:
                 description: The attribute value. The valid values are true or false.
                 type: boolean
@@ -273,6 +275,8 @@ spec:
                 description: The ID of the Amazon Web Services account that owns the
                   VPC.
                 type: string
+              securityGroupDefaultRulesExist:
+                type: boolean
               state:
                 description: The current state of the VPC.
                 type: string
