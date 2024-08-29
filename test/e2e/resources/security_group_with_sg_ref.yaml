@@ -1,0 +1,17 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg
+  vpcID: $VPC_ID
+  ingressRules:
+    - fromPort: 443
+      toPort: 443
+      ipProtocol: tcp
+      userIDGroupPairs:
+        - description: test UID group pair
+          groupRef:
+            from:
+              name: $SECURITY_GROUP_REF_NAME

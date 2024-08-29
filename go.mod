@@ -2,7 +2,7 @@ module github.com/aws-controllers-k8s/ec2-controller
 
 go 1.22.0
 
-toolchain go1.22.5
+toolchain go1.22.6
 
 require (
 	github.com/aws-controllers-k8s/runtime v0.38.0

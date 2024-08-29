@@ -192,24 +192,7 @@ func getReferencedResourceState_SecurityGroup(
 			"SecurityGroup",
 			namespace, name)
 	}
-	var refResourceSynced bool
-	for _, cond := range obj.Status.Conditions {
-		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-			cond.Status == corev1.ConditionTrue {
-			refResourceSynced = true
-		}
-	}
-	if !refResourceSynced {
-		return ackerr.ResourceReferenceNotSyncedFor(
-			"SecurityGroup",
-			namespace, name)
-	}
-	if obj.Status.ID == nil {
-		return ackerr.ResourceReferenceMissingTargetFieldFor(
-			"SecurityGroup",
-			namespace, name,
-			"Status.ID")
-	}
+
 	return nil
 }
 

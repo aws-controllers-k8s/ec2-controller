@@ -229,6 +229,11 @@ func (rm *resourceManager) sdkCreate(
 		return &resource{ko}, err
 	}
 
+	if !rm.referencesResolved(&resource{ko}) {
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
+		return &resource{ko}, nil
+	}
+
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
 		return &resource{ko}, err
 	}
@@ -287,6 +292,12 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
+	sgCpy := r.ko.DeepCopy()
+	sgCpy.Spec.IngressRules = nil
+	sgCpy.Spec.EgressRules = nil
+	if err := rm.syncSGRules(ctx, &resource{ko: sgCpy}, r); err != nil {
+		return nil, err
+	}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err

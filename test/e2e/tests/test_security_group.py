@@ -34,6 +34,9 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 
+CREATE_CYCLIC_REF_AFTER_SECONDS = 60
+DELETE_CYCLIC_REF_AFTER_SECONDS = 30
+
 @pytest.fixture
 def simple_security_group(request):
     resource_name = random_suffix_name("security-group-test", 24)
@@ -140,6 +143,62 @@ def security_group_with_vpc(request, simple_vpc):
     except:
         pass
 
+def create_security_group_with_sg_ref(resource_name, reference_name):
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_ID"] = get_bootstrap_resources().SharedTestVPC.vpc_id
+    replacements["SECURITY_GROUP_NAME"] = resource_name
+    replacements["SECURITY_GROUP_REF_NAME"] = reference_name
+
+    # Load Security Group CR
+    resource_data = load_ec2_resource(
+        "security_group_with_sg_ref",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    
+    return ref
+    
+@pytest.fixture
+def security_groups_cyclic_ref():
+    resource_name_1 = random_suffix_name("security-group-test", 24)
+    resource_name_2 = random_suffix_name("security-group-test", 24)
+    resource_name_3 = random_suffix_name("security-group-test", 24)
+    
+    ref_1 = create_security_group_with_sg_ref(resource_name_1, resource_name_2)
+    ref_2 = create_security_group_with_sg_ref(resource_name_2, resource_name_3)
+    ref_3 = create_security_group_with_sg_ref(resource_name_3, resource_name_1)
+    
+    time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+    
+    cr_1 = k8s.wait_resource_consumed_by_controller(ref_1)
+    cr_2 = k8s.wait_resource_consumed_by_controller(ref_2)
+    cr_3 = k8s.wait_resource_consumed_by_controller(ref_3)
+    assert cr_1 is not None
+    assert cr_2 is not None
+    assert cr_3 is not None
+    
+    yield [(ref_1, cr_1), (ref_2, cr_2), (ref_3, cr_3)]
+    
+    try:
+        k8s.delete_custom_resource(ref, 3, 10)
+        k8s.delete_custom_resource(ref, 3, 10)
+        k8s.delete_custom_resource(ref, 3, 10)
+        
+        time.sleep(DELETE_CYCLIC_REF_AFTER_SECONDS)
+        
+        assert not k8s.get_resource_exists(ref_1)
+        assert not k8s.get_resource_exists(ref_2)
+        assert not k8s.get_resource_exists(ref_3)
+    except:
+        pass
+    
 @service_marker
 @pytest.mark.canary
 class TestSecurityGroup:
@@ -425,3 +484,55 @@ class TestSecurityGroup:
 
         # Check SecurityGroup no longer exists in AWS
         ec2_validator.assert_security_group(resource_id, exists=False)
+
+    def test_cyclic_ref(self, ec2_client, security_groups_cyclic_ref):
+        sgs = security_groups_cyclic_ref
+        (ref_1, cr_1) = sgs[0]
+        (ref_2, cr_2) = sgs[1]
+        (ref_3, cr_3) = sgs[2]
+        
+        
+        
+        # Check Security Groups exists in AWS
+        resource_id_1 = cr_1["status"]["id"]
+        resource_id_2 = cr_2["status"]["id"]
+        resource_id_3 = cr_3["status"]["id"]
+        
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_security_group(resource_id_1)
+        ec2_validator.assert_security_group(resource_id_2)
+        ec2_validator.assert_security_group(resource_id_3)
+        
+        # Check resources are synced successfully
+        assert k8s.wait_on_condition(ref_1, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref_2, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref_3, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Check ingress rules exist
+        sg_group_1 = ec2_validator.get_security_group(resource_id_1)
+        sg_group_2 = ec2_validator.get_security_group(resource_id_2)
+        sg_group_3 = ec2_validator.get_security_group(resource_id_3)
+        assert len(sg_group_1["IpPermissions"]) == 1
+        assert len(sg_group_2["IpPermissions"]) == 1
+        assert len(sg_group_3["IpPermissions"]) == 1
+        
+        # Check ingress rules cyclic data
+        assert sg_group_1["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"] == resource_id_2
+        assert sg_group_2["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"] == resource_id_3
+        assert sg_group_3["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"] == resource_id_1
+        
+        # Delete k8s resources
+        k8s.delete_custom_resource(ref_1)
+        k8s.delete_custom_resource(ref_2)
+        k8s.delete_custom_resource(ref_3)
+        
+        time.sleep(DELETE_CYCLIC_REF_AFTER_SECONDS)
+        
+        assert not k8s.get_resource_exists(ref_1)
+        assert not k8s.get_resource_exists(ref_2)
+        assert not k8s.get_resource_exists(ref_3)
+        
+        # Check Security Group no longer exists in AWS
+        ec2_validator.assert_security_group(resource_id_1, exists=False)
+        ec2_validator.assert_security_group(resource_id_2, exists=False)
+        ec2_validator.assert_security_group(resource_id_3, exists=False)
