@@ -17,9 +17,11 @@ import (
 	"context"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	awserr "github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	corev1 "k8s.io/api/core/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -100,6 +102,29 @@ func (rm *resourceManager) requiredFieldsMissingForSGRule(
 	r *resource,
 ) bool {
 	return r.ko.Status.ID == nil
+}
+
+// referencesResolved checks that any referenced security group actually exists in AWS, before proceeding with syncSGRules.
+// This is required because Rules.UserIDGroupPairs.GroupID.skip_resource_state_validations is set to true,
+// meaning that any state validations performed at runtime, during ResolveReferences step, are being skipped.
+func (rm *resourceManager) referencesResolved(
+	r *resource,
+) bool {
+	for _, rule := range r.ko.Spec.IngressRules {
+		for _, groupPair := range rule.UserIDGroupPairs {
+			if groupPair.GroupRef != nil && groupPair.GroupID == nil {
+				return false
+			}
+		}
+	}
+	for _, rule := range r.ko.Spec.EgressRules {
+		for _, groupPair := range rule.UserIDGroupPairs {
+			if groupPair.GroupRef != nil && groupPair.GroupID == nil {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // syncSGRules analyzes desired and latest (if any)
@@ -357,6 +382,11 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.IngressRules") || delta.DifferentAt("Spec.EgressRules") {
+		if !rm.referencesResolved(desired) {
+			ackcondition.SetSynced(latest, corev1.ConditionFalse, nil, nil)
+			return latest, nil
+		}
+
 		if err := rm.syncSGRules(ctx, desired, latest); err != nil {
 			return nil, err
 		}
