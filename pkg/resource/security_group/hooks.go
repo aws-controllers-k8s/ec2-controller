@@ -382,9 +382,9 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	updated = rm.concreteResource(desired.DeepCopy())
 
 	if delta.DifferentAt("Spec.IngressRules") || delta.DifferentAt("Spec.EgressRules") {
-		if !rm.referencesResolved(desired) {
-			ackcondition.SetSynced(latest, corev1.ConditionFalse, nil, nil)
-			return latest, nil
+		if !rm.referencesResolved(updated) {
+			ackcondition.SetSynced(updated, corev1.ConditionFalse, nil, nil)
+			return updated, nil
 		}
 
 		if err := rm.syncSGRules(ctx, desired, latest); err != nil {
