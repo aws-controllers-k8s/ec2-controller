@@ -725,6 +725,12 @@ resources:
         print:
           path: Status.vpcID
           name: ID
+      DisallowSecurityGroupDefaultRules:
+        type: bool
+        is_required: false
+      SecurityGroupDefaultRulesExist:
+        type: bool
+        is_read_only: true
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/vpc/sdk_create_post_build_request.go.tpl

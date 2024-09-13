@@ -57,6 +57,13 @@ func newResourceDelta(
 			delta.Add("Spec.CIDRBlocks", a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.DisallowSecurityGroupDefaultRules, b.ko.Spec.DisallowSecurityGroupDefaultRules) {
+		delta.Add("Spec.DisallowSecurityGroupDefaultRules", a.ko.Spec.DisallowSecurityGroupDefaultRules, b.ko.Spec.DisallowSecurityGroupDefaultRules)
+	} else if a.ko.Spec.DisallowSecurityGroupDefaultRules != nil && b.ko.Spec.DisallowSecurityGroupDefaultRules != nil {
+		if *a.ko.Spec.DisallowSecurityGroupDefaultRules != *b.ko.Spec.DisallowSecurityGroupDefaultRules {
+			delta.Add("Spec.DisallowSecurityGroupDefaultRules", a.ko.Spec.DisallowSecurityGroupDefaultRules, b.ko.Spec.DisallowSecurityGroupDefaultRules)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames) {
 		delta.Add("Spec.EnableDNSHostnames", a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames)
 	} else if a.ko.Spec.EnableDNSHostnames != nil && b.ko.Spec.EnableDNSHostnames != nil {

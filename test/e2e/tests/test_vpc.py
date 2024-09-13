@@ -44,6 +44,57 @@ def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
     attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsHostnames')
     return attribute['EnableDnsHostnames']['Value']
 
+def contains_default_sg_rule(ec2_client, vpc_id: str) -> bool:
+    response = ec2_client.describe_security_groups(
+            Filters=[
+                {
+                    'Name': 'vpc-id',
+                    'Values': [vpc_id]
+                },
+                {
+                    'Name': 'group-name',
+                    'Values': ["default"]
+                }
+            ]
+    )
+
+    for sg in response['SecurityGroups']:
+        sg_id = sg['GroupId']
+        break
+
+    resp = ec2_client.describe_security_group_rules(
+            Filters=[
+                {
+                    'Name': 'group-id',
+                    'Values': [sg_id]
+                }
+            ]
+    )
+
+    for rule in resp['SecurityGroupRules']:
+        if is_default_sg_ingress_rule(rule):
+            return True
+        if is_default_sg_egress_rule(rule):
+            return True
+    
+def is_default_sg_egress_rule(rule):
+    return (
+        rule.get('CidrIpv4') == "0.0.0.0/0" and
+        rule.get('FromPort') == -1 and
+        rule.get('ToPort') == -1 and
+        rule.get('IpProtocol') == "-1" and
+        rule.get('IsEgress') is True
+    )
+
+def is_default_sg_ingress_rule(rule):
+    return (
+        rule.get('FromPort') == -1 and
+        rule.get('ToPort') == -1 and
+        rule.get('IpProtocol') == "-1" and
+        rule.get('IsEgress') is False and
+        rule.get('ReferencedGroupInfo', {}).get('GroupId') == rule.get('GroupId')
+    )
+
 @service_marker
 @pytest.mark.canary
 class TestVpc:
@@ -181,6 +232,74 @@ class TestVpc:
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC no longer exists in AWS
+        ec2_validator.assert_vpc(resource_id, exists=False)
+
+    @pytest.mark.resource_data({'disallow_default_sg_rule': 'true'})
+    def test_disallow_default_security_group_rule(self, ec2_client, simple_vpc):
+        (ref, cr) = simple_vpc
+        resource_id = cr["status"]["vpcID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check VPC exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc(resource_id)
+
+        # Make sure default security group rule is deleted
+        assert not contains_default_sg_rule(ec2_client, resource_id)
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC no longer exists in AWS
+        ec2_validator.assert_vpc(resource_id, exists=False)
+
+    def test_update_disallow_default_security_group_rule(self, ec2_client, simple_vpc):
+        (ref, cr) = simple_vpc
+        resource_id = cr["status"]["vpcID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check VPC exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc(resource_id)
+
+        # Make sure default security group rule is not deleted
+        assert contains_default_sg_rule(ec2_client, resource_id)
+
+        # Set disallowSecurityGroupDefaultRules to delete default security
+        # group rule
+        updates = {
+            "spec": {"disallowSecurityGroupDefaultRules": True}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Make sure default security group rule is deleted
+        assert not contains_default_sg_rule(ec2_client, resource_id)
+
+        # Reset disallowSecurityGroupDefaultRules to false.
+        # This should be no-op since default security
+        # group rule is previously deleted
+        updates = {
+            "spec": {"disallowSecurityGroupDefaultRules": False}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Make sure default security group rule is deleted
+        assert not contains_default_sg_rule(ec2_client, resource_id)
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)

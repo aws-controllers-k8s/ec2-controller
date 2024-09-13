@@ -15,9 +15,11 @@ package vpc
 
 import (
 	"context"
+	"fmt"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -293,6 +295,20 @@ func (rm *resourceManager) customUpdateVPC(
 	}
 	updated.ko.Status.CIDRBlockAssociationSet = latest.ko.Status.CIDRBlockAssociationSet
 
+	if delta.DifferentAt("Spec.DisallowSecurityGroupDefaultRules") {
+		if desired.ko.Spec.DisallowSecurityGroupDefaultRules != nil && *desired.ko.Spec.DisallowSecurityGroupDefaultRules {
+			if err = rm.deleteSecurityGroupDefaultRules(ctx, desired); err != nil {
+				// if deleteSecurityGroupDefaultRules fails, assume that the
+				// rules still exist and update the status accordingly.
+				exist := true
+				updated.ko.Status.SecurityGroupDefaultRulesExist = &exist
+				return nil, err
+			}
+			exist := false
+			updated.ko.Status.SecurityGroupDefaultRulesExist = &exist
+		}
+	}
+
 	if delta.DifferentAt("Spec.EnableDNSSupport") {
 		if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
 			return nil, err
@@ -349,4 +365,205 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.SetTags(requestedTags)
 		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
+}
+
+// hasSecurityGroupDefaultRules returns true if the vpc's 'default' security
+// group has autopopulated ingress/egress rules.
+func (rm *resourceManager) hasSecurityGroupDefaultRules(
+	ctx context.Context,
+	r *resource,
+) (defaultSGRulePresent bool, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.hasSecurityGroupDefaultRules")
+	defer exit(err)
+
+	sgID, err := rm.getDefaultSGId(ctx, r)
+	if err != nil {
+		return false, err
+	}
+
+	groupIDFilter := "group-id"
+	input := &svcsdk.DescribeSecurityGroupRulesInput{
+		Filters: []*svcsdk.Filter{
+			{
+				Name:   &groupIDFilter,
+				Values: []*string{sgID},
+			},
+		},
+	}
+
+	for {
+		resp, err := rm.sdkapi.DescribeSecurityGroupRulesWithContext(ctx, input)
+		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
+		if err != nil || resp == nil {
+			break
+		}
+		for _, sgRule := range resp.SecurityGroupRules {
+			if rm.isDefaultSGIngressRule(sgRule) {
+				return true, nil
+			}
+			if rm.isDefaultSGEgressRule(sgRule) {
+				return true, nil
+			}
+		}
+		if resp.NextToken == nil || *resp.NextToken == "" {
+			break
+		}
+		input.SetNextToken(*resp.NextToken)
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
+}
+
+// isDefaultSGIngressRule returns true if the SG ingress rule passed to the
+// function is the auto populated ingress rule.
+func (rm *resourceManager) isDefaultSGIngressRule(
+	rule *svcsdk.SecurityGroupRule,
+) bool {
+	if rule.FromPort == nil || rule.ToPort == nil || rule.IpProtocol == nil || rule.IsEgress == nil || rule.ReferencedGroupInfo == nil || rule.ReferencedGroupInfo.GroupId == nil || rule.GroupId == nil {
+		return false
+	}
+
+	if *rule.ReferencedGroupInfo.GroupId == *rule.GroupId &&
+		*rule.FromPort == -1 &&
+		*rule.ToPort == -1 &&
+		*rule.IpProtocol == "-1" &&
+		!*rule.IsEgress {
+		return true
+	}
+	return false
+}
+
+// isDefaultSGEgressRule returns true if the SG egress rule passed to the
+// function is the auto populated egress rule.
+func (rm *resourceManager) isDefaultSGEgressRule(
+	rule *svcsdk.SecurityGroupRule,
+) bool {
+	if rule.CidrIpv4 == nil || rule.FromPort == nil || rule.ToPort == nil || rule.IpProtocol == nil || rule.IsEgress == nil {
+		return false
+	}
+
+	if *rule.CidrIpv4 == "0.0.0.0/0" &&
+		*rule.FromPort == -1 &&
+		*rule.ToPort == -1 &&
+		*rule.IpProtocol == "-1" &&
+		*rule.IsEgress {
+		return true
+	}
+	return false
+}
+
+// deleteSecurityGroupDefaultRules deletes the ingress/egress rule that is
+// attached to the 'default' SecurityGroup upon creation.
+func (rm *resourceManager) deleteSecurityGroupDefaultRules(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteSecurityGroupDefaultRules")
+	defer exit(err)
+
+	sgID, err := rm.getDefaultSGId(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	ipRange := &svcsdk.IpRange{
+		CidrIp: ptr("0.0.0.0/0"),
+	}
+	egressInput := &svcsdk.IpPermission{
+		FromPort:   ptr(int64(-1)),
+		ToPort:     ptr(int64(-1)),
+		IpProtocol: ptr("-1"),
+		IpRanges:   []*svcsdk.IpRange{ipRange},
+	}
+	egressReq := &svcsdk.RevokeSecurityGroupEgressInput{
+		GroupId:       sgID,
+		IpPermissions: []*svcsdk.IpPermission{egressInput},
+	}
+	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, egressReq)
+	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidPermission.NotFound":
+				return
+			}
+		}
+		return err
+	}
+
+	IngressInput := &svcsdk.IpPermission{
+		FromPort:   ptr(int64(-1)),
+		ToPort:     ptr(int64(-1)),
+		IpProtocol: ptr("-1"),
+		UserIdGroupPairs: []*svcsdk.UserIdGroupPair{
+			{
+				GroupId: sgID,
+			},
+		},
+	}
+	ingressReq := &svcsdk.RevokeSecurityGroupIngressInput{
+		GroupId:       sgID,
+		IpPermissions: []*svcsdk.IpPermission{IngressInput},
+	}
+	_, err = rm.sdkapi.RevokeSecurityGroupIngressWithContext(ctx, ingressReq)
+	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupIngress", err)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidPermission.NotFound":
+				return
+			}
+		}
+		return err
+	}
+
+	return err
+}
+
+// getDefaultSGId calls DescribeSecurityGroups with filters as vpc-id and security
+// group name ('default') and returns the security groupd id
+func (rm *resourceManager) getDefaultSGId(
+	ctx context.Context,
+	res *resource,
+) (sgID *string, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getRules")
+	defer exit(err)
+
+	vpcIDFilter := "vpc-id"
+	groupNameFilter := "group-name"
+	groupNameValue := "default"
+	input := &svcsdk.DescribeSecurityGroupsInput{
+		Filters: []*svcsdk.Filter{
+			{
+				Name:   &vpcIDFilter,
+				Values: []*string{res.ko.Status.VPCID},
+			},
+			{
+				Name:   &groupNameFilter,
+				Values: []*string{&groupNameValue},
+			},
+		},
+	}
+
+	resp, err := rm.sdkapi.DescribeSecurityGroupsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
+	if err != nil || resp == nil {
+		return nil, err
+	}
+
+	if len(resp.SecurityGroups) == 0 || resp.SecurityGroups[0] == nil {
+		return nil, fmt.Errorf("default security group not found")
+	}
+
+	return resp.SecurityGroups[0].GroupId, nil
+}
+
+func ptr[T any](t T) *T {
+	return &t
 }
