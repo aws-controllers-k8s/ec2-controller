@@ -64,6 +64,7 @@ def simple_vpc(request):
     replacements["CIDR_BLOCK"] = "10.0.0.0/16"
     replacements["ENABLE_DNS_SUPPORT"] = "False"
     replacements["ENABLE_DNS_HOSTNAMES"] = "False"
+    replacements["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = 'False'
 
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
@@ -74,6 +75,8 @@ def simple_vpc(request):
             replacements["ENABLE_DNS_SUPPORT"] = data['enable_dns_support']
         if 'enable_dns_hostnames' in data:
             replacements["ENABLE_DNS_HOSTNAMES"] = data['enable_dns_hostnames']
+        if 'disallow_default_sg_rule' in data:
+            replacements["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = data['disallow_default_sg_rule']
         if 'tag_key' in data:
             replacements["TAG_KEY"] = data['tag_key']
         if 'tag_value' in data:

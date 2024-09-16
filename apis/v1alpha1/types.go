@@ -4582,13 +4582,17 @@ type UserData struct {
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
 // in the Amazon Elastic Compute Cloud User Guide.
 type UserIDGroupPair struct {
-	Description            *string `json:"description,omitempty"`
-	GroupID                *string `json:"groupID,omitempty"`
-	GroupName              *string `json:"groupName,omitempty"`
-	PeeringStatus          *string `json:"peeringStatus,omitempty"`
-	UserID                 *string `json:"userID,omitempty"`
-	VPCID                  *string `json:"vpcID,omitempty"`
-	VPCPeeringConnectionID *string `json:"vpcPeeringConnectionID,omitempty"`
+	Description *string `json:"description,omitempty"`
+	GroupID     *string `json:"groupID,omitempty"`
+	GroupName   *string `json:"groupName,omitempty"`
+	// Reference field for GroupID
+	GroupRef               *ackv1alpha1.AWSResourceReferenceWrapper `json:"groupRef,omitempty"`
+	PeeringStatus          *string                                  `json:"peeringStatus,omitempty"`
+	UserID                 *string                                  `json:"userID,omitempty"`
+	VPCID                  *string                                  `json:"vpcID,omitempty"`
+	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for VPCID
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // The minimum and maximum number of vCPUs.

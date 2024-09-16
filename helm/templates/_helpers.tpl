@@ -44,7 +44,8 @@ If release name contains chart name it will be used as a full name.
 
 {{/* The path the shared credentials file is mounted */}}
 {{- define "ack-ec2-controller.aws.credentials.path" -}}
-{{- printf "%s/%s" (include "aws.credentials.secret_mount_path" .) .Values.aws.credentials.secretKey -}}
+{{ $secret_mount_path := include "ack-ec2-controller.aws.credentials.secret_mount_path" . }}
+{{- printf "%s/%s" $secret_mount_path .Values.aws.credentials.secretKey -}}
 {{- end -}}
 
 {{/* The rules a of ClusterRole or Role */}}
@@ -417,3 +418,12 @@ rules:
   - patch
   - update
 {{- end }}
+
+{{/* Convert k/v map to string like: "key1=value1,key2=value2,..." */}}
+{{- define "ack-ec2-controller.feature-gates" -}}
+{{- $list := list -}}
+{{- range $k, $v := .Values.featureGates -}}
+{{- $list = append $list (printf "%s=%s" $k ( $v | toString)) -}}
+{{- end -}}
+{{ join "," $list }}
+{{- end -}}

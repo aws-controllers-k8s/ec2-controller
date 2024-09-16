@@ -11,12 +11,13 @@
 	// If the VPC Peering Connection is Pending Acceptance or Active, continue
 
 	if delta.DifferentAt("Spec.Tags") {
-			if err := rm.syncTags(ctx, desired, latest); err != nil {
-				// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
-				ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
-				return desired, err
-			}
+		if err := syncTags(
+			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.VPCPeeringConnectionID,
+			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+		); err != nil {
+			return nil, err
 		}
+	}
 
 	if delta.DifferentAt("Spec.AcceptRequest") {
 		// Throw a Terminal Error, if the field was set to 'true' and is now set to 'false'

@@ -241,11 +241,7 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/dhcp_options/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -277,11 +273,7 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/instance/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -311,14 +303,10 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
     list_operation:
       match_fields:
       - AllocationId
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/elastic_ip_address/sdk_create_post_build_request.go.tpl
       sdk_delete_post_build_request:
@@ -348,11 +336,7 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/flow_log/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -375,8 +359,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VPC:
         from:
           operation: AttachInternetGateway
@@ -395,8 +377,6 @@ resources:
           path: Status.internetGatewayID
           name: ID
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/internet_gateway/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -436,16 +416,12 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
     synced:
       when:
       - path: Status.State
         in:
         - available
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -479,8 +455,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VpcId:
         references:
           resource: VPC
@@ -541,13 +515,21 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VpcId:
         is_required: true
         references:
           resource: VPC
           path: Status.VPCID
+      IngressRules.UserIDGroupPairs.VPCID:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      IngressRules.UserIDGroupPairs.GroupID:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+          skip_resource_state_validations: true
+        is_required: false
     renames:
       operations:
         CreateSecurityGroup:
@@ -564,8 +546,6 @@ resources:
             GroupIds: Ids
             GroupNames: Names
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -574,6 +554,8 @@ resources:
         template_path: hooks/security_group/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/security_group/sdk_read_many_post_set_output.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/security_group/sdk_delete_pre_build_request.go.tpl
     update_operation:
       custom_method_name: customUpdateSecurityGroup
   NetworkAcl:
@@ -594,8 +576,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VpcId:
         is_required: true
         references:
@@ -623,8 +603,6 @@ resources:
           input_fields:
             NetworkAclId: Id    
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/network_acl/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -673,8 +651,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VpcId:
         references:
           resource: VPC
@@ -684,8 +660,6 @@ resources:
         - InvalidParameterValue
         - InvalidCustomerOwnedIpv4PoolID.Malformed
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/subnet/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -702,8 +676,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       State:
         print:
           path: Status.state
@@ -713,8 +685,6 @@ resources:
           path: Status.transitGatewayID
           name: ID
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/transit_gateway/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -751,15 +721,17 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VpcID:
         print:
           path: Status.vpcID
           name: ID
+      DisallowSecurityGroupDefaultRules:
+        type: bool
+        is_required: false
+      SecurityGroupDefaultRulesExist:
+        type: bool
+        is_read_only: true
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -776,8 +748,6 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
       VpcId:
         references:
           resource: VPC
@@ -807,12 +777,14 @@ resources:
         - InvalidVpcId.Malformed
         - InvalidServiceName
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_create_post_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/vpc_endpoint/sdk_create_post_set_output.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/vpc_endpoint/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
@@ -838,16 +810,12 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: true
     synced:
       when:
       - path: Status.ServiceState
         in:
         - available
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
       sdk_file_end:
@@ -880,11 +848,7 @@ resources:
         from:
           operation: CreateTags
           path: Tags
-        compare:
-          is_ignored: True
     hooks:
-      delta_pre_compare:
-        code: compareTags(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc_peering_connection/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:

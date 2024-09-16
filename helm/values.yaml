@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/ec2-controller
-  tag: 1.2.3
+  tag: 1.2.21
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -128,6 +128,12 @@ reconcile:
   # An object representing the reconcile resync configuration for each specific resource.
   resourceResyncPeriods: {}
 
+  # The default number of concurrent syncs that a reconciler can perform.
+  defaultMaxConcurrentSyncs: 1
+  # An object representing the reconcile max concurrent syncs configuration for each specific
+  # resource.
+  resourceMaxConcurrentSyncs: {}
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -147,3 +153,12 @@ leaderElection:
   # will attempt to use the namespace of the service account mounted to the Controller
   # pod.
   namespace: ""
+
+# Configuration for feature gates.  These are optional controller features that
+# can be individually enabled ("true") or disabled ("false") by adding key/value
+# pairs below.
+featureGates:
+  # Enables the Service level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
+  ServiceLevelCARM: false
+  # Enables the Team level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
+  TeamLevelCARM: false

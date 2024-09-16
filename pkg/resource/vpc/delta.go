@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AmazonProvidedIPv6CIDRBlock, b.ko.Spec.AmazonProvidedIPv6CIDRBlock) {
 		delta.Add("Spec.AmazonProvidedIPv6CIDRBlock", a.ko.Spec.AmazonProvidedIPv6CIDRBlock, b.ko.Spec.AmazonProvidedIPv6CIDRBlock)
@@ -56,6 +55,13 @@ func newResourceDelta(
 	} else if len(a.ko.Spec.CIDRBlocks) > 0 {
 		if !ackcompare.SliceStringPEqual(a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks) {
 			delta.Add("Spec.CIDRBlocks", a.ko.Spec.CIDRBlocks, b.ko.Spec.CIDRBlocks)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.DisallowSecurityGroupDefaultRules, b.ko.Spec.DisallowSecurityGroupDefaultRules) {
+		delta.Add("Spec.DisallowSecurityGroupDefaultRules", a.ko.Spec.DisallowSecurityGroupDefaultRules, b.ko.Spec.DisallowSecurityGroupDefaultRules)
+	} else if a.ko.Spec.DisallowSecurityGroupDefaultRules != nil && b.ko.Spec.DisallowSecurityGroupDefaultRules != nil {
+		if *a.ko.Spec.DisallowSecurityGroupDefaultRules != *b.ko.Spec.DisallowSecurityGroupDefaultRules {
+			delta.Add("Spec.DisallowSecurityGroupDefaultRules", a.ko.Spec.DisallowSecurityGroupDefaultRules, b.ko.Spec.DisallowSecurityGroupDefaultRules)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EnableDNSHostnames, b.ko.Spec.EnableDNSHostnames) {
@@ -127,6 +133,9 @@ func newResourceDelta(
 		if *a.ko.Spec.IPv6Pool != *b.ko.Spec.IPv6Pool {
 			delta.Add("Spec.IPv6Pool", a.ko.Spec.IPv6Pool, b.ko.Spec.IPv6Pool)
 		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta

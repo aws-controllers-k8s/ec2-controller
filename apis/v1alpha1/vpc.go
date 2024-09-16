@@ -30,7 +30,8 @@ type VPCSpec struct {
 	// CIDR block.
 	AmazonProvidedIPv6CIDRBlock *bool `json:"amazonProvidedIPv6CIDRBlock,omitempty"`
 	// +kubebuilder:validation:Required
-	CIDRBlocks []*string `json:"cidrBlocks"`
+	CIDRBlocks                        []*string `json:"cidrBlocks"`
+	DisallowSecurityGroupDefaultRules *bool     `json:"disallowSecurityGroupDefaultRules,omitempty"`
 	// The attribute value. The valid values are true or false.
 	EnableDNSHostnames *bool `json:"enableDNSHostnames,omitempty"`
 	// The attribute value. The valid values are true or false.
@@ -114,6 +115,8 @@ type VPCStatus struct {
 	// The ID of the Amazon Web Services account that owns the VPC.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
+	// +kubebuilder:validation:Optional
+	SecurityGroupDefaultRulesExist *bool `json:"securityGroupDefaultRulesExist,omitempty"`
 	// The current state of the VPC.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`

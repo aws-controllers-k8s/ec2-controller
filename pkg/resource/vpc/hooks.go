@@ -15,11 +15,15 @@ package vpc
 
 import (
 	"context"
+	"fmt"
 
-	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+
+	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
 
 type DNSAttrs struct {
@@ -291,6 +295,20 @@ func (rm *resourceManager) customUpdateVPC(
 	}
 	updated.ko.Status.CIDRBlockAssociationSet = latest.ko.Status.CIDRBlockAssociationSet
 
+	if delta.DifferentAt("Spec.DisallowSecurityGroupDefaultRules") {
+		if desired.ko.Spec.DisallowSecurityGroupDefaultRules != nil && *desired.ko.Spec.DisallowSecurityGroupDefaultRules {
+			if err = rm.deleteSecurityGroupDefaultRules(ctx, desired); err != nil {
+				// if deleteSecurityGroupDefaultRules fails, assume that the
+				// rules still exist and update the status accordingly.
+				exist := true
+				updated.ko.Status.SecurityGroupDefaultRulesExist = &exist
+				return nil, err
+			}
+			exist := false
+			updated.ko.Status.SecurityGroupDefaultRulesExist = &exist
+		}
+	}
+
 	if delta.DifferentAt("Spec.EnableDNSSupport") {
 		if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
 			return nil, err
@@ -304,7 +322,10 @@ func (rm *resourceManager) customUpdateVPC(
 	}
 
 	if delta.DifferentAt("Spec.Tags") {
-		if err := rm.syncTags(ctx, desired, latest); err != nil {
+		if err := tags.Sync(
+			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.VPCID,
+			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -319,122 +340,6 @@ func applyPrimaryCIDRBlockInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcInput) {
 	if len(r.ko.Spec.CIDRBlocks) > 0 {
 		input.CidrBlock = r.ko.Spec.CIDRBlocks[0]
-	}
-}
-
-// syncTags used to keep tags in sync by calling Create and Delete API's
-func (rm *resourceManager) syncTags(
-	ctx context.Context,
-	desired *resource,
-	latest *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncTags")
-	defer func(err error) {
-		exit(err)
-	}(err)
-
-	resourceId := []*string{latest.ko.Status.VPCID}
-
-	toAdd, toDelete := computeTagsDelta(
-		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
-	)
-
-	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from vpc resource", "tags", toDelete)
-		_, err = rm.sdkapi.DeleteTagsWithContext(
-			ctx,
-			&svcsdk.DeleteTagsInput{
-				Resources: resourceId,
-				Tags:      rm.sdkTags(toDelete),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "DeleteTags", err)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to vpc resource", "tags", toAdd)
-		_, err = rm.sdkapi.CreateTagsWithContext(
-			ctx,
-			&svcsdk.CreateTagsInput{
-				Resources: resourceId,
-				Tags:      rm.sdkTags(toAdd),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "CreateTags", err)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// sdkTags converts *svcapitypes.Tag array to a *svcsdk.Tag array
-func (rm *resourceManager) sdkTags(
-	tags []*svcapitypes.Tag,
-) (sdktags []*svcsdk.Tag) {
-
-	for _, i := range tags {
-		sdktag := rm.newTag(*i)
-		sdktags = append(sdktags, sdktag)
-	}
-
-	return sdktags
-}
-
-// computeTagsDelta returns tags to be added and removed from the resource
-func computeTagsDelta(
-	desired []*svcapitypes.Tag,
-	latest []*svcapitypes.Tag,
-) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
-
-	desiredTags := map[string]string{}
-	for _, tag := range desired {
-		desiredTags[*tag.Key] = *tag.Value
-	}
-
-	latestTags := map[string]string{}
-	for _, tag := range latest {
-		latestTags[*tag.Key] = *tag.Value
-	}
-
-	for _, tag := range desired {
-		val, ok := latestTags[*tag.Key]
-		if !ok || val != *tag.Value {
-			toAdd = append(toAdd, tag)
-		}
-	}
-
-	for _, tag := range latest {
-		_, ok := desiredTags[*tag.Key]
-		if !ok {
-			toDelete = append(toDelete, tag)
-		}
-	}
-
-	return toAdd, toDelete
-
-}
-
-// compareTags is a custom comparison function for comparing lists of Tag
-// structs where the order of the structs in the list is not important.
-func compareTags(
-	delta *ackcompare.Delta,
-	a *resource,
-	b *resource,
-) {
-	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	} else if len(a.ko.Spec.Tags) > 0 {
-		addedOrUpdated, removed := computeTagsDelta(a.ko.Spec.Tags, b.ko.Spec.Tags)
-		if len(addedOrUpdated) != 0 || len(removed) != 0 {
-			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-		}
 	}
 }
 
@@ -460,4 +365,205 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.SetTags(requestedTags)
 		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
 	}
+}
+
+// hasSecurityGroupDefaultRules returns true if the vpc's 'default' security
+// group has autopopulated ingress/egress rules.
+func (rm *resourceManager) hasSecurityGroupDefaultRules(
+	ctx context.Context,
+	r *resource,
+) (defaultSGRulePresent bool, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.hasSecurityGroupDefaultRules")
+	defer exit(err)
+
+	sgID, err := rm.getDefaultSGId(ctx, r)
+	if err != nil {
+		return false, err
+	}
+
+	groupIDFilter := "group-id"
+	input := &svcsdk.DescribeSecurityGroupRulesInput{
+		Filters: []*svcsdk.Filter{
+			{
+				Name:   &groupIDFilter,
+				Values: []*string{sgID},
+			},
+		},
+	}
+
+	for {
+		resp, err := rm.sdkapi.DescribeSecurityGroupRulesWithContext(ctx, input)
+		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
+		if err != nil || resp == nil {
+			break
+		}
+		for _, sgRule := range resp.SecurityGroupRules {
+			if rm.isDefaultSGIngressRule(sgRule) {
+				return true, nil
+			}
+			if rm.isDefaultSGEgressRule(sgRule) {
+				return true, nil
+			}
+		}
+		if resp.NextToken == nil || *resp.NextToken == "" {
+			break
+		}
+		input.SetNextToken(*resp.NextToken)
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
+}
+
+// isDefaultSGIngressRule returns true if the SG ingress rule passed to the
+// function is the auto populated ingress rule.
+func (rm *resourceManager) isDefaultSGIngressRule(
+	rule *svcsdk.SecurityGroupRule,
+) bool {
+	if rule.FromPort == nil || rule.ToPort == nil || rule.IpProtocol == nil || rule.IsEgress == nil || rule.ReferencedGroupInfo == nil || rule.ReferencedGroupInfo.GroupId == nil || rule.GroupId == nil {
+		return false
+	}
+
+	if *rule.ReferencedGroupInfo.GroupId == *rule.GroupId &&
+		*rule.FromPort == -1 &&
+		*rule.ToPort == -1 &&
+		*rule.IpProtocol == "-1" &&
+		!*rule.IsEgress {
+		return true
+	}
+	return false
+}
+
+// isDefaultSGEgressRule returns true if the SG egress rule passed to the
+// function is the auto populated egress rule.
+func (rm *resourceManager) isDefaultSGEgressRule(
+	rule *svcsdk.SecurityGroupRule,
+) bool {
+	if rule.CidrIpv4 == nil || rule.FromPort == nil || rule.ToPort == nil || rule.IpProtocol == nil || rule.IsEgress == nil {
+		return false
+	}
+
+	if *rule.CidrIpv4 == "0.0.0.0/0" &&
+		*rule.FromPort == -1 &&
+		*rule.ToPort == -1 &&
+		*rule.IpProtocol == "-1" &&
+		*rule.IsEgress {
+		return true
+	}
+	return false
+}
+
+// deleteSecurityGroupDefaultRules deletes the ingress/egress rule that is
+// attached to the 'default' SecurityGroup upon creation.
+func (rm *resourceManager) deleteSecurityGroupDefaultRules(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteSecurityGroupDefaultRules")
+	defer exit(err)
+
+	sgID, err := rm.getDefaultSGId(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	ipRange := &svcsdk.IpRange{
+		CidrIp: ptr("0.0.0.0/0"),
+	}
+	egressInput := &svcsdk.IpPermission{
+		FromPort:   ptr(int64(-1)),
+		ToPort:     ptr(int64(-1)),
+		IpProtocol: ptr("-1"),
+		IpRanges:   []*svcsdk.IpRange{ipRange},
+	}
+	egressReq := &svcsdk.RevokeSecurityGroupEgressInput{
+		GroupId:       sgID,
+		IpPermissions: []*svcsdk.IpPermission{egressInput},
+	}
+	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, egressReq)
+	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidPermission.NotFound":
+				return
+			}
+		}
+		return err
+	}
+
+	IngressInput := &svcsdk.IpPermission{
+		FromPort:   ptr(int64(-1)),
+		ToPort:     ptr(int64(-1)),
+		IpProtocol: ptr("-1"),
+		UserIdGroupPairs: []*svcsdk.UserIdGroupPair{
+			{
+				GroupId: sgID,
+			},
+		},
+	}
+	ingressReq := &svcsdk.RevokeSecurityGroupIngressInput{
+		GroupId:       sgID,
+		IpPermissions: []*svcsdk.IpPermission{IngressInput},
+	}
+	_, err = rm.sdkapi.RevokeSecurityGroupIngressWithContext(ctx, ingressReq)
+	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupIngress", err)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case "InvalidPermission.NotFound":
+				return
+			}
+		}
+		return err
+	}
+
+	return err
+}
+
+// getDefaultSGId calls DescribeSecurityGroups with filters as vpc-id and security
+// group name ('default') and returns the security groupd id
+func (rm *resourceManager) getDefaultSGId(
+	ctx context.Context,
+	res *resource,
+) (sgID *string, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getRules")
+	defer exit(err)
+
+	vpcIDFilter := "vpc-id"
+	groupNameFilter := "group-name"
+	groupNameValue := "default"
+	input := &svcsdk.DescribeSecurityGroupsInput{
+		Filters: []*svcsdk.Filter{
+			{
+				Name:   &vpcIDFilter,
+				Values: []*string{res.ko.Status.VPCID},
+			},
+			{
+				Name:   &groupNameFilter,
+				Values: []*string{&groupNameValue},
+			},
+		},
+	}
+
+	resp, err := rm.sdkapi.DescribeSecurityGroupsWithContext(ctx, input)
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
+	if err != nil || resp == nil {
+		return nil, err
+	}
+
+	if len(resp.SecurityGroups) == 0 || resp.SecurityGroups[0] == nil {
+		return nil, fmt.Errorf("default security group not found")
+	}
+
+	return resp.SecurityGroups[0].GroupId, nil
+}
+
+func ptr[T any](t T) *T {
+	return &t
 }

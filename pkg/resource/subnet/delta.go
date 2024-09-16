@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation) {
 		delta.Add("Spec.AssignIPv6AddressOnCreation", a.ko.Spec.AssignIPv6AddressOnCreation, b.ko.Spec.AssignIPv6AddressOnCreation)
@@ -144,6 +143,9 @@ func newResourceDelta(
 		if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTables, b.ko.Spec.RouteTables) {
 			delta.Add("Spec.RouteTables", a.ko.Spec.RouteTables, b.ko.Spec.RouteTables)
 		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)

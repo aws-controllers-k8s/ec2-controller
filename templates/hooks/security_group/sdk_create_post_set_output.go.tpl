@@ -8,6 +8,11 @@
 		return &resource{ko}, err
 	}
 
+	if !rm.referencesResolved(&resource{ko}) {
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
+        return &resource{ko}, nil
+	}
+
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
 		return &resource{ko}, err
 	}
