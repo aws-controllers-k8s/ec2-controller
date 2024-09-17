@@ -1,0 +1,20 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: NetworkACL
+metadata:
+  name: $NETWORK_ACL_NAME
+spec:
+  associations:
+  - subnetID: $SUBNET_ID
+  entries:
+  - cidrBlock: $CIDR_BLOCK
+    egress: true
+    portRange:
+      from: 80
+      to: 443
+    protocol: "6"
+    ruleAction: allow
+    ruleNumber: 100
+  vpcID: $VPC_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

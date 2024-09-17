@@ -167,6 +167,15 @@ func (rm *resourceManager) deleteOldAssociations(
 	latest *resource,
 	toDelete map[string]string,
 ) (err error) {
+	var vpcID *string
+	var aclID *string
+	if desired != nil {
+		vpcID = desired.ko.Spec.VPCID
+		aclID = desired.ko.Status.ID
+	} else {
+		vpcID = latest.ko.Spec.VPCID
+		aclID = latest.ko.Status.ID
+	}
 	naclList := &svcsdk.DescribeNetworkAclsInput{
 		Filters: []*svcsdk.Filter{
 			{
@@ -175,7 +184,7 @@ func (rm *resourceManager) deleteOldAssociations(
 			},
 			{
 				Name:   lo.ToPtr("vpc-id"),
-				Values: []*string{desired.ko.Spec.VPCID},
+				Values: []*string{vpcID},
 			},
 		},
 	}
@@ -204,7 +213,7 @@ func (rm *resourceManager) deleteOldAssociations(
 				Filters: []*svcsdk.Filter{
 					{
 						Name:   lo.ToPtr("network-acl-id"),
-						Values: []*string{desired.ko.Status.ID},
+						Values: []*string{aclID},
 					},
 					{
 						Name:   lo.ToPtr("association.subnet-id"),

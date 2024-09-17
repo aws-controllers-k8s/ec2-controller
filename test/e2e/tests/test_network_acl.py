@@ -40,6 +40,7 @@ def network_acl_exists(ec2_client, network_acl_id: str) -> bool:
 @pytest.fixture
 def simple_network_acl(request):
     resource_name = random_suffix_name("network-acl-test", 24)
+    resource_file = "network_acl"
     resources = get_bootstrap_resources()
 
     replacements = REPLACEMENT_VALUES.copy()
@@ -48,6 +49,7 @@ def simple_network_acl(request):
     replacements["CIDR_BLOCK"] = "192.168.1.0/24"
     replacements["TAG_KEY"] = "initialtagkey"
     replacements["TAG_VALUE"] = "initialtagvalue"
+    replacements["SUBNET_ID"] = resources.SharedTestVPC.public_subnets.subnet_ids[0]
 
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
@@ -60,10 +62,12 @@ def simple_network_acl(request):
             replacements["TAG_KEY"] = data['tag_key']
         if 'tag_value' in data:
             replacements["TAG_VALUE"] = data['tag_value']
+        if 'resource_file' in data:
+            resource_file = data['resource_file']
 
     # Load NetworkACL CR
     resource_data = load_ec2_resource(
-        "network_acl",
+        resource_file,
         additional_replacements=replacements,
     )
     logging.debug(resource_data)
@@ -188,7 +192,6 @@ class TestNetworkACLs:
         # Check Association exist in AWS
         ec2_validator.assert_association(network_acl_id, subnet_id)
 
-
         # Removing association so that nacl can be deleted
         updates = {
             "spec": {"associations": []},
@@ -200,6 +203,29 @@ class TestNetworkACLs:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Delete Network ACL 
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Network ACL no longer exists in AWS
+        ec2_validator.assert_network_acl(network_acl_id, exists=False)
+
+    @pytest.mark.resource_data({'resource_file': 'network_acl_with_subnet_assoc'})
+    def test_create_delete_with_subnet_assoc(self, ec2_client, simple_network_acl):
+        (ref, cr) = simple_network_acl
+        network_acl_id = cr["status"]["id"]
+
+        # Check Route Table exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_network_acl(network_acl_id)
+
+        assocs = cr["spec"]["associations"]
+        subnet_id = assocs[0]["subnetID"]
+        # Check Association exist in AWS
+        ec2_validator.assert_association(network_acl_id, subnet_id)
+
+        # Delete Network ACL
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 
