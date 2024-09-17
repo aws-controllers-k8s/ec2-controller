@@ -18,100 +18,18 @@ import (
 	"errors"
 	"strconv"
 
-	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/samber/lo"
+
+	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
 
 var DefaultRuleNumber = 32767
 var TypeSubnet = "SubnetID"
 var TypeNaclAssocId = "NetworkACLAssociationID"
-
-// syncTags used to keep tags in sync by calling Create and Delete API's
-func (rm *resourceManager) syncTags(
-	ctx context.Context,
-	desired *resource,
-	latest *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncTags")
-	defer func(err error) {
-		exit(err)
-	}(err)
-
-	resourceId := []*string{latest.ko.Status.ID}
-
-	desiredTags := ToACKTags(desired.ko.Spec.Tags)
-	latestTags := ToACKTags(latest.ko.Spec.Tags)
-
-	added, _, removed := ackcompare.GetTagsDifference(latestTags, desiredTags)
-
-	toAdd := FromACKTags(added)
-	toDelete := FromACKTags(removed)
-
-	if len(toDelete) > 0 {
-		_, err = rm.sdkapi.DeleteTagsWithContext(
-			ctx,
-			&svcsdk.DeleteTagsInput{
-				Resources: resourceId,
-				Tags:      rm.sdkTags(toDelete),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "DeleteTags", err)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if len(toAdd) > 0 {
-		_, err = rm.sdkapi.CreateTagsWithContext(
-			ctx,
-			&svcsdk.CreateTagsInput{
-				Resources: resourceId,
-				Tags:      rm.sdkTags(toAdd),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "CreateTags", err)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// // sdkTags converts *svcapitypes.Tag array to a *svcsdk.Tag array
-func (rm *resourceManager) sdkTags(
-	tags []*svcapitypes.Tag,
-) (sdktags []*svcsdk.Tag) {
-
-	for _, i := range tags {
-		sdktag := rm.newTag(*i)
-		sdktags = append(sdktags, sdktag)
-	}
-
-	return sdktags
-}
-
-// compareTags is a custom comparison function for comparing lists of Tag
-// structs where the order of the structs in the list is not important.
-func compareTags(
-	delta *ackcompare.Delta,
-	a *resource,
-	b *resource,
-) {
-	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	} else if len(a.ko.Spec.Tags) > 0 {
-		addedOrUpdated, removed := computeTagsDelta(a.ko.Spec.Tags, b.ko.Spec.Tags)
-		if len(addedOrUpdated) != 0 || len(removed) != 0 {
-			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-		}
-	}
-}
 
 func (rm *resourceManager) customUpdateNetworkAcl(
 	ctx context.Context,
@@ -121,23 +39,21 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateNetworkAcl")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
-	// Default `updated` to `desired` because it is likely
-	// EC2 `modify` APIs do NOT return output, only errors.
-	// If the `modify` calls (i.e. `sync`) do NOT return
-	// an error, then the update was successful and desired.Spec
-	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
-	if delta.DifferentAt("Spec.Entries") {
-		if err := rm.syncEntries(ctx, desired, latest); err != nil {
+	if delta.DifferentAt("Spec.Tags") {
+		if err := tags.Sync(
+			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.ID,
+			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+		); err != nil {
 			return nil, err
 		}
 	}
 
-	if delta.DifferentAt("Spec.Tags") {
-		if err := rm.syncTags(ctx, desired, latest); err != nil {
+	if delta.DifferentAt("Spec.Entries") {
+		if err := rm.syncEntries(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 	}
@@ -147,10 +63,16 @@ func (rm *resourceManager) customUpdateNetworkAcl(
 			return nil, err
 		}
 	}
-	updated, err = rm.sdkFind(ctx, desired)
+
+	latestResource, err := rm.sdkFind(ctx, desired)
 	if err != nil {
 		return nil, err
 	}
+
+	// The ec2 API can sometimes sort the entries in a different order than the
+	// ones we have in the desired spec. Hence, we need to conserve the order of
+	// entries in the desired spec.
+	updated.ko.Status = latestResource.ko.Status
 
 	return updated, nil
 }
@@ -385,7 +307,8 @@ func (rm *resourceManager) syncEntries(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncEntries")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
+
 	toAdd := []*svcapitypes.NetworkACLEntry{}
 	toDelete := []*svcapitypes.NetworkACLEntry{}
 	toUpdate := []*svcapitypes.NetworkACLEntry{}
@@ -623,40 +546,6 @@ func (rm *resourceManager) deleteEntry(
 	_, err = rm.sdkapi.DeleteNetworkAclEntryWithContext(ctx, res)
 	rm.metrics.RecordAPICall("UPDATE", "DeleteNetworkAclEntry", err)
 	return err
-}
-
-// computeTagsDelta returns tags to be added and removed from the resource
-func computeTagsDelta(
-	desired []*svcapitypes.Tag,
-	latest []*svcapitypes.Tag,
-) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
-
-	desiredTags := map[string]string{}
-	for _, tag := range desired {
-		desiredTags[*tag.Key] = *tag.Value
-	}
-
-	latestTags := map[string]string{}
-	for _, tag := range latest {
-		latestTags[*tag.Key] = *tag.Value
-	}
-
-	for _, tag := range desired {
-		val, ok := latestTags[*tag.Key]
-		if !ok || val != *tag.Value {
-			toAdd = append(toAdd, tag)
-		}
-	}
-
-	for _, tag := range latest {
-		_, ok := desiredTags[*tag.Key]
-		if !ok {
-			toDelete = append(toDelete, tag)
-		}
-	}
-
-	return toAdd, toDelete
-
 }
 
 // updateTagSpecificationsInCreateRequest adds

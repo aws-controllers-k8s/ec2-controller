@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
 		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
@@ -96,8 +95,12 @@ func newResourceDelta(
 				delta.Add("Spec.Options.MulticastSupport", a.ko.Spec.Options.MulticastSupport, b.ko.Spec.Options.MulticastSupport)
 			}
 		}
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
+		if len(a.ko.Spec.Options.TransitGatewayCIDRBlocks) != len(b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
 			delta.Add("Spec.Options.TransitGatewayCIDRBlocks", a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks)
+		} else if len(a.ko.Spec.Options.TransitGatewayCIDRBlocks) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks) {
+				delta.Add("Spec.Options.TransitGatewayCIDRBlocks", a.ko.Spec.Options.TransitGatewayCIDRBlocks, b.ko.Spec.Options.TransitGatewayCIDRBlocks)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport) {
 			delta.Add("Spec.Options.VPNECMPSupport", a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport)
@@ -106,6 +109,9 @@ func newResourceDelta(
 				delta.Add("Spec.Options.VPNECMPSupport", a.ko.Spec.Options.VPNECMPSupport, b.ko.Spec.Options.VPNECMPSupport)
 			}
 		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta

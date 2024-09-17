@@ -363,7 +363,8 @@ func (rm *resourceManager) sdkCreate(
 
 	if len(desired.ko.Spec.Associations) > 0 {
 		ko.Spec.Associations = desired.ko.Spec.Associations
-		if err := rm.createAssociation(ctx, &resource{ko}); err != nil {
+		copy := ko.DeepCopy()
+		if err := rm.createAssociation(ctx, &resource{copy}); err != nil {
 			rlog.Debug("Error while syncing Association", err)
 		}
 	}
@@ -371,7 +372,8 @@ func (rm *resourceManager) sdkCreate(
 	if len(desired.ko.Spec.Entries) > 0 {
 		//desired rules are overwritten by NetworkACL's default rules
 		ko.Spec.Entries = append(ko.Spec.Entries, desired.ko.Spec.Entries...)
-		if err := rm.createEntries(ctx, &resource{ko}); err != nil {
+		copy := ko.DeepCopy()
+		if err := rm.createEntries(ctx, &resource{copy}); err != nil {
 			rlog.Debug("Error while syncing routes", err)
 		}
 	}

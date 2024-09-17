@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions, b.ko.Spec.DNSOptions) {
 		delta.Add("Spec.DNSOptions", a.ko.Spec.DNSOptions, b.ko.Spec.DNSOptions)
@@ -76,14 +75,22 @@ func newResourceDelta(
 			delta.Add("Spec.PrivateDNSEnabled", a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs) {
+	if len(a.ko.Spec.RouteTableIDs) != len(b.ko.Spec.RouteTableIDs) {
 		delta.Add("Spec.RouteTableIDs", a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs)
+	} else if len(a.ko.Spec.RouteTableIDs) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs) {
+			delta.Add("Spec.RouteTableIDs", a.ko.Spec.RouteTableIDs, b.ko.Spec.RouteTableIDs)
+		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
 		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
+	if len(a.ko.Spec.SecurityGroupIDs) != len(b.ko.Spec.SecurityGroupIDs) {
 		delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
+	} else if len(a.ko.Spec.SecurityGroupIDs) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
+			delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
+		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.SecurityGroupRefs, b.ko.Spec.SecurityGroupRefs) {
 		delta.Add("Spec.SecurityGroupRefs", a.ko.Spec.SecurityGroupRefs, b.ko.Spec.SecurityGroupRefs)
@@ -95,11 +102,18 @@ func newResourceDelta(
 			delta.Add("Spec.ServiceName", a.ko.Spec.ServiceName, b.ko.Spec.ServiceName)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs) {
+	if len(a.ko.Spec.SubnetIDs) != len(b.ko.Spec.SubnetIDs) {
 		delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
+	} else if len(a.ko.Spec.SubnetIDs) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs) {
+			delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
+		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs) {
 		delta.Add("Spec.SubnetRefs", a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs)
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCEndpointType, b.ko.Spec.VPCEndpointType) {
 		delta.Add("Spec.VPCEndpointType", a.ko.Spec.VPCEndpointType, b.ko.Spec.VPCEndpointType)

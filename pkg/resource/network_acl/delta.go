@@ -42,13 +42,23 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
-	if !reflect.DeepEqual(a.ko.Spec.Associations, b.ko.Spec.Associations) {
+	if len(a.ko.Spec.Associations) != len(b.ko.Spec.Associations) {
 		delta.Add("Spec.Associations", a.ko.Spec.Associations, b.ko.Spec.Associations)
+	} else if len(a.ko.Spec.Associations) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Associations, b.ko.Spec.Associations) {
+			delta.Add("Spec.Associations", a.ko.Spec.Associations, b.ko.Spec.Associations)
+		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Entries, b.ko.Spec.Entries) {
+	if len(a.ko.Spec.Entries) != len(b.ko.Spec.Entries) {
 		delta.Add("Spec.Entries", a.ko.Spec.Entries, b.ko.Spec.Entries)
+	} else if len(a.ko.Spec.Entries) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Entries, b.ko.Spec.Entries) {
+			delta.Add("Spec.Entries", a.ko.Spec.Entries, b.ko.Spec.Entries)
+		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)

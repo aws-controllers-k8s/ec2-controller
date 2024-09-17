@@ -1,0 +1,16 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPCPeeringConnection
+metadata:
+  name: $VPC_PEERING_CONNECTION_NAME
+spec:
+  vpcRef:
+    from:
+      name: $VPC_REF_NAME
+  peerVPCRef:
+    from:
+      name: $PEER_VPC_REF_NAME
+  acceptRequest: true
+  requesterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: false
+  accepterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: false

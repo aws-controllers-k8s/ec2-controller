@@ -235,6 +235,19 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.Tags = r.ko.Spec.Tags
 	}
 
+	// Even if route is created with arguments as VPCEndpointID,
+	// when aws api is called to describe the route (inside skdFind), it
+	// returns VPCEndpointID as GatewayID. Due to this bug, spec section for
+	// routes is populated incorrectly in above auto-gen code.
+	// To solve this, if 'GatewayID' has prefix 'vpce-', then the entry is
+	// moved from 'GatewayID' to 'VPCEndpointID'.
+	for i, route := range ko.Spec.Routes {
+		if route.GatewayID != nil && strings.HasPrefix(*route.GatewayID, "vpce-") {
+			ko.Spec.Routes[i].VPCEndpointID = route.GatewayID
+			ko.Spec.Routes[i].GatewayID = nil
+		}
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -432,7 +445,8 @@ func (rm *resourceManager) sdkCreate(
 	if len(desired.ko.Spec.Routes) > 0 {
 		//desired routes are overwritten by RouteTable's default route
 		ko.Spec.Routes = append(ko.Spec.Routes, desired.ko.Spec.Routes...)
-		if err := rm.createRoutes(ctx, &resource{ko}); err != nil {
+		copy := ko.DeepCopy()
+		if err := rm.createRoutes(ctx, &resource{copy}); err != nil {
 			return nil, err
 		}
 	}
@@ -443,6 +457,7 @@ func (rm *resourceManager) sdkCreate(
 		// then assign desired tags to maintain tag order
 		ko.Spec.Tags = desired.ko.Spec.Tags
 	}
+
 	return &resource{ko}, nil
 }
 

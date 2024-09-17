@@ -123,6 +123,10 @@ func (rm *resourceManager) sdkFind(
 
 	rm.setStatusDefaults(ko)
 	if found {
+
+		// Needed because SecurityGroups Name are held in GroupName property of the AWS resource
+		ko.Spec.Name = resp.SecurityGroups[0].GroupName
+
 		rm.addRulesToSpec(ko, resp.SecurityGroups[0])
 
 		// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
@@ -133,6 +137,7 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.Rules = rules
 		}
 	}
+
 	return &resource{ko}, nil
 }
 
@@ -221,18 +226,23 @@ func (rm *resourceManager) sdkCreate(
 
 	// Delete the default egress rule
 	if err = rm.deleteDefaultSecurityGroupRule(ctx, &resource{ko}); err != nil {
-		return nil, err
+		return &resource{ko}, err
+	}
+
+	if !rm.referencesResolved(&resource{ko}) {
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
+		return &resource{ko}, nil
 	}
 
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
-		return nil, err
+		return &resource{ko}, err
 	}
 
 	// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
 	// is made to refresh Status.Rules with the recently-updated
 	// data from the above `sync` call
 	if rules, err := rm.getRules(ctx, &resource{ko}); err != nil {
-		return nil, err
+		return &resource{ko}, err
 	} else {
 		ko.Status.Rules = rules
 	}
@@ -282,6 +292,12 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
+	sgCpy := r.ko.DeepCopy()
+	sgCpy.Spec.IngressRules = nil
+	sgCpy.Spec.EgressRules = nil
+	if err := rm.syncSGRules(ctx, &resource{ko: sgCpy}, r); err != nil {
+		return nil, err
+	}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err
@@ -429,14 +445,26 @@ func compareIPPermission(
 			delta.Add("IPPermission.IPProtocol", a.IPProtocol, b.IPProtocol)
 		}
 	}
-	if !reflect.DeepEqual(a.IPRanges, b.IPRanges) {
+	if len(a.IPRanges) != len(b.IPRanges) {
 		delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
+	} else if len(a.IPRanges) > 0 {
+		if !reflect.DeepEqual(a.IPRanges, b.IPRanges) {
+			delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
+		}
 	}
-	if !reflect.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
+	if len(a.IPv6Ranges) != len(b.IPv6Ranges) {
 		delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
+	} else if len(a.IPv6Ranges) > 0 {
+		if !reflect.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
+			delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
+		}
 	}
-	if !reflect.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
+	if len(a.PrefixListIDs) != len(b.PrefixListIDs) {
 		delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
+	} else if len(a.PrefixListIDs) > 0 {
+		if !reflect.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
+			delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ToPort, b.ToPort) {
 		delta.Add("IPPermission.ToPort", a.ToPort, b.ToPort)
@@ -445,8 +473,12 @@ func compareIPPermission(
 			delta.Add("IPPermission.ToPort", a.ToPort, b.ToPort)
 		}
 	}
-	if !reflect.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
+	if len(a.UserIDGroupPairs) != len(b.UserIDGroupPairs) {
 		delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
+	} else if len(a.UserIDGroupPairs) > 0 {
+		if !reflect.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
+			delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
+		}
 	}
 
 	return delta

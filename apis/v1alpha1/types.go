@@ -678,6 +678,8 @@ type CreateRouteInput struct {
 	// Reference field for VPCEndpointID
 	VPCEndpointRef         *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcEndpointRef,omitempty"`
 	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for VPCPeeringConnectionID
+	VPCPeeringConnectionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcPeeringConnectionRef,omitempty"`
 }
 
 // Describes the options for a VPC attachment.
@@ -3063,6 +3065,7 @@ type PrivateDNSDetails struct {
 // Information about the private DNS name for the service endpoint.
 type PrivateDNSNameConfiguration struct {
 	Name  *string `json:"name,omitempty"`
+	State *string `json:"state,omitempty"`
 	Type  *string `json:"type_,omitempty"`
 	Value *string `json:"value,omitempty"`
 }
@@ -3674,24 +3677,39 @@ type ServiceConfiguration struct {
 	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
 	ManagesVPCEndpoints     *bool     `json:"managesVPCEndpoints,omitempty"`
 	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
+	PayerResponsibility     *string   `json:"payerResponsibility,omitempty"`
 	PrivateDNSName          *string   `json:"privateDNSName,omitempty"`
-	ServiceID               *string   `json:"serviceID,omitempty"`
-	ServiceName             *string   `json:"serviceName,omitempty"`
-	Tags                    []*Tag    `json:"tags,omitempty"`
+	// Information about the private DNS name for the service endpoint.
+	PrivateDNSNameConfiguration *PrivateDNSNameConfiguration `json:"privateDNSNameConfiguration,omitempty"`
+	ServiceID                   *string                      `json:"serviceID,omitempty"`
+	ServiceName                 *string                      `json:"serviceName,omitempty"`
+	ServiceState                *string                      `json:"serviceState,omitempty"`
+	ServiceType                 []*ServiceTypeDetail         `json:"serviceType,omitempty"`
+	SupportedIPAddressTypes     []*string                    `json:"supportedIPAddressTypes,omitempty"`
+	Tags                        []*Tag                       `json:"tags,omitempty"`
 }
 
 // Describes a VPC endpoint service.
 type ServiceDetail struct {
-	AcceptanceRequired         *bool     `json:"acceptanceRequired,omitempty"`
-	AvailabilityZones          []*string `json:"availabilityZones,omitempty"`
-	BaseEndpointDNSNames       []*string `json:"baseEndpointDNSNames,omitempty"`
-	ManagesVPCEndpoints        *bool     `json:"managesVPCEndpoints,omitempty"`
-	Owner                      *string   `json:"owner,omitempty"`
-	PrivateDNSName             *string   `json:"privateDNSName,omitempty"`
-	ServiceID                  *string   `json:"serviceID,omitempty"`
-	ServiceName                *string   `json:"serviceName,omitempty"`
-	Tags                       []*Tag    `json:"tags,omitempty"`
-	VPCEndpointPolicySupported *bool     `json:"vpcEndpointPolicySupported,omitempty"`
+	AcceptanceRequired              *bool                `json:"acceptanceRequired,omitempty"`
+	AvailabilityZones               []*string            `json:"availabilityZones,omitempty"`
+	BaseEndpointDNSNames            []*string            `json:"baseEndpointDNSNames,omitempty"`
+	ManagesVPCEndpoints             *bool                `json:"managesVPCEndpoints,omitempty"`
+	Owner                           *string              `json:"owner,omitempty"`
+	PayerResponsibility             *string              `json:"payerResponsibility,omitempty"`
+	PrivateDNSName                  *string              `json:"privateDNSName,omitempty"`
+	PrivateDNSNameVerificationState *string              `json:"privateDNSNameVerificationState,omitempty"`
+	ServiceID                       *string              `json:"serviceID,omitempty"`
+	ServiceName                     *string              `json:"serviceName,omitempty"`
+	ServiceType                     []*ServiceTypeDetail `json:"serviceType,omitempty"`
+	SupportedIPAddressTypes         []*string            `json:"supportedIPAddressTypes,omitempty"`
+	Tags                            []*Tag               `json:"tags,omitempty"`
+	VPCEndpointPolicySupported      *bool                `json:"vpcEndpointPolicySupported,omitempty"`
+}
+
+// Describes the type of service for a VPC endpoint.
+type ServiceTypeDetail struct {
+	ServiceType *string `json:"serviceType,omitempty"`
 }
 
 // Describes the time period for a Scheduled Instance to start its first schedule.
@@ -4564,13 +4582,17 @@ type UserData struct {
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
 // in the Amazon Elastic Compute Cloud User Guide.
 type UserIDGroupPair struct {
-	Description            *string `json:"description,omitempty"`
-	GroupID                *string `json:"groupID,omitempty"`
-	GroupName              *string `json:"groupName,omitempty"`
-	PeeringStatus          *string `json:"peeringStatus,omitempty"`
-	UserID                 *string `json:"userID,omitempty"`
-	VPCID                  *string `json:"vpcID,omitempty"`
-	VPCPeeringConnectionID *string `json:"vpcPeeringConnectionID,omitempty"`
+	Description *string `json:"description,omitempty"`
+	GroupID     *string `json:"groupID,omitempty"`
+	GroupName   *string `json:"groupName,omitempty"`
+	// Reference field for GroupID
+	GroupRef               *ackv1alpha1.AWSResourceReferenceWrapper `json:"groupRef,omitempty"`
+	PeeringStatus          *string                                  `json:"peeringStatus,omitempty"`
+	UserID                 *string                                  `json:"userID,omitempty"`
+	VPCID                  *string                                  `json:"vpcID,omitempty"`
+	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for VPCID
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // The minimum and maximum number of vCPUs.
@@ -4674,13 +4696,6 @@ type VPCIPv6CIDRBlockAssociation struct {
 	NetworkBorderGroup *string            `json:"networkBorderGroup,omitempty"`
 }
 
-// Describes a VPC peering connection.
-type VPCPeeringConnection struct {
-	ExpirationTime         *metav1.Time `json:"expirationTime,omitempty"`
-	Tags                   []*Tag       `json:"tags,omitempty"`
-	VPCPeeringConnectionID *string      `json:"vpcPeeringConnectionID,omitempty"`
-}
-
 // We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
 // from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
 // to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
@@ -4695,15 +4710,39 @@ type VPCPeeringConnectionOptionsDescription struct {
 
 // Describes the status of a VPC peering connection.
 type VPCPeeringConnectionStateReason struct {
+	Code    *string `json:"code,omitempty"`
 	Message *string `json:"message,omitempty"`
 }
 
 // Describes a VPC in a VPC peering connection.
 type VPCPeeringConnectionVPCInfo struct {
-	CIDRBlock *string `json:"cidrBlock,omitempty"`
-	OwnerID   *string `json:"ownerID,omitempty"`
-	Region    *string `json:"region,omitempty"`
-	VPCID     *string `json:"vpcID,omitempty"`
+	CIDRBlock        *string          `json:"cidrBlock,omitempty"`
+	CIDRBlockSet     []*CIDRBlock     `json:"cidrBlockSet,omitempty"`
+	IPv6CIDRBlockSet []*IPv6CIDRBlock `json:"ipv6CIDRBlockSet,omitempty"`
+	OwnerID          *string          `json:"ownerID,omitempty"`
+	//
+	// We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
+	// from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
+	// to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
+	// in the Amazon Elastic Compute Cloud User Guide.
+	//
+	// Describes the VPC peering connection options.
+	PeeringOptions *VPCPeeringConnectionOptionsDescription `json:"peeringOptions,omitempty"`
+	Region         *string                                 `json:"region,omitempty"`
+	VPCID          *string                                 `json:"vpcID,omitempty"`
+}
+
+// Describes a VPC peering connection.
+type VPCPeeringConnection_SDK struct {
+	// Describes a VPC in a VPC peering connection.
+	AccepterVPCInfo *VPCPeeringConnectionVPCInfo `json:"accepterVPCInfo,omitempty"`
+	ExpirationTime  *metav1.Time                 `json:"expirationTime,omitempty"`
+	// Describes a VPC in a VPC peering connection.
+	RequesterVPCInfo *VPCPeeringConnectionVPCInfo `json:"requesterVPCInfo,omitempty"`
+	// Describes the status of a VPC peering connection.
+	Status                 *VPCPeeringConnectionStateReason `json:"status,omitempty"`
+	Tags                   []*Tag                           `json:"tags,omitempty"`
+	VPCPeeringConnectionID *string                          `json:"vpcPeeringConnectionID,omitempty"`
 }
 
 // Describes a VPC.

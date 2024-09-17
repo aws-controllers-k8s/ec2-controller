@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
@@ -43,15 +44,21 @@ func (rm *resourceManager) syncRoutes(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 	toAdd := []*svcapitypes.CreateRouteInput{}
 	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	if latest != nil {
-		latest.ko.Spec.Routes = rm.excludeAwsRoute(latest.ko.Spec.Routes)
+		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(latest.ko.Spec.Routes)
+		if err != nil {
+			return err
+		}
 	}
 	if desired != nil {
-		desired.ko.Spec.Routes = rm.excludeAwsRoute(desired.ko.Spec.Routes)
+		desired.ko.Spec.Routes, err = rm.excludeAWSRoute(desired.ko.Spec.Routes)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, desiredRoute := range desired.ko.Spec.Routes {
@@ -84,15 +91,15 @@ func (rm *resourceManager) syncRoutes(
 		}
 	}
 
-	for _, route := range toAdd {
-		rlog.Debug("adding route to route table")
-		if err = rm.createRoute(ctx, desired, *route); err != nil {
-			return err
-		}
-	}
 	for _, route := range toDelete {
 		rlog.Debug("deleting route from route table")
 		if err = rm.deleteRoute(ctx, latest, *route); err != nil {
+			return err
+		}
+	}
+	for _, route := range toAdd {
+		rlog.Debug("adding route to route table")
+		if err = rm.createRoute(ctx, desired, *route); err != nil {
 			return err
 		}
 	}
@@ -161,7 +168,7 @@ func (rm *resourceManager) createRoute(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.createRoute")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	input := rm.newCreateRouteInput(c)
 	// Routes should only be configurable for the
@@ -179,7 +186,7 @@ func (rm *resourceManager) deleteRoute(
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.deleteRoute")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	input := rm.newDeleteRouteInput(c)
 	// Routes should only be configurable for the
@@ -198,7 +205,7 @@ func (rm *resourceManager) customUpdateRouteTable(
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.customUpdateRouteTable")
-	defer exit(err)
+	defer func(err error) { exit(err) }(err)
 
 	// Default `updated` to `desired` because it is likely
 	// EC2 `modify` APIs do NOT return output, only errors.
@@ -206,6 +213,16 @@ func (rm *resourceManager) customUpdateRouteTable(
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
+
+	if delta.DifferentAt("Spec.Tags") {
+		if err := tags.Sync(
+			ctx, rm.sdkapi, rm.metrics,
+			*latest.ko.Status.RouteTableID,
+			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+		); err != nil {
+			return nil, err
+		}
+	}
 
 	if delta.DifferentAt("Spec.Routes") {
 		if err := rm.syncRoutes(ctx, desired, latest); err != nil {
@@ -215,12 +232,6 @@ func (rm *resourceManager) customUpdateRouteTable(
 		// with the recently-updated data from the above `sync` call
 		updated, err = rm.sdkFind(ctx, desired)
 		if err != nil {
-			return nil, err
-		}
-	}
-
-	if delta.DifferentAt("Spec.Tags") {
-		if err := rm.syncTags(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 	}
@@ -252,22 +263,7 @@ func (rm *resourceManager) addRoutesToStatus(
 	}
 }
 
-// compareTags is a custom comparison function for comparing lists of Tag
-// structs where the order of the structs in the list is not important.
-func compareTags(
-	delta *ackcompare.Delta,
-	a *resource,
-	b *resource,
-) {
-	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	} else if len(a.ko.Spec.Tags) > 0 {
-		addedOrUpdated, removed := computeTagsDelta(a.ko.Spec.Tags, b.ko.Spec.Tags)
-		if len(addedOrUpdated) != 0 || len(removed) != 0 {
-			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-		}
-	}
-}
+var computeTagsDelta = tags.ComputeTagsDelta
 
 // customPreCompare ensures that default values of types are initialised and
 // server side defaults are excluded from the delta.
@@ -278,7 +274,6 @@ func customPreCompare(
 ) {
 	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
-	compareTags(delta, a, b)
 }
 
 // removeLocalRoute will filter out any routes that have a gateway ID that
@@ -299,9 +294,9 @@ func removeLocalRoute(
 	return ret
 }
 
-func (rm *resourceManager) excludeAwsRoute(
+func (rm *resourceManager) excludeAWSRoute(
 	routes []*svcapitypes.CreateRouteInput,
-) (ret []*svcapitypes.CreateRouteInput) {
+) (ret []*svcapitypes.CreateRouteInput, err error) {
 	ret = make([]*svcapitypes.CreateRouteInput, 0)
 	var prefixListIds []*string
 
@@ -312,20 +307,21 @@ func (rm *resourceManager) excludeAwsRoute(
 		return route.DestinationPrefixListID != nil
 	})
 
-	prefix_list_routes := lo.Filter(routes, func(route *svcapitypes.CreateRouteInput, index int) bool {
+	prefixListRoutes := lo.Filter(routes, func(route *svcapitypes.CreateRouteInput, index int) bool {
 		return route.DestinationPrefixListID != nil
 	})
 
-	prefixListIds = lo.Map(prefix_list_routes, func(route *svcapitypes.CreateRouteInput, _ int) *string {
+	prefixListIds = lo.Map(prefixListRoutes, func(route *svcapitypes.CreateRouteInput, _ int) *string {
 		return route.DestinationPrefixListID
-
 	})
 
-	var resp *svcsdk.DescribeManagedPrefixListsOutput
 	input := &svcsdk.DescribeManagedPrefixListsInput{}
 	input.PrefixListIds = prefixListIds
-	resp, _ = rm.sdkapi.DescribeManagedPrefixLists(input)
+	resp, err := rm.sdkapi.DescribeManagedPrefixLists(input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeManagedPrefixLists", nil)
+	if err != nil {
+		return ret, nil
+	}
 
 	m := lo.FilterMap(resp.PrefixLists, func(mpl *svcsdk.ManagedPrefixList, _ int) (string, bool) {
 		if strings.EqualFold(*mpl.OwnerId, "AWS") {
@@ -334,7 +330,7 @@ func (rm *resourceManager) excludeAwsRoute(
 		return "", false
 	})
 
-	filtered_routes := lo.FilterMap(prefix_list_routes, func(route *svcapitypes.CreateRouteInput, _ int) (*svcapitypes.CreateRouteInput, bool) {
+	filtered_routes := lo.FilterMap(prefixListRoutes, func(route *svcapitypes.CreateRouteInput, _ int) (*svcapitypes.CreateRouteInput, bool) {
 		found := lo.IndexOf(m, *route.DestinationPrefixListID)
 		if found == -1 {
 			return route, true
@@ -343,106 +339,7 @@ func (rm *resourceManager) excludeAwsRoute(
 	})
 	ret = append(ret, filtered_routes...)
 
-	return ret
-}
-
-// syncTags used to keep tags in sync by calling Create and Delete Tags API's
-func (rm *resourceManager) syncTags(
-	ctx context.Context,
-	desired *resource,
-	latest *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncTags")
-	defer func(err error) {
-		exit(err)
-	}(err)
-
-	resourceId := []*string{latest.ko.Status.RouteTableID}
-
-	toAdd, toDelete := computeTagsDelta(
-		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
-	)
-
-	if len(toDelete) > 0 {
-		rlog.Debug("removing tags from route table resource", "tags", toDelete)
-		_, err = rm.sdkapi.DeleteTagsWithContext(
-			ctx,
-			&svcsdk.DeleteTagsInput{
-				Resources: resourceId,
-				Tags:      rm.sdkTags(toDelete),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "DeleteTags", err)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if len(toAdd) > 0 {
-		rlog.Debug("adding tags to route table resource", "tags", toAdd)
-		_, err = rm.sdkapi.CreateTagsWithContext(
-			ctx,
-			&svcsdk.CreateTagsInput{
-				Resources: resourceId,
-				Tags:      rm.sdkTags(toAdd),
-			},
-		)
-		rm.metrics.RecordAPICall("UPDATE", "CreateTags", err)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// sdkTags converts *svcapitypes.Tag array to a *svcsdk.Tag array
-func (rm *resourceManager) sdkTags(
-	tags []*svcapitypes.Tag,
-) (sdktags []*svcsdk.Tag) {
-
-	for _, i := range tags {
-		sdktag := rm.newTag(*i)
-		sdktags = append(sdktags, sdktag)
-	}
-
-	return sdktags
-}
-
-// computeTagsDelta returns tags to be added and removed from the resource
-func computeTagsDelta(
-	desired []*svcapitypes.Tag,
-	latest []*svcapitypes.Tag,
-) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
-
-	desiredTags := map[string]string{}
-	for _, tag := range desired {
-		desiredTags[*tag.Key] = *tag.Value
-	}
-
-	latestTags := map[string]string{}
-	for _, tag := range latest {
-		latestTags[*tag.Key] = *tag.Value
-	}
-
-	for _, tag := range desired {
-		val, ok := latestTags[*tag.Key]
-		if !ok || val != *tag.Value {
-			toAdd = append(toAdd, tag)
-		}
-	}
-
-	for _, tag := range latest {
-		_, ok := desiredTags[*tag.Key]
-		if !ok {
-			toDelete = append(toDelete, tag)
-		}
-	}
-
-	return toAdd, toDelete
-
+	return ret, nil
 }
 
 // updateTagSpecificationsInCreateRequest adds

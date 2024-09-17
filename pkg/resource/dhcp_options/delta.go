@@ -42,13 +42,23 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
-	if !reflect.DeepEqual(a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations) {
+	if len(a.ko.Spec.DHCPConfigurations) != len(b.ko.Spec.DHCPConfigurations) {
 		delta.Add("Spec.DHCPConfigurations", a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations)
+	} else if len(a.ko.Spec.DHCPConfigurations) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations) {
+			delta.Add("Spec.DHCPConfigurations", a.ko.Spec.DHCPConfigurations, b.ko.Spec.DHCPConfigurations)
+		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.VPC, b.ko.Spec.VPC) {
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+	if len(a.ko.Spec.VPC) != len(b.ko.Spec.VPC) {
 		delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
+	} else if len(a.ko.Spec.VPC) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.VPC, b.ko.Spec.VPC) {
+			delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
+		}
 	}
 	if !reflect.DeepEqual(a.ko.Spec.VPCRefs, b.ko.Spec.VPCRefs) {
 		delta.Add("Spec.VPCRefs", a.ko.Spec.VPCRefs, b.ko.Spec.VPCRefs)

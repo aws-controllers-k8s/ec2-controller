@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: routetables.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
@@ -25,20 +24,28 @@ spec:
         description: RouteTable is the Schema for the RouteTables API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           spec:
-            description: "RouteTableSpec defines the desired state of RouteTable.
-              \n Describes a route table."
+            description: |-
+              RouteTableSpec defines the desired state of RouteTable.
+
+
+              Describes a route table.
             properties:
               routes:
                 items:
@@ -61,11 +68,13 @@ spec:
                       description: Reference field for GatewayID
                       properties:
                         from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
                           properties:
                             name:
+                              type: string
+                            namespace:
                               type: string
                           type: object
                       type: object
@@ -79,11 +88,13 @@ spec:
                       description: Reference field for NATGatewayID
                       properties:
                         from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
                           properties:
                             name:
+                              type: string
+                            namespace:
                               type: string
                           type: object
                       type: object
@@ -95,11 +106,13 @@ spec:
                       description: Reference field for TransitGatewayID
                       properties:
                         from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
                           properties:
                             name:
+                              type: string
+                            namespace:
                               type: string
                           type: object
                       type: object
@@ -109,22 +122,39 @@ spec:
                       description: Reference field for VPCEndpointID
                       properties:
                         from:
-                          description: AWSResourceReference provides all the values
-                            necessary to reference another k8s resource for finding
-                            the identifier(Id/ARN/Name)
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
                           properties:
                             name:
+                              type: string
+                            namespace:
                               type: string
                           type: object
                       type: object
                     vpcPeeringConnectionID:
                       type: string
+                    vpcPeeringConnectionRef:
+                      description: Reference field for VPCPeeringConnectionID
+                      properties:
+                        from:
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
                   type: object
                 type: array
               tags:
-                description: The tags. The value parameter is required, but if you
-                  don't want the tag to have a value, specify the parameter with no
-                  value, and we set the value to an empty string.
+                description: |-
+                  The tags. The value parameter is required, but if you don't want the tag
+                  to have a value, specify the parameter with no value, and we set the value
+                  to an empty string.
                 items:
                   description: Describes a tag.
                   properties:
@@ -139,14 +169,18 @@ spec:
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
-                  *AWSResourceReference type to provide more user friendly syntax
-                  for references using 'from' field Ex: APIIDRef: \n from: name: my-api"
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\n\tfrom:\n\t
+                  \ name: my-api"
                 properties:
                   from:
-                    description: AWSResourceReference provides all the values necessary
-                      to reference another k8s resource for finding the identifier(Id/ARN/Name)
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
                     properties:
                       name:
+                        type: string
+                      namespace:
                         type: string
                     type: object
                 type: object
@@ -155,24 +189,26 @@ spec:
             description: RouteTableStatus defines the observed state of RouteTable
             properties:
               ackResourceMetadata:
-                description: All CRs managed by ACK have a common `Status.ACKResourceMetadata`
-                  member that is used to contain resource sync state, account ownership,
+                description: |-
+                  All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
+                  that is used to contain resource sync state, account ownership,
                   constructed ARN for the resource
                 properties:
                   arn:
-                    description: 'ARN is the Amazon Resource Name for the resource.
-                      This is a globally-unique identifier and is set only by the
-                      ACK service controller once the controller has orchestrated
-                      the creation of the resource OR when it has verified that an
-                      "adopted" resource (a resource where the ARN annotation was
-                      set by the Kubernetes user on the CR) exists and matches the
-                      supplied CR''s Spec field values. TODO(vijat@): Find a better
-                      strategy for resources that do not have ARN in CreateOutputResponse
-                      https://github.com/aws/aws-controllers-k8s/issues/270'
+                    description: |-
+                      ARN is the Amazon Resource Name for the resource. This is a
+                      globally-unique identifier and is set only by the ACK service controller
+                      once the controller has orchestrated the creation of the resource OR
+                      when it has verified that an "adopted" resource (a resource where the
+                      ARN annotation was set by the Kubernetes user on the CR) exists and
+                      matches the supplied CR's Spec field values.
+                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
+                      https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:
-                    description: OwnerAccountID is the AWS Account ID of the account
-                      that owns the backend AWS service API resource.
+                    description: |-
+                      OwnerAccountID is the AWS Account ID of the account that owns the
+                      backend AWS service API resource.
                     type: string
                   region:
                     description: Region is the AWS region in which the resource exists
@@ -190,8 +226,9 @@ spec:
                     a subnet or gateway.
                   properties:
                     associationState:
-                      description: Describes the state of an association between a
-                        route table and a subnet or gateway.
+                      description: |-
+                        Describes the state of an association between a route table and a subnet
+                        or gateway.
                       properties:
                         state:
                           type: string
@@ -211,14 +248,16 @@ spec:
                   type: object
                 type: array
               conditions:
-                description: All CRS managed by ACK have a common `Status.Conditions`
-                  member that contains a collection of `ackv1alpha1.Condition` objects
-                  that describe the various terminal states of the CR and its backend
-                  AWS service API resource
+                description: |-
+                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  contains a collection of `ackv1alpha1.Condition` objects that describe
+                  the various terminal states of the CR and its backend AWS service API
+                  resource
                 items:
-                  description: Condition is the common struct used by all CRDs managed
-                    by ACK service controllers to indicate terminal states  of the
-                    CR and its backend AWS service API resource
+                  description: |-
+                    Condition is the common struct used by all CRDs managed by ACK service
+                    controllers to indicate terminal states  of the CR and its backend AWS
+                    service API resource
                   properties:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status

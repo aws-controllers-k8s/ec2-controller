@@ -42,7 +42,6 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
-	compareTags(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
 		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
@@ -51,11 +50,19 @@ func newResourceDelta(
 			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
+	if len(a.ko.Spec.EgressRules) != len(b.ko.Spec.EgressRules) {
 		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
+	} else if len(a.ko.Spec.EgressRules) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
+			delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
+		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
+	if len(a.ko.Spec.IngressRules) != len(b.ko.Spec.IngressRules) {
 		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
+	} else if len(a.ko.Spec.IngressRules) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
+			delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
@@ -63,6 +70,9 @@ func newResourceDelta(
 		if *a.ko.Spec.Name != *b.ko.Spec.Name {
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
+	}
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
 		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)

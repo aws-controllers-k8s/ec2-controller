@@ -1,0 +1,17 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPCEndpointServiceConfiguration
+metadata:
+  name: $VPC_ENDPOINT_SERVICE_NAME
+spec:
+  acceptanceRequired: $ACCEPTANCE_REQUIRED
+  allowedPrincipals:
+  - $ALLOWED_PRINCIPAL
+  # gatewayLoadBalancerARNs: $GATEWAY_LOAD_BALANCER_ARN_SET
+  networkLoadBalancerARNs:
+  - $NETWORK_LOAD_BALANCER_ARN_SET
+  supportedIPAddressTypes:
+  - $SUPPORTED_IP_ADDRESS_TYPE_SET
+  privateDNSName: $PRIVATE_DNS_NAME
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

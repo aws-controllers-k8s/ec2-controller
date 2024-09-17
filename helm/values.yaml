@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/ec2-controller
-  tag: 1.0.7
+  tag: 1.2.22
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -107,6 +107,7 @@ installScope: cluster
 
 # Set the value of the "namespace" to be watched by the controller
 # This value is only used when the `installScope` is set to "namespace". If left empty, the default value is the release namespace for the chart.
+# You can set multiple namespaces by providing a comma separated list of namespaces. e.g "namespace1,namespace2"
 watchNamespace: ""
 
 resourceTags:
@@ -127,6 +128,12 @@ reconcile:
   # An object representing the reconcile resync configuration for each specific resource.
   resourceResyncPeriods: {}
 
+  # The default number of concurrent syncs that a reconciler can perform.
+  defaultMaxConcurrentSyncs: 1
+  # An object representing the reconcile max concurrent syncs configuration for each specific
+  # resource.
+  resourceMaxConcurrentSyncs: {}
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -146,3 +153,12 @@ leaderElection:
   # will attempt to use the namespace of the service account mounted to the Controller
   # pod.
   namespace: ""
+
+# Configuration for feature gates.  These are optional controller features that
+# can be individually enabled ("true") or disabled ("false") by adding key/value
+# pairs below.
+featureGates:
+  # Enables the Service level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
+  ServiceLevelCARM: false
+  # Enables the Team level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
+  TeamLevelCARM: false
