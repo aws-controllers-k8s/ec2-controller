@@ -27,6 +27,7 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
 CREATE_WAIT_AFTER_SECONDS = 20
+MODIFY_WAIT_AFTER_SECONDS = 30
 DELETE_WAIT_AFTER_SECONDS = 10
 DELETE_TIMEOUT_SECONDS = 300
 
@@ -168,3 +169,118 @@ class TestEC2References:
         ec2_validator.assert_subnet(subnet_id, exists=False)
         ec2_validator.assert_security_group(sg_id, exists=False)
         ec2_validator.assert_vpc(vpc_id, exists=False)
+
+    def test_array_references(self, ec2_client):
+        route_table_name = random_suffix_name("route-table-test", 24)
+        vpc_name = random_suffix_name("vpc-ref-test", 24)
+        gateway_name = random_suffix_name("gateway-ref-test", 24)
+
+        test_values = REPLACEMENT_VALUES.copy()
+        test_values["ROUTE_TABLE_NAME"] = route_table_name
+        test_values["DEST_CIDR_BLOCK"] = "0.0.0.0/0"
+        test_values["INTERNET_GATEWAY_NAME"] = gateway_name
+        test_values["VPC_NAME"] = vpc_name
+        test_values["CIDR_BLOCK"] = "10.0.0.0/16"
+        test_values["ENABLE_DNS_SUPPORT"] = "False"
+        test_values["ENABLE_DNS_HOSTNAMES"] = "False"
+        test_values["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = "False"
+
+        # Load CRs
+        route_table_resource_data = load_ec2_resource(
+            "route_table_ref",
+            additional_replacements=test_values
+        )
+        vpc_resource_data = load_ec2_resource(
+            "vpc",
+            additional_replacements=test_values
+        )
+        gateway_resource_data = load_ec2_resource(
+            "internet_gateway_ref",
+            additional_replacements=test_values
+        )
+
+        # This test creates resources in order,
+        
+        # Create VPC
+        vpc_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, 'vpcs',
+            vpc_name, namespace="default",
+        )
+        k8s.create_custom_resource(vpc_ref, vpc_resource_data)
+
+        # Create Internet Gateway
+        gateway_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, 'internetgateways',
+            gateway_name, namespace="default",
+        )
+        k8s.create_custom_resource(gateway_ref, gateway_resource_data)
+
+        # Create route table
+        route_table_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, 'routetables',
+            route_table_name, namespace="default",
+        )
+        k8s.create_custom_resource(route_table_ref, route_table_resource_data)
+
+        # Wait a few seconds so resources are synced
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(vpc_ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(gateway_ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(route_table_ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        assert k8s.wait_on_condition(gateway_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
+        assert k8s.wait_on_condition(route_table_ref, "ACK.ReferencesResolved", "True", wait_periods=10)
+
+        # Acquire Internet Gateway ID
+        gateway_cr = k8s.get_resource(gateway_ref)
+        assert 'status' in gateway_cr
+        gateway_id = gateway_cr["status"]["internetGatewayID"]
+
+        # Ensure routetable contains reference in spec
+        route_table_cr = k8s.get_resource(route_table_ref)
+        assert 'spec' in route_table_cr
+        assert 'vpcRef' in route_table_cr['spec']
+        assert route_table_cr['spec']['vpcRef']['from']['name'] == vpc_name
+        assert 'routes' in route_table_cr['spec']
+        assert len(route_table_cr['spec']['routes']) == 1
+        assert 'gatewayID' not in route_table_cr['spec']['routes'][0]
+        assert 'gatewayRef' in route_table_cr['spec']['routes'][0]
+        assert route_table_cr['spec']['routes'][0]['gatewayRef']['from']['name'] == gateway_name
+        assert 'status' in route_table_cr
+        assert 'routeStatuses' in route_table_cr['status']
+        found_gateway_id = False
+        for rs in route_table_cr['status']['routeStatuses']:
+            if 'gatewayID' in rs and rs['gatewayID'] == gateway_id:
+                found_gateway_id = True
+        assert found_gateway_id
+
+        user_tag = {
+            "tag": "my_tag",
+            "value": "my_val"
+        }
+        route_table_update = {
+            'spec': {
+                'tags': [user_tag]
+            }
+        }
+        k8s.patch_custom_resource(route_table_ref, route_table_update)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(route_table_ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(route_table_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
+        
+        # Ensure that the reference has not changed
+        route_table_cr = k8s.get_resource(route_table_ref)
+        assert 'spec' in route_table_cr
+        assert 'routes' in route_table_cr['spec']
+        assert len(route_table_cr['spec']['routes']) == 1
+        assert 'gatewayID' not in route_table_cr['spec']['routes'][0]
+        assert 'gatewayRef' in route_table_cr['spec']['routes'][0]
+        assert route_table_cr['spec']['routes'][0]['gatewayRef']['from']['name'] == gateway_name
+
+        # Delete All
+        _, deleted = k8s.delete_custom_resource(route_table_ref)
+        assert deleted
+        _, deleted = k8s.delete_custom_resource(gateway_ref)
+        assert deleted    
+        _, deleted = k8s.delete_custom_resource(vpc_ref)
+        assert deleted
