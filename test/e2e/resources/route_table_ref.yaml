@@ -1,0 +1,16 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: RouteTable
+metadata:
+  name: $ROUTE_TABLE_NAME
+spec:
+  routes:
+    - destinationCIDRBlock: $DEST_CIDR_BLOCK
+      gatewayRef:
+        from:
+          name: $INTERNET_GATEWAY_NAME
+  vpcRef:
+    from:
+      name: $VPC_NAME
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
