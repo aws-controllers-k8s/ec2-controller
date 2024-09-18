@@ -236,7 +236,9 @@ func (rm *resourceManager) customUpdateRouteTable(
 		}
 	}
 
-	return updated, nil
+	newDesired := rm.concreteResource(desired.DeepCopy())
+	newDesired.ko.Status = updated.ko.Status
+	return newDesired, nil
 }
 
 func (rm *resourceManager) requiredFieldsMissingForCreateRoute(
