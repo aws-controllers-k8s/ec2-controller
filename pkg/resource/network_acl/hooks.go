@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"strings"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -396,13 +397,28 @@ func containsEntry(
 
 	for _, e := range entryCollection {
 		delta := compareNetworkACLEntry(e, entry)
-
-		if len(delta.Differences) == 0 {
-			return true
+		if !delta.DifferentExcept("NetworkACLEntry.RuleAction") {
+			// Case insensitive comparison for RuleAction
+			if compareNetworkACLEntryAtRuleAction(e, entry) {
+				return true
+			}
 		}
 	}
 	return false
 }
+
+func compareNetworkACLEntryAtRuleAction(entry1 *svcapitypes.NetworkACLEntry, entry2 *svcapitypes.NetworkACLEntry) bool {
+	if entry1.RuleAction == nil && entry2.RuleAction == nil {
+		return true
+	}
+
+	if entry1.RuleAction == nil || entry2.RuleAction == nil {
+		return false
+	}
+
+	return strings.EqualFold(*entry1.RuleAction, *entry2.RuleAction)
+}
+
 func (rm *resourceManager) createEntry(
 	ctx context.Context,
 	r *resource,
