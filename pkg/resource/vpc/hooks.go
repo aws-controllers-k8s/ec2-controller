@@ -310,14 +310,18 @@ func (rm *resourceManager) customUpdateVPC(
 	}
 
 	if delta.DifferentAt("Spec.EnableDNSSupport") {
-		if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
-			return nil, err
+		if desired.ko.Spec.EnableDNSSupport != nil {
+			if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	if delta.DifferentAt("Spec.EnableDNSHostnames") {
-		if err := rm.syncDNSHostnamesAttribute(ctx, desired); err != nil {
-			return nil, err
+		if desired.ko.Spec.EnableDNSHostnames != nil {
+			if err := rm.syncDNSHostnamesAttribute(ctx, desired); err != nil {
+				return nil, err
+			}
 		}
 	}
 
