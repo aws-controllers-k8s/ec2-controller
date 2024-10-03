@@ -310,18 +310,14 @@ func (rm *resourceManager) customUpdateVPC(
 	}
 
 	if delta.DifferentAt("Spec.EnableDNSSupport") {
-		if desired.ko.Spec.EnableDNSSupport != nil {
-			if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
-				return nil, err
-			}
+		if err := rm.syncDNSSupportAttribute(ctx, desired); err != nil {
+			return nil, err
 		}
 	}
 
 	if delta.DifferentAt("Spec.EnableDNSHostnames") {
-		if desired.ko.Spec.EnableDNSHostnames != nil {
-			if err := rm.syncDNSHostnamesAttribute(ctx, desired); err != nil {
-				return nil, err
-			}
+		if err := rm.syncDNSHostnamesAttribute(ctx, desired); err != nil {
+			return nil, err
 		}
 	}
 
@@ -570,4 +566,29 @@ func (rm *resourceManager) getDefaultSGId(
 
 func ptr[T any](t T) *T {
 	return &t
+}
+
+var (
+	// Defaults for DNS related attributes as defined in https://docs.aws.amazon.com/vpc/latest/userguide/AmazonDNS-concepts.html#vpc-dns-support
+	defaultEnableDNSHostnames = false
+	defaultEnableDNSSupport   = true
+)
+
+// customPreCompare ensures that default values of nil-able types are
+// appropriately replaced with empty maps or structs depending on the default
+// output of the SDK.
+func customPreCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	if a.ko.Spec.EnableDNSHostnames == nil {
+		a.ko.Spec.EnableDNSHostnames = &defaultEnableDNSHostnames
+	}
+	if a.ko.Spec.EnableDNSSupport == nil {
+		a.ko.Spec.EnableDNSSupport = &defaultEnableDNSSupport
+	}
+	if a.ko.Spec.DisallowSecurityGroupDefaultRules == nil {
+		a.ko.Spec.DisallowSecurityGroupDefaultRules = ptr(false)
+	}
 }
