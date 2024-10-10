@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: instances.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
@@ -43,7 +43,6 @@ spec:
           spec:
             description: |-
               InstanceSpec defines the desired state of Instance.
-
 
               Describes an instance.
             properties:
@@ -131,9 +130,7 @@ spec:
                   For more information, see Burstable performance instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances.html)
                   in the Amazon EC2 User Guide.
 
-
                   Default: standard (T2 instances) or unlimited (T3/T3a/T4g instances)
-
 
                   For T3 instances with host tenancy, only standard is supported.
                 properties:
@@ -153,7 +150,6 @@ spec:
                   Alternatively, if you set InstanceInitiatedShutdownBehavior to terminate,
                   you can terminate the instance by running the shutdown command from the instance.
 
-
                   Default: false
                 type: boolean
               ebsOptimized:
@@ -163,7 +159,6 @@ spec:
                   stack to provide optimal Amazon EBS I/O performance. This optimization isn't
                   available with all instance types. Additional usage charges apply when using
                   an EBS-optimized instance.
-
 
                   Default: false
                 type: boolean
@@ -186,7 +181,6 @@ spec:
                   inference accelerators are a resource you can attach to your Amazon EC2 instances
                   to accelerate your Deep Learning (DL) inference workloads.
 
-
                   You cannot specify accelerators from different generations in the same request.
                 items:
                   description: Describes an elastic inference accelerator.
@@ -204,7 +198,6 @@ spec:
                   For more information, see What is Amazon Web Services Nitro Enclaves? (https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html)
                   in the Amazon Web Services Nitro Enclaves User Guide.
 
-
                   You can't enable Amazon Web Services Nitro Enclaves and hibernation on the
                   same instance.
                 properties:
@@ -216,7 +209,6 @@ spec:
                   Indicates whether an instance is enabled for hibernation. For more information,
                   see Hibernate your instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
                   in the Amazon EC2 User Guide.
-
 
                   You can't enable hibernation and Amazon Web Services Nitro Enclaves on the
                   same instance.
@@ -243,13 +235,11 @@ spec:
                   Indicates whether an instance stops or terminates when you initiate shutdown
                   from the instance (using the operating system command for system shutdown).
 
-
                   Default: stop
                 type: string
               instanceMarketOptions:
                 description: |-
                   The market (purchasing) option for the instances.
-
 
                   For RunInstances, persistent Spot Instance requests are only supported when
                   InstanceInterruptionBehavior is set to either hibernate or stop.
@@ -278,7 +268,6 @@ spec:
                   The instance type. For more information, see Instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
                   in the Amazon EC2 User Guide.
 
-
                   Default: m1.small
                 type: string
               ipv6AddressCount:
@@ -288,7 +277,6 @@ spec:
                   You cannot specify this option and the option to assign specific IPv6 addresses
                   in the same request. You can specify this option if you've specified a minimum
                   number of instances to launch.
-
 
                   You cannot specify this option and the network interfaces option in the same
                   request.
@@ -300,7 +288,6 @@ spec:
                   the primary network interface. You cannot specify this option and the option
                   to assign a number of IPv6 addresses in the same request. You cannot specify
                   this option if you've specified a minimum number of instances to launch.
-
 
                   You cannot specify this option and the network interfaces option in the same
                   request.
@@ -315,7 +302,6 @@ spec:
                 description: |-
                   The ID of the kernel.
 
-
                   We recommend that you use PV-GRUB instead of kernels and RAM disks. For more
                   information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
                   in the Amazon EC2 User Guide.
@@ -324,7 +310,6 @@ spec:
                 description: |-
                   The name of the key pair. You can create a key pair using CreateKeyPair (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html)
                   or ImportKeyPair (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ImportKeyPair.html).
-
 
                   If you do not specify a key pair, you can't connect to the instance unless
                   you choose an AMI that is configured to allow users another way to log in.
@@ -363,7 +348,6 @@ spec:
                   than Amazon EC2 can launch in the target Availability Zone, Amazon EC2 launches
                   the largest possible number of instances above MinCount.
 
-
                   Constraints: Between 1 and the maximum number you're allowed for the specified
                   instance type. For more information about the default limits, and how to
                   request an increase, see How many instances can I run in Amazon EC2 (http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2)
@@ -392,7 +376,6 @@ spec:
                   The minimum number of instances to launch. If you specify a minimum that
                   is more instances than Amazon EC2 can launch in the target Availability Zone,
                   Amazon EC2 launches no instances.
-
 
                   Constraints: Between 1 and the maximum number you're allowed for the specified
                   instance type. For more information about the default limits, and how to
@@ -526,12 +509,10 @@ spec:
                   [EC2-VPC] The primary IPv4 address. You must specify a value from the IPv4
                   address range of the subnet.
 
-
                   Only one private IP address can be designated as primary. You can't specify
                   this option if you've specified the option to designate a private IP address
                   as the primary IP address in a network interface specification. You cannot
                   specify this option if you're launching more than one instance in the request.
-
 
                   You cannot specify this option and the network interfaces option in the same
                   request.
@@ -543,7 +524,6 @@ spec:
                   need to specify a RAM disk. To find kernel requirements, go to the Amazon
                   Web Services Resource Center and search for the kernel ID.
 
-
                   We recommend that you use PV-GRUB instead of kernels and RAM disks. For more
                   information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
                   in the Amazon EC2 User Guide.
@@ -552,7 +532,6 @@ spec:
                 description: |-
                   The IDs of the security groups. You can create a security group using CreateSecurityGroup
                   (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html).
-
 
                   If you specify a network interface, you must specify any security groups
                   as part of the network interface.
@@ -564,10 +543,8 @@ spec:
                   [EC2-Classic, default VPC] The names of the security groups. For a nondefault
                   VPC, you must use security group IDs instead.
 
-
                   If you specify a network interface, you must specify any security groups
                   as part of the network interface.
-
 
                   Default: Amazon EC2 uses the default security group.
                 items:
@@ -576,7 +553,6 @@ spec:
               subnetID:
                 description: |-
                   [EC2-VPC] The ID of the subnet to launch the instance into.
-
 
                   If you specify a network interface, you must specify any subnets as part
                   of the network interface.
@@ -622,7 +598,6 @@ spec:
                       when it has verified that an "adopted" resource (a resource where the
                       ARN annotation was set by the Kubernetes user on the CR) exists and
                       matches the supplied CR's Spec field values.
-                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
                       https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:
@@ -774,7 +749,6 @@ spec:
                   DNS hostname can only be used inside the Amazon EC2 network. This name is
                   not available until the instance enters the running state.
 
-
                   [EC2-VPC] The Amazon-provided DNS server resolves Amazon-provided private
                   DNS hostnames if you've enabled DNS resolution and DNS hostnames in your
                   VPC. If you are not using the Amazon-provided DNS server in your VPC, your
@@ -801,7 +775,6 @@ spec:
                 description: |-
                   The public IPv4 address, or the Carrier IP address assigned to the instance,
                   if applicable.
-
 
                   A Carrier IP address only applies to an instance launched in a subnet associated
                   with a Wavelength Zone.
