@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: flowlogs.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
@@ -40,14 +40,12 @@ spec:
             description: |-
               FlowLogSpec defines the desired state of FlowLog.
 
-
               Describes a flow log.
             properties:
               deliverLogsPermissionARN:
                 description: |-
                   The ARN for the IAM role that permits Amazon EC2 to publish flow logs to
                   a CloudWatch Logs log group in your account.
-
 
                   If you specify LogDestinationType as s3, do not specify DeliverLogsPermissionArn
                   or LogGroupName.
@@ -68,12 +66,10 @@ spec:
                   can be published to a CloudWatch Logs log group or an Amazon S3 bucket. The
                   value specified for this parameter depends on the value specified for LogDestinationType.
 
-
                   If LogDestinationType is not specified or cloud-watch-logs, specify the Amazon
                   Resource Name (ARN) of the CloudWatch Logs log group. For example, to publish
                   to a log group called my-logs, specify arn:aws:logs:us-east-1:123456789012:log-group:my-logs.
                   Alternatively, use LogGroupName instead.
-
 
                   If LogDestinationType is s3, specify the ARN of the Amazon S3 bucket. You
                   can also specify a subfolder in the bucket. To specify a subfolder in the
@@ -89,10 +85,8 @@ spec:
                   log data to CloudWatch Logs, specify cloud-watch-logs. To publish flow log
                   data to Amazon S3, specify s3.
 
-
                   If you specify LogDestinationType as s3, do not specify DeliverLogsPermissionArn
                   or LogGroupName.
-
 
                   Default: cloud-watch-logs
                 type: string
@@ -103,7 +97,6 @@ spec:
                   If you omit this parameter, the flow log is created using the default format.
                   If you specify this parameter, you must specify at least one field.
 
-
                   Specify the fields using the ${field-id} format, separated by spaces. For
                   the CLI, surround this parameter value with single quotes on Linux or double
                   quotes on Windows.
@@ -112,7 +105,6 @@ spec:
                 description: |-
                   The name of a new or existing CloudWatch Logs log group where Amazon EC2
                   publishes your flow logs.
-
 
                   If you specify LogDestinationType as s3, do not specify DeliverLogsPermissionArn
                   or LogGroupName.
@@ -123,11 +115,9 @@ spec:
                   aggregated into a flow log record. You can specify 60 seconds (1 minute)
                   or 600 seconds (10 minutes).
 
-
                   When a network interface is attached to a Nitro-based instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances),
                   the aggregation interval is always 60 seconds or less, regardless of the
                   value that you specify.
-
 
                   Default: 600
                 format: int64
@@ -179,7 +169,6 @@ spec:
                       when it has verified that an "adopted" resource (a resource where the
                       ARN annotation was set by the Kubernetes user on the CR) exists and
                       matches the supplied CR's Spec field values.
-                      TODO(vijat@): Find a better strategy for resources that do not have ARN in CreateOutputResponse
                       https://github.com/aws/aws-controllers-k8s/issues/270
                     type: string
                   ownerAccountID:
