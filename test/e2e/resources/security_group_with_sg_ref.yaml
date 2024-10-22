@@ -15,3 +15,12 @@ spec:
           groupRef:
             from:
               name: $SECURITY_GROUP_REF_NAME
+  egressRules:
+    - fromPort: 443
+      toPort: 443
+      ipProtocol: tcp
+      userIDGroupPairs:
+        - description: test UID group pair
+          groupRef:
+            from:
+              name: $SECURITY_GROUP_REF_NAME

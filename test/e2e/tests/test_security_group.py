@@ -37,6 +37,7 @@ MODIFY_WAIT_AFTER_SECONDS = 5
 CREATE_CYCLIC_REF_AFTER_SECONDS = 60
 DELETE_CYCLIC_REF_AFTER_SECONDS = 30
 
+
 @pytest.fixture
 def simple_security_group(request):
     resource_name = random_suffix_name("security-group-test", 24)
@@ -51,12 +52,12 @@ def simple_security_group(request):
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
-        if 'resource_file' in data:
-            resource_file = data['resource_file']
+        if "resource_file" in data:
+            resource_file = data["resource_file"]
             replacements.update(data)
-        if 'tag_key' in data:
+        if "tag_key" in data:
             replacements["TAG_KEY"] = data["tag_key"]
-        if 'tag_value' in data:
+        if "tag_value" in data:
             replacements["TAG_VALUE"] = data["tag_value"]
 
     # Load Security Group CR
@@ -68,8 +69,11 @@ def simple_security_group(request):
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        resource_name, namespace="default",
+        CRD_GROUP,
+        CRD_VERSION,
+        RESOURCE_PLURAL,
+        resource_name,
+        namespace="default",
     )
 
     k8s.create_custom_resource(ref, resource_data)
@@ -87,6 +91,7 @@ def simple_security_group(request):
         assert deleted
     except:
         pass
+
 
 @pytest.fixture
 def security_group_with_vpc(request, simple_vpc):
@@ -106,12 +111,12 @@ def security_group_with_vpc(request, simple_vpc):
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
-        if 'resource_file' in data:
-            resource_file = data['resource_file']
+        if "resource_file" in data:
+            resource_file = data["resource_file"]
             replacements.update(data)
-        if 'tag_key' in data:
+        if "tag_key" in data:
             replacements["TAG_KEY"] = data["tag_key"]
-        if 'tag_value' in data:
+        if "tag_value" in data:
             replacements["TAG_VALUE"] = data["tag_value"]
 
     # Load Security Group CR
@@ -123,8 +128,11 @@ def security_group_with_vpc(request, simple_vpc):
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        resource_name, namespace="default",
+        CRD_GROUP,
+        CRD_VERSION,
+        RESOURCE_PLURAL,
+        resource_name,
+        namespace="default",
     )
 
     k8s.create_custom_resource(ref, resource_data)
@@ -143,6 +151,7 @@ def security_group_with_vpc(request, simple_vpc):
     except:
         pass
 
+
 def create_security_group_with_sg_ref(resource_name, reference_name):
     replacements = REPLACEMENT_VALUES.copy()
     replacements["VPC_ID"] = get_bootstrap_resources().SharedTestVPC.vpc_id
@@ -158,47 +167,52 @@ def create_security_group_with_sg_ref(resource_name, reference_name):
 
     # Create k8s resource
     ref = k8s.CustomResourceReference(
-        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-        resource_name, namespace="default",
+        CRD_GROUP,
+        CRD_VERSION,
+        RESOURCE_PLURAL,
+        resource_name,
+        namespace="default",
     )
     k8s.create_custom_resource(ref, resource_data)
-    
+
     return ref
-    
+
+
 @pytest.fixture
 def security_groups_cyclic_ref():
     resource_name_1 = random_suffix_name("security-group-test", 24)
     resource_name_2 = random_suffix_name("security-group-test", 24)
     resource_name_3 = random_suffix_name("security-group-test", 24)
-    
+
     ref_1 = create_security_group_with_sg_ref(resource_name_1, resource_name_2)
     ref_2 = create_security_group_with_sg_ref(resource_name_2, resource_name_3)
     ref_3 = create_security_group_with_sg_ref(resource_name_3, resource_name_1)
-    
+
     time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
-    
+
     cr_1 = k8s.wait_resource_consumed_by_controller(ref_1)
     cr_2 = k8s.wait_resource_consumed_by_controller(ref_2)
     cr_3 = k8s.wait_resource_consumed_by_controller(ref_3)
     assert cr_1 is not None
     assert cr_2 is not None
     assert cr_3 is not None
-    
+
     yield [(ref_1, cr_1), (ref_2, cr_2), (ref_3, cr_3)]
-    
+
     try:
         k8s.delete_custom_resource(ref, 3, 10)
         k8s.delete_custom_resource(ref, 3, 10)
         k8s.delete_custom_resource(ref, 3, 10)
-        
+
         time.sleep(DELETE_CYCLIC_REF_AFTER_SECONDS)
-        
+
         assert not k8s.get_resource_exists(ref_1)
         assert not k8s.get_resource_exists(ref_2)
         assert not k8s.get_resource_exists(ref_3)
     except:
         pass
-    
+
+
 @service_marker
 @pytest.mark.canary
 class TestSecurityGroup:
@@ -232,13 +246,15 @@ class TestSecurityGroup:
 
         # Add a new Egress rule via patch
         new_egress_rule = {
-                        "ipProtocol": "-1",
-                        "ipRanges": [{
-                            "cidrIP": "0.0.0.0/0",
-                            "description": "Allow traffic from all IPs - test"
-                        }]
+            "ipProtocol": "-1",
+            "ipRanges": [
+                {
+                    "cidrIP": "0.0.0.0/0",
+                    "description": "Allow traffic from all IPs - test",
+                }
+            ],
         }
-        patch = {"spec": {"egressRules":[new_egress_rule]}}
+        patch = {"spec": {"egressRules": [new_egress_rule]}}
         _ = k8s.patch_custom_resource(ref, patch)
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -272,18 +288,20 @@ class TestSecurityGroup:
         # Deleting Security Group will also delete rules
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    @pytest.mark.resource_data({
-        'resource_file': 'security_group_rule',
-        'IP_PROTOCOL': 'tcp',
-        'FROM_PORT': "80",
-        'TO_PORT': "80",
-        'CIDR_IP': '172.31.0.0/16',
-        'DESCRIPTION_INGRESS': 'test ingress rule',
-    })
+    @pytest.mark.resource_data(
+        {
+            "resource_file": "security_group_rule",
+            "IP_PROTOCOL": "tcp",
+            "FROM_PORT": "80",
+            "TO_PORT": "80",
+            "CIDR_IP": "172.31.0.0/16",
+            "DESCRIPTION_INGRESS": "test ingress rule",
+        }
+    )
     def test_rules_create_update_delete(self, ec2_client, simple_security_group):
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
-    
+
         # Check resource is synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
@@ -304,32 +322,24 @@ class TestSecurityGroup:
             "ipProtocol": "tcp",
             "fromPort": 25,
             "toPort": 25,
-            "ipRanges": [
-                {
-                    "cidrIP": "172.31.0.0/16",
-                    "description": "test egress"
-                }
-            ]
+            "ipRanges": [{"cidrIP": "172.31.0.0/16", "description": "test egress"}],
         }
         # Add Egress rule via patch
         new_egress_rule_with_sg_pair = {
             "ipProtocol": "tcp",
             "fromPort": 40,
             "toPort": 40,
-            "ipRanges": [
-                {
-                    "cidrIP": "172.31.0.0/12",
-                    "description": "test egress"
-                }
-            ],
+            "ipRanges": [{"cidrIP": "172.31.0.0/12", "description": "test egress"}],
             "userIDGroupPairs": [
                 {
                     "description": "test userIDGroupPairs",
-                    "userID": str(get_account_id())
+                    "userID": str(get_account_id()),
                 }
-            ]
+            ],
         }
-        patch = {"spec": {"egressRules":[new_egress_rule, new_egress_rule_with_sg_pair]}}
+        patch = {
+            "spec": {"egressRules": [new_egress_rule, new_egress_rule_with_sg_pair]}
+        }
         _ = k8s.patch_custom_resource(ref, patch)
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -341,29 +351,41 @@ class TestSecurityGroup:
         sg_group = ec2_validator.get_security_group(resource_id)
         assert len(sg_group["IpPermissions"]) == 1
         assert len(sg_group["IpPermissionsEgress"]) == 2
-        
+
         # Check egress rule data
         assert sg_group["IpPermissionsEgress"][0]["IpProtocol"] == "tcp"
         assert sg_group["IpPermissionsEgress"][0]["FromPort"] == 25
         assert sg_group["IpPermissionsEgress"][0]["ToPort"] == 25
-        assert sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"] == "test egress"
+        assert (
+            sg_group["IpPermissionsEgress"][0]["IpRanges"][0]["Description"]
+            == "test egress"
+        )
 
         assert sg_group["IpPermissionsEgress"][1]["IpProtocol"] == "tcp"
         assert sg_group["IpPermissionsEgress"][1]["FromPort"] == 40
         assert sg_group["IpPermissionsEgress"][1]["ToPort"] == 40
-        assert sg_group["IpPermissionsEgress"][1]["IpRanges"][0]["Description"] == "test egress"
+        assert (
+            sg_group["IpPermissionsEgress"][1]["IpRanges"][0]["Description"]
+            == "test egress"
+        )
         assert len(sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"]) == 1
-        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["Description"] == "test userIDGroupPairs"
-        assert sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["GroupId"] == resource_id
+        assert (
+            sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["Description"]
+            == "test userIDGroupPairs"
+        )
+        assert (
+            sg_group["IpPermissionsEgress"][1]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id
+        )
 
         # Remove Ingress rule
-        patch = {"spec": {"ingressRules":[]}}
+        patch = {"spec": {"ingressRules": []}}
         _ = k8s.patch_custom_resource(ref, patch)
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # assert patched state
         cr = k8s.get_resource(ref)
-        assert len(cr['status']['rules']) == 3
+        assert len(cr["status"]["rules"]) == 3
 
         # Check ingress rule removed; egress rule remains
         sg_group = ec2_validator.get_security_group(resource_id)
@@ -379,12 +401,13 @@ class TestSecurityGroup:
         # Check Security Group no longer exists in AWS
         # Deleting Security Group will also delete rules
         ec2_validator.assert_security_group(resource_id, exists=False)
-    
 
-    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    @pytest.mark.resource_data(
+        {"tag_key": "initialtagkey", "tag_value": "initialtagvalue"}
+    )
     def test_crud_tags(self, ec2_client, simple_security_group):
         (ref, cr) = simple_security_group
-        
+
         resource = k8s.get_resource(ref)
         resource_id = cr["status"]["id"]
 
@@ -394,12 +417,9 @@ class TestSecurityGroup:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_security_group(resource_id)
 
-        
         # Check system and user tags exist for security group resource
         security_group = ec2_validator.get_security_group(resource_id)
-        user_tags = {
-            "initialtagkey": "initialtagvalue"
-        }
+        user_tags = {"initialtagkey": "initialtagvalue"}
         tags.assert_ack_system_tags(
             tags=security_group["Tags"],
         )
@@ -407,7 +427,7 @@ class TestSecurityGroup:
             expected=user_tags,
             actual=security_group["Tags"],
         )
-        
+
         # Only user tags should be present in Spec
         assert len(resource["spec"]["tags"]) == 1
         assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
@@ -415,11 +435,11 @@ class TestSecurityGroup:
 
         # Update tags
         update_tags = [
-                {
-                    "key": "updatedtagkey",
-                    "value": "updatedtagvalue",
-                }
-            ]
+            {
+                "key": "updatedtagkey",
+                "value": "updatedtagvalue",
+            }
+        ]
 
         # Patch the SecurityGroup, updating the tags with new pair
         updates = {
@@ -431,12 +451,10 @@ class TestSecurityGroup:
 
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        
+
         # Check for updated user tags; system tags should persist
         security_group = ec2_validator.get_security_group(resource_id)
-        updated_tags = {
-            "updatedtagkey": "updatedtagvalue"
-        }
+        updated_tags = {"updatedtagkey": "updatedtagvalue"}
         tags.assert_ack_system_tags(
             tags=security_group["Tags"],
         )
@@ -444,7 +462,7 @@ class TestSecurityGroup:
             expected=updated_tags,
             actual=security_group["Tags"],
         )
-               
+
         # Only user tags should be present in Spec
         resource = k8s.get_resource(ref)
         assert len(resource["spec"]["tags"]) == 1
@@ -453,7 +471,7 @@ class TestSecurityGroup:
 
         # Patch the SecurityGroup resource, deleting the tags
         updates = {
-                "spec": {"tags": []},
+            "spec": {"tags": []},
         }
 
         k8s.patch_custom_resource(ref, updates)
@@ -461,7 +479,7 @@ class TestSecurityGroup:
 
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        
+
         # Check for removed user tags; system tags should persist
         security_group = ec2_validator.get_security_group(resource_id)
         tags.assert_ack_system_tags(
@@ -471,7 +489,7 @@ class TestSecurityGroup:
             expected=[],
             actual=security_group["Tags"],
         )
-        
+
         # Check user tags are removed from Spec
         resource = k8s.get_resource(ref)
         assert len(resource["spec"]["tags"]) == 0
@@ -490,48 +508,81 @@ class TestSecurityGroup:
         (ref_1, cr_1) = sgs[0]
         (ref_2, cr_2) = sgs[1]
         (ref_3, cr_3) = sgs[2]
-        
-        
-        
+
         # Check Security Groups exists in AWS
         resource_id_1 = cr_1["status"]["id"]
         resource_id_2 = cr_2["status"]["id"]
         resource_id_3 = cr_3["status"]["id"]
-        
+
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_security_group(resource_id_1)
         ec2_validator.assert_security_group(resource_id_2)
         ec2_validator.assert_security_group(resource_id_3)
-        
+
         # Check resources are synced successfully
-        assert k8s.wait_on_condition(ref_1, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(ref_2, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(ref_3, "ACK.ResourceSynced", "True", wait_periods=5)
-        
-        # Check ingress rules exist
+        assert k8s.wait_on_condition(
+            ref_1, "ACK.ResourceSynced", "True", wait_periods=5
+        )
+        assert k8s.wait_on_condition(
+            ref_2, "ACK.ResourceSynced", "True", wait_periods=5
+        )
+        assert k8s.wait_on_condition(
+            ref_3, "ACK.ResourceSynced", "True", wait_periods=5
+        )
+
         sg_group_1 = ec2_validator.get_security_group(resource_id_1)
         sg_group_2 = ec2_validator.get_security_group(resource_id_2)
         sg_group_3 = ec2_validator.get_security_group(resource_id_3)
+
+        # Check ingress rules exist
         assert len(sg_group_1["IpPermissions"]) == 1
         assert len(sg_group_2["IpPermissions"]) == 1
         assert len(sg_group_3["IpPermissions"]) == 1
-        
+
+        # Check egress rules exist
+        assert len(sg_group_1["IpPermissionsEgress"]) == 1
+        assert len(sg_group_2["IpPermissionsEgress"]) == 1
+        assert len(sg_group_3["IpPermissionsEgress"]) == 1
+
         # Check ingress rules cyclic data
-        assert sg_group_1["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"] == resource_id_2
-        assert sg_group_2["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"] == resource_id_3
-        assert sg_group_3["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"] == resource_id_1
-        
+        assert (
+            sg_group_1["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id_2
+        )
+        assert (
+            sg_group_2["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id_3
+        )
+        assert (
+            sg_group_3["IpPermissions"][0]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id_1
+        )
+
+        # Check egress rules cyclic data
+        assert (
+            sg_group_1["IpPermissionsEgress"][0]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id_2
+        )
+        assert (
+            sg_group_2["IpPermissionsEgress"][0]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id_3
+        )
+        assert (
+            sg_group_3["IpPermissionsEgress"][0]["UserIdGroupPairs"][0]["GroupId"]
+            == resource_id_1
+        )
+
         # Delete k8s resources
         k8s.delete_custom_resource(ref_1)
         k8s.delete_custom_resource(ref_2)
         k8s.delete_custom_resource(ref_3)
-        
+
         time.sleep(DELETE_CYCLIC_REF_AFTER_SECONDS)
-        
+
         assert not k8s.get_resource_exists(ref_1)
         assert not k8s.get_resource_exists(ref_2)
         assert not k8s.get_resource_exists(ref_3)
-        
+
         # Check Security Group no longer exists in AWS
         ec2_validator.assert_security_group(resource_id_1, exists=False)
         ec2_validator.assert_security_group(resource_id_2, exists=False)

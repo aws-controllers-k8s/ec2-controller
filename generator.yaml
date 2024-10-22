@@ -530,6 +530,16 @@ resources:
           path: Status.ID
           skip_resource_state_validations: true
         is_required: false
+      EgressRules.UserIDGroupPairs.VPCID:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      EgressRules.UserIDGroupPairs.GroupID:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+          skip_resource_state_validations: true
+        is_required: false
     renames:
       operations:
         CreateSecurityGroup:
