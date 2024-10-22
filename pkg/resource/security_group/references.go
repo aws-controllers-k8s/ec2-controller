@@ -37,6 +37,22 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
+	for f0idx, f0iter := range ko.Spec.EgressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.GroupRef != nil {
+				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = nil
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.EgressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCRef != nil {
+				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = nil
+			}
+		}
+	}
+
 	for f0idx, f0iter := range ko.Spec.IngressRules {
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.GroupRef != nil {
@@ -76,6 +92,18 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForEgressRules_UserIDGroupPairs_GroupID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForEgressRules_UserIDGroupPairs_VPCID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -100,6 +128,22 @@ func (rm *resourceManager) ResolveReferences(
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
+
+	for _, f0iter := range ko.Spec.EgressRules {
+		for _, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.GroupRef != nil && f1iter.GroupID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("EgressRules.UserIDGroupPairs.GroupID", "EgressRules.UserIDGroupPairs.GroupRef")
+			}
+		}
+	}
+
+	for _, f0iter := range ko.Spec.EgressRules {
+		for _, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCRef != nil && f1iter.VPCID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("EgressRules.UserIDGroupPairs.VPCID", "EgressRules.UserIDGroupPairs.VPCRef")
+			}
+		}
+	}
 
 	for _, f0iter := range ko.Spec.IngressRules {
 		for _, f1iter := range f0iter.UserIDGroupPairs {
@@ -126,22 +170,22 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 	return nil
 }
 
-// resolveReferenceForIngressRules_UserIDGroupPairs_GroupID reads the resource referenced
-// from IngressRules.UserIDGroupPairs.GroupRef field and sets the IngressRules.UserIDGroupPairs.GroupID
+// resolveReferenceForEgressRules_UserIDGroupPairs_GroupID reads the resource referenced
+// from EgressRules.UserIDGroupPairs.GroupRef field and sets the EgressRules.UserIDGroupPairs.GroupID
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
-func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(
+func (rm *resourceManager) resolveReferenceForEgressRules_UserIDGroupPairs_GroupID(
 	ctx context.Context,
 	apiReader client.Reader,
 	ko *svcapitypes.SecurityGroup,
 ) (hasReferences bool, err error) {
-	for f0idx, f0iter := range ko.Spec.IngressRules {
+	for f0idx, f0iter := range ko.Spec.EgressRules {
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.GroupRef != nil && f1iter.GroupRef.From != nil {
 				hasReferences = true
 				arr := f1iter.GroupRef.From
 				if arr.Name == nil || *arr.Name == "" {
-					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.GroupRef")
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EgressRules.UserIDGroupPairs.GroupRef")
 				}
 				namespace := ko.ObjectMeta.GetNamespace()
 				if arr.Namespace != nil && *arr.Namespace != "" {
@@ -151,7 +195,7 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_Grou
 				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return hasReferences, err
 				}
-				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = (*string)(obj.Status.ID)
+				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = (*string)(obj.Status.ID)
 			}
 		}
 	}
@@ -196,22 +240,22 @@ func getReferencedResourceState_SecurityGroup(
 	return nil
 }
 
-// resolveReferenceForIngressRules_UserIDGroupPairs_VPCID reads the resource referenced
-// from IngressRules.UserIDGroupPairs.VPCRef field and sets the IngressRules.UserIDGroupPairs.VPCID
+// resolveReferenceForEgressRules_UserIDGroupPairs_VPCID reads the resource referenced
+// from EgressRules.UserIDGroupPairs.VPCRef field and sets the EgressRules.UserIDGroupPairs.VPCID
 // from referenced resource. Returns a boolean indicating whether a reference
 // contains references, or an error
-func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCID(
+func (rm *resourceManager) resolveReferenceForEgressRules_UserIDGroupPairs_VPCID(
 	ctx context.Context,
 	apiReader client.Reader,
 	ko *svcapitypes.SecurityGroup,
 ) (hasReferences bool, err error) {
-	for f0idx, f0iter := range ko.Spec.IngressRules {
+	for f0idx, f0iter := range ko.Spec.EgressRules {
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.VPCRef != nil && f1iter.VPCRef.From != nil {
 				hasReferences = true
 				arr := f1iter.VPCRef.From
 				if arr.Name == nil || *arr.Name == "" {
-					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.VPCRef")
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EgressRules.UserIDGroupPairs.VPCRef")
 				}
 				namespace := ko.ObjectMeta.GetNamespace()
 				if arr.Namespace != nil && *arr.Namespace != "" {
@@ -221,7 +265,7 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCI
 				if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return hasReferences, err
 				}
-				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = (*string)(obj.Status.VPCID)
+				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = (*string)(obj.Status.VPCID)
 			}
 		}
 	}
@@ -281,6 +325,72 @@ func getReferencedResourceState_VPC(
 			"Status.VPCID")
 	}
 	return nil
+}
+
+// resolveReferenceForIngressRules_UserIDGroupPairs_GroupID reads the resource referenced
+// from IngressRules.UserIDGroupPairs.GroupRef field and sets the IngressRules.UserIDGroupPairs.GroupID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.SecurityGroup,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.IngressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.GroupRef != nil && f1iter.GroupRef.From != nil {
+				hasReferences = true
+				arr := f1iter.GroupRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.GroupRef")
+				}
+				namespace := ko.ObjectMeta.GetNamespace()
+				if arr.Namespace != nil && *arr.Namespace != "" {
+					namespace = *arr.Namespace
+				}
+				obj := &svcapitypes.SecurityGroup{}
+				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = (*string)(obj.Status.ID)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// resolveReferenceForIngressRules_UserIDGroupPairs_VPCID reads the resource referenced
+// from IngressRules.UserIDGroupPairs.VPCRef field and sets the IngressRules.UserIDGroupPairs.VPCID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.SecurityGroup,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.IngressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCRef != nil && f1iter.VPCRef.From != nil {
+				hasReferences = true
+				arr := f1iter.VPCRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.VPCRef")
+				}
+				namespace := ko.ObjectMeta.GetNamespace()
+				if arr.Namespace != nil && *arr.Namespace != "" {
+					namespace = *arr.Namespace
+				}
+				obj := &svcapitypes.VPC{}
+				if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = (*string)(obj.Status.VPCID)
+			}
+		}
+	}
+
+	return hasReferences, nil
 }
 
 // resolveReferenceForVPCID reads the resource referenced
