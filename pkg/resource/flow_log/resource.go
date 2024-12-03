@@ -101,6 +101,29 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	return nil
 }
 
+// PopulateResourceFromAnnotation populates the fields passed from adoption annotation
+func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
+	tmp, ok := fields["flowLogID"]
+	if !ok {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Status.FlowLogID = &tmp
+
+	if resourceID, ok := fields["resourceID"]; ok {
+		r.ko.Spec.ResourceID = &resourceID
+	} else {
+		return ackerrors.MissingNameIdentifier
+	}
+
+	if resourceType, ok := fields["resourceType"]; ok {
+		r.ko.Spec.ResourceType = &resourceType
+	} else {
+		return ackerrors.MissingNameIdentifier
+	}
+
+	return nil
+}
+
 // DeepCopy will return a copy of the resource
 func (r *resource) DeepCopy() acktypes.AWSResource {
 	koCopy := r.ko.DeepCopy()
