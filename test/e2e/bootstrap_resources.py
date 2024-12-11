@@ -24,6 +24,7 @@ from e2e import bootstrap_directory
 class BootstrapResources(Resources):
     FlowLogsBucket: Bucket
     SharedTestVPC: VPC
+    AdoptedVPC: VPC
     NetworkLoadBalancer: NetworkLoadBalancer
 
 _bootstrap_resources = None
