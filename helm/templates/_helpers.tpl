@@ -77,6 +77,8 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+  - launchtemplates
+  - launchtemplateversions
   - natgateways
   - networkacls
   - routetables
@@ -103,6 +105,8 @@ rules:
   - flowlogs/status
   - instances/status
   - internetgateways/status
+  - launchtemplates/status
+  - launchtemplateversions/status
   - natgateways/status
   - networkacls/status
   - routetables/status

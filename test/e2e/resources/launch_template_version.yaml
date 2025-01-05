@@ -1,0 +1,12 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplateVersion
+metadata:
+  name: $LAUNCH_TEMPLATE_NAME
+spec:
+  name: $LAUNCH_TEMPLATE_NAME
+  launchTemplateID: $LAUNCH_TEMPLATE_ID
+  versionDescription: $VERSION_DESCRIPTION
+  launchTemplateData:
+    instanceType: $INSTANCE_TYPE
+    disableAPITermination: $DISABLE_API_TERMINATION
+  sourceVersion: $SOURCE_VERSION
