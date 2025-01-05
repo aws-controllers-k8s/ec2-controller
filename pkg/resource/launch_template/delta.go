@@ -53,8 +53,12 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData, b.ko.Spec.LaunchTemplateData) {
 		delta.Add("Spec.LaunchTemplateData", a.ko.Spec.LaunchTemplateData, b.ko.Spec.LaunchTemplateData)
 	} else if a.ko.Spec.LaunchTemplateData != nil && b.ko.Spec.LaunchTemplateData != nil {
-		if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.BlockDeviceMappings, b.ko.Spec.LaunchTemplateData.BlockDeviceMappings) {
+		if len(a.ko.Spec.LaunchTemplateData.BlockDeviceMappings) != len(b.ko.Spec.LaunchTemplateData.BlockDeviceMappings) {
 			delta.Add("Spec.LaunchTemplateData.BlockDeviceMappings", a.ko.Spec.LaunchTemplateData.BlockDeviceMappings, b.ko.Spec.LaunchTemplateData.BlockDeviceMappings)
+		} else if len(a.ko.Spec.LaunchTemplateData.BlockDeviceMappings) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.BlockDeviceMappings, b.ko.Spec.LaunchTemplateData.BlockDeviceMappings) {
+				delta.Add("Spec.LaunchTemplateData.BlockDeviceMappings", a.ko.Spec.LaunchTemplateData.BlockDeviceMappings, b.ko.Spec.LaunchTemplateData.BlockDeviceMappings)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.CapacityReservationSpecification, b.ko.Spec.LaunchTemplateData.CapacityReservationSpecification) {
 			delta.Add("Spec.LaunchTemplateData.CapacityReservationSpecification", a.ko.Spec.LaunchTemplateData.CapacityReservationSpecification, b.ko.Spec.LaunchTemplateData.CapacityReservationSpecification)
@@ -135,11 +139,19 @@ func newResourceDelta(
 				delta.Add("Spec.LaunchTemplateData.EBSOptimized", a.ko.Spec.LaunchTemplateData.EBSOptimized, b.ko.Spec.LaunchTemplateData.EBSOptimized)
 			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications, b.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications) {
+		if len(a.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications) != len(b.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications) {
 			delta.Add("Spec.LaunchTemplateData.ElasticGPUSpecifications", a.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications, b.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications)
+		} else if len(a.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications, b.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications) {
+				delta.Add("Spec.LaunchTemplateData.ElasticGPUSpecifications", a.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications, b.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications)
+			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators, b.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators) {
+		if len(a.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators) != len(b.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators) {
 			delta.Add("Spec.LaunchTemplateData.ElasticInferenceAccelerators", a.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators, b.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators)
+		} else if len(a.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators, b.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators) {
+				delta.Add("Spec.LaunchTemplateData.ElasticInferenceAccelerators", a.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators, b.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.EnclaveOptions, b.ko.Spec.LaunchTemplateData.EnclaveOptions) {
 			delta.Add("Spec.LaunchTemplateData.EnclaveOptions", a.ko.Spec.LaunchTemplateData.EnclaveOptions, b.ko.Spec.LaunchTemplateData.EnclaveOptions)
@@ -266,11 +278,19 @@ func newResourceDelta(
 					}
 				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers)
+				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames)
+				}
 			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB)
@@ -290,8 +310,12 @@ func newResourceDelta(
 					}
 				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes)
+				}
 			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BareMetal", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal)
@@ -325,14 +349,26 @@ func newResourceDelta(
 					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BurstablePerformance", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BurstablePerformance, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BurstablePerformance)
 				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers", a.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers", a.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers, b.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers)
+				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes)
+				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations, b.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations", a.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations, b.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations, b.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations", a.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations, b.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations)
+				}
 			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.LocalStorage", a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage)
@@ -341,8 +377,12 @@ func newResourceDelta(
 					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.LocalStorage", a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage)
 				}
 			}
-			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes) {
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes)
+				}
 			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU", a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU)
@@ -477,8 +517,12 @@ func newResourceDelta(
 				delta.Add("Spec.LaunchTemplateData.KeyName", a.ko.Spec.LaunchTemplateData.KeyName, b.ko.Spec.LaunchTemplateData.KeyName)
 			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.LicenseSpecifications, b.ko.Spec.LaunchTemplateData.LicenseSpecifications) {
+		if len(a.ko.Spec.LaunchTemplateData.LicenseSpecifications) != len(b.ko.Spec.LaunchTemplateData.LicenseSpecifications) {
 			delta.Add("Spec.LaunchTemplateData.LicenseSpecifications", a.ko.Spec.LaunchTemplateData.LicenseSpecifications, b.ko.Spec.LaunchTemplateData.LicenseSpecifications)
+		} else if len(a.ko.Spec.LaunchTemplateData.LicenseSpecifications) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.LicenseSpecifications, b.ko.Spec.LaunchTemplateData.LicenseSpecifications) {
+				delta.Add("Spec.LaunchTemplateData.LicenseSpecifications", a.ko.Spec.LaunchTemplateData.LicenseSpecifications, b.ko.Spec.LaunchTemplateData.LicenseSpecifications)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.MaintenanceOptions, b.ko.Spec.LaunchTemplateData.MaintenanceOptions) {
 			delta.Add("Spec.LaunchTemplateData.MaintenanceOptions", a.ko.Spec.LaunchTemplateData.MaintenanceOptions, b.ko.Spec.LaunchTemplateData.MaintenanceOptions)
@@ -541,8 +585,12 @@ func newResourceDelta(
 				}
 			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.NetworkInterfaces, b.ko.Spec.LaunchTemplateData.NetworkInterfaces) {
+		if len(a.ko.Spec.LaunchTemplateData.NetworkInterfaces) != len(b.ko.Spec.LaunchTemplateData.NetworkInterfaces) {
 			delta.Add("Spec.LaunchTemplateData.NetworkInterfaces", a.ko.Spec.LaunchTemplateData.NetworkInterfaces, b.ko.Spec.LaunchTemplateData.NetworkInterfaces)
+		} else if len(a.ko.Spec.LaunchTemplateData.NetworkInterfaces) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.NetworkInterfaces, b.ko.Spec.LaunchTemplateData.NetworkInterfaces) {
+				delta.Add("Spec.LaunchTemplateData.NetworkInterfaces", a.ko.Spec.LaunchTemplateData.NetworkInterfaces, b.ko.Spec.LaunchTemplateData.NetworkInterfaces)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.Placement, b.ko.Spec.LaunchTemplateData.Placement) {
 			delta.Add("Spec.LaunchTemplateData.Placement", a.ko.Spec.LaunchTemplateData.Placement, b.ko.Spec.LaunchTemplateData.Placement)
@@ -636,14 +684,26 @@ func newResourceDelta(
 				delta.Add("Spec.LaunchTemplateData.RAMDiskID", a.ko.Spec.LaunchTemplateData.RAMDiskID, b.ko.Spec.LaunchTemplateData.RAMDiskID)
 			}
 		}
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.SecurityGroupIDs, b.ko.Spec.LaunchTemplateData.SecurityGroupIDs) {
+		if len(a.ko.Spec.LaunchTemplateData.SecurityGroupIDs) != len(b.ko.Spec.LaunchTemplateData.SecurityGroupIDs) {
 			delta.Add("Spec.LaunchTemplateData.SecurityGroupIDs", a.ko.Spec.LaunchTemplateData.SecurityGroupIDs, b.ko.Spec.LaunchTemplateData.SecurityGroupIDs)
+		} else if len(a.ko.Spec.LaunchTemplateData.SecurityGroupIDs) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.SecurityGroupIDs, b.ko.Spec.LaunchTemplateData.SecurityGroupIDs) {
+				delta.Add("Spec.LaunchTemplateData.SecurityGroupIDs", a.ko.Spec.LaunchTemplateData.SecurityGroupIDs, b.ko.Spec.LaunchTemplateData.SecurityGroupIDs)
+			}
 		}
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.SecurityGroups, b.ko.Spec.LaunchTemplateData.SecurityGroups) {
+		if len(a.ko.Spec.LaunchTemplateData.SecurityGroups) != len(b.ko.Spec.LaunchTemplateData.SecurityGroups) {
 			delta.Add("Spec.LaunchTemplateData.SecurityGroups", a.ko.Spec.LaunchTemplateData.SecurityGroups, b.ko.Spec.LaunchTemplateData.SecurityGroups)
+		} else if len(a.ko.Spec.LaunchTemplateData.SecurityGroups) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.SecurityGroups, b.ko.Spec.LaunchTemplateData.SecurityGroups) {
+				delta.Add("Spec.LaunchTemplateData.SecurityGroups", a.ko.Spec.LaunchTemplateData.SecurityGroups, b.ko.Spec.LaunchTemplateData.SecurityGroups)
+			}
 		}
-		if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.TagSpecifications, b.ko.Spec.LaunchTemplateData.TagSpecifications) {
+		if len(a.ko.Spec.LaunchTemplateData.TagSpecifications) != len(b.ko.Spec.LaunchTemplateData.TagSpecifications) {
 			delta.Add("Spec.LaunchTemplateData.TagSpecifications", a.ko.Spec.LaunchTemplateData.TagSpecifications, b.ko.Spec.LaunchTemplateData.TagSpecifications)
+		} else if len(a.ko.Spec.LaunchTemplateData.TagSpecifications) > 0 {
+			if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.TagSpecifications, b.ko.Spec.LaunchTemplateData.TagSpecifications) {
+				delta.Add("Spec.LaunchTemplateData.TagSpecifications", a.ko.Spec.LaunchTemplateData.TagSpecifications, b.ko.Spec.LaunchTemplateData.TagSpecifications)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.UserData, b.ko.Spec.LaunchTemplateData.UserData) {
 			delta.Add("Spec.LaunchTemplateData.UserData", a.ko.Spec.LaunchTemplateData.UserData, b.ko.Spec.LaunchTemplateData.UserData)
