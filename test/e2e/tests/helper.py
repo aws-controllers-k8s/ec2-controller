@@ -250,16 +250,37 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+<<<<<<< HEAD
+=======
+
+    def get_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_vpc_endpoint_service_configurations(ServiceIds=[vpc_endpoint_service_configuration_id])
+            if len(aws_res["ServiceConfigurations"]) > 0:
+                return aws_res["ServiceConfigurations"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+>>>>>>> 5b42f5f (remove typos from tests/helper.py)
     def get_launch_template(self, launch_template_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
             if len(aws_res["LaunchTemplates"]) > 0:
                 return aws_res["LaunchTemplates"][0]
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5b42f5f (remove typos from tests/helper.py)
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
         
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5b42f5f (remove typos from tests/helper.py)
     def assert_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str, exists=True):
         res_found = False
         try:
@@ -300,6 +321,7 @@ class EC2Validator:
                 or
                 aws_res["VpcPeeringConnections"][0]["Status"]["Code"] == "deleted")
 
+<<<<<<< HEAD
         
     def get_capacity_reservation(self, capacity_reservation_id: str) -> Union[None, Dict]:
         try:
@@ -323,6 +345,8 @@ class EC2Validator:
                 or
                 aws_res["CapacityReservations"][0]["State"] == "cancelled")
 
+=======
+>>>>>>> 5b42f5f (remove typos from tests/helper.py)
     def assert_launch_template(self, launch_template_id: str, exists=True):
         res_found = False
         try:
