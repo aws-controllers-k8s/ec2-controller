@@ -250,6 +250,7 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+
     def get_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_vpc_endpoint_service_configurations(ServiceIds=[vpc_endpoint_service_configuration_id])
@@ -258,6 +259,18 @@ class EC2Validator:
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
+
+    def get_launch_template(self, launch_template_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            if len(aws_res["LaunchTemplates"]) > 0:
+                return aws_res["LaunchTemplates"][0]
+
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+        
+
 
     def assert_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str, exists=True):
         res_found = False
@@ -298,3 +311,13 @@ class EC2Validator:
         assert (res_found is exists 
                 or
                 aws_res["VpcPeeringConnections"][0]["Status"]["Code"] == "deleted")
+
+    def assert_launch_template(self, launch_template_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            res_found = len(aws_res["LaunchTemplates"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
