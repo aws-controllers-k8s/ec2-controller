@@ -359,25 +359,6 @@ type CancelledSpotInstanceRequest struct {
 	SpotInstanceRequestID *string `json:"spotInstanceRequestID,omitempty"`
 }
 
-// Describes a Capacity Reservation.
-type CapacityReservation struct {
-	AvailabilityZone           *string      `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID         *string      `json:"availabilityZoneID,omitempty"`
-	AvailableInstanceCount     *int64       `json:"availableInstanceCount,omitempty"`
-	CapacityReservationARN     *string      `json:"capacityReservationARN,omitempty"`
-	CapacityReservationFleetID *string      `json:"capacityReservationFleetID,omitempty"`
-	CapacityReservationID      *string      `json:"capacityReservationID,omitempty"`
-	CreateDate                 *metav1.Time `json:"createDate,omitempty"`
-	EBSOptimized               *bool        `json:"ebsOptimized,omitempty"`
-	EndDate                    *metav1.Time `json:"endDate,omitempty"`
-	EphemeralStorage           *bool        `json:"ephemeralStorage,omitempty"`
-	InstanceType               *string      `json:"instanceType,omitempty"`
-	OwnerID                    *string      `json:"ownerID,omitempty"`
-	StartDate                  *metav1.Time `json:"startDate,omitempty"`
-	Tags                       []*Tag       `json:"tags,omitempty"`
-	TotalInstanceCount         *int64       `json:"totalInstanceCount,omitempty"`
-}
-
 // Information about a Capacity Reservation Fleet.
 type CapacityReservationFleet struct {
 	AllocationStrategy          *string      `json:"allocationStrategy,omitempty"`
@@ -432,6 +413,32 @@ type CapacityReservationTarget struct {
 type CapacityReservationTargetResponse struct {
 	CapacityReservationID               *string `json:"capacityReservationID,omitempty"`
 	CapacityReservationResourceGroupARN *string `json:"capacityReservationResourceGroupARN,omitempty"`
+}
+
+// Describes a Capacity Reservation.
+type CapacityReservation_SDK struct {
+	AvailabilityZone           *string      `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID         *string      `json:"availabilityZoneID,omitempty"`
+	AvailableInstanceCount     *int64       `json:"availableInstanceCount,omitempty"`
+	CapacityReservationARN     *string      `json:"capacityReservationARN,omitempty"`
+	CapacityReservationFleetID *string      `json:"capacityReservationFleetID,omitempty"`
+	CapacityReservationID      *string      `json:"capacityReservationID,omitempty"`
+	CreateDate                 *metav1.Time `json:"createDate,omitempty"`
+	EBSOptimized               *bool        `json:"ebsOptimized,omitempty"`
+	EndDate                    *metav1.Time `json:"endDate,omitempty"`
+	EndDateType                *string      `json:"endDateType,omitempty"`
+	EphemeralStorage           *bool        `json:"ephemeralStorage,omitempty"`
+	InstanceMatchCriteria      *string      `json:"instanceMatchCriteria,omitempty"`
+	InstancePlatform           *string      `json:"instancePlatform,omitempty"`
+	InstanceType               *string      `json:"instanceType,omitempty"`
+	OutpostARN                 *string      `json:"outpostARN,omitempty"`
+	OwnerID                    *string      `json:"ownerID,omitempty"`
+	PlacementGroupARN          *string      `json:"placementGroupARN,omitempty"`
+	StartDate                  *metav1.Time `json:"startDate,omitempty"`
+	State                      *string      `json:"state,omitempty"`
+	Tags                       []*Tag       `json:"tags,omitempty"`
+	Tenancy                    *string      `json:"tenancy,omitempty"`
+	TotalInstanceCount         *int64       `json:"totalInstanceCount,omitempty"`
 }
 
 // Describes a carrier gateway.
@@ -1179,6 +1186,7 @@ type FleetCapacityReservation struct {
 	CapacityReservationID *string      `json:"capacityReservationID,omitempty"`
 	CreateDate            *metav1.Time `json:"createDate,omitempty"`
 	EBSOptimized          *bool        `json:"ebsOptimized,omitempty"`
+	InstancePlatform      *string      `json:"instancePlatform,omitempty"`
 	InstanceType          *string      `json:"instanceType,omitempty"`
 	TotalInstanceCount    *int64       `json:"totalInstanceCount,omitempty"`
 }
@@ -3271,6 +3279,7 @@ type ReservationFleetInstanceSpecification struct {
 	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
 	EBSOptimized       *bool   `json:"ebsOptimized,omitempty"`
+	InstancePlatform   *string `json:"instancePlatform,omitempty"`
 	InstanceType       *string `json:"instanceType,omitempty"`
 }
 

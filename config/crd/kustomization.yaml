@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - common
+  - bases/ec2.services.k8s.aws_capacityreservations.yaml
   - bases/ec2.services.k8s.aws_dhcpoptions.yaml
   - bases/ec2.services.k8s.aws_elasticipaddresses.yaml
   - bases/ec2.services.k8s.aws_flowlogs.yaml

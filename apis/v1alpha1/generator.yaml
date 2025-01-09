@@ -5,6 +5,7 @@ ignore:
   field_paths:
     - AllocateAddressInput.DryRun
     - AllocateAddressInput.TagSpecifications
+    - CreateCapacityReservationInput.TagSpecifications
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.DryRun
@@ -60,7 +61,7 @@ ignore:
     - TerminateInstancesInput.DryRun
   resource_names:
     - AccountAttribute
-    - CapacityReservation
+    # - CapacityReservation
     - CapacityReservationFleet
     - CarrierGateway
     - ClientVpnEndpoint
@@ -216,6 +217,15 @@ operations:
       - Update
     resource_name: VpcPeeringConnection
 resources:
+  CapacityReservation:
+    fields:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/capacity_reservation/sdk_create_post_build_request.go.tpl
   DhcpOptions:
     exceptions:
       terminal_codes:
