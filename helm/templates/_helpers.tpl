@@ -72,6 +72,7 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - capacityreservations
   - dhcpoptions
   - elasticipaddresses
   - flowlogs
@@ -98,6 +99,7 @@ rules:
 - apiGroups:
   - ec2.services.k8s.aws
   resources:
+  - capacityreservations/status
   - dhcpoptions/status
   - elasticipaddresses/status
   - flowlogs/status
