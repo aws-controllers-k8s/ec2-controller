@@ -472,58 +472,8 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (updated *resource, err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.sdkUpdate")
-	defer func() {
-		exit(err)
-	}()
-	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
-	if err != nil {
-		return nil, err
-	}
-
-	var resp *svcsdk.ModifyCapacityReservationOutput
-	_ = resp
-	resp, err = rm.sdkapi.ModifyCapacityReservationWithContext(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "ModifyCapacityReservation", err)
-	if err != nil {
-		return nil, err
-	}
-	// Merge in the information we read from the API call above to the copy of
-	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
-
-	rm.setStatusDefaults(ko)
-	return &resource{ko}, nil
-}
-
-// newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
-// payload of the Update API call for the resource
-func (rm *resourceManager) newUpdateRequestPayload(
-	ctx context.Context,
-	r *resource,
-	delta *ackcompare.Delta,
-) (*svcsdk.ModifyCapacityReservationInput, error) {
-	res := &svcsdk.ModifyCapacityReservationInput{}
-
-	if r.ko.Status.CapacityReservationID != nil {
-		res.SetCapacityReservationId(*r.ko.Status.CapacityReservationID)
-	}
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
-	if r.ko.Spec.EndDate != nil {
-		res.SetEndDate(r.ko.Spec.EndDate.Time)
-	}
-	if r.ko.Spec.EndDateType != nil {
-		res.SetEndDateType(*r.ko.Spec.EndDateType)
-	}
-	if r.ko.Spec.InstanceCount != nil {
-		res.SetInstanceCount(*r.ko.Spec.InstanceCount)
-	}
-
-	return res, nil
+) (*resource, error) {
+	return rm.customUpdateCapacityReservation(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
