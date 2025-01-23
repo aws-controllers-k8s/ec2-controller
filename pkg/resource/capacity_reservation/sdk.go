@@ -486,9 +486,32 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
-	// TODO(jaypipes): Figure this out...
-	return nil, nil
+	input, err := rm.newDeleteRequestPayload(r)
+	if err != nil {
+		return nil, err
+	}
+	var resp *svcsdk.CancelCapacityReservationOutput
+	_ = resp
+	resp, err = rm.sdkapi.CancelCapacityReservationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "CancelCapacityReservation", err)
+	return nil, err
+}
 
+// newDeleteRequestPayload returns an SDK-specific struct for the HTTP request
+// payload of the Delete API call for the resource
+func (rm *resourceManager) newDeleteRequestPayload(
+	r *resource,
+) (*svcsdk.CancelCapacityReservationInput, error) {
+	res := &svcsdk.CancelCapacityReservationInput{}
+
+	if r.ko.Status.CapacityReservationID != nil {
+		res.SetCapacityReservationId(*r.ko.Status.CapacityReservationID)
+	}
+	if r.ko.Spec.DryRun != nil {
+		res.SetDryRun(*r.ko.Spec.DryRun)
+	}
+
+	return res, nil
 }
 
 // setStatusDefaults sets default properties into supplied custom resource

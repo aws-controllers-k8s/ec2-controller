@@ -148,6 +148,10 @@ operations:
     operation_type: 
     - Create
     resource_name: ElasticIPAddress
+  CancelCapacityReservation:
+    operation_type:
+    - Delete 
+    resource_name: CapacityReservation
   DescribeAddresses:
     operation_type:
     - List
