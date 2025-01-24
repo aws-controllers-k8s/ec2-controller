@@ -183,6 +183,9 @@ type CapacityReservationStatus struct {
 // CapacityReservation is the Schema for the CapacityReservations API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.capacityReservationID`
+// +kubebuilder:printcolumn:name="START_DATE",type=date,priority=0,JSONPath=`.status.startDate`
+// +kubebuilder:printcolumn:name="STATE",type=string,priority=0,JSONPath=`.status.state`
 type CapacityReservation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

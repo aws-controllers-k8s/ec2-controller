@@ -227,6 +227,15 @@ resources:
         from:
           operation: CreateTags
           path: Tags
+      CapacityReservationID:
+        print:
+          name: ID
+      State:
+        print:
+          name: STATE
+      StartDate:
+        print:
+          name: START_DATE
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/capacity_reservation/sdk_create_post_build_request.go.tpl

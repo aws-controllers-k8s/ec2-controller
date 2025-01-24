@@ -14,7 +14,17 @@ spec:
     singular: capacityreservation
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.capacityReservationID
+      name: ID
+      type: string
+    - jsonPath: .status.startDate
+      name: START_DATE
+      type: date
+    - jsonPath: .status.state
+      name: STATE
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: CapacityReservation is the Schema for the CapacityReservations
