@@ -239,8 +239,8 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/capacity_reservation/sdk_create_post_build_request.go.tpl
-    update_operation:
-      custom_method_name: customUpdateCapacityReservation
+      sdk_update_pre_build_request:
+        template_path: hooks/capacity_reservation/sdk_update_pre_build_request.go.tpl
   DhcpOptions:
     exceptions:
       terminal_codes:
