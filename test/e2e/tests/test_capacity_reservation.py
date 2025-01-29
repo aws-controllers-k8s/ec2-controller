@@ -113,3 +113,105 @@ class TestCapacityReservation:
         # Check CapacityReservation no longer exists in AWS
         ec2_validator.assert_capacity_reservation(resource_id, exists=False)
         
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_crud_tags(self, ec2_client, simple_capacity_reservation):
+        (ref, cr) = simple_capacity_reservation
+        
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["capacityReservationID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check CapacityReservation exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_capacity_reservation(resource_id)
+        
+        # Check system and user tags exist for capacity reservation resource
+        capacity_reservation = ec2_validator.get_capacity_reservation(resource_id)
+        user_tags = {
+            "initialtagkey": "initialtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=capacity_reservation["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=user_tags,
+            actual=capacity_reservation["Tags"],
+        )
+        
+        # Only user tags should be present in Spec
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == "initialtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "initialtagvalue"
+
+        # Update tags
+        update_tags = [
+                {
+                    "key": "updatedtagkey",
+                    "value": "updatedtagvalue",
+                }
+            ]
+
+        # Patch the capacity reservation, updating the tags with new pair
+        updates = {
+            "spec": {"tags": update_tags},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Check for updated user tags; system tags should persist
+        capacity_reservation = ec2_validator.get_capacity_reservation(resource_id)
+        updated_tags = {
+            "updatedtagkey": "updatedtagvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=capacity_reservation["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=updated_tags,
+            actual=capacity_reservation["Tags"],
+        )
+               
+        # Only user tags should be present in Spec
+        resource = k8s.get_resource(ref)
+        assert len(resource["spec"]["tags"]) == 1
+        assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
+        assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
+
+        # Patch the capacity reservation resource, deleting the tags
+        updates = {
+                "spec": {"tags": []},
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
+        # Check for removed user tags; system tags should persist
+        capacity_reservation = ec2_validator.get_capacity_reservation(resource_id)
+        tags.assert_ack_system_tags(
+            tags=capacity_reservation["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=[],
+            actual=capacity_reservation["Tags"],
+        )
+        
+        # Check user tags are removed from Spec
+        resource = k8s.get_resource(ref)
+        assert len(resource["spec"]["tags"]) == 0
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check capacity reservation no longer exists in AWS
+        ec2_validator.assert_capacity_reservation(resource_id, exists=False)
