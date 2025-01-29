@@ -1,0 +1,12 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: CapacityReservation
+metadata:
+  name: $RESERVATION_NAME
+spec:
+  instanceType: $INSTANCE_TYPE
+  instancePlatform: $INSTANCE_PLATFORM
+  instanceCount: $INSTANCE_COUNT
+  availabilityZone: "$AVAILABILITY_ZONE"
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
