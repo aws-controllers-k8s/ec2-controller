@@ -15,6 +15,7 @@ package route_table
 
 import (
 	"context"
+	"reflect"
 	"strings"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -32,7 +33,7 @@ func (rm *resourceManager) createRoutes(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if err := rm.syncRoutes(ctx, r, nil); err != nil {
+	if err := rm.syncRoutes(ctx, r, nil, nil); err != nil {
 		return err
 	}
 	return nil
@@ -42,6 +43,7 @@ func (rm *resourceManager) syncRoutes(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
+	delta *ackcompare.Delta,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
@@ -62,34 +64,17 @@ func (rm *resourceManager) syncRoutes(
 		}
 	}
 
-	for _, desiredRoute := range desired.ko.Spec.Routes {
-		if (*desiredRoute).GatewayID != nil && *desiredRoute.GatewayID == LocalRouteGateway {
-			// no-op for default route
-			continue
-		}
-		if latestRoute := getMatchingRoute(desiredRoute, latest); latestRoute != nil {
-			delta := compareCreateRouteInput(desiredRoute, latestRoute)
-			if len(delta.Differences) > 0 {
-				// "update" route by deleting old route and adding the new route
-				toDelete = append(toDelete, latestRoute)
-				toAdd = append(toAdd, desiredRoute)
-			}
-		} else {
-			// a desired route is not in latest; therefore, create
-			toAdd = append(toAdd, desiredRoute)
-		}
-	}
-	if latest != nil {
-		for _, latestRoute := range latest.ko.Spec.Routes {
-			if (*latestRoute).GatewayID != nil && *latestRoute.GatewayID == LocalRouteGateway {
-				// no-op for default route
-				continue
-			}
-			if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
-				// latest has a route that is not desired; therefore, delete
-				toDelete = append(toDelete, latestRoute)
+	switch {
+	case delta == nil:
+		toAdd = desired.ko.Spec.Routes
+	case delta.DifferentAt("Spec.Routes"):
+		for _, diff := range delta.Differences {
+			if diff.Path.Contains("Spec.Routes") {
+				toAdd = diff.A.([]*svcapitypes.CreateRouteInput)
+				toDelete = diff.B.([]*svcapitypes.CreateRouteInput)
 			}
 		}
+	default: // nothing to do
 	}
 
 	for _, route := range toDelete {
@@ -102,60 +87,6 @@ func (rm *resourceManager) syncRoutes(
 		rlog.Debug("adding route to route table")
 		if err = rm.createRoute(ctx, desired, *route); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func getMatchingRoute(
-	routeToMatch *svcapitypes.CreateRouteInput,
-	resource *resource,
-) *svcapitypes.CreateRouteInput {
-	if resource == nil {
-		return nil
-	}
-
-	for _, route := range resource.ko.Spec.Routes {
-		delta := compareCreateRouteInput(routeToMatch, route)
-		if len(delta.Differences) == 0 {
-			return route
-		} else {
-			if routeToMatch.CarrierGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.CarrierGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.EgressOnlyInternetGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.EgressOnlyInternetGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.GatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.GatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.LocalGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.LocalGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.NATGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.NATGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.TransitGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.TransitGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.VPCPeeringConnectionID != nil {
-				if !delta.DifferentAt("CreateRouteInput.VPCPeeringConnectionID") {
-					return route
-				}
-			}
 		}
 	}
 
@@ -226,7 +157,7 @@ func (rm *resourceManager) customUpdateRouteTable(
 	}
 
 	if delta.DifferentAt("Spec.Routes") {
-		if err := rm.syncRoutes(ctx, desired, latest); err != nil {
+		if err := rm.syncRoutes(ctx, desired, latest, delta); err != nil {
 			return nil, err
 		}
 		// A ReadOne call is made to refresh Status.RouteStatuses
@@ -277,6 +208,37 @@ func customPreCompare(
 ) {
 	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
+
+	toAdd := []*svcapitypes.CreateRouteInput{}
+	toDelete := make([]*svcapitypes.CreateRouteInput, len(b.ko.Spec.Routes))
+	copy(toDelete, b.ko.Spec.Routes) // Copy of the routes from b, that will be reduced while iterating
+
+	remove := func(s []*svcapitypes.CreateRouteInput, i int) []*svcapitypes.CreateRouteInput {
+		if i < len(s)-1 { // if not last element just copy the last element to where the removed element was
+			s[i] = s[len(s)-1]
+		}
+		return s[:len(s)-1]
+	}
+
+	// Routes that are desired, but not in latest, need to be added.
+	// Routes that are in latest, but not desired, need to be deleted.
+	// Everything else, we don't touch.
+	for _, routeA := range a.ko.Spec.Routes {
+		found := false
+		for idx, routeB := range toDelete {
+			if found = reflect.DeepEqual(routeA, routeB); found {
+				toDelete = remove(toDelete, idx)
+				break
+			}
+		}
+		if !found {
+			toAdd = append(toAdd, routeA)
+		}
+	}
+
+	if len(toAdd) > 0 || len(toDelete) > 0 {
+		delta.Add("Spec.Routes", toAdd, toDelete)
+	}
 }
 
 // removeLocalRoute will filter out any routes that have a gateway ID that
