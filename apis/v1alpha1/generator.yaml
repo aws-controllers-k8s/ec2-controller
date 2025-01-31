@@ -227,6 +227,10 @@ resources:
         from:
           operation: CreateTags
           path: Tags
+      AdditionalInfo:
+        from:
+          operation: ModifyCapacityReservation
+          path: AdditionalInfo
       CapacityReservationID:
         print:
           name: ID

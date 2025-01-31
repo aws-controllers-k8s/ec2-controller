@@ -533,6 +533,9 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.ModifyCapacityReservationInput, error) {
 	res := &svcsdk.ModifyCapacityReservationInput{}
 
+	if r.ko.Spec.AdditionalInfo != nil {
+		res.SetAdditionalInfo(*r.ko.Spec.AdditionalInfo)
+	}
 	if r.ko.Status.CapacityReservationID != nil {
 		res.SetCapacityReservationId(*r.ko.Status.CapacityReservationID)
 	}

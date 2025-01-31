@@ -25,6 +25,8 @@ import (
 // Describes a Capacity Reservation.
 type CapacityReservationSpec struct {
 
+	// Reserved for future use.
+	AdditionalInfo *string `json:"additionalInfo,omitempty"`
 	// The Availability Zone in which to create the Capacity Reservation.
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	// The ID of the Availability Zone in which to create the Capacity Reservation.

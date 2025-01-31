@@ -53,6 +53,9 @@ spec:
 
               Describes a Capacity Reservation.
             properties:
+              additionalInfo:
+                description: Reserved for future use.
+                type: string
               availabilityZone:
                 description: The Availability Zone in which to create the Capacity
                   Reservation.
