@@ -90,6 +90,9 @@ func validateReferenceFields(ko *svcapitypes.VPCPeeringConnection) error {
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPCID", "VPCRef")
 	}
+	if ko.Spec.VPCRef == nil && ko.Spec.VPCID == nil {
+		return ackerr.ResourceReferenceOrIDRequiredFor("VPCID", "VPCRef")
+	}
 	return nil
 }
 

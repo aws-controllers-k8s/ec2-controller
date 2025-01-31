@@ -12,8 +12,8 @@
 {{- $vpcEndpointServiceConfigurationRefName = "Tag" }}
 func (rm *resourceManager) new{{ $vpcEndpointServiceConfigurationRefName }}(
 	    c svcapitypes.{{ $vpcEndpointServiceConfigurationRefName }},
-) *svcsdk.{{ $vpcEndpointServiceConfigurationRefName }} {
-	res := &svcsdk.{{ $vpcEndpointServiceConfigurationRefName }}{}
+) *svcsdktypes.{{ $vpcEndpointServiceConfigurationRefName }} {
+	res := &svcsdktypes.{{ $vpcEndpointServiceConfigurationRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $vpcEndpointServiceConfigurationRef "" "c" 1 }}
 	return res
 }

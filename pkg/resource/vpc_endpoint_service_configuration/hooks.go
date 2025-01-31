@@ -23,7 +23,7 @@ import (
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -43,7 +43,7 @@ func addIDToDeleteRequest(r *resource,
 	if r.ko.Status.ServiceID == nil {
 		return errors.New("unable to extract ServiceID from resource")
 	}
-	input.ServiceIds = []*string{r.ko.Status.ServiceID}
+	input.ServiceIds = []string{*r.ko.Status.ServiceID}
 	return nil
 }
 
@@ -59,8 +59,8 @@ func (rm *resourceManager) syncAllowedPrincipals(
 		exit(err)
 	}(err)
 
-	toAdd := []*string{}
-	toDelete := []*string{}
+	toAdd := []string{}
+	toDelete := []string{}
 
 	currentlyAllowedPrincipals := latest.ko.Spec.AllowedPrincipals
 	desiredAllowedPrincipals := desired.ko.Spec.AllowedPrincipals
@@ -68,14 +68,14 @@ func (rm *resourceManager) syncAllowedPrincipals(
 	// Check if any desired allowed principals need to be added
 	for _, p := range desiredAllowedPrincipals {
 		if !ackutil.InStringPs(*p, currentlyAllowedPrincipals) {
-			toAdd = append(toAdd, p)
+			toAdd = append(toAdd, *p)
 		}
 	}
 
 	// Check if any currently allowed principals need to be deleted
 	for _, p := range currentlyAllowedPrincipals {
 		if !ackutil.InStringPs(*p, desiredAllowedPrincipals) {
-			toDelete = append(toDelete, p)
+			toDelete = append(toDelete, *p)
 		}
 	}
 
@@ -92,8 +92,8 @@ func (rm *resourceManager) syncAllowedPrincipals(
 func (rm *resourceManager) modifyAllowedPrincipals(
 	ctx context.Context,
 	latest *resource,
-	toAdd []*string,
-	toDelete []*string,
+	toAdd []string,
+	toDelete []string,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("modifyAllowedPrincipals")
@@ -112,7 +112,7 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 		modifyPermissionsInput.RemoveAllowedPrincipals = toDelete
 	}
 
-	_, err = rm.sdkapi.ModifyVpcEndpointServicePermissionsWithContext(ctx, modifyPermissionsInput)
+	_, err = rm.sdkapi.ModifyVpcEndpointServicePermissions(ctx, modifyPermissionsInput)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServicePermissions", err)
 	if err != nil {
 		return err
@@ -133,10 +133,10 @@ func (rm *resourceManager) setAdditionalFields(
 		ServiceId: ko.Status.ServiceID,
 	}
 	var permResp *svcsdk.DescribeVpcEndpointServicePermissionsOutput
-	permResp, err = rm.sdkapi.DescribeVpcEndpointServicePermissionsWithContext(ctx, permInput)
+	permResp, err = rm.sdkapi.DescribeVpcEndpointServicePermissions(ctx, permInput)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpointServicePermissions", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err

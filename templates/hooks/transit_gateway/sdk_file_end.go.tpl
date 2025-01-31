@@ -12,8 +12,8 @@
 {{- $transitGatewayRefName = "Tag" }}
 func (rm *resourceManager) new{{ $transitGatewayRefName }}(
 	    c svcapitypes.{{ $transitGatewayRefName }},
-) *svcsdk.{{ $transitGatewayRefName }} {
-	res := &svcsdk.{{ $transitGatewayRefName }}{}
+) *svcsdktypes.{{ $transitGatewayRefName }} {
+	res := &svcsdktypes.{{ $transitGatewayRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $transitGatewayRef "" "c" 1 }}
 	return res
 }

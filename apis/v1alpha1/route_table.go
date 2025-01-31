@@ -47,7 +47,7 @@ type RouteTableStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// The associations between the route table and one or more subnets or a gateway.
+	// The associations between the route table and your subnets or gateways.
 	// +kubebuilder:validation:Optional
 	Associations []*RouteTableAssociation `json:"associations,omitempty"`
 	// The ID of the Amazon Web Services account that owns the route table.

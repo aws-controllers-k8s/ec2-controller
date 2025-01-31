@@ -12,8 +12,8 @@
 {{- $dhcpOptionsRefName = "Tag" }}
 func (rm *resourceManager) new{{ $dhcpOptionsRefName }}(
 	    c svcapitypes.{{ $dhcpOptionsRefName }},
-) *svcsdk.{{ $dhcpOptionsRefName }} {
-	res := &svcsdk.{{ $dhcpOptionsRefName }}{}
+) svcsdktypes.{{ $dhcpOptionsRefName }} {
+	res := svcsdktypes.{{ $dhcpOptionsRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $dhcpOptionsRef "" "c" 1 }}
 	return res
 }

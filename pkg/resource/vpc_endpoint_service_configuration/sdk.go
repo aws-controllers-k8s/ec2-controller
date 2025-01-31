@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.VPCEndpointServiceConfiguration{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeVpcEndpointServiceConfigurationsOutput
-	resp, err = rm.sdkapi.DescribeVpcEndpointServiceConfigurationsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeVpcEndpointServiceConfigurations(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpointServiceConfigurations", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -94,35 +97,17 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.AcceptanceRequired = nil
 		}
 		if elem.AvailabilityZones != nil {
-			f1 := []*string{}
-			for _, f1iter := range elem.AvailabilityZones {
-				var f1elem string
-				f1elem = *f1iter
-				f1 = append(f1, &f1elem)
-			}
-			ko.Status.AvailabilityZones = f1
+			ko.Status.AvailabilityZones = aws.StringSlice(elem.AvailabilityZones)
 		} else {
 			ko.Status.AvailabilityZones = nil
 		}
 		if elem.BaseEndpointDnsNames != nil {
-			f2 := []*string{}
-			for _, f2iter := range elem.BaseEndpointDnsNames {
-				var f2elem string
-				f2elem = *f2iter
-				f2 = append(f2, &f2elem)
-			}
-			ko.Status.BaseEndpointDNSNames = f2
+			ko.Status.BaseEndpointDNSNames = aws.StringSlice(elem.BaseEndpointDnsNames)
 		} else {
 			ko.Status.BaseEndpointDNSNames = nil
 		}
 		if elem.GatewayLoadBalancerArns != nil {
-			f3 := []*string{}
-			for _, f3iter := range elem.GatewayLoadBalancerArns {
-				var f3elem string
-				f3elem = *f3iter
-				f3 = append(f3, &f3elem)
-			}
-			ko.Spec.GatewayLoadBalancerARNs = f3
+			ko.Spec.GatewayLoadBalancerARNs = aws.StringSlice(elem.GatewayLoadBalancerArns)
 		} else {
 			ko.Spec.GatewayLoadBalancerARNs = nil
 		}
@@ -132,18 +117,12 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.ManagesVPCEndpoints = nil
 		}
 		if elem.NetworkLoadBalancerArns != nil {
-			f5 := []*string{}
-			for _, f5iter := range elem.NetworkLoadBalancerArns {
-				var f5elem string
-				f5elem = *f5iter
-				f5 = append(f5, &f5elem)
-			}
-			ko.Spec.NetworkLoadBalancerARNs = f5
+			ko.Spec.NetworkLoadBalancerARNs = aws.StringSlice(elem.NetworkLoadBalancerArns)
 		} else {
 			ko.Spec.NetworkLoadBalancerARNs = nil
 		}
-		if elem.PayerResponsibility != nil {
-			ko.Status.PayerResponsibility = elem.PayerResponsibility
+		if elem.PayerResponsibility != "" {
+			ko.Status.PayerResponsibility = aws.String(string(elem.PayerResponsibility))
 		} else {
 			ko.Status.PayerResponsibility = nil
 		}
@@ -157,8 +136,8 @@ func (rm *resourceManager) sdkFind(
 			if elem.PrivateDnsNameConfiguration.Name != nil {
 				f8.Name = elem.PrivateDnsNameConfiguration.Name
 			}
-			if elem.PrivateDnsNameConfiguration.State != nil {
-				f8.State = elem.PrivateDnsNameConfiguration.State
+			if elem.PrivateDnsNameConfiguration.State != "" {
+				f8.State = aws.String(string(elem.PrivateDnsNameConfiguration.State))
 			}
 			if elem.PrivateDnsNameConfiguration.Type != nil {
 				f8.Type = elem.PrivateDnsNameConfiguration.Type
@@ -180,8 +159,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.ServiceName = nil
 		}
-		if elem.ServiceState != nil {
-			ko.Status.ServiceState = elem.ServiceState
+		if elem.ServiceState != "" {
+			ko.Status.ServiceState = aws.String(string(elem.ServiceState))
 		} else {
 			ko.Status.ServiceState = nil
 		}
@@ -189,8 +168,8 @@ func (rm *resourceManager) sdkFind(
 			f12 := []*svcapitypes.ServiceTypeDetail{}
 			for _, f12iter := range elem.ServiceType {
 				f12elem := &svcapitypes.ServiceTypeDetail{}
-				if f12iter.ServiceType != nil {
-					f12elem.ServiceType = f12iter.ServiceType
+				if f12iter.ServiceType != "" {
+					f12elem.ServiceType = aws.String(string(f12iter.ServiceType))
 				}
 				f12 = append(f12, f12elem)
 			}
@@ -201,9 +180,9 @@ func (rm *resourceManager) sdkFind(
 		if elem.SupportedIpAddressTypes != nil {
 			f13 := []*string{}
 			for _, f13iter := range elem.SupportedIpAddressTypes {
-				var f13elem string
-				f13elem = *f13iter
-				f13 = append(f13, &f13elem)
+				var f13elem *string
+				f13elem = aws.String(string(f13iter))
+				f13 = append(f13, f13elem)
 			}
 			ko.Spec.SupportedIPAddressTypes = f13
 		} else {
@@ -277,7 +256,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateVpcEndpointServiceConfigurationOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateVpcEndpointServiceConfigurationWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateVpcEndpointServiceConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpcEndpointServiceConfiguration", err)
 	if err != nil {
 		return nil, err
@@ -292,35 +271,17 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.AcceptanceRequired = nil
 	}
 	if resp.ServiceConfiguration.AvailabilityZones != nil {
-		f1 := []*string{}
-		for _, f1iter := range resp.ServiceConfiguration.AvailabilityZones {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		ko.Status.AvailabilityZones = f1
+		ko.Status.AvailabilityZones = aws.StringSlice(resp.ServiceConfiguration.AvailabilityZones)
 	} else {
 		ko.Status.AvailabilityZones = nil
 	}
 	if resp.ServiceConfiguration.BaseEndpointDnsNames != nil {
-		f2 := []*string{}
-		for _, f2iter := range resp.ServiceConfiguration.BaseEndpointDnsNames {
-			var f2elem string
-			f2elem = *f2iter
-			f2 = append(f2, &f2elem)
-		}
-		ko.Status.BaseEndpointDNSNames = f2
+		ko.Status.BaseEndpointDNSNames = aws.StringSlice(resp.ServiceConfiguration.BaseEndpointDnsNames)
 	} else {
 		ko.Status.BaseEndpointDNSNames = nil
 	}
 	if resp.ServiceConfiguration.GatewayLoadBalancerArns != nil {
-		f3 := []*string{}
-		for _, f3iter := range resp.ServiceConfiguration.GatewayLoadBalancerArns {
-			var f3elem string
-			f3elem = *f3iter
-			f3 = append(f3, &f3elem)
-		}
-		ko.Spec.GatewayLoadBalancerARNs = f3
+		ko.Spec.GatewayLoadBalancerARNs = aws.StringSlice(resp.ServiceConfiguration.GatewayLoadBalancerArns)
 	} else {
 		ko.Spec.GatewayLoadBalancerARNs = nil
 	}
@@ -330,18 +291,12 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.ManagesVPCEndpoints = nil
 	}
 	if resp.ServiceConfiguration.NetworkLoadBalancerArns != nil {
-		f5 := []*string{}
-		for _, f5iter := range resp.ServiceConfiguration.NetworkLoadBalancerArns {
-			var f5elem string
-			f5elem = *f5iter
-			f5 = append(f5, &f5elem)
-		}
-		ko.Spec.NetworkLoadBalancerARNs = f5
+		ko.Spec.NetworkLoadBalancerARNs = aws.StringSlice(resp.ServiceConfiguration.NetworkLoadBalancerArns)
 	} else {
 		ko.Spec.NetworkLoadBalancerARNs = nil
 	}
-	if resp.ServiceConfiguration.PayerResponsibility != nil {
-		ko.Status.PayerResponsibility = resp.ServiceConfiguration.PayerResponsibility
+	if resp.ServiceConfiguration.PayerResponsibility != "" {
+		ko.Status.PayerResponsibility = aws.String(string(resp.ServiceConfiguration.PayerResponsibility))
 	} else {
 		ko.Status.PayerResponsibility = nil
 	}
@@ -355,8 +310,8 @@ func (rm *resourceManager) sdkCreate(
 		if resp.ServiceConfiguration.PrivateDnsNameConfiguration.Name != nil {
 			f8.Name = resp.ServiceConfiguration.PrivateDnsNameConfiguration.Name
 		}
-		if resp.ServiceConfiguration.PrivateDnsNameConfiguration.State != nil {
-			f8.State = resp.ServiceConfiguration.PrivateDnsNameConfiguration.State
+		if resp.ServiceConfiguration.PrivateDnsNameConfiguration.State != "" {
+			f8.State = aws.String(string(resp.ServiceConfiguration.PrivateDnsNameConfiguration.State))
 		}
 		if resp.ServiceConfiguration.PrivateDnsNameConfiguration.Type != nil {
 			f8.Type = resp.ServiceConfiguration.PrivateDnsNameConfiguration.Type
@@ -378,8 +333,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.ServiceName = nil
 	}
-	if resp.ServiceConfiguration.ServiceState != nil {
-		ko.Status.ServiceState = resp.ServiceConfiguration.ServiceState
+	if resp.ServiceConfiguration.ServiceState != "" {
+		ko.Status.ServiceState = aws.String(string(resp.ServiceConfiguration.ServiceState))
 	} else {
 		ko.Status.ServiceState = nil
 	}
@@ -387,8 +342,8 @@ func (rm *resourceManager) sdkCreate(
 		f12 := []*svcapitypes.ServiceTypeDetail{}
 		for _, f12iter := range resp.ServiceConfiguration.ServiceType {
 			f12elem := &svcapitypes.ServiceTypeDetail{}
-			if f12iter.ServiceType != nil {
-				f12elem.ServiceType = f12iter.ServiceType
+			if f12iter.ServiceType != "" {
+				f12elem.ServiceType = aws.String(string(f12iter.ServiceType))
 			}
 			f12 = append(f12, f12elem)
 		}
@@ -399,9 +354,9 @@ func (rm *resourceManager) sdkCreate(
 	if resp.ServiceConfiguration.SupportedIpAddressTypes != nil {
 		f13 := []*string{}
 		for _, f13iter := range resp.ServiceConfiguration.SupportedIpAddressTypes {
-			var f13elem string
-			f13elem = *f13iter
-			f13 = append(f13, &f13elem)
+			var f13elem *string
+			f13elem = aws.String(string(f13iter))
+			f13 = append(f13, f13elem)
 		}
 		ko.Spec.SupportedIPAddressTypes = f13
 	} else {
@@ -437,37 +392,19 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateVpcEndpointServiceConfigurationInput{}
 
 	if r.ko.Spec.AcceptanceRequired != nil {
-		res.SetAcceptanceRequired(*r.ko.Spec.AcceptanceRequired)
+		res.AcceptanceRequired = r.ko.Spec.AcceptanceRequired
 	}
 	if r.ko.Spec.GatewayLoadBalancerARNs != nil {
-		f1 := []*string{}
-		for _, f1iter := range r.ko.Spec.GatewayLoadBalancerARNs {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		res.SetGatewayLoadBalancerArns(f1)
+		res.GatewayLoadBalancerArns = aws.ToStringSlice(r.ko.Spec.GatewayLoadBalancerARNs)
 	}
 	if r.ko.Spec.NetworkLoadBalancerARNs != nil {
-		f2 := []*string{}
-		for _, f2iter := range r.ko.Spec.NetworkLoadBalancerARNs {
-			var f2elem string
-			f2elem = *f2iter
-			f2 = append(f2, &f2elem)
-		}
-		res.SetNetworkLoadBalancerArns(f2)
+		res.NetworkLoadBalancerArns = aws.ToStringSlice(r.ko.Spec.NetworkLoadBalancerARNs)
 	}
 	if r.ko.Spec.PrivateDNSName != nil {
-		res.SetPrivateDnsName(*r.ko.Spec.PrivateDNSName)
+		res.PrivateDnsName = r.ko.Spec.PrivateDNSName
 	}
 	if r.ko.Spec.SupportedIPAddressTypes != nil {
-		f4 := []*string{}
-		for _, f4iter := range r.ko.Spec.SupportedIPAddressTypes {
-			var f4elem string
-			f4elem = *f4iter
-			f4 = append(f4, &f4elem)
-		}
-		res.SetSupportedIpAddressTypes(f4)
+		res.SupportedIpAddressTypes = aws.ToStringSlice(r.ko.Spec.SupportedIPAddressTypes)
 	}
 
 	return res, nil
@@ -521,7 +458,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.ModifyVpcEndpointServiceConfigurationOutput
 	_ = resp
-	resp, err = rm.sdkapi.ModifyVpcEndpointServiceConfigurationWithContext(ctx, input)
+	resp, err = rm.sdkapi.ModifyVpcEndpointServiceConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServiceConfiguration", err)
 	if err != nil {
 		return nil, err
@@ -544,13 +481,13 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.ModifyVpcEndpointServiceConfigurationInput{}
 
 	if r.ko.Spec.AcceptanceRequired != nil {
-		res.SetAcceptanceRequired(*r.ko.Spec.AcceptanceRequired)
+		res.AcceptanceRequired = r.ko.Spec.AcceptanceRequired
 	}
 	if r.ko.Spec.PrivateDNSName != nil {
-		res.SetPrivateDnsName(*r.ko.Spec.PrivateDNSName)
+		res.PrivateDnsName = r.ko.Spec.PrivateDNSName
 	}
 	if r.ko.Status.ServiceID != nil {
-		res.SetServiceId(*r.ko.Status.ServiceID)
+		res.ServiceId = r.ko.Status.ServiceID
 	}
 
 	return res, nil
@@ -575,7 +512,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteVpcEndpointServiceConfigurationsOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteVpcEndpointServiceConfigurationsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteVpcEndpointServiceConfigurations(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpcEndpointServiceConfigurations", err)
 	return nil, err
 }
@@ -695,13 +632,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

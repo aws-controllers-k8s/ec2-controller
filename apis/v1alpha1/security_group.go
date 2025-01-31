@@ -25,13 +25,11 @@ import (
 // Describes a security group.
 type SecurityGroupSpec struct {
 
-	// A description for the security group. This is informational only.
+	// A description for the security group.
 	//
 	// Constraints: Up to 255 characters in length
 	//
-	// Constraints for EC2-Classic: ASCII characters
-	//
-	// Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
 	// +kubebuilder:validation:Required
 	Description  *string         `json:"description"`
 	EgressRules  []*IPPermission `json:"egressRules,omitempty"`
@@ -40,16 +38,14 @@ type SecurityGroupSpec struct {
 	//
 	// Constraints: Up to 255 characters in length. Cannot start with sg-.
 	//
-	// Constraints for EC2-Classic: ASCII characters
-	//
-	// Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
 	Tags []*Tag `json:"tags,omitempty"`
-	// [EC2-VPC] The ID of the VPC. Required for EC2-VPC.
+	// The ID of the VPC. Required for a nondefault VPC.
 	VPCID  *string                                  `json:"vpcID,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }

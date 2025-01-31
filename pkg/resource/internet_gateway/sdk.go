@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.InternetGateway{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeInternetGatewaysOutput
-	resp, err = rm.sdkapi.DescribeInternetGatewaysWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeInternetGateways(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeInternetGateways", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -92,8 +95,8 @@ func (rm *resourceManager) sdkFind(
 			f0 := []*svcapitypes.InternetGatewayAttachment{}
 			for _, f0iter := range elem.Attachments {
 				f0elem := &svcapitypes.InternetGatewayAttachment{}
-				if f0iter.State != nil {
-					f0elem.State = f0iter.State
+				if f0iter.State != "" {
+					f0elem.State = aws.String(string(f0iter.State))
 				}
 				if f0iter.VpcId != nil {
 					f0elem.VPCID = f0iter.VpcId
@@ -176,9 +179,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeInternetGatewaysInput{}
 
 	if r.ko.Status.InternetGatewayID != nil {
-		f2 := []*string{}
-		f2 = append(f2, r.ko.Status.InternetGatewayID)
-		res.SetInternetGatewayIds(f2)
+		f2 := []string{}
+		f2 = append(f2, *r.ko.Status.InternetGatewayID)
+		res.InternetGatewayIds = f2
 	}
 
 	return res, nil
@@ -204,7 +207,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateInternetGatewayOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateInternetGatewayWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateInternetGateway(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateInternetGateway", err)
 	if err != nil {
 		return nil, err
@@ -217,8 +220,8 @@ func (rm *resourceManager) sdkCreate(
 		f0 := []*svcapitypes.InternetGatewayAttachment{}
 		for _, f0iter := range resp.InternetGateway.Attachments {
 			f0elem := &svcapitypes.InternetGatewayAttachment{}
-			if f0iter.State != nil {
-				f0elem.State = f0iter.State
+			if f0iter.State != "" {
+				f0elem.State = aws.String(string(f0iter.State))
 			}
 			if f0iter.VpcId != nil {
 				f0elem.VPCID = f0iter.VpcId
@@ -313,7 +316,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteInternetGatewayOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteInternetGatewayWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteInternetGateway(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteInternetGateway", err)
 	return nil, err
 }
@@ -326,7 +329,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteInternetGatewayInput{}
 
 	if r.ko.Status.InternetGatewayID != nil {
-		res.SetInternetGatewayId(*r.ko.Status.InternetGatewayID)
+		res.InternetGatewayId = r.ko.Status.InternetGatewayID
 	}
 
 	return res, nil
@@ -437,13 +440,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

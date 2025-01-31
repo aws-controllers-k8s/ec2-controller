@@ -323,7 +323,7 @@ def peering_options_vpc_peering_connection(request):
     except:
         pass
 
-def wait_for_vpc_peering_connection_status(ref, timeout_seconds=300):
+def wait_for_vpc_peering_connection_status(ref, timeout_seconds=500):
     '''
     Loops until the VPC Peering Connection's Status Code is 'active'
     '''

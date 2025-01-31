@@ -19,7 +19,8 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
@@ -32,7 +33,7 @@ func addInstanceIDsToTerminateRequest(r *resource,
 	if r.ko.Status.InstanceID == nil {
 		return errors.New("InstanceID nil for resource when creating TerminateRequest")
 	}
-	input.InstanceIds = append(input.InstanceIds, r.ko.Status.InstanceID)
+	input.InstanceIds = append(input.InstanceIds, *r.ko.Status.InstanceID)
 	return nil
 }
 
@@ -73,20 +74,20 @@ var computeTagsDelta = tags.ComputeTagsDelta
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.RunInstancesInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		instanceTags := []*svcsdk.Tag{}
+		instanceTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			instanceTags = append(instanceTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("instance")
-		desiredTagSpecs.SetTags(instanceTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "instance"
+		desiredTagSpecs.Tags = instanceTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }

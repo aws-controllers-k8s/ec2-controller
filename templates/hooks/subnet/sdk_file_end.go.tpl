@@ -12,8 +12,8 @@
 {{- $subnetRefName = "Tag" }}
 func (rm *resourceManager) new{{ $subnetRefName }}(
 	    c svcapitypes.{{ $subnetRefName }},
-) *svcsdk.{{ $subnetRefName }} {
-	res := &svcsdk.{{ $subnetRefName }}{}
+) *svcsdktypes.{{ $subnetRefName }} {
+	res := &svcsdktypes.{{ $subnetRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $subnetRef "" "c" 1 }}
 	return res
 }

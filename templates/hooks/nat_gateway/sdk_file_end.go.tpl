@@ -12,8 +12,8 @@
 {{- $natGatewayRefName = "Tag" }}
 func (rm *resourceManager) new{{ $natGatewayRefName }}(
 	    c svcapitypes.{{ $natGatewayRefName }},
-) *svcsdk.{{ $natGatewayRefName }} {
-	res := &svcsdk.{{ $natGatewayRefName }}{}
+) *svcsdktypes.{{ $natGatewayRefName }} {
+	res := &svcsdktypes.{{ $natGatewayRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $natGatewayRef "" "c" 1 }}
 	return res
 }

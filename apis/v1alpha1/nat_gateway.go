@@ -34,7 +34,7 @@ type NATGatewaySpec struct {
 	// Indicates whether the NAT gateway supports public or private connectivity.
 	// The default is public connectivity.
 	ConnectivityType *string `json:"connectivityType,omitempty"`
-	// The subnet in which to create the NAT gateway.
+	// The ID of the subnet in which to create the NAT gateway.
 	SubnetID  *string                                  `json:"subnetID,omitempty"`
 	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
@@ -97,8 +97,8 @@ type NATGatewayStatus struct {
 	// +kubebuilder:validation:Optional
 	NATGatewayID *string `json:"natGatewayID,omitempty"`
 	// Reserved. If you need to sustain traffic greater than the documented limits
-	// (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html),
-	// contact us through the Support Center (https://console.aws.amazon.com/support/home?).
+	// (https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html#vpc-limits-gateways),
+	// contact Amazon Web Services Support.
 	// +kubebuilder:validation:Optional
 	ProvisionedBandwidth *ProvisionedBandwidth `json:"provisionedBandwidth,omitempty"`
 	// The state of the NAT gateway.

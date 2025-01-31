@@ -12,8 +12,8 @@
 {{- $flowLogRefName = "Tag" }}
 func (rm *resourceManager) new{{ $flowLogRefName }}(
 	    c svcapitypes.{{ $flowLogRefName }},
-) *svcsdk.{{ $flowLogRefName }} {
-	res := &svcsdk.{{ $flowLogRefName }}{}
+) *svcsdktypes.{{ $flowLogRefName }} {
+	res := &svcsdktypes.{{ $flowLogRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $flowLogRef "" "c" 1 }}
 	return res
 }

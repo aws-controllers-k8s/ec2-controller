@@ -17,9 +17,8 @@ import (
 	"context"
 
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/request"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -32,9 +31,9 @@ type metricsRecorder interface {
 }
 
 type tagsClient interface {
-	CreateTagsWithContext(context.Context, *svcsdk.CreateTagsInput, ...request.Option) (*svcsdk.CreateTagsOutput, error)
-	DescribeTagsWithContext(context.Context, *svcsdk.DescribeTagsInput, ...request.Option) (*svcsdk.DescribeTagsOutput, error)
-	DeleteTagsWithContext(context.Context, *svcsdk.DeleteTagsInput, ...request.Option) (*svcsdk.DeleteTagsOutput, error)
+	CreateTags(context.Context, *svcsdk.CreateTagsInput, ...func(*svcsdk.Options)) (*svcsdk.CreateTagsOutput, error)
+	DescribeTags(context.Context, *svcsdk.DescribeTagsInput, ...func(*svcsdk.Options)) (*svcsdk.DescribeTagsOutput, error)
+	DeleteTags(context.Context, *svcsdk.DeleteTagsInput, ...func(*svcsdk.Options)) (*svcsdk.DeleteTagsOutput, error)
 }
 
 // Sync is responsible of taking two arrays of tags (desired and latest), comparing
@@ -56,10 +55,10 @@ func Sync(
 	addedOrUpdated, removed := ComputeTagsDelta(latestTags, desiredTags)
 
 	if len(removed) > 0 {
-		_, err = client.DeleteTagsWithContext(
+		_, err = client.DeleteTags(
 			ctx,
 			&svcsdk.DeleteTagsInput{
-				Resources: []*string{aws.String(resourceID)},
+				Resources: []string{resourceID},
 				Tags:      sdkTagsFromResourceTags(removed),
 			},
 		)
@@ -70,10 +69,10 @@ func Sync(
 	}
 
 	if len(addedOrUpdated) > 0 {
-		_, err = client.CreateTagsWithContext(
+		_, err = client.CreateTags(
 			ctx,
 			&svcsdk.CreateTagsInput{
-				Resources: []*string{aws.String(resourceID)},
+				Resources: []string{resourceID},
 				Tags:      sdkTagsFromResourceTags(addedOrUpdated),
 			},
 		)
@@ -120,11 +119,11 @@ func ComputeTagsDelta(
 }
 
 // svcTagsFromResourceTags transforms a *svcapitypes.Tag array to a *svcsdk.Tag array.
-func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []*svcsdk.Tag {
-	tags := make([]*svcsdk.Tag, len(rTags))
+func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []svcsdktypes.Tag {
+	tags := make([]svcsdktypes.Tag, len(rTags))
 	for i := range rTags {
 		if rTags[i] != nil {
-			tags[i] = &svcsdk.Tag{
+			tags[i] = svcsdktypes.Tag{
 				Key:   rTags[i].Key,
 				Value: rTags[i].Value,
 			}

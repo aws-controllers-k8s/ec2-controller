@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.FlowLog{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -75,12 +78,13 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	input.SetFlowLogIds([]*string{r.ko.Status.FlowLogID})
+	input.FlowLogIds = []string{*r.ko.Status.FlowLogID}
 	var resp *svcsdk.DescribeFlowLogsOutput
-	resp, err = rm.sdkapi.DescribeFlowLogsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeFlowLogs(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeFlowLogs", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -98,17 +102,17 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.DeliverLogsPermissionARN = nil
 		}
 		if elem.DestinationOptions != nil {
-			f4 := &svcapitypes.DestinationOptionsRequest{}
-			if elem.DestinationOptions.FileFormat != nil {
-				f4.FileFormat = elem.DestinationOptions.FileFormat
+			f5 := &svcapitypes.DestinationOptionsRequest{}
+			if elem.DestinationOptions.FileFormat != "" {
+				f5.FileFormat = aws.String(string(elem.DestinationOptions.FileFormat))
 			}
 			if elem.DestinationOptions.HiveCompatiblePartitions != nil {
-				f4.HiveCompatiblePartitions = elem.DestinationOptions.HiveCompatiblePartitions
+				f5.HiveCompatiblePartitions = elem.DestinationOptions.HiveCompatiblePartitions
 			}
 			if elem.DestinationOptions.PerHourPartition != nil {
-				f4.PerHourPartition = elem.DestinationOptions.PerHourPartition
+				f5.PerHourPartition = elem.DestinationOptions.PerHourPartition
 			}
-			ko.Spec.DestinationOptions = f4
+			ko.Spec.DestinationOptions = f5
 		} else {
 			ko.Spec.DestinationOptions = nil
 		}
@@ -117,8 +121,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.LogDestination = nil
 		}
-		if elem.LogDestinationType != nil {
-			ko.Spec.LogDestinationType = elem.LogDestinationType
+		if elem.LogDestinationType != "" {
+			ko.Spec.LogDestinationType = aws.String(string(elem.LogDestinationType))
 		} else {
 			ko.Spec.LogDestinationType = nil
 		}
@@ -133,28 +137,29 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.LogGroupName = nil
 		}
 		if elem.MaxAggregationInterval != nil {
-			ko.Spec.MaxAggregationInterval = elem.MaxAggregationInterval
+			maxAggregationIntervalCopy := int64(*elem.MaxAggregationInterval)
+			ko.Spec.MaxAggregationInterval = &maxAggregationIntervalCopy
 		} else {
 			ko.Spec.MaxAggregationInterval = nil
 		}
 		if elem.Tags != nil {
-			f13 := []*svcapitypes.Tag{}
-			for _, f13iter := range elem.Tags {
-				f13elem := &svcapitypes.Tag{}
-				if f13iter.Key != nil {
-					f13elem.Key = f13iter.Key
+			f14 := []*svcapitypes.Tag{}
+			for _, f14iter := range elem.Tags {
+				f14elem := &svcapitypes.Tag{}
+				if f14iter.Key != nil {
+					f14elem.Key = f14iter.Key
 				}
-				if f13iter.Value != nil {
-					f13elem.Value = f13iter.Value
+				if f14iter.Value != nil {
+					f14elem.Value = f14iter.Value
 				}
-				f13 = append(f13, f13elem)
+				f14 = append(f14, f14elem)
 			}
-			ko.Spec.Tags = f13
+			ko.Spec.Tags = f14
 		} else {
 			ko.Spec.Tags = nil
 		}
-		if elem.TrafficType != nil {
-			ko.Spec.TrafficType = elem.TrafficType
+		if elem.TrafficType != "" {
+			ko.Spec.TrafficType = aws.String(string(elem.TrafficType))
 		} else {
 			ko.Spec.TrafficType = nil
 		}
@@ -205,11 +210,11 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 	updateTagSpecificationsInCreateRequest(desired, input)
-	input.SetResourceIds([]*string{desired.ko.Spec.ResourceID})
+	input.ResourceIds = []string{*desired.ko.Spec.ResourceID}
 
 	var resp *svcsdk.CreateFlowLogsOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateFlowLogsWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateFlowLogs(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateFlowLogs", err)
 	if err != nil {
 		return nil, err
@@ -248,8 +253,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	if len(resp.FlowLogIds) > 0 && resp.FlowLogIds[0] != nil {
-		ko.Status.FlowLogID = resp.FlowLogIds[0]
+	if len(resp.FlowLogIds) > 0 && resp.FlowLogIds[0] != "" {
+		ko.Status.FlowLogID = aws.String(resp.FlowLogIds[0])
 	}
 	return &resource{ko}, nil
 }
@@ -263,41 +268,46 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateFlowLogsInput{}
 
 	if r.ko.Spec.DeliverLogsPermissionARN != nil {
-		res.SetDeliverLogsPermissionArn(*r.ko.Spec.DeliverLogsPermissionARN)
+		res.DeliverLogsPermissionArn = r.ko.Spec.DeliverLogsPermissionARN
 	}
 	if r.ko.Spec.DestinationOptions != nil {
-		f1 := &svcsdk.DestinationOptionsRequest{}
+		f1 := &svcsdktypes.DestinationOptionsRequest{}
 		if r.ko.Spec.DestinationOptions.FileFormat != nil {
-			f1.SetFileFormat(*r.ko.Spec.DestinationOptions.FileFormat)
+			f1.FileFormat = svcsdktypes.DestinationFileFormat(*r.ko.Spec.DestinationOptions.FileFormat)
 		}
 		if r.ko.Spec.DestinationOptions.HiveCompatiblePartitions != nil {
-			f1.SetHiveCompatiblePartitions(*r.ko.Spec.DestinationOptions.HiveCompatiblePartitions)
+			f1.HiveCompatiblePartitions = r.ko.Spec.DestinationOptions.HiveCompatiblePartitions
 		}
 		if r.ko.Spec.DestinationOptions.PerHourPartition != nil {
-			f1.SetPerHourPartition(*r.ko.Spec.DestinationOptions.PerHourPartition)
+			f1.PerHourPartition = r.ko.Spec.DestinationOptions.PerHourPartition
 		}
-		res.SetDestinationOptions(f1)
+		res.DestinationOptions = f1
 	}
 	if r.ko.Spec.LogDestination != nil {
-		res.SetLogDestination(*r.ko.Spec.LogDestination)
+		res.LogDestination = r.ko.Spec.LogDestination
 	}
 	if r.ko.Spec.LogDestinationType != nil {
-		res.SetLogDestinationType(*r.ko.Spec.LogDestinationType)
+		res.LogDestinationType = svcsdktypes.LogDestinationType(*r.ko.Spec.LogDestinationType)
 	}
 	if r.ko.Spec.LogFormat != nil {
-		res.SetLogFormat(*r.ko.Spec.LogFormat)
+		res.LogFormat = r.ko.Spec.LogFormat
 	}
 	if r.ko.Spec.LogGroupName != nil {
-		res.SetLogGroupName(*r.ko.Spec.LogGroupName)
+		res.LogGroupName = r.ko.Spec.LogGroupName
 	}
 	if r.ko.Spec.MaxAggregationInterval != nil {
-		res.SetMaxAggregationInterval(*r.ko.Spec.MaxAggregationInterval)
+		maxAggregationIntervalCopy0 := *r.ko.Spec.MaxAggregationInterval
+		if maxAggregationIntervalCopy0 > math.MaxInt32 || maxAggregationIntervalCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field MaxAggregationInterval is of type int32")
+		}
+		maxAggregationIntervalCopy := int32(maxAggregationIntervalCopy0)
+		res.MaxAggregationInterval = &maxAggregationIntervalCopy
 	}
 	if r.ko.Spec.ResourceType != nil {
-		res.SetResourceType(*r.ko.Spec.ResourceType)
+		res.ResourceType = svcsdktypes.FlowLogsResourceType(*r.ko.Spec.ResourceType)
 	}
 	if r.ko.Spec.TrafficType != nil {
-		res.SetTrafficType(*r.ko.Spec.TrafficType)
+		res.TrafficType = svcsdktypes.TrafficType(*r.ko.Spec.TrafficType)
 	}
 
 	return res, nil
@@ -331,10 +341,10 @@ func (rm *resourceManager) sdkDelete(
 	if r.ko.Status.FlowLogID == nil {
 		return nil, ackerr.NotFound
 	}
-	input.SetFlowLogIds([]*string{r.ko.Status.FlowLogID})
+	input.FlowLogIds = []string{*r.ko.Status.FlowLogID}
 	var resp *svcsdk.DeleteFlowLogsOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteFlowLogsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteFlowLogs(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteFlowLogs", err)
 	return nil, err
 }
@@ -451,11 +461,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidParameter",
 		"InvalidParameterValue":
 		return true
@@ -466,13 +477,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

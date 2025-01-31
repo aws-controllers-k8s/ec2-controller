@@ -22,7 +22,7 @@ import (
 
 // DhcpOptionsSpec defines the desired state of DhcpOptions.
 //
-// Describes a set of DHCP options.
+// The set of DHCP options.
 type DHCPOptionsSpec struct {
 
 	// A DHCP configuration option.
