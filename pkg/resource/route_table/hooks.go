@@ -66,7 +66,7 @@ func (rm *resourceManager) syncRoutes(
 
 	switch {
 	case delta == nil:
-		toAdd = desired.ko.Spec.Routes
+		toAdd = removeLocalRoute(desired.ko.Spec.Routes)
 	case delta.DifferentAt("Spec.Routes"):
 		for _, diff := range delta.Differences {
 			if diff.Path.Contains("Spec.Routes") {
