@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.SecurityGroup{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +76,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeSecurityGroupsOutput
-	resp, err = rm.sdkapi.DescribeSecurityGroupsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeSecurityGroups(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroups", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -93,19 +97,26 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.Description = nil
 		}
-		if elem.Tags != nil {
-			f6 := []*svcapitypes.Tag{}
-			for _, f6iter := range elem.Tags {
-				f6elem := &svcapitypes.Tag{}
-				if f6iter.Key != nil {
-					f6elem.Key = f6iter.Key
-				}
-				if f6iter.Value != nil {
-					f6elem.Value = f6iter.Value
-				}
-				f6 = append(f6, f6elem)
+		if elem.SecurityGroupArn != nil {
+			if ko.Status.ACKResourceMetadata == nil {
+				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 			}
-			ko.Spec.Tags = f6
+			tmpARN := ackv1alpha1.AWSResourceName(*elem.SecurityGroupArn)
+			ko.Status.ACKResourceMetadata.ARN = &tmpARN
+		}
+		if elem.Tags != nil {
+			f7 := []*svcapitypes.Tag{}
+			for _, f7iter := range elem.Tags {
+				f7elem := &svcapitypes.Tag{}
+				if f7iter.Key != nil {
+					f7elem.Key = f7iter.Key
+				}
+				if f7iter.Value != nil {
+					f7elem.Value = f7iter.Value
+				}
+				f7 = append(f7, f7elem)
+			}
+			ko.Spec.Tags = f7
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -159,9 +170,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeSecurityGroupsInput{}
 
 	if r.ko.Status.ID != nil {
-		f2 := []*string{}
-		f2 = append(f2, r.ko.Status.ID)
-		res.SetGroupIds(f2)
+		f2 := []string{}
+		f2 = append(f2, *r.ko.Status.ID)
+		res.GroupIds = f2
 	}
 
 	return res, nil
@@ -187,7 +198,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateSecurityGroupOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateSecurityGroupWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateSecurityGroup(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateSecurityGroup", err)
 	if err != nil {
 		return nil, err
@@ -201,19 +212,26 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.ID = nil
 	}
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.SecurityGroupArn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.SecurityGroupArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
 	if resp.Tags != nil {
-		f1 := []*svcapitypes.Tag{}
-		for _, f1iter := range resp.Tags {
-			f1elem := &svcapitypes.Tag{}
-			if f1iter.Key != nil {
-				f1elem.Key = f1iter.Key
+		f2 := []*svcapitypes.Tag{}
+		for _, f2iter := range resp.Tags {
+			f2elem := &svcapitypes.Tag{}
+			if f2iter.Key != nil {
+				f2elem.Key = f2iter.Key
 			}
-			if f1iter.Value != nil {
-				f1elem.Value = f1iter.Value
+			if f2iter.Value != nil {
+				f2elem.Value = f2iter.Value
 			}
-			f1 = append(f1, f1elem)
+			f2 = append(f2, f2elem)
 		}
-		ko.Spec.Tags = f1
+		ko.Spec.Tags = f2
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -259,13 +277,13 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateSecurityGroupInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetGroupName(*r.ko.Spec.Name)
+		res.GroupName = r.ko.Spec.Name
 	}
 	if r.ko.Spec.VPCID != nil {
-		res.SetVpcId(*r.ko.Spec.VPCID)
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil
@@ -304,7 +322,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteSecurityGroupOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteSecurityGroupWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteSecurityGroup(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteSecurityGroup", err)
 	return nil, err
 }
@@ -317,7 +335,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteSecurityGroupInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetGroupId(*r.ko.Status.ID)
+		res.GroupId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -486,102 +504,112 @@ func compareIPPermission(
 
 func (rm *resourceManager) newIPPermission(
 	c svcapitypes.IPPermission,
-) *svcsdk.IpPermission {
-	res := &svcsdk.IpPermission{}
+) (*svcsdktypes.IpPermission, error) {
+	res := &svcsdktypes.IpPermission{}
 
 	if c.FromPort != nil {
-		res.SetFromPort(*c.FromPort)
+		fromPortCopy0 := *c.FromPort
+		if fromPortCopy0 > math.MaxInt32 || fromPortCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field FromPort is of type int32")
+		}
+		fromPortCopy := int32(fromPortCopy0)
+		res.FromPort = &fromPortCopy
 	}
 	if c.IPProtocol != nil {
-		res.SetIpProtocol(*c.IPProtocol)
+		res.IpProtocol = c.IPProtocol
 	}
 	if c.IPRanges != nil {
-		resf2 := []*svcsdk.IpRange{}
+		resf2 := []svcsdktypes.IpRange{}
 		for _, resf2iter := range c.IPRanges {
-			resf2elem := &svcsdk.IpRange{}
+			resf2elem := &svcsdktypes.IpRange{}
 			if resf2iter.CIDRIP != nil {
-				resf2elem.SetCidrIp(*resf2iter.CIDRIP)
+				resf2elem.CidrIp = resf2iter.CIDRIP
 			}
 			if resf2iter.Description != nil {
-				resf2elem.SetDescription(*resf2iter.Description)
+				resf2elem.Description = resf2iter.Description
 			}
-			resf2 = append(resf2, resf2elem)
+			resf2 = append(resf2, *resf2elem)
 		}
-		res.SetIpRanges(resf2)
+		res.IpRanges = resf2
 	}
 	if c.IPv6Ranges != nil {
-		resf3 := []*svcsdk.Ipv6Range{}
+		resf3 := []svcsdktypes.Ipv6Range{}
 		for _, resf3iter := range c.IPv6Ranges {
-			resf3elem := &svcsdk.Ipv6Range{}
+			resf3elem := &svcsdktypes.Ipv6Range{}
 			if resf3iter.CIDRIPv6 != nil {
-				resf3elem.SetCidrIpv6(*resf3iter.CIDRIPv6)
+				resf3elem.CidrIpv6 = resf3iter.CIDRIPv6
 			}
 			if resf3iter.Description != nil {
-				resf3elem.SetDescription(*resf3iter.Description)
+				resf3elem.Description = resf3iter.Description
 			}
-			resf3 = append(resf3, resf3elem)
+			resf3 = append(resf3, *resf3elem)
 		}
-		res.SetIpv6Ranges(resf3)
+		res.Ipv6Ranges = resf3
 	}
 	if c.PrefixListIDs != nil {
-		resf4 := []*svcsdk.PrefixListId{}
+		resf4 := []svcsdktypes.PrefixListId{}
 		for _, resf4iter := range c.PrefixListIDs {
-			resf4elem := &svcsdk.PrefixListId{}
+			resf4elem := &svcsdktypes.PrefixListId{}
 			if resf4iter.Description != nil {
-				resf4elem.SetDescription(*resf4iter.Description)
+				resf4elem.Description = resf4iter.Description
 			}
 			if resf4iter.PrefixListID != nil {
-				resf4elem.SetPrefixListId(*resf4iter.PrefixListID)
+				resf4elem.PrefixListId = resf4iter.PrefixListID
 			}
-			resf4 = append(resf4, resf4elem)
+			resf4 = append(resf4, *resf4elem)
 		}
-		res.SetPrefixListIds(resf4)
+		res.PrefixListIds = resf4
 	}
 	if c.ToPort != nil {
-		res.SetToPort(*c.ToPort)
+		toPortCopy0 := *c.ToPort
+		if toPortCopy0 > math.MaxInt32 || toPortCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field ToPort is of type int32")
+		}
+		toPortCopy := int32(toPortCopy0)
+		res.ToPort = &toPortCopy
 	}
 	if c.UserIDGroupPairs != nil {
-		resf6 := []*svcsdk.UserIdGroupPair{}
+		resf6 := []svcsdktypes.UserIdGroupPair{}
 		for _, resf6iter := range c.UserIDGroupPairs {
-			resf6elem := &svcsdk.UserIdGroupPair{}
+			resf6elem := &svcsdktypes.UserIdGroupPair{}
 			if resf6iter.Description != nil {
-				resf6elem.SetDescription(*resf6iter.Description)
+				resf6elem.Description = resf6iter.Description
 			}
 			if resf6iter.GroupID != nil {
-				resf6elem.SetGroupId(*resf6iter.GroupID)
+				resf6elem.GroupId = resf6iter.GroupID
 			}
 			if resf6iter.GroupName != nil {
-				resf6elem.SetGroupName(*resf6iter.GroupName)
+				resf6elem.GroupName = resf6iter.GroupName
 			}
 			if resf6iter.PeeringStatus != nil {
-				resf6elem.SetPeeringStatus(*resf6iter.PeeringStatus)
+				resf6elem.PeeringStatus = resf6iter.PeeringStatus
 			}
 			if resf6iter.UserID != nil {
-				resf6elem.SetUserId(*resf6iter.UserID)
+				resf6elem.UserId = resf6iter.UserID
 			}
 			if resf6iter.VPCID != nil {
-				resf6elem.SetVpcId(*resf6iter.VPCID)
+				resf6elem.VpcId = resf6iter.VPCID
 			}
 			if resf6iter.VPCPeeringConnectionID != nil {
-				resf6elem.SetVpcPeeringConnectionId(*resf6iter.VPCPeeringConnectionID)
+				resf6elem.VpcPeeringConnectionId = resf6iter.VPCPeeringConnectionID
 			}
-			resf6 = append(resf6, resf6elem)
+			resf6 = append(resf6, *resf6elem)
 		}
-		res.SetUserIdGroupPairs(resf6)
+		res.UserIdGroupPairs = resf6
 	}
 
-	return res
+	return res, nil
 }
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res
@@ -590,7 +618,7 @@ func (rm *resourceManager) newTag(
 // setSecurityGroupRule sets a resource SecurityGroupRule type
 // given the SDK type.
 func (rm *resourceManager) setResourceSecurityGroupRule(
-	resp *svcsdk.SecurityGroupRule,
+	resp *svcsdktypes.SecurityGroupRule,
 ) *svcapitypes.SecurityGroupRule {
 	res := &svcapitypes.SecurityGroupRule{}
 
@@ -604,7 +632,8 @@ func (rm *resourceManager) setResourceSecurityGroupRule(
 		res.Description = resp.Description
 	}
 	if resp.FromPort != nil {
-		res.FromPort = resp.FromPort
+		fromPortCopy := int64(*resp.FromPort)
+		res.FromPort = &fromPortCopy
 	}
 	if resp.IpProtocol != nil {
 		res.IPProtocol = resp.IpProtocol
@@ -633,7 +662,8 @@ func (rm *resourceManager) setResourceSecurityGroupRule(
 		res.Tags = resf8
 	}
 	if resp.ToPort != nil {
-		res.ToPort = resp.ToPort
+		toPortCopy := int64(*resp.ToPort)
+		res.ToPort = &toPortCopy
 	}
 
 	return res
@@ -642,12 +672,13 @@ func (rm *resourceManager) setResourceSecurityGroupRule(
 // setIPPermission sets a resource IPPermission type
 // given the SDK type.
 func (rm *resourceManager) setResourceIPPermission(
-	resp *svcsdk.IpPermission,
+	resp *svcsdktypes.IpPermission,
 ) *svcapitypes.IPPermission {
 	res := &svcapitypes.IPPermission{}
 
 	if resp.FromPort != nil {
-		res.FromPort = resp.FromPort
+		fromPortCopy := int64(*resp.FromPort)
+		res.FromPort = &fromPortCopy
 	}
 	if resp.IpProtocol != nil {
 		res.IPProtocol = resp.IpProtocol
@@ -695,7 +726,8 @@ func (rm *resourceManager) setResourceIPPermission(
 		res.PrefixListIDs = resf4
 	}
 	if resp.ToPort != nil {
-		res.ToPort = resp.ToPort
+		toPortCopy := int64(*resp.ToPort)
+		res.ToPort = &toPortCopy
 	}
 	if resp.UserIdGroupPairs != nil {
 		resf6 := []*svcapitypes.UserIDGroupPair{}

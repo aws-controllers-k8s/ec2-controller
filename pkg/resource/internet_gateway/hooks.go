@@ -19,7 +19,8 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutils "github.com/aws-controllers-k8s/runtime/pkg/util"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
@@ -95,8 +96,8 @@ func (rm *resourceManager) getAttachedVPC(
 	for _, att := range latest.ko.Status.Attachments {
 		// There is no `AttachmentStatusAvailable` - so we can just check by
 		// using negative logic with the constants we have, instead
-		if *att.State != svcsdk.AttachmentStatusDetached &&
-			*att.State != svcsdk.AttachmentStatusDetaching {
+		if *att.State != string(svcsdktypes.AttachmentStatusDetached) &&
+			*att.State != string(svcsdktypes.AttachmentStatusDetaching) {
 			return att.VPCID, nil
 		}
 	}
@@ -119,7 +120,7 @@ func (rm *resourceManager) attachToVPC(
 		VpcId:             desired.ko.Spec.VPC,
 	}
 
-	_, err = rm.sdkapi.AttachInternetGatewayWithContext(ctx, input)
+	_, err = rm.sdkapi.AttachInternetGateway(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "AttachInternetGateway", err)
 	if err != nil {
 		return err
@@ -144,7 +145,7 @@ func (rm *resourceManager) detachFromVPC(
 		VpcId:             &vpcID,
 	}
 
-	_, err = rm.sdkapi.DetachInternetGatewayWithContext(ctx, input)
+	_, err = rm.sdkapi.DetachInternetGateway(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "DetachInternetGateway", err)
 	if err != nil {
 		return err
@@ -159,21 +160,21 @@ func (rm *resourceManager) detachFromVPC(
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateInternetGatewayInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("internet-gateway")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "internet-gateway"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }
 
@@ -218,7 +219,7 @@ func (rm *resourceManager) updateRouteTableAssociations(
 	}
 
 	toAdd := make([]*string, 0)
-	toDelete := make([]*svcsdk.RouteTableAssociation, 0)
+	toDelete := make([]svcsdktypes.RouteTableAssociation, 0)
 
 	for _, rt := range existingRTs {
 		if !ackutils.InStringPs(*rt.RouteTableId, desired.ko.Spec.RouteTables) {
@@ -266,7 +267,7 @@ func (rm *resourceManager) associateRouteTable(
 		GatewayId:    &igwID,
 	}
 
-	_, err = rm.sdkapi.AssociateRouteTableWithContext(ctx, input)
+	_, err = rm.sdkapi.AssociateRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "AssociateRouteTable", err)
 	if err != nil {
 		return err
@@ -293,7 +294,7 @@ func (rm *resourceManager) disassociateRouteTable(
 		AssociationId: &associationID,
 	}
 
-	_, err = rm.sdkapi.DisassociateRouteTableWithContext(ctx, input)
+	_, err = rm.sdkapi.DisassociateRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "DisassociateRouteTable", err)
 	if err != nil {
 		return err
@@ -308,7 +309,7 @@ func (rm *resourceManager) disassociateRouteTable(
 func (rm *resourceManager) getRouteTableAssociations(
 	ctx context.Context,
 	res *resource,
-) (rtAssociations []*svcsdk.RouteTableAssociation, err error) {
+) (rtAssociations []svcsdktypes.RouteTableAssociation, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.getRouteTableAssociations")
 	defer func(err error) {
@@ -318,7 +319,7 @@ func (rm *resourceManager) getRouteTableAssociations(
 	input := &svcsdk.DescribeRouteTablesInput{}
 
 	for {
-		resp, err := rm.sdkapi.DescribeRouteTablesWithContext(ctx, input)
+		resp, err := rm.sdkapi.DescribeRouteTables(ctx, input)
 		if err != nil || resp == nil {
 			break
 		}
@@ -330,7 +331,7 @@ func (rm *resourceManager) getRouteTableAssociations(
 				if rtAssociation.GatewayId == nil || res.ko.Status.InternetGatewayID == nil {
 					continue
 				}
-				if *rtAssociation.GatewayId == *res.ko.Status.InternetGatewayID && *rtAssociation.AssociationState.State == "associated" {
+				if *rtAssociation.GatewayId == *res.ko.Status.InternetGatewayID && rtAssociation.AssociationState.State == svcsdktypes.RouteTableAssociationStateCodeAssociated {
 					rtAssociations = append(rtAssociations, rtAssociation)
 					break
 				}
@@ -339,7 +340,7 @@ func (rm *resourceManager) getRouteTableAssociations(
 		if resp.NextToken == nil || *resp.NextToken == "" {
 			break
 		}
-		input.SetNextToken(*resp.NextToken)
+		input.NextToken = resp.NextToken
 	}
 	return rtAssociations, nil
 }
@@ -348,7 +349,7 @@ func (rm *resourceManager) getRouteTableAssociations(
 // route table assocations.
 func inAssociations(
 	rtID string,
-	assocs []*svcsdk.RouteTableAssociation,
+	assocs []svcsdktypes.RouteTableAssociation,
 ) bool {
 	for _, a := range assocs {
 		if *a.RouteTableId == rtID {

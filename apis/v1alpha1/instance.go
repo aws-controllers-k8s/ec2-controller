@@ -33,7 +33,7 @@ type InstanceSpec struct {
 	// Information about the Capacity Reservation targeting option. If you do not
 	// specify this parameter, the instance's Capacity Reservation preference defaults
 	// to open, which enables it to run in any open Capacity Reservation that has
-	// matching attributes (instance type, platform, Availability Zone).
+	// matching attributes (instance type, platform, Availability Zone, and tenancy).
 	CapacityReservationSpecification *CapacityReservationSpecification `json:"capacityReservationSpecification,omitempty"`
 	// The CPU options for the instance. For more information, see Optimize CPU
 	// options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html)
@@ -68,16 +68,13 @@ type InstanceSpec struct {
 	//
 	// Default: false
 	EBSOptimized *bool `json:"ebsOptimized,omitempty"`
-	// An elastic GPU to associate with the instance. An Elastic GPU is a GPU resource
-	// that you can attach to your Windows instance to accelerate the graphics performance
-	// of your applications. For more information, see Amazon EC2 Elastic GPUs (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/elastic-graphics.html)
-	// in the Amazon EC2 User Guide.
-	ElasticGPUSpecification []*ElasticGPUSpecification `json:"elasticGPUSpecification,omitempty"`
-	// An elastic inference accelerator to associate with the instance. Elastic
-	// inference accelerators are a resource you can attach to your Amazon EC2 instances
-	// to accelerate your Deep Learning (DL) inference workloads.
+	// An elastic GPU to associate with the instance.
 	//
-	// You cannot specify accelerators from different generations in the same request.
+	// Amazon Elastic Graphics reached end of life on January 8, 2024.
+	ElasticGPUSpecification []*ElasticGPUSpecification `json:"elasticGPUSpecification,omitempty"`
+	// An elastic inference accelerator to associate with the instance.
+	//
+	// Amazon Elastic Inference is no longer available.
 	ElasticInferenceAccelerators []*ElasticInferenceAccelerator `json:"elasticInferenceAccelerators,omitempty"`
 	// Indicates whether the instance is enabled for Amazon Web Services Nitro Enclaves.
 	// For more information, see What is Amazon Web Services Nitro Enclaves? (https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html)
@@ -86,8 +83,9 @@ type InstanceSpec struct {
 	// You can't enable Amazon Web Services Nitro Enclaves and hibernation on the
 	// same instance.
 	EnclaveOptions *EnclaveOptionsRequest `json:"enclaveOptions,omitempty"`
-	// Indicates whether an instance is enabled for hibernation. For more information,
-	// see Hibernate your instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
+	// Indicates whether an instance is enabled for hibernation. This parameter
+	// is valid only if the instance meets the hibernation prerequisites (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html).
+	// For more information, see Hibernate your Amazon EC2 instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
 	// in the Amazon EC2 User Guide.
 	//
 	// You can't enable hibernation and Amazon Web Services Nitro Enclaves on the
@@ -108,24 +106,22 @@ type InstanceSpec struct {
 	// For RunInstances, persistent Spot Instance requests are only supported when
 	// InstanceInterruptionBehavior is set to either hibernate or stop.
 	InstanceMarketOptions *InstanceMarketOptionsRequest `json:"instanceMarketOptions,omitempty"`
-	// The instance type. For more information, see Instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
+	// The instance type. For more information, see Amazon EC2 instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
 	// in the Amazon EC2 User Guide.
-	//
-	// Default: m1.small
 	InstanceType *string `json:"instanceType,omitempty"`
-	// [EC2-VPC] The number of IPv6 addresses to associate with the primary network
-	// interface. Amazon EC2 chooses the IPv6 addresses from the range of your subnet.
-	// You cannot specify this option and the option to assign specific IPv6 addresses
+	// The number of IPv6 addresses to associate with the primary network interface.
+	// Amazon EC2 chooses the IPv6 addresses from the range of your subnet. You
+	// cannot specify this option and the option to assign specific IPv6 addresses
 	// in the same request. You can specify this option if you've specified a minimum
 	// number of instances to launch.
 	//
 	// You cannot specify this option and the network interfaces option in the same
 	// request.
 	IPv6AddressCount *int64 `json:"ipv6AddressCount,omitempty"`
-	// [EC2-VPC] The IPv6 addresses from the range of the subnet to associate with
-	// the primary network interface. You cannot specify this option and the option
-	// to assign a number of IPv6 addresses in the same request. You cannot specify
-	// this option if you've specified a minimum number of instances to launch.
+	// The IPv6 addresses from the range of the subnet to associate with the primary
+	// network interface. You cannot specify this option and the option to assign
+	// a number of IPv6 addresses in the same request. You cannot specify this option
+	// if you've specified a minimum number of instances to launch.
 	//
 	// You cannot specify this option and the network interfaces option in the same
 	// request.
@@ -142,48 +138,45 @@ type InstanceSpec struct {
 	// If you do not specify a key pair, you can't connect to the instance unless
 	// you choose an AMI that is configured to allow users another way to log in.
 	KeyName *string `json:"keyName,omitempty"`
-	// The launch template to use to launch the instances. Any parameters that you
-	// specify in RunInstances override the same parameters in the launch template.
-	// You can specify either the name or ID of a launch template, but not both.
+	// The launch template. Any additional parameters that you specify for the new
+	// instance overwrite the corresponding parameters included in the launch template.
 	LaunchTemplate *LaunchTemplateSpecification `json:"launchTemplate,omitempty"`
 	// The license configurations.
 	LicenseSpecifications []*LicenseConfigurationRequest `json:"licenseSpecifications,omitempty"`
 	// The maintenance and recovery options for the instance.
 	MaintenanceOptions *InstanceMaintenanceOptionsRequest `json:"maintenanceOptions,omitempty"`
-	// The maximum number of instances to launch. If you specify more instances
-	// than Amazon EC2 can launch in the target Availability Zone, Amazon EC2 launches
-	// the largest possible number of instances above MinCount.
+	// The maximum number of instances to launch. If you specify a value that is
+	// more capacity than Amazon EC2 can launch in the target Availability Zone,
+	// Amazon EC2 launches the largest possible number of instances above the specified
+	// minimum count.
 	//
-	// Constraints: Between 1 and the maximum number you're allowed for the specified
-	// instance type. For more information about the default limits, and how to
-	// request an increase, see How many instances can I run in Amazon EC2 (http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2)
-	// in the Amazon EC2 FAQ.
+	// Constraints: Between 1 and the quota for the specified instance type for
+	// your account for this Region. For more information, see Amazon EC2 instance
+	// type quotas (https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html).
 	MaxCount *int64 `json:"maxCount,omitempty"`
 	// The metadata options for the instance. For more information, see Instance
 	// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
 	MetadataOptions *InstanceMetadataOptionsRequest `json:"metadataOptions,omitempty"`
-	// The minimum number of instances to launch. If you specify a minimum that
-	// is more instances than Amazon EC2 can launch in the target Availability Zone,
-	// Amazon EC2 launches no instances.
+	// The minimum number of instances to launch. If you specify a value that is
+	// more capacity than Amazon EC2 can provide in the target Availability Zone,
+	// Amazon EC2 does not launch any instances.
 	//
-	// Constraints: Between 1 and the maximum number you're allowed for the specified
-	// instance type. For more information about the default limits, and how to
-	// request an increase, see How many instances can I run in Amazon EC2 (http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2)
-	// in the Amazon EC2 General FAQ.
+	// Constraints: Between 1 and the quota for the specified instance type for
+	// your account for this Region. For more information, see Amazon EC2 instance
+	// type quotas (https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html).
 	MinCount *int64 `json:"minCount,omitempty"`
 	// Specifies whether detailed monitoring is enabled for the instance.
 	Monitoring *RunInstancesMonitoringEnabled `json:"monitoring,omitempty"`
-	// The network interfaces to associate with the instance. If you specify a network
-	// interface, you must specify any security groups and subnets as part of the
-	// network interface.
+	// The network interfaces to associate with the instance.
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
 	// The placement for the instance.
 	Placement *Placement `json:"placement,omitempty"`
 	// The options for the instance hostname. The default values are inherited from
-	// the subnet.
+	// the subnet. Applies only if creating a network interface, not attaching an
+	// existing one.
 	PrivateDNSNameOptions *PrivateDNSNameOptionsRequest `json:"privateDNSNameOptions,omitempty"`
-	// [EC2-VPC] The primary IPv4 address. You must specify a value from the IPv4
-	// address range of the subnet.
+	// The primary IPv4 address. You must specify a value from the IPv4 address
+	// range of the subnet.
 	//
 	// Only one private IP address can be designated as primary. You can't specify
 	// this option if you've specified the option to designate a private IP address
@@ -206,31 +199,28 @@ type InstanceSpec struct {
 	// (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html).
 	//
 	// If you specify a network interface, you must specify any security groups
-	// as part of the network interface.
+	// as part of the network interface instead of using this parameter.
 	SecurityGroupIDs []*string `json:"securityGroupIDs,omitempty"`
-	// [EC2-Classic, default VPC] The names of the security groups. For a nondefault
-	// VPC, you must use security group IDs instead.
+	// [Default VPC] The names of the security groups.
 	//
 	// If you specify a network interface, you must specify any security groups
-	// as part of the network interface.
+	// as part of the network interface instead of using this parameter.
 	//
 	// Default: Amazon EC2 uses the default security group.
 	SecurityGroups []*string `json:"securityGroups,omitempty"`
-	// [EC2-VPC] The ID of the subnet to launch the instance into.
+	// The ID of the subnet to launch the instance into.
 	//
 	// If you specify a network interface, you must specify any subnets as part
-	// of the network interface.
+	// of the network interface instead of using this parameter.
 	SubnetID *string `json:"subnetID,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
 	Tags []*Tag `json:"tags,omitempty"`
-	// The user data script to make available to the instance. For more information,
-	// see Run commands on your Linux instance at launch (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)
-	// and Run commands on your Windows instance at launch (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-windows-user-data.html).
-	// If you are using a command line tool, base64-encoding is performed for you,
-	// and you can load the text from a file. Otherwise, you must provide base64-encoded
-	// text. User data is limited to 16 KB.
+	// The user data to make available to the instance. User data must be base64-encoded.
+	// Depending on the tool or SDK that you're using, the base64-encoding might
+	// be performed for you. For more information, see Work with instance user data
+	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html).
 	UserData *string `json:"userData,omitempty"`
 }
 
@@ -254,17 +244,28 @@ type InstanceStatus struct {
 	// The architecture of the image.
 	// +kubebuilder:validation:Optional
 	Architecture *string `json:"architecture,omitempty"`
-	// The boot mode of the instance. For more information, see Boot modes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html)
+	// The boot mode that was specified by the AMI. If the value is uefi-preferred,
+	// the AMI supports both UEFI and Legacy BIOS. The currentInstanceBootMode parameter
+	// is the boot mode that is used to boot the instance at launch or start.
+	//
+	// The operating system contained in the AMI must be configured to support the
+	// specified boot mode.
+	//
+	// For more information, see Boot modes (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html)
 	// in the Amazon EC2 User Guide.
 	// +kubebuilder:validation:Optional
 	BootMode *string `json:"bootMode,omitempty"`
 	// The ID of the Capacity Reservation.
 	// +kubebuilder:validation:Optional
 	CapacityReservationID *string `json:"capacityReservationID,omitempty"`
-	// The Elastic GPU associated with the instance.
+	// Deprecated.
+	//
+	// Amazon Elastic Graphics reached end of life on January 8, 2024.
 	// +kubebuilder:validation:Optional
 	ElasticGPUAssociations []*ElasticGPUAssociation `json:"elasticGPUAssociations,omitempty"`
-	// The elastic inference accelerator associated with the instance.
+	// Deprecated
+	//
+	// Amazon Elastic Inference is no longer available.
 	// +kubebuilder:validation:Optional
 	ElasticInferenceAcceleratorAssociations []*ElasticInferenceAcceleratorAssociation `json:"elasticInferenceAcceleratorAssociations,omitempty"`
 	// Specifies whether enhanced networking with ENA is enabled.
@@ -283,7 +284,9 @@ type InstanceStatus struct {
 	// The IPv6 address assigned to the instance.
 	// +kubebuilder:validation:Optional
 	IPv6Address *string `json:"ipv6Address,omitempty"`
-	// The time the instance was launched.
+	// The time that the instance was last launched. To determine the time that
+	// instance was first launched, see the attachment time for the primary network
+	// interface.
 	// +kubebuilder:validation:Optional
 	LaunchTime *metav1.Time `json:"launchTime,omitempty"`
 	// The license configurations for the instance.
@@ -292,7 +295,8 @@ type InstanceStatus struct {
 	// The Amazon Resource Name (ARN) of the Outpost.
 	// +kubebuilder:validation:Optional
 	OutpostARN *string `json:"outpostARN,omitempty"`
-	// The value is Windows for Windows instances; otherwise blank.
+	// The platform. This value is windows for Windows instances; otherwise, it
+	// is empty.
 	// +kubebuilder:validation:Optional
 	Platform *string `json:"platform,omitempty"`
 	// The platform details value for the instance. For more information, see AMI
@@ -300,22 +304,22 @@ type InstanceStatus struct {
 	// in the Amazon EC2 User Guide.
 	// +kubebuilder:validation:Optional
 	PlatformDetails *string `json:"platformDetails,omitempty"`
-	// (IPv4 only) The private DNS hostname name assigned to the instance. This
+	// [IPv4 only] The private DNS hostname name assigned to the instance. This
 	// DNS hostname can only be used inside the Amazon EC2 network. This name is
 	// not available until the instance enters the running state.
 	//
-	// [EC2-VPC] The Amazon-provided DNS server resolves Amazon-provided private
-	// DNS hostnames if you've enabled DNS resolution and DNS hostnames in your
-	// VPC. If you are not using the Amazon-provided DNS server in your VPC, your
-	// custom domain name servers must resolve the hostname as appropriate.
+	// The Amazon-provided DNS server resolves Amazon-provided private DNS hostnames
+	// if you've enabled DNS resolution and DNS hostnames in your VPC. If you are
+	// not using the Amazon-provided DNS server in your VPC, your custom domain
+	// name servers must resolve the hostname as appropriate.
 	// +kubebuilder:validation:Optional
 	PrivateDNSName *string `json:"privateDNSName,omitempty"`
 	// The product codes attached to this instance, if applicable.
 	// +kubebuilder:validation:Optional
 	ProductCodes []*ProductCode `json:"productCodes,omitempty"`
-	// (IPv4 only) The public DNS name assigned to the instance. This name is not
-	// available until the instance enters the running state. For EC2-VPC, this
-	// name is only available if you've enabled DNS hostnames for your VPC.
+	// [IPv4 only] The public DNS name assigned to the instance. This name is not
+	// available until the instance enters the running state. This name is only
+	// available if you've enabled DNS hostnames for your VPC.
 	// +kubebuilder:validation:Optional
 	PublicDNSName *string `json:"publicDNSName,omitempty"`
 	// The public IPv4 address, or the Carrier IP address assigned to the instance,
@@ -367,7 +371,7 @@ type InstanceStatus struct {
 	// The virtualization type of the instance.
 	// +kubebuilder:validation:Optional
 	VirtualizationType *string `json:"virtualizationType,omitempty"`
-	// [EC2-VPC] The ID of the VPC in which the instance is running.
+	// The ID of the VPC in which the instance is running.
 	// +kubebuilder:validation:Optional
 	VPCID *string `json:"vpcID,omitempty"`
 }

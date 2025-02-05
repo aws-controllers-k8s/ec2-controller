@@ -12,8 +12,8 @@
 {{- $eipRefName = "Tag" }}
 func (rm *resourceManager) new{{ $eipRefName }}(
 	    c svcapitypes.{{ $eipRefName }},
-) *svcsdk.{{ $eipRefName }} {
-	res := &svcsdk.{{ $eipRefName }}{}
+) *svcsdktypes.{{ $eipRefName }} {
+	res := &svcsdktypes.{{ $eipRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $eipRef "" "c" 1 }}
 	return res
 }

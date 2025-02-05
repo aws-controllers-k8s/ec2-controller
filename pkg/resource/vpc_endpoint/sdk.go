@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.VPCEndpoint{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeVpcEndpointsOutput
-	resp, err = rm.sdkapi.DescribeVpcEndpointsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeVpcEndpoints(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpoints", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -111,8 +114,8 @@ func (rm *resourceManager) sdkFind(
 		}
 		if elem.DnsOptions != nil {
 			f2 := &svcapitypes.DNSOptionsSpecification{}
-			if elem.DnsOptions.DnsRecordIpType != nil {
-				f2.DNSRecordIPType = elem.DnsOptions.DnsRecordIpType
+			if elem.DnsOptions.DnsRecordIpType != "" {
+				f2.DNSRecordIPType = aws.String(string(elem.DnsOptions.DnsRecordIpType))
 			}
 			ko.Spec.DNSOptions = f2
 		} else {
@@ -134,8 +137,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.Groups = nil
 		}
-		if elem.IpAddressType != nil {
-			ko.Spec.IPAddressType = elem.IpAddressType
+		if elem.IpAddressType != "" {
+			ko.Spec.IPAddressType = aws.String(string(elem.IpAddressType))
 		} else {
 			ko.Spec.IPAddressType = nil
 		}
@@ -152,13 +155,7 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.LastError = nil
 		}
 		if elem.NetworkInterfaceIds != nil {
-			f6 := []*string{}
-			for _, f6iter := range elem.NetworkInterfaceIds {
-				var f6elem string
-				f6elem = *f6iter
-				f6 = append(f6, &f6elem)
-			}
-			ko.Status.NetworkInterfaceIDs = f6
+			ko.Status.NetworkInterfaceIDs = aws.StringSlice(elem.NetworkInterfaceIds)
 		} else {
 			ko.Status.NetworkInterfaceIDs = nil
 		}
@@ -183,13 +180,7 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.RequesterManaged = nil
 		}
 		if elem.RouteTableIds != nil {
-			f11 := []*string{}
-			for _, f11iter := range elem.RouteTableIds {
-				var f11elem string
-				f11elem = *f11iter
-				f11 = append(f11, &f11elem)
-			}
-			ko.Spec.RouteTableIDs = f11
+			ko.Spec.RouteTableIDs = aws.StringSlice(elem.RouteTableIds)
 		} else {
 			ko.Spec.RouteTableIDs = nil
 		}
@@ -198,19 +189,13 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.ServiceName = nil
 		}
-		if elem.State != nil {
-			ko.Status.State = elem.State
+		if elem.State != "" {
+			ko.Status.State = aws.String(string(elem.State))
 		} else {
 			ko.Status.State = nil
 		}
 		if elem.SubnetIds != nil {
-			f14 := []*string{}
-			for _, f14iter := range elem.SubnetIds {
-				var f14elem string
-				f14elem = *f14iter
-				f14 = append(f14, &f14elem)
-			}
-			ko.Spec.SubnetIDs = f14
+			ko.Spec.SubnetIDs = aws.StringSlice(elem.SubnetIds)
 		} else {
 			ko.Spec.SubnetIDs = nil
 		}
@@ -235,8 +220,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.VPCEndpointID = nil
 		}
-		if elem.VpcEndpointType != nil {
-			ko.Spec.VPCEndpointType = elem.VpcEndpointType
+		if elem.VpcEndpointType != "" {
+			ko.Spec.VPCEndpointType = aws.String(string(elem.VpcEndpointType))
 		} else {
 			ko.Spec.VPCEndpointType = nil
 		}
@@ -281,9 +266,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeVpcEndpointsInput{}
 
 	if r.ko.Status.VPCEndpointID != nil {
-		f4 := []*string{}
-		f4 = append(f4, r.ko.Status.VPCEndpointID)
-		res.SetVpcEndpointIds(f4)
+		f4 := []string{}
+		f4 = append(f4, *r.ko.Status.VPCEndpointID)
+		res.VpcEndpointIds = f4
 	}
 
 	return res, nil
@@ -309,7 +294,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateVpcEndpointOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateVpcEndpointWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateVpcEndpoint(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpcEndpoint", err)
 	if err != nil {
 		return nil, err
@@ -341,8 +326,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 	if resp.VpcEndpoint.DnsOptions != nil {
 		f2 := &svcapitypes.DNSOptionsSpecification{}
-		if resp.VpcEndpoint.DnsOptions.DnsRecordIpType != nil {
-			f2.DNSRecordIPType = resp.VpcEndpoint.DnsOptions.DnsRecordIpType
+		if resp.VpcEndpoint.DnsOptions.DnsRecordIpType != "" {
+			f2.DNSRecordIPType = aws.String(string(resp.VpcEndpoint.DnsOptions.DnsRecordIpType))
 		}
 		ko.Spec.DNSOptions = f2
 	} else {
@@ -364,8 +349,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.Groups = nil
 	}
-	if resp.VpcEndpoint.IpAddressType != nil {
-		ko.Spec.IPAddressType = resp.VpcEndpoint.IpAddressType
+	if resp.VpcEndpoint.IpAddressType != "" {
+		ko.Spec.IPAddressType = aws.String(string(resp.VpcEndpoint.IpAddressType))
 	} else {
 		ko.Spec.IPAddressType = nil
 	}
@@ -382,13 +367,7 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.LastError = nil
 	}
 	if resp.VpcEndpoint.NetworkInterfaceIds != nil {
-		f6 := []*string{}
-		for _, f6iter := range resp.VpcEndpoint.NetworkInterfaceIds {
-			var f6elem string
-			f6elem = *f6iter
-			f6 = append(f6, &f6elem)
-		}
-		ko.Status.NetworkInterfaceIDs = f6
+		ko.Status.NetworkInterfaceIDs = aws.StringSlice(resp.VpcEndpoint.NetworkInterfaceIds)
 	} else {
 		ko.Status.NetworkInterfaceIDs = nil
 	}
@@ -413,13 +392,7 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.RequesterManaged = nil
 	}
 	if resp.VpcEndpoint.RouteTableIds != nil {
-		f11 := []*string{}
-		for _, f11iter := range resp.VpcEndpoint.RouteTableIds {
-			var f11elem string
-			f11elem = *f11iter
-			f11 = append(f11, &f11elem)
-		}
-		ko.Spec.RouteTableIDs = f11
+		ko.Spec.RouteTableIDs = aws.StringSlice(resp.VpcEndpoint.RouteTableIds)
 	} else {
 		ko.Spec.RouteTableIDs = nil
 	}
@@ -428,19 +401,13 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.ServiceName = nil
 	}
-	if resp.VpcEndpoint.State != nil {
-		ko.Status.State = resp.VpcEndpoint.State
+	if resp.VpcEndpoint.State != "" {
+		ko.Status.State = aws.String(string(resp.VpcEndpoint.State))
 	} else {
 		ko.Status.State = nil
 	}
 	if resp.VpcEndpoint.SubnetIds != nil {
-		f14 := []*string{}
-		for _, f14iter := range resp.VpcEndpoint.SubnetIds {
-			var f14elem string
-			f14elem = *f14iter
-			f14 = append(f14, &f14elem)
-		}
-		ko.Spec.SubnetIDs = f14
+		ko.Spec.SubnetIDs = aws.StringSlice(resp.VpcEndpoint.SubnetIds)
 	} else {
 		ko.Spec.SubnetIDs = nil
 	}
@@ -465,8 +432,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.VPCEndpointID = nil
 	}
-	if resp.VpcEndpoint.VpcEndpointType != nil {
-		ko.Spec.VPCEndpointType = resp.VpcEndpoint.VpcEndpointType
+	if resp.VpcEndpoint.VpcEndpointType != "" {
+		ko.Spec.VPCEndpointType = aws.String(string(resp.VpcEndpoint.VpcEndpointType))
 	} else {
 		ko.Spec.VPCEndpointType = nil
 	}
@@ -494,56 +461,38 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateVpcEndpointInput{}
 
 	if r.ko.Spec.DNSOptions != nil {
-		f0 := &svcsdk.DnsOptionsSpecification{}
+		f0 := &svcsdktypes.DnsOptionsSpecification{}
 		if r.ko.Spec.DNSOptions.DNSRecordIPType != nil {
-			f0.SetDnsRecordIpType(*r.ko.Spec.DNSOptions.DNSRecordIPType)
+			f0.DnsRecordIpType = svcsdktypes.DnsRecordIpType(*r.ko.Spec.DNSOptions.DNSRecordIPType)
 		}
-		res.SetDnsOptions(f0)
+		res.DnsOptions = f0
 	}
 	if r.ko.Spec.IPAddressType != nil {
-		res.SetIpAddressType(*r.ko.Spec.IPAddressType)
+		res.IpAddressType = svcsdktypes.IpAddressType(*r.ko.Spec.IPAddressType)
 	}
 	if r.ko.Spec.PolicyDocument != nil {
-		res.SetPolicyDocument(*r.ko.Spec.PolicyDocument)
+		res.PolicyDocument = r.ko.Spec.PolicyDocument
 	}
 	if r.ko.Spec.PrivateDNSEnabled != nil {
-		res.SetPrivateDnsEnabled(*r.ko.Spec.PrivateDNSEnabled)
+		res.PrivateDnsEnabled = r.ko.Spec.PrivateDNSEnabled
 	}
 	if r.ko.Spec.RouteTableIDs != nil {
-		f4 := []*string{}
-		for _, f4iter := range r.ko.Spec.RouteTableIDs {
-			var f4elem string
-			f4elem = *f4iter
-			f4 = append(f4, &f4elem)
-		}
-		res.SetRouteTableIds(f4)
+		res.RouteTableIds = aws.ToStringSlice(r.ko.Spec.RouteTableIDs)
 	}
 	if r.ko.Spec.SecurityGroupIDs != nil {
-		f5 := []*string{}
-		for _, f5iter := range r.ko.Spec.SecurityGroupIDs {
-			var f5elem string
-			f5elem = *f5iter
-			f5 = append(f5, &f5elem)
-		}
-		res.SetSecurityGroupIds(f5)
+		res.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.SecurityGroupIDs)
 	}
 	if r.ko.Spec.ServiceName != nil {
-		res.SetServiceName(*r.ko.Spec.ServiceName)
+		res.ServiceName = r.ko.Spec.ServiceName
 	}
 	if r.ko.Spec.SubnetIDs != nil {
-		f7 := []*string{}
-		for _, f7iter := range r.ko.Spec.SubnetIDs {
-			var f7elem string
-			f7elem = *f7iter
-			f7 = append(f7, &f7elem)
-		}
-		res.SetSubnetIds(f7)
+		res.SubnetIds = aws.ToStringSlice(r.ko.Spec.SubnetIDs)
 	}
 	if r.ko.Spec.VPCEndpointType != nil {
-		res.SetVpcEndpointType(*r.ko.Spec.VPCEndpointType)
+		res.VpcEndpointType = svcsdktypes.VpcEndpointType(*r.ko.Spec.VPCEndpointType)
 	}
 	if r.ko.Spec.VPCID != nil {
-		res.SetVpcId(*r.ko.Spec.VPCID)
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil
@@ -579,7 +528,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteVpcEndpointsOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteVpcEndpointsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteVpcEndpoints(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpcEndpoints", err)
 	return nil, err
 }
@@ -696,11 +645,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidVpcId.Malformed",
 		"InvalidServiceName":
 		return true
@@ -711,13 +661,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

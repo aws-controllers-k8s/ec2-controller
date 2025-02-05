@@ -21,7 +21,8 @@ import (
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/samber/lo"
 )
 
@@ -49,13 +50,13 @@ func (rm *resourceManager) syncRoutes(
 	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	if latest != nil {
-		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(latest.ko.Spec.Routes)
+		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, latest.ko.Spec.Routes)
 		if err != nil {
 			return err
 		}
 	}
 	if desired != nil {
-		desired.ko.Spec.Routes, err = rm.excludeAWSRoute(desired.ko.Spec.Routes)
+		desired.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, desired.ko.Spec.Routes)
 		if err != nil {
 			return err
 		}
@@ -174,7 +175,7 @@ func (rm *resourceManager) createRoute(
 	// Routes should only be configurable for the
 	// RouteTable in which they are defined
 	input.RouteTableId = r.ko.Status.RouteTableID
-	_, err = rm.sdkapi.CreateRouteWithContext(ctx, input)
+	_, err = rm.sdkapi.CreateRoute(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateRoute", err)
 	return err
 }
@@ -192,7 +193,7 @@ func (rm *resourceManager) deleteRoute(
 	// Routes should only be configurable for the
 	// RouteTable in which they are defined
 	input.RouteTableId = r.ko.Status.RouteTableID
-	_, err = rm.sdkapi.DeleteRouteWithContext(ctx, input)
+	_, err = rm.sdkapi.DeleteRoute(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRoute", err)
 	return err
 }
@@ -253,7 +254,7 @@ func (rm *resourceManager) requiredFieldsMissingForCreateRoute(
 // RouteTable's Routes from aws-sdk output with RouteTable.Spec.Routes.
 func (rm *resourceManager) addRoutesToStatus(
 	ko *svcapitypes.RouteTable,
-	routeTable *svcsdk.RouteTable,
+	routeTable svcsdktypes.RouteTable,
 ) {
 	ko.Status.RouteStatuses = nil
 	if routeTable.Routes != nil {
@@ -297,10 +298,11 @@ func removeLocalRoute(
 }
 
 func (rm *resourceManager) excludeAWSRoute(
+	ctx context.Context,
 	routes []*svcapitypes.CreateRouteInput,
 ) (ret []*svcapitypes.CreateRouteInput, err error) {
 	ret = make([]*svcapitypes.CreateRouteInput, 0)
-	var prefixListIds []*string
+	var prefixListIds []string
 
 	// Preparing a list of prefixIds from all the DestinationPrefixListIDs in Routes
 	// This is to prevent multiple AWS API calls of DescribeManagedPrefixLists
@@ -313,19 +315,19 @@ func (rm *resourceManager) excludeAWSRoute(
 		return route.DestinationPrefixListID != nil
 	})
 
-	prefixListIds = lo.Map(prefixListRoutes, func(route *svcapitypes.CreateRouteInput, _ int) *string {
-		return route.DestinationPrefixListID
+	prefixListIds = lo.Map(prefixListRoutes, func(route *svcapitypes.CreateRouteInput, _ int) string {
+		return *route.DestinationPrefixListID
 	})
 
 	input := &svcsdk.DescribeManagedPrefixListsInput{}
 	input.PrefixListIds = prefixListIds
-	resp, err := rm.sdkapi.DescribeManagedPrefixLists(input)
+	resp, err := rm.sdkapi.DescribeManagedPrefixLists(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeManagedPrefixLists", nil)
 	if err != nil {
 		return ret, nil
 	}
 
-	m := lo.FilterMap(resp.PrefixLists, func(mpl *svcsdk.ManagedPrefixList, _ int) (string, bool) {
+	m := lo.FilterMap(resp.PrefixLists, func(mpl svcsdktypes.ManagedPrefixList, _ int) (string, bool) {
 		if strings.EqualFold(*mpl.OwnerId, "AWS") {
 			return *mpl.PrefixListId, true
 		}
@@ -350,20 +352,20 @@ func (rm *resourceManager) excludeAWSRoute(
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateRouteTableInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("route-table")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "route-table"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }

@@ -1,4 +1,8 @@
 ignore:
+  shape_names:
+    - ConnectionTrackingSpecificationRequest
+    - EnaSrdSpecificationRequest
+    - OperatorRequest
   operations:
     - ModifyTransitGateway
     - ModifyVpcEndpoint
@@ -8,6 +12,7 @@ ignore:
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.DryRun
+    - CreateFlowLogsInput.DeliverCrossAccountRole
     - CreateFlowLogsInput.ClientToken
     - CreateFlowLogsInput.TagSpecifications
     - CreateFlowLogsInput.ResourceIds
@@ -15,30 +20,58 @@ ignore:
     - CreateInternetGatewayInput.DryRun
     - CreateInternetGatewayInput.TagSpecifications
     - CreateNatGatewayInput.ClientToken
+    - CreateNatGatewayInput.PrivateIpAddress
+    - CreateNatGatewayInput.SecondaryAllocationIds
+    - CreateNatGatewayInput.SecondaryPrivateIpAddressCount
+    - CreateNatGatewayInput.SecondaryPrivateIpAddresses
     - CreateNatGatewayInput.DryRun
     - CreateNatGatewayInput.TagSpecifications
     - CreateNetworkAclInput.DryRun
+    - CreateNetworkAclInput.ClientToken
     - CreateNetworkAclInput.TagSpecifications
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
     - CreateRouteTableInput.DryRun
+    - CreateRouteTableInput.ClientToken
     - CreateRouteTableInput.TagSpecifications
     - CreateSecurityGroupInput.DryRun
     - CreateSecurityGroupInput.TagSpecifications
     - CreateSubnetInput.DryRun
+    - CreateSubnetInput.Ipv4IpamPoolId
+    - CreateSubnetInput.Ipv4NetmaskLength
+    - CreateSubnetInput.Ipv6IpamPoolId
+    - CreateSubnetInput.Ipv6NetmaskLength
     - CreateSubnetInput.TagSpecifications
+    - CreateSubnetOutput.Subnet.BlockPublicAccessStates
     - CreateTransitGatewayInput.DryRun
+    - CreateTransitGatewayInput.Options.SecurityGroupReferencingSupport
     - CreateTransitGatewayInput.TagSpecifications
     - CreateVpcInput.CidrBlock
     - CreateVpcOutput.Vpc.CidrBlock
+    - CreateVpcOutput.Vpc.BlockPublicAccessStates
     - CreateVpcInput.DryRun
     - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
+    - CreateVpcEndpointInput.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
+    - CreateVpcEndpointInput.ResourceConfigurationArn
+    - CreateVpcEndpointInput.ServiceNetworkArn
+    - CreateVpcEndpointInput.ServiceRegion
+    - CreateVpcEndpointInput.SubnetConfigurations
+    - CreateVpcEndpointOutput.VpcEndpoint.FailureReason
+    - CreateVpcEndpointOutput.VpcEndpoint.Ipv4Prefixes
+    - CreateVpcEndpointOutput.VpcEndpoint.Ipv6Prefixes
+    - CreateVpcEndpointOutput.VpcEndpoint.ResourceConfigurationArn
+    - CreateVpcEndpointOutput.VpcEndpoint.ServiceNetworkArn
+    - CreateVpcEndpointOutput.VpcEndpoint.ServiceRegion
     - CreateVpcEndpointServiceConfigurationInput.ClientToken
     - CreateVpcEndpointServiceConfigurationInput.DryRun
     - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
+    - CreateVpcEndpointServiceConfigurationInput.SupportedRegions
+    - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.SupportedRegions
+    - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
+    - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
     - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
@@ -47,18 +80,38 @@ ignore:
     - DeleteSecurityGroupInput.GroupName
     # support EC2-VPC only
     - AllocateAddressInput.Domain
+    - AllocateAddressInput.IpamPoolId
     - AllocateAddressOutput.Domain
     - Instance.ClientToken
     - InstanceNetworkInterfaceSpecification.Groups
     - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.Placement.GroupId
+    - Instance.CurrentInstanceBootMode
+    - Instance.Operator
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
     - RunInstancesInput.TagSpecifications
+    - RunInstancesInput.EnablePrimaryIpv6
+    - RunInstancesInput.CpuOptions.AmdSevSnp
     - SecurityGroupRule.GroupId
+    - SecurityGroupRule.SecurityGroupRuleArn
     - SecurityGroupRule.GroupOwnerId
     - SecurityGroupRule.ReferencedGroupInfo
     - TerminateInstancesInput.DryRun
+    - InstanceIpv6Address.IsPrimaryIpv6
+    - InstanceNetworkInterfaceSpecification.PrimaryIpv6
+    - NatGatewayAddress.AssociationId
+    - NatGatewayAddress.FailureMessage
+    - NatGatewayAddress.IsPrimary
+    - NatGatewayAddress.Status
+    - SubnetIpv6CidrBlockAssociation.IpSource
+    - SubnetIpv6CidrBlockAssociation.Ipv6AddressAttribute
+    - VpcIpv6CidrBlockAssociation.IpSource
+    - VpcIpv6CidrBlockAssociation.Ipv6AddressAttribute
   resource_names:
+    - CapacityReservationBySplitting
+    - IpamExternalResourceVerificationToken
+    - VpcBlockPublicAccessExclusion
     - AccountAttribute
     - CapacityReservation
     - CapacityReservationFleet
@@ -161,6 +214,10 @@ operations:
     output_wrapper_field_path: NetworkAcl
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
+  CreateRouteTable:
+    output_wrapper_field_path: RouteTable
+    operation_type:
+      - Create
   DeleteVpcEndpoints:
     operation_type:
       - Delete
@@ -199,8 +256,8 @@ operations:
       # instances at once (returning them in a single Reservation),
       # a Reservation controller does not align with the declarative state model 
       # in Kubernetes because users would not be able to update the underlying instances.
-      MaxCount: 1
-      MinCount: 1
+      MaxCount: aws.Int32(1)
+      MinCount: aws.Int32(1)
   DescribeInstances:
     #output shape: DescribeInstancesOutput
     output_wrapper_field_path: Reservations.Instances

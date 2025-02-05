@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.VPCPeeringConnection{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeVpcPeeringConnectionsOutput
-	resp, err = rm.sdkapi.DescribeVpcPeeringConnectionsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeVpcPeeringConnections(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcPeeringConnections", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -201,8 +204,8 @@ func (rm *resourceManager) sdkFind(
 		}
 		if elem.Status != nil {
 			f3 := &svcapitypes.VPCPeeringConnectionStateReason{}
-			if elem.Status.Code != nil {
-				f3.Code = elem.Status.Code
+			if elem.Status.Code != "" {
+				f3.Code = aws.String(string(elem.Status.Code))
 			}
 			if elem.Status.Message != nil {
 				f3.Message = elem.Status.Message
@@ -302,9 +305,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeVpcPeeringConnectionsInput{}
 
 	if r.ko.Status.VPCPeeringConnectionID != nil {
-		f4 := []*string{}
-		f4 = append(f4, r.ko.Status.VPCPeeringConnectionID)
-		res.SetVpcPeeringConnectionIds(f4)
+		f4 := []string{}
+		f4 = append(f4, *r.ko.Status.VPCPeeringConnectionID)
+		res.VpcPeeringConnectionIds = f4
 	}
 
 	return res, nil
@@ -330,7 +333,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateVpcPeeringConnectionOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateVpcPeeringConnectionWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateVpcPeeringConnection(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpcPeeringConnection", err)
 	if err != nil {
 		return nil, err
@@ -452,8 +455,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 	if resp.VpcPeeringConnection.Status != nil {
 		f3 := &svcapitypes.VPCPeeringConnectionStateReason{}
-		if resp.VpcPeeringConnection.Status.Code != nil {
-			f3.Code = resp.VpcPeeringConnection.Status.Code
+		if resp.VpcPeeringConnection.Status.Code != "" {
+			f3.Code = aws.String(string(resp.VpcPeeringConnection.Status.Code))
 		}
 		if resp.VpcPeeringConnection.Status.Message != nil {
 			f3.Message = resp.VpcPeeringConnection.Status.Message
@@ -501,16 +504,16 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateVpcPeeringConnectionInput{}
 
 	if r.ko.Spec.PeerOwnerID != nil {
-		res.SetPeerOwnerId(*r.ko.Spec.PeerOwnerID)
+		res.PeerOwnerId = r.ko.Spec.PeerOwnerID
 	}
 	if r.ko.Spec.PeerRegion != nil {
-		res.SetPeerRegion(*r.ko.Spec.PeerRegion)
+		res.PeerRegion = r.ko.Spec.PeerRegion
 	}
 	if r.ko.Spec.PeerVPCID != nil {
-		res.SetPeerVpcId(*r.ko.Spec.PeerVPCID)
+		res.PeerVpcId = r.ko.Spec.PeerVPCID
 	}
 	if r.ko.Spec.VPCID != nil {
-		res.SetVpcId(*r.ko.Spec.VPCID)
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil
@@ -561,7 +564,7 @@ func (rm *resourceManager) sdkUpdate(
 			acceptInput := &svcsdk.AcceptVpcPeeringConnectionInput{
 				VpcPeeringConnectionId: latest.ko.Status.VPCPeeringConnectionID,
 			}
-			acceptResp, err := rm.sdkapi.AcceptVpcPeeringConnectionWithContext(ctx, acceptInput)
+			acceptResp, err := rm.sdkapi.AcceptVpcPeeringConnection(ctx, acceptInput)
 			if err != nil {
 				return nil, err
 			}
@@ -620,7 +623,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput
 	_ = resp
-	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptionsWithContext(ctx, input)
+	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptions(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcPeeringConnectionOptions", err)
 	if err != nil {
 		return nil, err
@@ -674,33 +677,33 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.ModifyVpcPeeringConnectionOptionsInput{}
 
 	if r.ko.Spec.AccepterPeeringConnectionOptions != nil {
-		f0 := &svcsdk.PeeringConnectionOptionsRequest{}
+		f0 := &svcsdktypes.PeeringConnectionOptionsRequest{}
 		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
-			f0.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+			f0.AllowDnsResolutionFromRemoteVpc = r.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC
 		}
 		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
-			f0.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+			f0.AllowEgressFromLocalClassicLinkToRemoteVpc = r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC
 		}
 		if r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
-			f0.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+			f0.AllowEgressFromLocalVpcToRemoteClassicLink = r.ko.Spec.AccepterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink
 		}
-		res.SetAccepterPeeringConnectionOptions(f0)
+		res.AccepterPeeringConnectionOptions = f0
 	}
 	if r.ko.Spec.RequesterPeeringConnectionOptions != nil {
-		f2 := &svcsdk.PeeringConnectionOptionsRequest{}
+		f2 := &svcsdktypes.PeeringConnectionOptionsRequest{}
 		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
-			f2.SetAllowDnsResolutionFromRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC)
+			f2.AllowDnsResolutionFromRemoteVpc = r.ko.Spec.RequesterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC
 		}
 		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC != nil {
-			f2.SetAllowEgressFromLocalClassicLinkToRemoteVpc(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC)
+			f2.AllowEgressFromLocalClassicLinkToRemoteVpc = r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalClassicLinkToRemoteVPC
 		}
 		if r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink != nil {
-			f2.SetAllowEgressFromLocalVpcToRemoteClassicLink(*r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink)
+			f2.AllowEgressFromLocalVpcToRemoteClassicLink = r.ko.Spec.RequesterPeeringConnectionOptions.AllowEgressFromLocalVPCToRemoteClassicLink
 		}
-		res.SetRequesterPeeringConnectionOptions(f2)
+		res.RequesterPeeringConnectionOptions = f2
 	}
 	if r.ko.Status.VPCPeeringConnectionID != nil {
-		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
+		res.VpcPeeringConnectionId = r.ko.Status.VPCPeeringConnectionID
 	}
 
 	return res, nil
@@ -722,7 +725,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteVpcPeeringConnectionOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteVpcPeeringConnectionWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteVpcPeeringConnection(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpcPeeringConnection", err)
 	return nil, err
 }
@@ -735,7 +738,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteVpcPeeringConnectionInput{}
 
 	if r.ko.Status.VPCPeeringConnectionID != nil {
-		res.SetVpcPeeringConnectionId(*r.ko.Status.VPCPeeringConnectionID)
+		res.VpcPeeringConnectionId = r.ko.Status.VPCPeeringConnectionID
 	}
 
 	return res, nil
@@ -846,13 +849,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

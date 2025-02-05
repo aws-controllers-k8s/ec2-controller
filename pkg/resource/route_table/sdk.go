@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.RouteTable{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeRouteTablesOutput
-	resp, err = rm.sdkapi.DescribeRouteTablesWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeRouteTables(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeRouteTables", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -94,8 +97,8 @@ func (rm *resourceManager) sdkFind(
 				f0elem := &svcapitypes.RouteTableAssociation{}
 				if f0iter.AssociationState != nil {
 					f0elemf0 := &svcapitypes.RouteTableAssociationState{}
-					if f0iter.AssociationState.State != nil {
-						f0elemf0.State = f0iter.AssociationState.State
+					if f0iter.AssociationState.State != "" {
+						f0elemf0.State = aws.String(string(f0iter.AssociationState.State))
 					}
 					if f0iter.AssociationState.StatusMessage != nil {
 						f0elemf0.StatusMessage = f0iter.AssociationState.StatusMessage
@@ -269,9 +272,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeRouteTablesInput{}
 
 	if r.ko.Status.RouteTableID != nil {
-		f4 := []*string{}
-		f4 = append(f4, r.ko.Status.RouteTableID)
-		res.SetRouteTableIds(f4)
+		f4 := []string{}
+		f4 = append(f4, *r.ko.Status.RouteTableID)
+		res.RouteTableIds = f4
 	}
 
 	return res, nil
@@ -297,7 +300,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateRouteTableOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateRouteTableWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateRouteTable", err)
 	if err != nil {
 		return nil, err
@@ -312,8 +315,8 @@ func (rm *resourceManager) sdkCreate(
 			f0elem := &svcapitypes.RouteTableAssociation{}
 			if f0iter.AssociationState != nil {
 				f0elemf0 := &svcapitypes.RouteTableAssociationState{}
-				if f0iter.AssociationState.State != nil {
-					f0elemf0.State = f0iter.AssociationState.State
+				if f0iter.AssociationState.State != "" {
+					f0elemf0.State = aws.String(string(f0iter.AssociationState.State))
 				}
 				if f0iter.AssociationState.StatusMessage != nil {
 					f0elemf0.StatusMessage = f0iter.AssociationState.StatusMessage
@@ -436,7 +439,7 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	rm.addRoutesToStatus(ko, resp.RouteTable)
+	rm.addRoutesToStatus(ko, *resp.RouteTable)
 
 	if rm.requiredFieldsMissingForCreateRoute(&resource{ko}) {
 		return nil, ackerr.NotFound
@@ -470,7 +473,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateRouteTableInput{}
 
 	if r.ko.Spec.VPCID != nil {
-		res.SetVpcId(*r.ko.Spec.VPCID)
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil
@@ -503,7 +506,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteRouteTableOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteRouteTableWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRouteTable", err)
 	return nil, err
 }
@@ -516,7 +519,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteRouteTableInput{}
 
 	if r.ko.Status.RouteTableID != nil {
-		res.SetRouteTableId(*r.ko.Status.RouteTableID)
+		res.RouteTableId = r.ko.Status.RouteTableID
 	}
 
 	return res, nil
@@ -738,46 +741,46 @@ func (rm *resourceManager) newCreateRouteInput(
 	res := &svcsdk.CreateRouteInput{}
 
 	if c.CarrierGatewayID != nil {
-		res.SetCarrierGatewayId(*c.CarrierGatewayID)
+		res.CarrierGatewayId = c.CarrierGatewayID
 	}
 	if c.CoreNetworkARN != nil {
-		res.SetCoreNetworkArn(*c.CoreNetworkARN)
+		res.CoreNetworkArn = c.CoreNetworkARN
 	}
 	if c.DestinationCIDRBlock != nil {
-		res.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
+		res.DestinationCidrBlock = c.DestinationCIDRBlock
 	}
 	if c.DestinationIPv6CIDRBlock != nil {
-		res.SetDestinationIpv6CidrBlock(*c.DestinationIPv6CIDRBlock)
+		res.DestinationIpv6CidrBlock = c.DestinationIPv6CIDRBlock
 	}
 	if c.DestinationPrefixListID != nil {
-		res.SetDestinationPrefixListId(*c.DestinationPrefixListID)
+		res.DestinationPrefixListId = c.DestinationPrefixListID
 	}
 	if c.EgressOnlyInternetGatewayID != nil {
-		res.SetEgressOnlyInternetGatewayId(*c.EgressOnlyInternetGatewayID)
+		res.EgressOnlyInternetGatewayId = c.EgressOnlyInternetGatewayID
 	}
 	if c.GatewayID != nil {
-		res.SetGatewayId(*c.GatewayID)
+		res.GatewayId = c.GatewayID
 	}
 	if c.InstanceID != nil {
-		res.SetInstanceId(*c.InstanceID)
+		res.InstanceId = c.InstanceID
 	}
 	if c.LocalGatewayID != nil {
-		res.SetLocalGatewayId(*c.LocalGatewayID)
+		res.LocalGatewayId = c.LocalGatewayID
 	}
 	if c.NATGatewayID != nil {
-		res.SetNatGatewayId(*c.NATGatewayID)
+		res.NatGatewayId = c.NATGatewayID
 	}
 	if c.NetworkInterfaceID != nil {
-		res.SetNetworkInterfaceId(*c.NetworkInterfaceID)
+		res.NetworkInterfaceId = c.NetworkInterfaceID
 	}
 	if c.TransitGatewayID != nil {
-		res.SetTransitGatewayId(*c.TransitGatewayID)
+		res.TransitGatewayId = c.TransitGatewayID
 	}
 	if c.VPCEndpointID != nil {
-		res.SetVpcEndpointId(*c.VPCEndpointID)
+		res.VpcEndpointId = c.VPCEndpointID
 	}
 	if c.VPCPeeringConnectionID != nil {
-		res.SetVpcPeeringConnectionId(*c.VPCPeeringConnectionID)
+		res.VpcPeeringConnectionId = c.VPCPeeringConnectionID
 	}
 
 	return res
@@ -785,13 +788,13 @@ func (rm *resourceManager) newCreateRouteInput(
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res
@@ -803,13 +806,13 @@ func (rm *resourceManager) newDeleteRouteInput(
 	res := &svcsdk.DeleteRouteInput{}
 
 	if c.DestinationCIDRBlock != nil {
-		res.SetDestinationCidrBlock(*c.DestinationCIDRBlock)
+		res.DestinationCidrBlock = c.DestinationCIDRBlock
 	}
 	if c.DestinationIPv6CIDRBlock != nil {
-		res.SetDestinationIpv6CidrBlock(*c.DestinationIPv6CIDRBlock)
+		res.DestinationIpv6CidrBlock = c.DestinationIPv6CIDRBlock
 	}
 	if c.DestinationPrefixListID != nil {
-		res.SetDestinationPrefixListId(*c.DestinationPrefixListID)
+		res.DestinationPrefixListId = c.DestinationPrefixListID
 	}
 
 	return res
@@ -818,7 +821,7 @@ func (rm *resourceManager) newDeleteRouteInput(
 // setRoute sets a resource Route type
 // given the SDK type.
 func (rm *resourceManager) setResourceRoute(
-	resp *svcsdk.Route,
+	resp svcsdktypes.Route,
 ) *svcapitypes.Route {
 	res := &svcapitypes.Route{}
 
@@ -858,11 +861,11 @@ func (rm *resourceManager) setResourceRoute(
 	if resp.NetworkInterfaceId != nil {
 		res.NetworkInterfaceID = resp.NetworkInterfaceId
 	}
-	if resp.Origin != nil {
-		res.Origin = resp.Origin
+	if resp.Origin != "" {
+		res.Origin = aws.String(string(resp.Origin))
 	}
-	if resp.State != nil {
-		res.State = resp.State
+	if resp.State != "" {
+		res.State = aws.String(string(resp.State))
 	}
 	if resp.TransitGatewayId != nil {
 		res.TransitGatewayID = resp.TransitGatewayId

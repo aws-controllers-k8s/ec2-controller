@@ -20,7 +20,8 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 var (
@@ -30,11 +31,11 @@ var (
 	)
 	ErrVPCPeeringConnectionProvisioning = fmt.Errorf(
 		"VPCPeeringConnection in '%v' state, cannot be modified or deleted",
-		svcsdk.VpcPeeringConnectionStateReasonCodeProvisioning,
+		svcsdktypes.VpcPeeringConnectionStateReasonCodeProvisioning,
 	)
 	ErrVPCPeeringConnectionDeleting = fmt.Errorf(
 		"VPCPeeringConnection in '%v' state, cannot be modified or deleted",
-		svcsdk.VpcPeeringConnectionStateReasonCodeDeleting,
+		svcsdktypes.VpcPeeringConnectionStateReasonCodeDeleting,
 	)
 )
 
@@ -99,21 +100,21 @@ func isVPCPeeringConnectionPendingAcceptance(r *resource) bool {
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcPeeringConnectionInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("vpc-peering-connection")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "vpc-peering-connection"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }
 

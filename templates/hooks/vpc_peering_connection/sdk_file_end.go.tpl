@@ -12,8 +12,8 @@
 {{- $vpcPeeringConnectionRefName = "Tag" }}
 func (rm *resourceManager) new{{ $vpcPeeringConnectionRefName }}(
 	    c svcapitypes.{{ $vpcPeeringConnectionRefName }},
-) *svcsdk.{{ $vpcPeeringConnectionRefName }} {
-	res := &svcsdk.{{ $vpcPeeringConnectionRefName }}{}
+) *svcsdktypes.{{ $vpcPeeringConnectionRefName }} {
+	res := &svcsdktypes.{{ $vpcPeeringConnectionRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $vpcPeeringConnectionRef "" "c" 1 }}
 	return res
 }

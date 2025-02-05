@@ -82,7 +82,7 @@ spec:
                   Default: true
                 type: boolean
               routeTableIDs:
-                description: (Gateway endpoint) One or more route table IDs.
+                description: (Gateway endpoint) The route table IDs.
                 items:
                   type: string
                 type: array
@@ -107,8 +107,9 @@ spec:
                 type: array
               securityGroupIDs:
                 description: |-
-                  (Interface endpoint) The ID of one or more security groups to associate with
-                  the endpoint network interface.
+                  (Interface endpoint) The IDs of the security groups to associate with the
+                  endpoint network interfaces. If this parameter is not specified, we use the
+                  default security group for the VPC.
                 items:
                   type: string
                 type: array
@@ -132,15 +133,13 @@ spec:
                   type: object
                 type: array
               serviceName:
-                description: |-
-                  The service name. To get a list of available services, use the DescribeVpcEndpointServices
-                  request, or get the name from the service provider.
+                description: The name of the endpoint service.
                 type: string
               subnetIDs:
                 description: |-
-                  (Interface and Gateway Load Balancer endpoints) The ID of one or more subnets
-                  in which to create an endpoint network interface. For a Gateway Load Balancer
-                  endpoint, you can specify one subnet only.
+                  (Interface and Gateway Load Balancer endpoints) The IDs of the subnets in
+                  which to create endpoint network interfaces. For a Gateway Load Balancer
+                  endpoint, you can specify only one subnet.
                 items:
                   type: string
                 type: array
@@ -184,7 +183,7 @@ spec:
                   Default: Gateway
                 type: string
               vpcID:
-                description: The ID of the VPC in which the endpoint will be used.
+                description: The ID of the VPC.
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -203,8 +202,6 @@ spec:
                         type: string
                     type: object
                 type: object
-            required:
-            - serviceName
             type: object
           status:
             description: VPCEndpointStatus defines the observed state of VPCEndpoint
@@ -310,8 +307,7 @@ spec:
                     type: string
                 type: object
               networkInterfaceIDs:
-                description: (Interface endpoint) One or more network interfaces for
-                  the endpoint.
+                description: (Interface endpoint) The network interfaces for the endpoint.
                 items:
                   type: string
                 type: array

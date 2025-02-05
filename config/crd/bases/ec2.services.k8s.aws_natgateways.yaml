@@ -79,7 +79,7 @@ spec:
                   The default is public connectivity.
                 type: string
               subnetID:
-                description: The subnet in which to create the NAT gateway.
+                description: The ID of the subnet in which to create the NAT gateway.
                 type: string
               subnetRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -241,8 +241,8 @@ spec:
               provisionedBandwidth:
                 description: |-
                   Reserved. If you need to sustain traffic greater than the documented limits
-                  (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html),
-                  contact us through the Support Center (https://console.aws.amazon.com/support/home?).
+                  (https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html#vpc-limits-gateways),
+                  contact Amazon Web Services Support.
                 properties:
                   provisionTime:
                     format: date-time

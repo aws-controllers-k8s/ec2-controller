@@ -19,8 +19,10 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -36,8 +38,8 @@ func newDescribeVpcAttributePayload(
 	attribute string,
 ) *svcsdk.DescribeVpcAttributeInput {
 	res := &svcsdk.DescribeVpcAttributeInput{}
-	res.SetVpcId(vpcID)
-	res.SetAttribute(attribute)
+	res.VpcId = aws.String(vpcID)
+	res.Attribute = svcsdktypes.VpcAttributeName(attribute)
 	return res
 }
 
@@ -46,18 +48,18 @@ func (rm *resourceManager) getDNSAttributes(
 	vpcID string,
 ) (res *DNSAttrs, err error) {
 	res = &DNSAttrs{}
-	dnsSupport, err := rm.sdkapi.DescribeVpcAttributeWithContext(
+	dnsSupport, err := rm.sdkapi.DescribeVpcAttribute(
 		ctx,
-		newDescribeVpcAttributePayload(vpcID, svcsdk.VpcAttributeNameEnableDnsSupport),
+		newDescribeVpcAttributePayload(vpcID, string(svcsdktypes.VpcAttributeNameEnableDnsSupport)),
 	)
 	if err != nil {
 		return nil, err
 	}
 	res.EnableSupport = dnsSupport.EnableDnsSupport.Value
 
-	dnsHostnames, err := rm.sdkapi.DescribeVpcAttributeWithContext(
+	dnsHostnames, err := rm.sdkapi.DescribeVpcAttribute(
 		ctx,
-		newDescribeVpcAttributePayload(vpcID, svcsdk.VpcAttributeNameEnableDnsHostnames),
+		newDescribeVpcAttributePayload(vpcID, string(svcsdktypes.VpcAttributeNameEnableDnsHostnames)),
 	)
 	if err != nil {
 		return nil, err
@@ -71,12 +73,12 @@ func newModifyDNSSupportAttributeInputPayload(
 	r *resource,
 ) *svcsdk.ModifyVpcAttributeInput {
 	res := &svcsdk.ModifyVpcAttributeInput{}
-	res.SetVpcId(*r.ko.Status.VPCID)
+	res.VpcId = r.ko.Status.VPCID
 
 	if r.ko.Spec.EnableDNSSupport != nil {
-		res.SetEnableDnsSupport(&svcsdk.AttributeBooleanValue{
+		res.EnableDnsSupport = &svcsdktypes.AttributeBooleanValue{
 			Value: r.ko.Spec.EnableDNSSupport,
-		})
+		}
 	}
 
 	return res
@@ -86,12 +88,12 @@ func newModifyDNSHostnamesAttributeInputPayload(
 	r *resource,
 ) *svcsdk.ModifyVpcAttributeInput {
 	res := &svcsdk.ModifyVpcAttributeInput{}
-	res.SetVpcId(*r.ko.Status.VPCID)
+	res.VpcId = r.ko.Status.VPCID
 
 	if r.ko.Spec.EnableDNSHostnames != nil {
-		res.SetEnableDnsHostnames(&svcsdk.AttributeBooleanValue{
+		res.EnableDnsHostnames = &svcsdktypes.AttributeBooleanValue{
 			Value: r.ko.Spec.EnableDNSHostnames,
-		})
+		}
 	}
 
 	return res
@@ -106,7 +108,7 @@ func (rm *resourceManager) syncDNSSupportAttribute(
 	defer exit(err)
 	input := newModifyDNSSupportAttributeInputPayload(r)
 
-	_, err = rm.sdkapi.ModifyVpcAttributeWithContext(ctx, input)
+	_, err = rm.sdkapi.ModifyVpcAttribute(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcAttribute", err)
 	if err != nil {
 		return err
@@ -124,7 +126,7 @@ func (rm *resourceManager) syncDNSHostnamesAttribute(
 	defer exit(err)
 	input := newModifyDNSHostnamesAttributeInputPayload(r)
 
-	_, err = rm.sdkapi.ModifyVpcAttributeWithContext(ctx, input)
+	_, err = rm.sdkapi.ModifyVpcAttribute(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcAttribute", err)
 	if err != nil {
 		return err
@@ -185,7 +187,7 @@ func (rm *resourceManager) syncCIDRBlocks(
 		for _, cidrAssociation := range latestCIDRStates {
 			if *cidr == *cidrAssociation.CIDRBlock {
 				input.AssociationId = cidrAssociation.AssociationID
-				_, err = rm.sdkapi.DisassociateVpcCidrBlockWithContext(ctx, input)
+				_, err = rm.sdkapi.DisassociateVpcCidrBlock(ctx, input)
 				rm.metrics.RecordAPICall("UPDATE", "DisassociateVpcCidrBlock", err)
 				if err != nil {
 					return err
@@ -203,7 +205,7 @@ func (rm *resourceManager) syncCIDRBlocks(
 		}
 		var res *svcsdk.AssociateVpcCidrBlockOutput
 		cidrblockassociation := &svcapitypes.VPCCIDRBlockAssociation{}
-		res, err = rm.sdkapi.AssociateVpcCidrBlockWithContext(ctx, input)
+		res, err = rm.sdkapi.AssociateVpcCidrBlock(ctx, input)
 		rm.metrics.RecordAPICall("UPDATE", "AssociateVpcCidrBlock", err)
 		if err != nil {
 			return err
@@ -217,8 +219,8 @@ func (rm *resourceManager) syncCIDRBlocks(
 			}
 			if res.CidrBlockAssociation.CidrBlockState != nil {
 				cidrblockstate := &svcapitypes.VPCCIDRBlockState{}
-				if res.CidrBlockAssociation.CidrBlockState.State != nil {
-					cidrblockstate.State = res.CidrBlockAssociation.CidrBlockState.State
+				if res.CidrBlockAssociation.CidrBlockState.State != "" {
+					cidrblockstate.State = aws.String(string(res.CidrBlockAssociation.CidrBlockState.State))
 				}
 				if res.CidrBlockAssociation.CidrBlockState.StatusMessage != nil {
 					cidrblockstate.StatusMessage = res.CidrBlockAssociation.CidrBlockState.StatusMessage
@@ -349,21 +351,21 @@ func applyPrimaryCIDRBlockInCreateRequest(r *resource,
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("vpc")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "vpc"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }
 
@@ -384,16 +386,16 @@ func (rm *resourceManager) hasSecurityGroupDefaultRules(
 
 	groupIDFilter := "group-id"
 	input := &svcsdk.DescribeSecurityGroupRulesInput{
-		Filters: []*svcsdk.Filter{
+		Filters: []svcsdktypes.Filter{
 			{
 				Name:   &groupIDFilter,
-				Values: []*string{sgID},
+				Values: []string{*sgID},
 			},
 		},
 	}
 
 	for {
-		resp, err := rm.sdkapi.DescribeSecurityGroupRulesWithContext(ctx, input)
+		resp, err := rm.sdkapi.DescribeSecurityGroupRules(ctx, input)
 		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
 		if err != nil || resp == nil {
 			break
@@ -409,7 +411,7 @@ func (rm *resourceManager) hasSecurityGroupDefaultRules(
 		if resp.NextToken == nil || *resp.NextToken == "" {
 			break
 		}
-		input.SetNextToken(*resp.NextToken)
+		input.NextToken = resp.NextToken
 	}
 	if err != nil {
 		return false, err
@@ -421,7 +423,7 @@ func (rm *resourceManager) hasSecurityGroupDefaultRules(
 // isDefaultSGIngressRule returns true if the SG ingress rule passed to the
 // function is the auto populated ingress rule.
 func (rm *resourceManager) isDefaultSGIngressRule(
-	rule *svcsdk.SecurityGroupRule,
+	rule svcsdktypes.SecurityGroupRule,
 ) bool {
 	if rule.FromPort == nil || rule.ToPort == nil || rule.IpProtocol == nil || rule.IsEgress == nil || rule.ReferencedGroupInfo == nil || rule.ReferencedGroupInfo.GroupId == nil || rule.GroupId == nil {
 		return false
@@ -440,7 +442,7 @@ func (rm *resourceManager) isDefaultSGIngressRule(
 // isDefaultSGEgressRule returns true if the SG egress rule passed to the
 // function is the auto populated egress rule.
 func (rm *resourceManager) isDefaultSGEgressRule(
-	rule *svcsdk.SecurityGroupRule,
+	rule svcsdktypes.SecurityGroupRule,
 ) bool {
 	if rule.CidrIpv4 == nil || rule.FromPort == nil || rule.ToPort == nil || rule.IpProtocol == nil || rule.IsEgress == nil {
 		return false
@@ -471,20 +473,20 @@ func (rm *resourceManager) deleteSecurityGroupDefaultRules(
 		return err
 	}
 
-	ipRange := &svcsdk.IpRange{
+	ipRange := svcsdktypes.IpRange{
 		CidrIp: ptr("0.0.0.0/0"),
 	}
-	egressInput := &svcsdk.IpPermission{
-		FromPort:   ptr(int64(-1)),
-		ToPort:     ptr(int64(-1)),
+	egressInput := svcsdktypes.IpPermission{
+		FromPort:   ptr(int32(-1)),
+		ToPort:     ptr(int32(-1)),
 		IpProtocol: ptr("-1"),
-		IpRanges:   []*svcsdk.IpRange{ipRange},
+		IpRanges:   []svcsdktypes.IpRange{ipRange},
 	}
 	egressReq := &svcsdk.RevokeSecurityGroupEgressInput{
 		GroupId:       sgID,
-		IpPermissions: []*svcsdk.IpPermission{egressInput},
+		IpPermissions: []svcsdktypes.IpPermission{egressInput},
 	}
-	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, egressReq)
+	_, err = rm.sdkapi.RevokeSecurityGroupEgress(ctx, egressReq)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -496,11 +498,11 @@ func (rm *resourceManager) deleteSecurityGroupDefaultRules(
 		return err
 	}
 
-	IngressInput := &svcsdk.IpPermission{
-		FromPort:   ptr(int64(-1)),
-		ToPort:     ptr(int64(-1)),
+	IngressInput := svcsdktypes.IpPermission{
+		FromPort:   ptr(int32(-1)),
+		ToPort:     ptr(int32(-1)),
 		IpProtocol: ptr("-1"),
-		UserIdGroupPairs: []*svcsdk.UserIdGroupPair{
+		UserIdGroupPairs: []svcsdktypes.UserIdGroupPair{
 			{
 				GroupId: sgID,
 			},
@@ -508,9 +510,9 @@ func (rm *resourceManager) deleteSecurityGroupDefaultRules(
 	}
 	ingressReq := &svcsdk.RevokeSecurityGroupIngressInput{
 		GroupId:       sgID,
-		IpPermissions: []*svcsdk.IpPermission{IngressInput},
+		IpPermissions: []svcsdktypes.IpPermission{IngressInput},
 	}
-	_, err = rm.sdkapi.RevokeSecurityGroupIngressWithContext(ctx, ingressReq)
+	_, err = rm.sdkapi.RevokeSecurityGroupIngress(ctx, ingressReq)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupIngress", err)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -539,25 +541,25 @@ func (rm *resourceManager) getDefaultSGId(
 	groupNameFilter := "group-name"
 	groupNameValue := "default"
 	input := &svcsdk.DescribeSecurityGroupsInput{
-		Filters: []*svcsdk.Filter{
+		Filters: []svcsdktypes.Filter{
 			{
 				Name:   &vpcIDFilter,
-				Values: []*string{res.ko.Status.VPCID},
+				Values: []string{*res.ko.Status.VPCID},
 			},
 			{
 				Name:   &groupNameFilter,
-				Values: []*string{&groupNameValue},
+				Values: []string{groupNameValue},
 			},
 		},
 	}
 
-	resp, err := rm.sdkapi.DescribeSecurityGroupsWithContext(ctx, input)
+	resp, err := rm.sdkapi.DescribeSecurityGroups(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
 	if err != nil || resp == nil {
 		return nil, err
 	}
 
-	if len(resp.SecurityGroups) == 0 || resp.SecurityGroups[0] == nil {
+	if len(resp.SecurityGroups) == 0 {
 		return nil, fmt.Errorf("default security group not found")
 	}
 

@@ -44,11 +44,12 @@ spec:
             description: |-
               DhcpOptionsSpec defines the desired state of DhcpOptions.
 
-              Describes a set of DHCP options.
+              The set of DHCP options.
             properties:
               dhcpConfigurations:
                 description: A DHCP configuration option.
                 items:
+                  description: Describes a DHCP configuration option.
                   properties:
                     key:
                       type: string

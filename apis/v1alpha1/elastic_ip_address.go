@@ -23,8 +23,7 @@ import (
 // ElasticIPAddressSpec defines the desired state of ElasticIPAddress.
 type ElasticIPAddressSpec struct {
 
-	// [EC2-VPC] The Elastic IP address to recover or an IPv4 address from an address
-	// pool.
+	// The Elastic IP address to recover or an IPv4 address from an address pool.
 	Address *string `json:"address,omitempty"`
 	// The ID of a customer-owned address pool. Use this parameter to let Amazon
 	// EC2 select an address from the address pool. Alternatively, specify a specific
@@ -34,12 +33,6 @@ type ElasticIPAddressSpec struct {
 	// which Amazon Web Services advertises IP addresses. Use this parameter to
 	// limit the IP address to this location. IP addresses cannot move between network
 	// border groups.
-	//
-	// Use DescribeAvailabilityZones (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAvailabilityZones.html)
-	// to view the network border groups.
-	//
-	// You cannot use a network border group with EC2 Classic. If you attempt this
-	// operation on EC2 Classic, you receive an InvalidParameterCombination error.
 	NetworkBorderGroup *string `json:"networkBorderGroup,omitempty"`
 	// The ID of an address pool that you own. Use this parameter to let Amazon
 	// EC2 select an address from the address pool. To specify a specific address
@@ -64,12 +57,11 @@ type ElasticIPAddressStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// [EC2-VPC] The ID that Amazon Web Services assigns to represent the allocation
-	// of the Elastic IP address for use with instances in a VPC.
+	// The ID that represents the allocation of the Elastic IP address.
 	// +kubebuilder:validation:Optional
 	AllocationID *string `json:"allocationID,omitempty"`
 	// The carrier IP address. This option is only available for network interfaces
-	// which reside in a subnet in a Wavelength Zone (for example an EC2 instance).
+	// that reside in a subnet in a Wavelength Zone.
 	// +kubebuilder:validation:Optional
 	CarrierIP *string `json:"carrierIP,omitempty"`
 	// The customer-owned IP address.
