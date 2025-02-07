@@ -18,7 +18,7 @@ spec:
     - jsonPath: .status.capacityReservationID
       name: ID
       type: string
-    - jsonPath: .status.startDate
+    - jsonPath: .spec.startDate
       name: START_DATE
       type: date
     - jsonPath: .status.state
@@ -69,6 +69,32 @@ spec:
                   Unique, case-sensitive identifier that you provide to ensure the idempotency
                   of the request. For more information, see Ensure Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
                 type: string
+              commitmentDuration:
+                description: |-
+                  Required for future-dated Capacity Reservations only. To create a Capacity
+                  Reservation for immediate use, omit this parameter.
+
+                  Specify a commitment duration, in seconds, for the future-dated Capacity
+                  Reservation.
+
+                  The commitment duration is a minimum duration for which you commit to having
+                  the future-dated Capacity Reservation in the active state in your account
+                  after it has been delivered.
+
+                  For more information, see Commitment duration (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-concepts.html#cr-commitment-duration).
+                format: int64
+                type: integer
+              deliveryPreference:
+                description: |-
+                  Required for future-dated Capacity Reservations only. To create a Capacity
+                  Reservation for immediate use, omit this parameter.
+
+                  Indicates that the requested capacity will be delivered in addition to any
+                  running instances or reserved capacity that you have in your account at the
+                  requested date and time.
+
+                  The only supported value is incremental.
+                type: string
               dryRun:
                 description: |-
                   Checks whether you have the required permissions for the action, without
@@ -98,6 +124,9 @@ spec:
                   an hour from the specified time. For example, if you specify 5/31/2019, 13:30:55,
                   the Capacity Reservation is guaranteed to end between 13:30:55 and 14:30:55
                   on 5/31/2019.
+
+                  If you are requesting a future-dated Capacity Reservation, you can't specify
+                  an end date and time that is within the commitment duration.
                 format: date-time
                 type: string
               endDateType:
@@ -119,6 +148,11 @@ spec:
                 description: |-
                   The number of instances for which to reserve capacity.
 
+                  You can request future-dated Capacity Reservations for an instance count
+                  with a minimum of 100 VPUs. For example, if you request a future-dated Capacity
+                  Reservation for m5.xlarge instances, you must request at least 25 instances
+                  (25 * m5.xlarge = 100 vCPUs).
+
                   Valid range: 1 - 1000
                 format: int64
                 type: integer
@@ -137,6 +171,9 @@ spec:
                       and explicitly target the Capacity Reservation. This ensures that only
                       permitted instances can use the reserved capacity.
 
+                  If you are requesting a future-dated Capacity Reservation, you must specify
+                  targeted.
+
                   Default: open
                 type: string
               instancePlatform:
@@ -144,21 +181,41 @@ spec:
                 type: string
               instanceType:
                 description: |-
-                  The instance type for which to reserve capacity. For more information, see
-                  Instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
+                  The instance type for which to reserve capacity.
+
+                  You can request future-dated Capacity Reservations for instance types in
+                  the C, M, R, I, and T instance families only.
+
+                  For more information, see Instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
                   in the Amazon EC2 User Guide.
                 type: string
               outpostARN:
                 description: |-
+                  Not supported for future-dated Capacity Reservations.
+
                   The Amazon Resource Name (ARN) of the Outpost on which to create the Capacity
                   Reservation.
                 type: string
               placementGroupARN:
                 description: |-
+                  Not supported for future-dated Capacity Reservations.
+
                   The Amazon Resource Name (ARN) of the cluster placement group in which to
                   create the Capacity Reservation. For more information, see Capacity Reservations
                   for cluster placement groups (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-cpg.html)
                   in the Amazon EC2 User Guide.
+                type: string
+              startDate:
+                description: |-
+                  Required for future-dated Capacity Reservations only. To create a Capacity
+                  Reservation for immediate use, omit this parameter.
+
+                  The date and time at which the future-dated Capacity Reservation should become
+                  available for use, in the ISO8601 format in the UTC time zone (YYYY-MM-DDThh:mm:ss.sssZ).
+
+                  You can request a future-dated Capacity Reservation between 5 and 120 days
+                  in advance.
+                format: date-time
                 type: string
               tags:
                 description: |-
@@ -228,6 +285,19 @@ spec:
                   in the Capacity Reservation.
                 format: int64
                 type: integer
+              capacityAllocations:
+                description: Information about instance capacity usage.
+                items:
+                  description: Information about instance capacity usage for a Capacity
+                    Reservation.
+                  properties:
+                    allocationType:
+                      type: string
+                    count:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
               capacityReservationFleetID:
                 description: |-
                   The ID of the Capacity Reservation Fleet to which the Capacity Reservation
@@ -237,6 +307,17 @@ spec:
               capacityReservationID:
                 description: The ID of the Capacity Reservation.
                 type: string
+              commitmentInfo:
+                description: Information about your commitment for a future-dated
+                  Capacity Reservation.
+                properties:
+                  commitmentEndDate:
+                    format: date-time
+                    type: string
+                  committedInstanceCount:
+                    format: int64
+                    type: integer
+                type: object
               conditions:
                 description: |-
                   All CRS managed by ACK have a common `Status.Conditions` member that
@@ -281,32 +362,46 @@ spec:
                 description: The ID of the Amazon Web Services account that owns the
                   Capacity Reservation.
                 type: string
-              startDate:
-                description: The date and time at which the Capacity Reservation was
-                  started.
-                format: date-time
+              reservationType:
+                description: The type of Capacity Reservation.
                 type: string
               state:
                 description: |-
                   The current state of the Capacity Reservation. A Capacity Reservation can
                   be in one of the following states:
 
-                     * active - The Capacity Reservation is active and the capacity is available
-                     for your use.
+                     * active - The capacity is available for use.
 
                      * expired - The Capacity Reservation expired automatically at the date
-                     and time specified in your request. The reserved capacity is no longer
-                     available for your use.
+                     and time specified in your reservation request. The reserved capacity
+                     is no longer available for your use.
 
-                     * cancelled - The Capacity Reservation was cancelled. The reserved capacity
+                     * cancelled - The Capacity Reservation was canceled. The reserved capacity
                      is no longer available for your use.
 
                      * pending - The Capacity Reservation request was successful but the capacity
                      provisioning is still pending.
 
-                     * failed - The Capacity Reservation request has failed. A request might
-                     fail due to invalid request parameters, capacity constraints, or instance
-                     limit constraints. Failed requests are retained for 60 minutes.
+                     * failed - The Capacity Reservation request has failed. A request can
+                     fail due to request parameters that are not valid, capacity constraints,
+                     or instance limit constraints. You can view a failed request for 60 minutes.
+
+                     * scheduled - (Future-dated Capacity Reservations only) The future-dated
+                     Capacity Reservation request was approved and the Capacity Reservation
+                     is scheduled for delivery on the requested start date.
+
+                     * assessing - (Future-dated Capacity Reservations only) Amazon EC2 is
+                     assessing your request for a future-dated Capacity Reservation.
+
+                     * delayed - (Future-dated Capacity Reservations only) Amazon EC2 encountered
+                     a delay in provisioning the requested future-dated Capacity Reservation.
+                     Amazon EC2 is unable to deliver the requested capacity by the requested
+                     start date and time.
+
+                     * unsupported - (Future-dated Capacity Reservations only) Amazon EC2 can't
+                     support the future-dated Capacity Reservation request due to capacity
+                     constraints. You can view unsupported requests for 30 days. The Capacity
+                     Reservation will not be delivered.
                 type: string
               totalInstanceCount:
                 description: |-
@@ -314,6 +409,11 @@ spec:
                   capacity.
                 format: int64
                 type: integer
+              unusedReservationBillingOwnerID:
+                description: |-
+                  The ID of the Amazon Web Services account to which billing of the unused
+                  capacity of the Capacity Reservation is assigned.
+                type: string
             type: object
         type: object
     served: true

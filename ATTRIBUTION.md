@@ -22,6 +22,9 @@ License version 2.0, we include the full text of the package's License below.
 
 * `github.com/aws-controllers-k8s/runtime`
 * `github.com/aws/aws-sdk-go`
+* `github.com/aws/aws-sdk-go-v2`
+* `github.com/aws/aws-sdk-go-v2/service/ec2`
+* `github.com/aws/smithy-go`
 * `github.com/go-logr/logr`
 * `github.com/samber/lo`
 * `github.com/spf13/pflag`
@@ -35,7 +38,11 @@ License version 2.0, we include the full text of the package's License below.
 Apache License version 2.0
 
 Subdependencies:
-* `github.com/aws/aws-sdk-go`
+* `github.com/aws/aws-sdk-go-v2`
+* `github.com/aws/aws-sdk-go-v2/config`
+* `github.com/aws/aws-sdk-go-v2/credentials`
+* `github.com/aws/aws-sdk-go-v2/service/sts`
+* `github.com/aws/smithy-go`
 * `github.com/cenkalti/backoff/v4`
 * `github.com/go-logr/logr`
 * `github.com/google/go-cmp`
@@ -52,6 +59,14 @@ Subdependencies:
 * `k8s.io/client-go`
 * `k8s.io/klog/v2`
 * `sigs.k8s.io/controller-runtime`
+* `github.com/aws/aws-sdk-go-v2/feature/ec2/imds`
+* `github.com/aws/aws-sdk-go-v2/internal/configsources`
+* `github.com/aws/aws-sdk-go-v2/internal/endpoints/v2`
+* `github.com/aws/aws-sdk-go-v2/internal/ini`
+* `github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding`
+* `github.com/aws/aws-sdk-go-v2/service/internal/presigned-url`
+* `github.com/aws/aws-sdk-go-v2/service/sso`
+* `github.com/aws/aws-sdk-go-v2/service/ssooidc`
 * `github.com/beorn7/perks`
 * `github.com/cespare/xxhash/v2`
 * `github.com/davecgh/go-spew`
@@ -72,7 +87,6 @@ Subdependencies:
 * `github.com/google/uuid`
 * `github.com/imdario/mergo`
 * `github.com/itchyny/timefmt-go`
-* `github.com/jmespath/go-jmespath`
 * `github.com/josharian/intern`
 * `github.com/json-iterator/go`
 * `github.com/mailru/easyjson`
@@ -106,7 +120,23 @@ Subdependencies:
 * `sigs.k8s.io/structured-merge-diff/v4`
 * `sigs.k8s.io/yaml`
 
-#### github.com/aws/aws-sdk-go
+#### github.com/aws/aws-sdk-go-v2
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/config
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/credentials
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/service/sts
+
+Apache License version 2.0
+
+#### github.com/aws/smithy-go
 
 Apache License version 2.0
 
@@ -343,6 +373,38 @@ Apache License version 2.0
 Apache License version 2.0
 
 #### sigs.k8s.io/controller-runtime
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/feature/ec2/imds
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/internal/configsources
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/internal/endpoints/v2
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/internal/ini
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/service/internal/presigned-url
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/service/sso
+
+Apache License version 2.0
+
+#### github.com/aws/aws-sdk-go-v2/service/ssooidc
 
 Apache License version 2.0
 
@@ -724,10 +786,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-#### github.com/jmespath/go-jmespath
-
-Apache License version 2.0
 
 #### github.com/josharian/intern
 
@@ -1513,6 +1571,39 @@ Apache License version 2.0
 #### sigs.k8s.io/yaml
 
 Apache License version 2.0
+
+### github.com/aws/aws-sdk-go
+
+Apache License version 2.0
+
+Subdependencies:
+* `github.com/jmespath/go-jmespath`
+* `golang.org/x/net`
+* `golang.org/x/text`
+
+#### github.com/jmespath/go-jmespath
+
+Apache License version 2.0
+
+### github.com/aws/aws-sdk-go-v2
+
+Apache License version 2.0
+
+Subdependencies:
+* `github.com/aws/smithy-go`
+* `github.com/jmespath/go-jmespath`
+
+### github.com/aws/aws-sdk-go-v2/service/ec2
+
+Apache License version 2.0
+
+Subdependencies:
+* `github.com/aws/aws-sdk-go-v2`
+* `github.com/aws/aws-sdk-go-v2/internal/configsources`
+* `github.com/aws/aws-sdk-go-v2/internal/endpoints/v2`
+* `github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding`
+* `github.com/aws/aws-sdk-go-v2/service/internal/presigned-url`
+* `github.com/aws/smithy-go`
 
 
 
