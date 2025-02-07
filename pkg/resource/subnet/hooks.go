@@ -19,7 +19,9 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutils "github.com/aws-controllers-k8s/runtime/pkg/util"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
@@ -129,48 +131,48 @@ func (rm *resourceManager) updateSubnetAttribute(
 		SubnetId: r.ko.Status.SubnetID,
 	}
 
-	defaultAttrValue := svcsdk.AttributeBooleanValue{}
-	defaultAttrValue.SetValue(false)
+	defaultAttrValue := svcsdktypes.AttributeBooleanValue{}
+	defaultAttrValue.Value = aws.Bool(false)
 	switch deltaFieldName {
 	case "AssignIPv6AddressOnCreation":
-		input.SetAssignIpv6AddressOnCreation(&defaultAttrValue)
+		input.AssignIpv6AddressOnCreation = (&defaultAttrValue)
 		if r.ko.Spec.AssignIPv6AddressOnCreation != nil {
 			input.AssignIpv6AddressOnCreation.Value = r.ko.Spec.AssignIPv6AddressOnCreation
 		}
 	case "CustomerOwnedIPv4Pool":
-		input.SetMapCustomerOwnedIpOnLaunch(&defaultAttrValue)
+		input.MapCustomerOwnedIpOnLaunch = (&defaultAttrValue)
 		if r.ko.Spec.CustomerOwnedIPv4Pool != nil {
-			input.MapCustomerOwnedIpOnLaunch.SetValue(true)
+			input.MapCustomerOwnedIpOnLaunch.Value = aws.Bool(true)
 			input.CustomerOwnedIpv4Pool = r.ko.Spec.CustomerOwnedIPv4Pool
 		}
 	case "EnableDNS64":
-		input.SetEnableDns64(&defaultAttrValue)
+		input.EnableDns64 = (&defaultAttrValue)
 		if r.ko.Spec.EnableDNS64 != nil {
 			input.EnableDns64.Value = r.ko.Spec.EnableDNS64
 		}
 	case "EnableResourceNameDNSAAAARecord":
-		input.SetEnableResourceNameDnsAAAARecordOnLaunch(&defaultAttrValue)
+		input.EnableResourceNameDnsAAAARecordOnLaunch = (&defaultAttrValue)
 		if r.ko.Spec.EnableResourceNameDNSAAAARecord != nil {
 			input.EnableResourceNameDnsAAAARecordOnLaunch.Value = r.ko.Spec.EnableResourceNameDNSAAAARecord
 		}
 	case "EnableResourceNameDNSARecord":
-		input.SetEnableResourceNameDnsARecordOnLaunch(&defaultAttrValue)
+		input.EnableResourceNameDnsARecordOnLaunch = (&defaultAttrValue)
 		if r.ko.Spec.EnableResourceNameDNSARecord != nil {
 			input.EnableResourceNameDnsARecordOnLaunch.Value = r.ko.Spec.EnableResourceNameDNSARecord
 		}
 	case "HostnameType":
-		input.SetPrivateDnsHostnameTypeOnLaunch("ip-name")
+		input.PrivateDnsHostnameTypeOnLaunch = ("ip-name")
 		if r.ko.Spec.HostnameType != nil {
-			input.PrivateDnsHostnameTypeOnLaunch = r.ko.Spec.HostnameType
+			input.PrivateDnsHostnameTypeOnLaunch = svcsdktypes.HostnameType(*r.ko.Spec.HostnameType)
 		}
 	case "MapPublicIPOnLaunch":
-		input.SetMapPublicIpOnLaunch(&defaultAttrValue)
+		input.MapPublicIpOnLaunch = (&defaultAttrValue)
 		if r.ko.Spec.MapPublicIPOnLaunch != nil {
 			input.MapPublicIpOnLaunch.Value = r.ko.Spec.MapPublicIPOnLaunch
 		}
 	}
 
-	_, err = rm.sdkapi.ModifySubnetAttributeWithContext(ctx, input)
+	_, err = rm.sdkapi.ModifySubnetAttribute(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifySubnetAttribute", err)
 	if err != nil {
 		return err
@@ -220,7 +222,7 @@ func (rm *resourceManager) updateRouteTableAssociations(
 	}
 
 	toAdd := make([]*string, 0)
-	toDelete := make([]*svcsdk.RouteTableAssociation, 0)
+	toDelete := make([]svcsdktypes.RouteTableAssociation, 0)
 
 	for _, rt := range existingRTs {
 		if !ackutils.InStringPs(*rt.RouteTableId, desired.ko.Spec.RouteTables) {
@@ -268,7 +270,7 @@ func (rm *resourceManager) associateRouteTable(
 		SubnetId:     &subnetID,
 	}
 
-	_, err = rm.sdkapi.AssociateRouteTableWithContext(ctx, input)
+	_, err = rm.sdkapi.AssociateRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "AssociateRouteTable", err)
 	if err != nil {
 		return err
@@ -295,7 +297,7 @@ func (rm *resourceManager) disassociateRouteTable(
 		AssociationId: &associationID,
 	}
 
-	_, err = rm.sdkapi.DisassociateRouteTableWithContext(ctx, input)
+	_, err = rm.sdkapi.DisassociateRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "DisassociateRouteTable", err)
 	if err != nil {
 		return err
@@ -310,7 +312,7 @@ func (rm *resourceManager) disassociateRouteTable(
 func (rm *resourceManager) getRouteTableAssociations(
 	ctx context.Context,
 	res *resource,
-) (assocs []*svcsdk.RouteTableAssociation, err error) {
+) (assocs []svcsdktypes.RouteTableAssociation, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.getAssociatedRouteTables")
 	defer func(err error) {
@@ -318,22 +320,22 @@ func (rm *resourceManager) getRouteTableAssociations(
 	}(err)
 
 	input := &svcsdk.DescribeRouteTablesInput{
-		Filters: []*svcsdk.Filter{
+		Filters: []svcsdktypes.Filter{
 			{
 				Name:   toStrPtr("association.subnet-id"),
-				Values: []*string{res.ko.Status.SubnetID},
+				Values: []string{*res.ko.Status.SubnetID},
 			},
 		},
 	}
 
 	for {
-		resp, err := rm.sdkapi.DescribeRouteTablesWithContext(ctx, input)
+		resp, err := rm.sdkapi.DescribeRouteTables(ctx, input)
 		if err != nil || resp == nil {
 			break
 		}
 		rm.metrics.RecordAPICall("GET", "DescribeRouteTables", err)
 		for _, rt := range resp.RouteTables {
-			var assoc *svcsdk.RouteTableAssociation
+			var assoc svcsdktypes.RouteTableAssociation
 			// Find the association for the current subnet
 			for _, as := range rt.Associations {
 				if *as.SubnetId == *res.ko.Status.SubnetID {
@@ -342,18 +344,12 @@ func (rm *resourceManager) getRouteTableAssociations(
 				}
 			}
 
-			// If we can't find the assocation, something has gone wrong because
-			// our filter on the input was meant to have caught this.
-			if assoc == nil {
-				continue
-			}
-
 			assocs = append(assocs, assoc)
 		}
 		if resp.NextToken == nil || *resp.NextToken == "" {
 			break
 		}
-		input.SetNextToken(*resp.NextToken)
+		input.NextToken = resp.NextToken
 	}
 	return assocs, nil
 }
@@ -362,7 +358,7 @@ func (rm *resourceManager) getRouteTableAssociations(
 // route table assocations.
 func inAssociations(
 	rtID string,
-	assocs []*svcsdk.RouteTableAssociation,
+	assocs []svcsdktypes.RouteTableAssociation,
 ) bool {
 	for _, a := range assocs {
 		if *a.RouteTableId == rtID {
@@ -382,20 +378,20 @@ func toStrPtr(str string) *string {
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateSubnetInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("subnet")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "subnet"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }

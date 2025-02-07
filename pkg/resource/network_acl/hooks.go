@@ -21,7 +21,9 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/samber/lo"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -178,18 +180,18 @@ func (rm *resourceManager) deleteOldAssociations(
 		aclID = latest.ko.Status.ID
 	}
 	naclList := &svcsdk.DescribeNetworkAclsInput{
-		Filters: []*svcsdk.Filter{
+		Filters: []svcsdktypes.Filter{
 			{
 				Name:   lo.ToPtr("default"),
-				Values: []*string{lo.ToPtr("true")},
+				Values: []string{"true"},
 			},
 			{
 				Name:   lo.ToPtr("vpc-id"),
-				Values: []*string{vpcID},
+				Values: []string{*vpcID},
 			},
 		},
 	}
-	defaultNacl, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, naclList)
+	defaultNacl, err := rm.sdkapi.DescribeNetworkAcls(ctx, naclList)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 	if err != nil {
 		return err
@@ -203,7 +205,7 @@ func (rm *resourceManager) deleteOldAssociations(
 		if rtype == TypeNaclAssocId {
 			input.AssociationId = &rid
 			input.NetworkAclId = defaultNacl.NetworkAcls[0].NetworkAclId
-			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociation(ctx, input)
 			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
 			if err != nil {
 				return err
@@ -211,18 +213,18 @@ func (rm *resourceManager) deleteOldAssociations(
 		}
 		if rtype == TypeSubnet {
 			dnaInput := &svcsdk.DescribeNetworkAclsInput{
-				Filters: []*svcsdk.Filter{
+				Filters: []svcsdktypes.Filter{
 					{
 						Name:   lo.ToPtr("network-acl-id"),
-						Values: []*string{aclID},
+						Values: []string{*aclID},
 					},
 					{
 						Name:   lo.ToPtr("association.subnet-id"),
-						Values: []*string{&rid},
+						Values: []string{rid},
 					},
 				},
 			}
-			dnaOutput, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, dnaInput)
+			dnaOutput, err := rm.sdkapi.DescribeNetworkAcls(ctx, dnaInput)
 			rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 			if err != nil {
 				return err
@@ -238,7 +240,7 @@ func (rm *resourceManager) deleteOldAssociations(
 				}
 			}
 
-			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociation(ctx, input)
 			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
 			if err != nil {
 				return err
@@ -260,7 +262,7 @@ func (rm *resourceManager) upsertNewAssociations(
 		if rtype == TypeNaclAssocId {
 			input.AssociationId = &rid
 			input.NetworkAclId = latest.ko.Status.ID
-			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociation(ctx, input)
 			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
 			if err != nil {
 				return err
@@ -268,14 +270,14 @@ func (rm *resourceManager) upsertNewAssociations(
 		}
 		if rtype == TypeSubnet {
 			dnaInput := &svcsdk.DescribeNetworkAclsInput{
-				Filters: []*svcsdk.Filter{
+				Filters: []svcsdktypes.Filter{
 					{
 						Name:   lo.ToPtr("association.subnet-id"),
-						Values: []*string{&rid},
+						Values: []string{rid},
 					},
 				},
 			}
-			dnaOutput, err := rm.sdkapi.DescribeNetworkAclsWithContext(ctx, dnaInput)
+			dnaOutput, err := rm.sdkapi.DescribeNetworkAcls(ctx, dnaInput)
 			rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 			if err != nil {
 				return err
@@ -291,7 +293,7 @@ func (rm *resourceManager) upsertNewAssociations(
 					}
 				}
 			}
-			_, err = rm.sdkapi.ReplaceNetworkAclAssociationWithContext(ctx, input)
+			_, err = rm.sdkapi.ReplaceNetworkAclAssociation(ctx, input)
 			rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclAssociation", err)
 			if err != nil {
 				return err
@@ -434,46 +436,46 @@ func (rm *resourceManager) createEntry(
 
 	res := &svcsdk.CreateNetworkAclEntryInput{}
 	if c.CIDRBlock != nil {
-		res.SetCidrBlock(*c.CIDRBlock)
+		res.CidrBlock = c.CIDRBlock
 	}
 	if c.Egress != nil {
-		res.SetEgress(*c.Egress)
+		res.Egress = c.Egress
 	}
 	if c.ICMPTypeCode != nil {
-		resf3 := &svcsdk.IcmpTypeCode{}
+		resf3 := &svcsdktypes.IcmpTypeCode{}
 		if c.ICMPTypeCode.Code != nil {
-			resf3.SetCode(*c.ICMPTypeCode.Code)
+			resf3.Code = aws.Int32(int32(*c.ICMPTypeCode.Code))
 		}
 		if c.ICMPTypeCode.Type != nil {
-			resf3.SetType(*c.ICMPTypeCode.Type)
+			resf3.Type = aws.Int32(int32(*c.ICMPTypeCode.Type))
 		}
-		res.SetIcmpTypeCode(resf3)
+		res.IcmpTypeCode = resf3
 	}
 	if c.IPv6CIDRBlock != nil {
-		res.SetIpv6CidrBlock(*c.IPv6CIDRBlock)
+		res.Ipv6CidrBlock = c.IPv6CIDRBlock
 	}
 	if c.PortRange != nil {
-		resf6 := &svcsdk.PortRange{}
+		resf6 := &svcsdktypes.PortRange{}
 		if c.PortRange.From != nil {
-			resf6.SetFrom(*c.PortRange.From)
+			resf6.From = aws.Int32(int32(*c.PortRange.From))
 		}
 		if c.PortRange.To != nil {
-			resf6.SetTo(*c.PortRange.To)
+			resf6.To = aws.Int32(int32(*c.PortRange.To))
 		}
-		res.SetPortRange(resf6)
+		res.PortRange = resf6
 	}
 	if c.Protocol != nil {
-		res.SetProtocol(*c.Protocol)
+		res.Protocol = c.Protocol
 	}
 	if c.RuleAction != nil {
-		res.SetRuleAction(*c.RuleAction)
+		res.RuleAction = svcsdktypes.RuleAction(*c.RuleAction)
 	}
 	if c.RuleNumber != nil {
-		res.SetRuleNumber(*c.RuleNumber)
+		res.RuleNumber = aws.Int32(int32(*c.RuleNumber))
 	}
 
 	res.NetworkAclId = r.ko.Status.ID
-	_, err = rm.sdkapi.CreateNetworkAclEntryWithContext(ctx, res)
+	_, err = rm.sdkapi.CreateNetworkAclEntry(ctx, res)
 	rm.metrics.RecordAPICall("UPDATE", "CreateNetworkAclEntry", err)
 	return err
 }
@@ -493,46 +495,46 @@ func (rm *resourceManager) updateEntry(
 
 	res := &svcsdk.ReplaceNetworkAclEntryInput{}
 	if c.CIDRBlock != nil {
-		res.SetCidrBlock(*c.CIDRBlock)
+		res.CidrBlock = c.CIDRBlock
 	}
 	if c.Egress != nil {
-		res.SetEgress(*c.Egress)
+		res.Egress = c.Egress
 	}
 	if c.ICMPTypeCode != nil {
-		resf3 := &svcsdk.IcmpTypeCode{}
+		resf3 := &svcsdktypes.IcmpTypeCode{}
 		if c.ICMPTypeCode.Code != nil {
-			resf3.SetCode(*c.ICMPTypeCode.Code)
+			resf3.Code = aws.Int32(int32(*c.ICMPTypeCode.Code))
 		}
 		if c.ICMPTypeCode.Type != nil {
-			resf3.SetType(*c.ICMPTypeCode.Type)
+			resf3.Type = aws.Int32(int32(*c.ICMPTypeCode.Type))
 		}
-		res.SetIcmpTypeCode(resf3)
+		res.IcmpTypeCode = resf3
 	}
 	if c.IPv6CIDRBlock != nil {
-		res.SetIpv6CidrBlock(*c.IPv6CIDRBlock)
+		res.Ipv6CidrBlock = c.IPv6CIDRBlock
 	}
 	if c.PortRange != nil {
-		resf6 := &svcsdk.PortRange{}
+		resf6 := &svcsdktypes.PortRange{}
 		if c.PortRange.From != nil {
-			resf6.SetFrom(*c.PortRange.From)
+			resf6.From = aws.Int32(int32(*c.PortRange.From))
 		}
 		if c.PortRange.To != nil {
-			resf6.SetTo(*c.PortRange.To)
+			resf6.To = aws.Int32(int32(*c.PortRange.To))
 		}
-		res.SetPortRange(resf6)
+		res.PortRange = resf6
 	}
 	if c.Protocol != nil {
-		res.SetProtocol(*c.Protocol)
+		res.Protocol = c.Protocol
 	}
 	if c.RuleAction != nil {
-		res.SetRuleAction(*c.RuleAction)
+		res.RuleAction = svcsdktypes.RuleAction(*c.RuleAction)
 	}
 	if c.RuleNumber != nil {
-		res.SetRuleNumber(*c.RuleNumber)
+		res.RuleNumber = aws.Int32(int32(*c.RuleNumber))
 	}
 
 	res.NetworkAclId = r.ko.Status.ID
-	_, err = rm.sdkapi.ReplaceNetworkAclEntryWithContext(ctx, res)
+	_, err = rm.sdkapi.ReplaceNetworkAclEntry(ctx, res)
 	rm.metrics.RecordAPICall("UPDATE", "ReplaceNetworkAclEntry", err)
 	return err
 }
@@ -552,14 +554,14 @@ func (rm *resourceManager) deleteEntry(
 
 	res := &svcsdk.DeleteNetworkAclEntryInput{}
 	if c.Egress != nil {
-		res.SetEgress(*c.Egress)
+		res.Egress = c.Egress
 	}
 	if c.RuleNumber != nil {
-		res.SetRuleNumber(*c.RuleNumber)
+		res.RuleNumber = aws.Int32(int32(*c.RuleNumber))
 	}
 
 	res.NetworkAclId = r.ko.Status.ID
-	_, err = rm.sdkapi.DeleteNetworkAclEntryWithContext(ctx, res)
+	_, err = rm.sdkapi.DeleteNetworkAclEntry(ctx, res)
 	rm.metrics.RecordAPICall("UPDATE", "DeleteNetworkAclEntry", err)
 	return err
 }
@@ -570,20 +572,20 @@ func (rm *resourceManager) deleteEntry(
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateNetworkAclInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("network-acl")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "network-acl"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }

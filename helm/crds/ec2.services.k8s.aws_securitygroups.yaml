@@ -48,18 +48,15 @@ spec:
             properties:
               description:
                 description: |-
-                  A description for the security group. This is informational only.
+                  A description for the security group.
 
                   Constraints: Up to 255 characters in length
 
-                  Constraints for EC2-Classic: ASCII characters
-
-                  Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+                  Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
                 type: string
               egressRules:
                 items:
-                  description: Describes a set of permissions for a security group
-                    rule.
+                  description: Describes the permissions for a security group rule.
                   properties:
                     fromPort:
                       format: int64
@@ -68,7 +65,7 @@ spec:
                       type: string
                     ipRanges:
                       items:
-                        description: Describes an IPv4 range.
+                        description: Describes an IPv4 address range.
                         properties:
                           cidrIP:
                             type: string
@@ -78,7 +75,7 @@ spec:
                       type: array
                     ipv6Ranges:
                       items:
-                        description: '[EC2-VPC only] Describes an IPv6 range.'
+                        description: Describes an IPv6 address range.
                         properties:
                           cidrIPv6:
                             type: string
@@ -101,13 +98,8 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: |-
-                          Describes a security group and Amazon Web Services account ID pair.
-
-                          We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
-                          from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
-                          to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
-                          in the Amazon Elastic Compute Cloud User Guide.
+                        description: Describes a security group and Amazon Web Services
+                          account ID pair.
                         properties:
                           description:
                             type: string
@@ -157,8 +149,7 @@ spec:
                 type: array
               ingressRules:
                 items:
-                  description: Describes a set of permissions for a security group
-                    rule.
+                  description: Describes the permissions for a security group rule.
                   properties:
                     fromPort:
                       format: int64
@@ -167,7 +158,7 @@ spec:
                       type: string
                     ipRanges:
                       items:
-                        description: Describes an IPv4 range.
+                        description: Describes an IPv4 address range.
                         properties:
                           cidrIP:
                             type: string
@@ -177,7 +168,7 @@ spec:
                       type: array
                     ipv6Ranges:
                       items:
-                        description: '[EC2-VPC only] Describes an IPv6 range.'
+                        description: Describes an IPv6 address range.
                         properties:
                           cidrIPv6:
                             type: string
@@ -200,13 +191,8 @@ spec:
                       type: integer
                     userIDGroupPairs:
                       items:
-                        description: |-
-                          Describes a security group and Amazon Web Services account ID pair.
-
-                          We are retiring EC2-Classic on August 15, 2022. We recommend that you migrate
-                          from EC2-Classic to a VPC. For more information, see Migrate from EC2-Classic
-                          to a VPC (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/vpc-migrate.html)
-                          in the Amazon Elastic Compute Cloud User Guide.
+                        description: Describes a security group and Amazon Web Services
+                          account ID pair.
                         properties:
                           description:
                             type: string
@@ -260,9 +246,7 @@ spec:
 
                   Constraints: Up to 255 characters in length. Cannot start with sg-.
 
-                  Constraints for EC2-Classic: ASCII characters
-
-                  Constraints for EC2-VPC: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+                  Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
                 type: string
               tags:
                 description: |-
@@ -279,7 +263,7 @@ spec:
                   type: object
                 type: array
               vpcID:
-                description: '[EC2-VPC] The ID of the VPC. Required for EC2-VPC.'
+                description: The ID of the VPC. Required for a nondefault VPC.
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around

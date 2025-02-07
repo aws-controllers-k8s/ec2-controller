@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.ElasticIPAddress{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -76,15 +78,16 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	if r.ko.Status.AllocationID != nil {
-		input.SetAllocationIds([]*string{r.ko.Status.AllocationID})
+		input.AllocationIds = []string{*r.ko.Status.AllocationID}
 	} else if r.ko.Status.PublicIP != nil {
-		input.SetPublicIps([]*string{r.ko.Status.PublicIP})
+		input.PublicIps = []string{*r.ko.Status.PublicIP}
 	}
 	var resp *svcsdk.DescribeAddressesOutput
-	resp, err = rm.sdkapi.DescribeAddressesWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeAddresses(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeAddresses", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -200,11 +203,11 @@ func (rm *resourceManager) sdkCreate(
 	}
 	updateTagSpecificationsInCreateRequest(desired, input)
 	// EC2-VPC only supports setting Domain to "vpc"
-	input.SetDomain(svcsdk.DomainTypeVpc)
+	input.Domain = svcsdktypes.DomainTypeVpc
 
 	var resp *svcsdk.AllocateAddressOutput
 	_ = resp
-	resp, err = rm.sdkapi.AllocateAddressWithContext(ctx, input)
+	resp, err = rm.sdkapi.AllocateAddress(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "AllocateAddress", err)
 	if err != nil {
 		return nil, err
@@ -262,16 +265,16 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.AllocateAddressInput{}
 
 	if r.ko.Spec.Address != nil {
-		res.SetAddress(*r.ko.Spec.Address)
+		res.Address = r.ko.Spec.Address
 	}
 	if r.ko.Spec.CustomerOwnedIPv4Pool != nil {
-		res.SetCustomerOwnedIpv4Pool(*r.ko.Spec.CustomerOwnedIPv4Pool)
+		res.CustomerOwnedIpv4Pool = r.ko.Spec.CustomerOwnedIPv4Pool
 	}
 	if r.ko.Spec.NetworkBorderGroup != nil {
-		res.SetNetworkBorderGroup(*r.ko.Spec.NetworkBorderGroup)
+		res.NetworkBorderGroup = r.ko.Spec.NetworkBorderGroup
 	}
 	if r.ko.Spec.PublicIPv4Pool != nil {
-		res.SetPublicIpv4Pool(*r.ko.Spec.PublicIPv4Pool)
+		res.PublicIpv4Pool = r.ko.Spec.PublicIPv4Pool
 	}
 
 	return res, nil
@@ -311,7 +314,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.ReleaseAddressOutput
 	_ = resp
-	resp, err = rm.sdkapi.ReleaseAddressWithContext(ctx, input)
+	resp, err = rm.sdkapi.ReleaseAddress(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "ReleaseAddress", err)
 	return nil, err
 }
@@ -324,13 +327,13 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.ReleaseAddressInput{}
 
 	if r.ko.Status.AllocationID != nil {
-		res.SetAllocationId(*r.ko.Status.AllocationID)
+		res.AllocationId = r.ko.Status.AllocationID
 	}
 	if r.ko.Spec.NetworkBorderGroup != nil {
-		res.SetNetworkBorderGroup(*r.ko.Spec.NetworkBorderGroup)
+		res.NetworkBorderGroup = r.ko.Spec.NetworkBorderGroup
 	}
 	if r.ko.Status.PublicIP != nil {
-		res.SetPublicIp(*r.ko.Status.PublicIP)
+		res.PublicIp = r.ko.Status.PublicIP
 	}
 
 	return res, nil
@@ -438,11 +441,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidParameterCombination",
 		"InvalidParameterValue":
 		return true
@@ -453,13 +457,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

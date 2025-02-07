@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.NetworkACL{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeNetworkAclsOutput
-	resp, err = rm.sdkapi.DescribeNetworkAclsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeNetworkAcls(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeNetworkAcls", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -120,10 +123,12 @@ func (rm *resourceManager) sdkFind(
 				if f1iter.IcmpTypeCode != nil {
 					f1elemf2 := &svcapitypes.ICMPTypeCode{}
 					if f1iter.IcmpTypeCode.Code != nil {
-						f1elemf2.Code = f1iter.IcmpTypeCode.Code
+						codeCopy := int64(*f1iter.IcmpTypeCode.Code)
+						f1elemf2.Code = &codeCopy
 					}
 					if f1iter.IcmpTypeCode.Type != nil {
-						f1elemf2.Type = f1iter.IcmpTypeCode.Type
+						type_Copy := int64(*f1iter.IcmpTypeCode.Type)
+						f1elemf2.Type = &type_Copy
 					}
 					f1elem.ICMPTypeCode = f1elemf2
 				}
@@ -133,21 +138,24 @@ func (rm *resourceManager) sdkFind(
 				if f1iter.PortRange != nil {
 					f1elemf4 := &svcapitypes.PortRange{}
 					if f1iter.PortRange.From != nil {
-						f1elemf4.From = f1iter.PortRange.From
+						fromCopy := int64(*f1iter.PortRange.From)
+						f1elemf4.From = &fromCopy
 					}
 					if f1iter.PortRange.To != nil {
-						f1elemf4.To = f1iter.PortRange.To
+						toCopy := int64(*f1iter.PortRange.To)
+						f1elemf4.To = &toCopy
 					}
 					f1elem.PortRange = f1elemf4
 				}
 				if f1iter.Protocol != nil {
 					f1elem.Protocol = f1iter.Protocol
 				}
-				if f1iter.RuleAction != nil {
-					f1elem.RuleAction = f1iter.RuleAction
+				if f1iter.RuleAction != "" {
+					f1elem.RuleAction = aws.String(string(f1iter.RuleAction))
 				}
 				if f1iter.RuleNumber != nil {
-					f1elem.RuleNumber = f1iter.RuleNumber
+					ruleNumberCopy := int64(*f1iter.RuleNumber)
+					f1elem.RuleNumber = &ruleNumberCopy
 				}
 				f1 = append(f1, f1elem)
 			}
@@ -215,9 +223,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeNetworkAclsInput{}
 
 	if r.ko.Status.ID != nil {
-		f3 := []*string{}
-		f3 = append(f3, r.ko.Status.ID)
-		res.SetNetworkAclIds(f3)
+		f3 := []string{}
+		f3 = append(f3, *r.ko.Status.ID)
+		res.NetworkAclIds = f3
 	}
 
 	return res, nil
@@ -243,7 +251,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateNetworkAclOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateNetworkAclWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateNetworkAcl(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateNetworkAcl", err)
 	if err != nil {
 		return nil, err
@@ -284,10 +292,12 @@ func (rm *resourceManager) sdkCreate(
 			if f1iter.IcmpTypeCode != nil {
 				f1elemf2 := &svcapitypes.ICMPTypeCode{}
 				if f1iter.IcmpTypeCode.Code != nil {
-					f1elemf2.Code = f1iter.IcmpTypeCode.Code
+					codeCopy := int64(*f1iter.IcmpTypeCode.Code)
+					f1elemf2.Code = &codeCopy
 				}
 				if f1iter.IcmpTypeCode.Type != nil {
-					f1elemf2.Type = f1iter.IcmpTypeCode.Type
+					type_Copy := int64(*f1iter.IcmpTypeCode.Type)
+					f1elemf2.Type = &type_Copy
 				}
 				f1elem.ICMPTypeCode = f1elemf2
 			}
@@ -297,21 +307,24 @@ func (rm *resourceManager) sdkCreate(
 			if f1iter.PortRange != nil {
 				f1elemf4 := &svcapitypes.PortRange{}
 				if f1iter.PortRange.From != nil {
-					f1elemf4.From = f1iter.PortRange.From
+					fromCopy := int64(*f1iter.PortRange.From)
+					f1elemf4.From = &fromCopy
 				}
 				if f1iter.PortRange.To != nil {
-					f1elemf4.To = f1iter.PortRange.To
+					toCopy := int64(*f1iter.PortRange.To)
+					f1elemf4.To = &toCopy
 				}
 				f1elem.PortRange = f1elemf4
 			}
 			if f1iter.Protocol != nil {
 				f1elem.Protocol = f1iter.Protocol
 			}
-			if f1iter.RuleAction != nil {
-				f1elem.RuleAction = f1iter.RuleAction
+			if f1iter.RuleAction != "" {
+				f1elem.RuleAction = aws.String(string(f1iter.RuleAction))
 			}
 			if f1iter.RuleNumber != nil {
-				f1elem.RuleNumber = f1iter.RuleNumber
+				ruleNumberCopy := int64(*f1iter.RuleNumber)
+				f1elem.RuleNumber = &ruleNumberCopy
 			}
 			f1 = append(f1, f1elem)
 		}
@@ -390,7 +403,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateNetworkAclInput{}
 
 	if r.ko.Spec.VPCID != nil {
-		res.SetVpcId(*r.ko.Spec.VPCID)
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil
@@ -430,7 +443,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteNetworkAclOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteNetworkAclWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteNetworkAcl(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteNetworkAcl", err)
 	return nil, err
 }
@@ -443,7 +456,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteNetworkAclInput{}
 
 	if r.ko.Status.ID != nil {
-		res.SetNetworkAclId(*r.ko.Status.ID)
+		res.NetworkAclId = r.ko.Status.ID
 	}
 
 	return res, nil
@@ -641,13 +654,13 @@ func compareNetworkACLEntry(
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

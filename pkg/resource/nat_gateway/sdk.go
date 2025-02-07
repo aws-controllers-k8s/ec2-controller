@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.NATGateway{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeNatGatewaysOutput
-	resp, err = rm.sdkapi.DescribeNatGatewaysWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeNatGateways(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeNatGateways", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -88,8 +91,8 @@ func (rm *resourceManager) sdkFind(
 
 	found := false
 	for _, elem := range resp.NatGateways {
-		if elem.ConnectivityType != nil {
-			ko.Spec.ConnectivityType = elem.ConnectivityType
+		if elem.ConnectivityType != "" {
+			ko.Spec.ConnectivityType = aws.String(string(elem.ConnectivityType))
 		} else {
 			ko.Spec.ConnectivityType = nil
 		}
@@ -161,8 +164,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.ProvisionedBandwidth = nil
 		}
-		if elem.State != nil {
-			ko.Status.State = elem.State
+		if elem.State != "" {
+			ko.Status.State = aws.String(string(elem.State))
 		} else {
 			ko.Status.State = nil
 		}
@@ -221,9 +224,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeNatGatewaysInput{}
 
 	if r.ko.Status.NATGatewayID != nil {
-		f3 := []*string{}
-		f3 = append(f3, r.ko.Status.NATGatewayID)
-		res.SetNatGatewayIds(f3)
+		f3 := []string{}
+		f3 = append(f3, *r.ko.Status.NATGatewayID)
+		res.NatGatewayIds = f3
 	}
 
 	return res, nil
@@ -249,7 +252,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateNatGatewayOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateNatGatewayWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateNatGateway(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateNatGateway", err)
 	if err != nil {
 		return nil, err
@@ -258,8 +261,8 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
-	if resp.NatGateway.ConnectivityType != nil {
-		ko.Spec.ConnectivityType = resp.NatGateway.ConnectivityType
+	if resp.NatGateway.ConnectivityType != "" {
+		ko.Spec.ConnectivityType = aws.String(string(resp.NatGateway.ConnectivityType))
 	} else {
 		ko.Spec.ConnectivityType = nil
 	}
@@ -331,8 +334,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.ProvisionedBandwidth = nil
 	}
-	if resp.NatGateway.State != nil {
-		ko.Status.State = resp.NatGateway.State
+	if resp.NatGateway.State != "" {
+		ko.Status.State = aws.String(string(resp.NatGateway.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -376,13 +379,13 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateNatGatewayInput{}
 
 	if r.ko.Spec.AllocationID != nil {
-		res.SetAllocationId(*r.ko.Spec.AllocationID)
+		res.AllocationId = r.ko.Spec.AllocationID
 	}
 	if r.ko.Spec.ConnectivityType != nil {
-		res.SetConnectivityType(*r.ko.Spec.ConnectivityType)
+		res.ConnectivityType = svcsdktypes.ConnectivityType(*r.ko.Spec.ConnectivityType)
 	}
 	if r.ko.Spec.SubnetID != nil {
-		res.SetSubnetId(*r.ko.Spec.SubnetID)
+		res.SubnetId = r.ko.Spec.SubnetID
 	}
 
 	return res, nil
@@ -415,7 +418,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteNatGatewayOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteNatGatewayWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteNatGateway(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteNatGateway", err)
 	return nil, err
 }
@@ -428,7 +431,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteNatGatewayInput{}
 
 	if r.ko.Status.NATGatewayID != nil {
-		res.SetNatGatewayId(*r.ko.Status.NATGatewayID)
+		res.NatGatewayId = r.ko.Status.NATGatewayID
 	}
 
 	return res, nil
@@ -536,11 +539,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidSubnet",
 		"InvalidElasticIpID.Malformed",
 		"MissingParameter":
@@ -552,13 +556,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

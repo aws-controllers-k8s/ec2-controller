@@ -217,8 +217,8 @@ spec:
                 - region
                 type: object
               associations:
-                description: The associations between the route table and one or more
-                  subnets or a gateway.
+                description: The associations between the route table and your subnets
+                  or gateways.
                 items:
                   description: Describes an association between a route table and
                     a subnet or gateway.

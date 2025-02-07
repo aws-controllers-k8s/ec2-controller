@@ -21,7 +21,8 @@ import (
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 // https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/describe_vpc_endpoints.html
@@ -50,7 +51,7 @@ func addIDToDeleteRequest(r *resource,
 	if r.ko.Status.VPCEndpointID == nil {
 		return errors.New("unable to extract VPCEndpointID from resource")
 	}
-	input.VpcEndpointIds = []*string{r.ko.Status.VPCEndpointID}
+	input.VpcEndpointIds = []string{*r.ko.Status.VPCEndpointID}
 	return nil
 }
 
@@ -89,20 +90,20 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateVpcEndpointInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("vpc-endpoint")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "vpc-endpoint"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }

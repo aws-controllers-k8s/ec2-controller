@@ -42,8 +42,8 @@ func (rm *resourceManager) new{{ $memberRefName }}(
 
 func (rm *resourceManager) new{{ $rtRefName }}(
 	    c svcapitypes.{{ $rtRefName }},
-) *svcsdk.{{ $rtRefName }} {
-	res := &svcsdk.{{ $rtRefName }}{}
+) *svcsdktypes.{{ $rtRefName }} {
+	res := &svcsdktypes.{{ $rtRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $rtRef "" "c" 1 }}
 	return res
 }
@@ -82,7 +82,7 @@ func (rm *resourceManager) new{{ $deleteInputName }}(
 // set{{ $routeRefName }} sets a resource {{ $routeRefName }} type
 // given the SDK type.
 func (rm *resourceManager) setResource{{ $routeRefName }}(
-    resp *svcsdk.{{ $routeRefName }},
+    resp svcsdktypes.{{ $routeRefName }},
 ) *svcapitypes.{{ $routeRefName }} {
     res := &svcapitypes.{{ $routeRefName }}{}
 

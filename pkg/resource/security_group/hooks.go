@@ -19,8 +19,10 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go/aws"
 	awserr "github.com/aws/aws-sdk-go/aws/awserr"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
 	corev1 "k8s.io/api/core/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -31,7 +33,7 @@ import (
 // using data from a DescribeSecurityGroups response
 func (rm *resourceManager) addRulesToSpec(
 	ko *svcapitypes.SecurityGroup,
-	resp *svcsdk.SecurityGroup,
+	resp svcsdktypes.SecurityGroup,
 ) {
 	// if there are no rules to add to Spec, then
 	// set Spec rules to nil to align with latest state;
@@ -43,14 +45,14 @@ func (rm *resourceManager) addRulesToSpec(
 	if resp.IpPermissions != nil {
 		specIngress := []*svcapitypes.IPPermission{}
 		for _, ip := range resp.IpPermissions {
-			specIngress = append(specIngress, rm.setResourceIPPermission(ip))
+			specIngress = append(specIngress, rm.setResourceIPPermission(&ip))
 		}
 		ko.Spec.IngressRules = specIngress
 	}
 	if resp.IpPermissionsEgress != nil {
 		specEgress := []*svcapitypes.IPPermission{}
 		for _, ep := range resp.IpPermissionsEgress {
-			specEgress = append(specEgress, rm.setResourceIPPermission(ep))
+			specEgress = append(specEgress, rm.setResourceIPPermission(&ep))
 		}
 		ko.Spec.EgressRules = specEgress
 	}
@@ -69,27 +71,27 @@ func (rm *resourceManager) getRules(
 
 	groupIDFilter := "group-id"
 	input := &svcsdk.DescribeSecurityGroupRulesInput{
-		Filters: []*svcsdk.Filter{
+		Filters: []svcsdktypes.Filter{
 			{
 				Name:   &groupIDFilter,
-				Values: []*string{res.ko.Status.ID},
+				Values: []string{*res.ko.Status.ID},
 			},
 		},
 	}
 
 	for {
-		resp, err := rm.sdkapi.DescribeSecurityGroupRulesWithContext(ctx, input)
+		resp, err := rm.sdkapi.DescribeSecurityGroupRules(ctx, input)
 		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
 		if err != nil || resp == nil {
 			break
 		}
 		for _, sgRule := range resp.SecurityGroupRules {
-			rules = append(rules, rm.setResourceSecurityGroupRule(sgRule))
+			rules = append(rules, rm.setResourceSecurityGroupRule(&sgRule))
 		}
 		if resp.NextToken == nil || *resp.NextToken == "" {
 			break
 		}
-		input.SetNextToken(*resp.NextToken)
+		input.NextToken = resp.NextToken
 	}
 	if err != nil {
 		return nil, err
@@ -189,21 +191,21 @@ func (rm *resourceManager) syncSGRules(
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateSecurityGroupInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 	if r.ko.Spec.Tags != nil {
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.SetKey(*desiredTag.Key)
-				tag.SetValue(*desiredTag.Value)
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
 			}
 			requestedTags = append(requestedTags, tag)
 		}
-		desiredTagSpecs.SetResourceType("security-group")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = "security-group"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }
 
@@ -220,24 +222,27 @@ func (rm *resourceManager) createSecurityGroupRules(
 	exit := rlog.Trace("rm.createSecurityGroupRules")
 	defer func() { exit(err) }()
 
-	ingressRules := []*svcsdk.IpPermission{}
+	ingressRules := []svcsdktypes.IpPermission{}
 
 	// Authorize ingress rules
 	for _, i := range ingress {
-		ipInput := rm.newIPPermission(*i)
-		for _, userIDGroupPair := range ipInput.UserIdGroupPairs {
-			// If not provided, we need to default the VPC and SecurityGroup IDs.
+		ipInput, err := rm.newIPPermission(*i)
+		if err != nil {
+			return err
+		}
+		for j := range ipInput.UserIdGroupPairs {
+			// If not provided, we need to default the security group ID and vpc ID.
 			//
 			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
 			// access them here.
-			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
-				userIDGroupPair.GroupId = r.ko.Status.ID
+			if ipInput.UserIdGroupPairs[j].GroupId == nil && ipInput.UserIdGroupPairs[j].GroupName == nil {
+				ipInput.UserIdGroupPairs[j].GroupId = r.ko.Status.ID
 			}
-			if userIDGroupPair.VpcId == nil {
-				userIDGroupPair.VpcId = r.ko.Spec.VPCID
+			if ipInput.UserIdGroupPairs[j].VpcId == nil {
+				ipInput.UserIdGroupPairs[j].VpcId = r.ko.Spec.VPCID
 			}
 		}
-		ingressRules = append(ingressRules, ipInput)
+		ingressRules = append(ingressRules, *ipInput)
 	}
 
 	// API can only handle 1000 rules at a time. Send in batches of 1000.
@@ -250,30 +255,33 @@ func (rm *resourceManager) createSecurityGroupRules(
 			GroupId:       r.ko.Status.ID,
 			IpPermissions: ingressRules[i:end],
 		}
-		_, err = rm.sdkapi.AuthorizeSecurityGroupIngressWithContext(ctx, req)
+		_, err = rm.sdkapi.AuthorizeSecurityGroupIngress(ctx, req)
 		rm.metrics.RecordAPICall("CREATE", "AuthorizeSecurityGroupIngress", err)
 		if err != nil {
 			return err
 		}
 	}
 
-	egressRules := []*svcsdk.IpPermission{}
+	egressRules := []svcsdktypes.IpPermission{}
 	// Authorize egress rules
 	for _, e := range egress {
-		ipInput := rm.newIPPermission(*e)
-		for _, userIDGroupPair := range ipInput.UserIdGroupPairs {
+		ipInput, err := rm.newIPPermission(*e)
+		if err != nil {
+			return err
+		}
+		for j := range ipInput.UserIdGroupPairs {
 			// If not provided, we need to default the security group ID and vpc ID.
 			//
 			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
 			// access them here.
-			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
-				userIDGroupPair.GroupId = r.ko.Status.ID
+			if ipInput.UserIdGroupPairs[j].GroupId == nil && ipInput.UserIdGroupPairs[j].GroupName == nil {
+				ipInput.UserIdGroupPairs[j].GroupId = r.ko.Status.ID
 			}
-			if userIDGroupPair.VpcId == nil {
-				userIDGroupPair.VpcId = r.ko.Spec.VPCID
+			if ipInput.UserIdGroupPairs[j].VpcId == nil {
+				ipInput.UserIdGroupPairs[j].VpcId = r.ko.Spec.VPCID
 			}
 		}
-		egressRules = append(egressRules, ipInput)
+		egressRules = append(egressRules, *ipInput)
 	}
 
 	// API can only handle 1000 rules at a time. Send in batches of 1000.
@@ -286,7 +294,7 @@ func (rm *resourceManager) createSecurityGroupRules(
 			GroupId:       r.ko.Status.ID,
 			IpPermissions: egressRules[i:end],
 		}
-		_, err = rm.sdkapi.AuthorizeSecurityGroupEgressWithContext(ctx, req)
+		_, err = rm.sdkapi.AuthorizeSecurityGroupEgress(ctx, req)
 		rm.metrics.RecordAPICall("CREATE", "AuthorizeSecurityGroupEgress", err)
 		if err != nil {
 			return err
@@ -308,20 +316,20 @@ func (rm *resourceManager) deleteDefaultSecurityGroupRule(
 	exit := rlog.Trace("rm.deleteDefaultSecurityGroupRule")
 	defer func() { exit(err) }()
 
-	ipRange := &svcsdk.IpRange{
+	ipRange := svcsdktypes.IpRange{
 		CidrIp: toStrPtr("0.0.0.0/0"),
 	}
-	input := &svcsdk.IpPermission{
-		FromPort:   toInt64Ptr(-1),
-		ToPort:     toInt64Ptr(-1),
+	input := svcsdktypes.IpPermission{
+		FromPort:   aws.Int32(-1),
+		ToPort:     aws.Int32(-1),
 		IpProtocol: toStrPtr("-1"),
-		IpRanges:   []*svcsdk.IpRange{ipRange},
+		IpRanges:   []svcsdktypes.IpRange{ipRange},
 	}
 	req := &svcsdk.RevokeSecurityGroupEgressInput{
 		GroupId:       r.ko.Status.ID,
-		IpPermissions: []*svcsdk.IpPermission{input},
+		IpPermissions: []svcsdktypes.IpPermission{input},
 	}
-	_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, req)
+	_, err = rm.sdkapi.RevokeSecurityGroupEgress(ctx, req)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -350,18 +358,25 @@ func (rm *resourceManager) deleteSecurityGroupRules(
 	defer func() { exit(err) }()
 
 	// Revoke ingress rules
-	ingressRules := []*svcsdk.IpPermission{}
+	ingressRules := []svcsdktypes.IpPermission{}
 	for _, i := range ingress {
-		ipInput := rm.newIPPermission(*i)
-		for _, userIDGroupPair := range ipInput.UserIdGroupPairs {
-			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
-				userIDGroupPair.GroupId = r.ko.Status.ID
+		ipInput, err := rm.newIPPermission(*i)
+		if err != nil {
+			return err
+		}
+		for j := range ipInput.UserIdGroupPairs {
+			// If not provided, we need to default the security group ID and vpc ID.
+			//
+			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
+			// access them here.
+			if ipInput.UserIdGroupPairs[j].GroupId == nil && ipInput.UserIdGroupPairs[j].GroupName == nil {
+				ipInput.UserIdGroupPairs[j].GroupId = r.ko.Status.ID
 			}
-			if userIDGroupPair.VpcId == nil {
-				userIDGroupPair.VpcId = r.ko.Spec.VPCID
+			if ipInput.UserIdGroupPairs[j].VpcId == nil {
+				ipInput.UserIdGroupPairs[j].VpcId = r.ko.Spec.VPCID
 			}
 		}
-		ingressRules = append(ingressRules, ipInput)
+		ingressRules = append(ingressRules, *ipInput)
 	}
 
 	// API can only handle 1000 rules at a time. Send in batches of 1000.
@@ -374,7 +389,7 @@ func (rm *resourceManager) deleteSecurityGroupRules(
 			GroupId:       r.ko.Status.ID,
 			IpPermissions: ingressRules[i:end],
 		}
-		_, err = rm.sdkapi.RevokeSecurityGroupIngressWithContext(ctx, req)
+		_, err = rm.sdkapi.RevokeSecurityGroupIngress(ctx, req)
 		rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupIngress", err)
 		if err != nil {
 			return err
@@ -382,18 +397,25 @@ func (rm *resourceManager) deleteSecurityGroupRules(
 	}
 
 	// Revoke egress rules
-	egressRules := []*svcsdk.IpPermission{}
+	egressRules := []svcsdktypes.IpPermission{}
 	for _, e := range egress {
-		ipInput := rm.newIPPermission(*e)
-		for _, userIDGroupPair := range ipInput.UserIdGroupPairs {
-			if userIDGroupPair.GroupId == nil && userIDGroupPair.GroupName == nil {
-				userIDGroupPair.GroupId = r.ko.Status.ID
+		ipInput, err := rm.newIPPermission(*e)
+		if err != nil {
+			return err
+		}
+		for j := range ipInput.UserIdGroupPairs {
+			// If not provided, we need to default the security group ID and vpc ID.
+			//
+			// The newIPPermission function doesn't return nil UserIdGroupPair items. It is safe to
+			// access them here.
+			if ipInput.UserIdGroupPairs[j].GroupId == nil && ipInput.UserIdGroupPairs[j].GroupName == nil {
+				ipInput.UserIdGroupPairs[j].GroupId = r.ko.Status.ID
 			}
-			if userIDGroupPair.VpcId == nil {
-				userIDGroupPair.VpcId = r.ko.Spec.VPCID
+			if ipInput.UserIdGroupPairs[j].VpcId == nil {
+				ipInput.UserIdGroupPairs[j].VpcId = r.ko.Spec.VPCID
 			}
 		}
-		egressRules = append(egressRules, ipInput)
+		egressRules = append(egressRules, *ipInput)
 	}
 
 	// API can only handle 1000 rules at a time. Send in batches of 1000.
@@ -406,7 +428,7 @@ func (rm *resourceManager) deleteSecurityGroupRules(
 			GroupId:       r.ko.Status.ID,
 			IpPermissions: egressRules[i:end],
 		}
-		_, err = rm.sdkapi.RevokeSecurityGroupEgressWithContext(ctx, req)
+		_, err = rm.sdkapi.RevokeSecurityGroupEgress(ctx, req)
 		rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 		if err != nil {
 			return err

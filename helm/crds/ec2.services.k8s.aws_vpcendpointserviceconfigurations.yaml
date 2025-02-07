@@ -55,22 +55,21 @@ spec:
                 type: boolean
               allowedPrincipals:
                 description: |-
-                  The Amazon Resource Names (ARN) of one or more principals. Permissions are
-                  granted to the principals in this list. To grant permissions to all principals,
-                  specify an asterisk (*).
+                  The Amazon Resource Names (ARN) of the principals. Permissions are granted
+                  to the principals in this list. To grant permissions to all principals, specify
+                  an asterisk (*).
                 items:
                   type: string
                 type: array
               gatewayLoadBalancerARNs:
-                description: The Amazon Resource Names (ARNs) of one or more Gateway
-                  Load Balancers.
+                description: The Amazon Resource Names (ARNs) of the Gateway Load
+                  Balancers.
                 items:
                   type: string
                 type: array
               networkLoadBalancerARNs:
-                description: |-
-                  The Amazon Resource Names (ARNs) of one or more Network Load Balancers for
-                  your service.
+                description: The Amazon Resource Names (ARNs) of the Network Load
+                  Balancers.
                 items:
                   type: string
                 type: array

@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Subnet{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeSubnetsOutput
-	resp, err = rm.sdkapi.DescribeSubnetsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeSubnets(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeSubnets", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -104,7 +107,8 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.AvailabilityZoneID = nil
 		}
 		if elem.AvailableIpAddressCount != nil {
-			ko.Status.AvailableIPAddressCount = elem.AvailableIpAddressCount
+			availableIPAddressCountCopy := int64(*elem.AvailableIpAddressCount)
+			ko.Status.AvailableIPAddressCount = &availableIPAddressCountCopy
 		} else {
 			ko.Status.AvailableIPAddressCount = nil
 		}
@@ -129,7 +133,8 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.EnableDNS64 = nil
 		}
 		if elem.EnableLniAtDeviceIndex != nil {
-			ko.Status.EnableLniAtDeviceIndex = elem.EnableLniAtDeviceIndex
+			enableLniAtDeviceIndexCopy := int64(*elem.EnableLniAtDeviceIndex)
+			ko.Status.EnableLniAtDeviceIndex = &enableLniAtDeviceIndexCopy
 		} else {
 			ko.Status.EnableLniAtDeviceIndex = nil
 		}
@@ -145,8 +150,8 @@ func (rm *resourceManager) sdkFind(
 				}
 				if f9iter.Ipv6CidrBlockState != nil {
 					f9elemf2 := &svcapitypes.SubnetCIDRBlockState{}
-					if f9iter.Ipv6CidrBlockState.State != nil {
-						f9elemf2.State = f9iter.Ipv6CidrBlockState.State
+					if f9iter.Ipv6CidrBlockState.State != "" {
+						f9elemf2.State = aws.String(string(f9iter.Ipv6CidrBlockState.State))
 					}
 					if f9iter.Ipv6CidrBlockState.StatusMessage != nil {
 						f9elemf2.StatusMessage = f9iter.Ipv6CidrBlockState.StatusMessage
@@ -192,15 +197,15 @@ func (rm *resourceManager) sdkFind(
 			if elem.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord != nil {
 				f15.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord
 			}
-			if elem.PrivateDnsNameOptionsOnLaunch.HostnameType != nil {
-				f15.HostnameType = elem.PrivateDnsNameOptionsOnLaunch.HostnameType
+			if elem.PrivateDnsNameOptionsOnLaunch.HostnameType != "" {
+				f15.HostnameType = aws.String(string(elem.PrivateDnsNameOptionsOnLaunch.HostnameType))
 			}
 			ko.Status.PrivateDNSNameOptionsOnLaunch = f15
 		} else {
 			ko.Status.PrivateDNSNameOptionsOnLaunch = nil
 		}
-		if elem.State != nil {
-			ko.Status.State = elem.State
+		if elem.State != "" {
+			ko.Status.State = aws.String(string(elem.State))
 		} else {
 			ko.Status.State = nil
 		}
@@ -287,9 +292,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeSubnetsInput{}
 
 	if r.ko.Status.SubnetID != nil {
-		f4 := []*string{}
-		f4 = append(f4, r.ko.Status.SubnetID)
-		res.SetSubnetIds(f4)
+		f4 := []string{}
+		f4 = append(f4, *r.ko.Status.SubnetID)
+		res.SubnetIds = f4
 	}
 
 	return res, nil
@@ -315,7 +320,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateSubnetOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateSubnetWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateSubnet(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateSubnet", err)
 	if err != nil {
 		return nil, err
@@ -340,7 +345,8 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.AvailabilityZoneID = nil
 	}
 	if resp.Subnet.AvailableIpAddressCount != nil {
-		ko.Status.AvailableIPAddressCount = resp.Subnet.AvailableIpAddressCount
+		availableIPAddressCountCopy := int64(*resp.Subnet.AvailableIpAddressCount)
+		ko.Status.AvailableIPAddressCount = &availableIPAddressCountCopy
 	} else {
 		ko.Status.AvailableIPAddressCount = nil
 	}
@@ -365,7 +371,8 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.EnableDNS64 = nil
 	}
 	if resp.Subnet.EnableLniAtDeviceIndex != nil {
-		ko.Status.EnableLniAtDeviceIndex = resp.Subnet.EnableLniAtDeviceIndex
+		enableLniAtDeviceIndexCopy := int64(*resp.Subnet.EnableLniAtDeviceIndex)
+		ko.Status.EnableLniAtDeviceIndex = &enableLniAtDeviceIndexCopy
 	} else {
 		ko.Status.EnableLniAtDeviceIndex = nil
 	}
@@ -381,8 +388,8 @@ func (rm *resourceManager) sdkCreate(
 			}
 			if f9iter.Ipv6CidrBlockState != nil {
 				f9elemf2 := &svcapitypes.SubnetCIDRBlockState{}
-				if f9iter.Ipv6CidrBlockState.State != nil {
-					f9elemf2.State = f9iter.Ipv6CidrBlockState.State
+				if f9iter.Ipv6CidrBlockState.State != "" {
+					f9elemf2.State = aws.String(string(f9iter.Ipv6CidrBlockState.State))
 				}
 				if f9iter.Ipv6CidrBlockState.StatusMessage != nil {
 					f9elemf2.StatusMessage = f9iter.Ipv6CidrBlockState.StatusMessage
@@ -428,15 +435,15 @@ func (rm *resourceManager) sdkCreate(
 		if resp.Subnet.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord != nil {
 			f15.EnableResourceNameDNSARecord = resp.Subnet.PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord
 		}
-		if resp.Subnet.PrivateDnsNameOptionsOnLaunch.HostnameType != nil {
-			f15.HostnameType = resp.Subnet.PrivateDnsNameOptionsOnLaunch.HostnameType
+		if resp.Subnet.PrivateDnsNameOptionsOnLaunch.HostnameType != "" {
+			f15.HostnameType = aws.String(string(resp.Subnet.PrivateDnsNameOptionsOnLaunch.HostnameType))
 		}
 		ko.Status.PrivateDNSNameOptionsOnLaunch = f15
 	} else {
 		ko.Status.PrivateDNSNameOptionsOnLaunch = nil
 	}
-	if resp.Subnet.State != nil {
-		ko.Status.State = resp.Subnet.State
+	if resp.Subnet.State != "" {
+		ko.Status.State = aws.String(string(resp.Subnet.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -506,25 +513,25 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateSubnetInput{}
 
 	if r.ko.Spec.AvailabilityZone != nil {
-		res.SetAvailabilityZone(*r.ko.Spec.AvailabilityZone)
+		res.AvailabilityZone = r.ko.Spec.AvailabilityZone
 	}
 	if r.ko.Spec.AvailabilityZoneID != nil {
-		res.SetAvailabilityZoneId(*r.ko.Spec.AvailabilityZoneID)
+		res.AvailabilityZoneId = r.ko.Spec.AvailabilityZoneID
 	}
 	if r.ko.Spec.CIDRBlock != nil {
-		res.SetCidrBlock(*r.ko.Spec.CIDRBlock)
+		res.CidrBlock = r.ko.Spec.CIDRBlock
 	}
 	if r.ko.Spec.IPv6CIDRBlock != nil {
-		res.SetIpv6CidrBlock(*r.ko.Spec.IPv6CIDRBlock)
+		res.Ipv6CidrBlock = r.ko.Spec.IPv6CIDRBlock
 	}
 	if r.ko.Spec.IPv6Native != nil {
-		res.SetIpv6Native(*r.ko.Spec.IPv6Native)
+		res.Ipv6Native = r.ko.Spec.IPv6Native
 	}
 	if r.ko.Spec.OutpostARN != nil {
-		res.SetOutpostArn(*r.ko.Spec.OutpostARN)
+		res.OutpostArn = r.ko.Spec.OutpostARN
 	}
 	if r.ko.Spec.VPCID != nil {
-		res.SetVpcId(*r.ko.Spec.VPCID)
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil
@@ -557,7 +564,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteSubnetOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteSubnetWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteSubnet(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteSubnet", err)
 	return nil, err
 }
@@ -570,7 +577,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteSubnetInput{}
 
 	if r.ko.Status.SubnetID != nil {
-		res.SetSubnetId(*r.ko.Status.SubnetID)
+		res.SubnetId = r.ko.Status.SubnetID
 	}
 
 	return res, nil
@@ -678,11 +685,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidParameterValue",
 		"InvalidCustomerOwnedIpv4PoolID.Malformed":
 		return true
@@ -693,13 +701,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.TransitGateway{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeTransitGatewaysOutput
-	resp, err = rm.sdkapi.DescribeTransitGatewaysWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeTransitGateways(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeTransitGateways", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -103,32 +106,26 @@ func (rm *resourceManager) sdkFind(
 			if elem.Options.AmazonSideAsn != nil {
 				f2.AmazonSideASN = elem.Options.AmazonSideAsn
 			}
-			if elem.Options.AutoAcceptSharedAttachments != nil {
-				f2.AutoAcceptSharedAttachments = elem.Options.AutoAcceptSharedAttachments
+			if elem.Options.AutoAcceptSharedAttachments != "" {
+				f2.AutoAcceptSharedAttachments = aws.String(string(elem.Options.AutoAcceptSharedAttachments))
 			}
-			if elem.Options.DefaultRouteTableAssociation != nil {
-				f2.DefaultRouteTableAssociation = elem.Options.DefaultRouteTableAssociation
+			if elem.Options.DefaultRouteTableAssociation != "" {
+				f2.DefaultRouteTableAssociation = aws.String(string(elem.Options.DefaultRouteTableAssociation))
 			}
-			if elem.Options.DefaultRouteTablePropagation != nil {
-				f2.DefaultRouteTablePropagation = elem.Options.DefaultRouteTablePropagation
+			if elem.Options.DefaultRouteTablePropagation != "" {
+				f2.DefaultRouteTablePropagation = aws.String(string(elem.Options.DefaultRouteTablePropagation))
 			}
-			if elem.Options.DnsSupport != nil {
-				f2.DNSSupport = elem.Options.DnsSupport
+			if elem.Options.DnsSupport != "" {
+				f2.DNSSupport = aws.String(string(elem.Options.DnsSupport))
 			}
-			if elem.Options.MulticastSupport != nil {
-				f2.MulticastSupport = elem.Options.MulticastSupport
+			if elem.Options.MulticastSupport != "" {
+				f2.MulticastSupport = aws.String(string(elem.Options.MulticastSupport))
 			}
 			if elem.Options.TransitGatewayCidrBlocks != nil {
-				f2f8 := []*string{}
-				for _, f2f8iter := range elem.Options.TransitGatewayCidrBlocks {
-					var f2f8elem string
-					f2f8elem = *f2f8iter
-					f2f8 = append(f2f8, &f2f8elem)
-				}
-				f2.TransitGatewayCIDRBlocks = f2f8
+				f2.TransitGatewayCIDRBlocks = aws.StringSlice(elem.Options.TransitGatewayCidrBlocks)
 			}
-			if elem.Options.VpnEcmpSupport != nil {
-				f2.VPNECMPSupport = elem.Options.VpnEcmpSupport
+			if elem.Options.VpnEcmpSupport != "" {
+				f2.VPNECMPSupport = aws.String(string(elem.Options.VpnEcmpSupport))
 			}
 			ko.Spec.Options = f2
 		} else {
@@ -139,8 +136,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.OwnerID = nil
 		}
-		if elem.State != nil {
-			ko.Status.State = elem.State
+		if elem.State != "" {
+			ko.Status.State = aws.String(string(elem.State))
 		} else {
 			ko.Status.State = nil
 		}
@@ -201,9 +198,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeTransitGatewaysInput{}
 
 	if r.ko.Status.TransitGatewayID != nil {
-		f4 := []*string{}
-		f4 = append(f4, r.ko.Status.TransitGatewayID)
-		res.SetTransitGatewayIds(f4)
+		f4 := []string{}
+		f4 = append(f4, *r.ko.Status.TransitGatewayID)
+		res.TransitGatewayIds = f4
 	}
 
 	return res, nil
@@ -229,7 +226,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateTransitGatewayOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateTransitGatewayWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateTransitGateway(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateTransitGateway", err)
 	if err != nil {
 		return nil, err
@@ -253,32 +250,26 @@ func (rm *resourceManager) sdkCreate(
 		if resp.TransitGateway.Options.AmazonSideAsn != nil {
 			f2.AmazonSideASN = resp.TransitGateway.Options.AmazonSideAsn
 		}
-		if resp.TransitGateway.Options.AutoAcceptSharedAttachments != nil {
-			f2.AutoAcceptSharedAttachments = resp.TransitGateway.Options.AutoAcceptSharedAttachments
+		if resp.TransitGateway.Options.AutoAcceptSharedAttachments != "" {
+			f2.AutoAcceptSharedAttachments = aws.String(string(resp.TransitGateway.Options.AutoAcceptSharedAttachments))
 		}
-		if resp.TransitGateway.Options.DefaultRouteTableAssociation != nil {
-			f2.DefaultRouteTableAssociation = resp.TransitGateway.Options.DefaultRouteTableAssociation
+		if resp.TransitGateway.Options.DefaultRouteTableAssociation != "" {
+			f2.DefaultRouteTableAssociation = aws.String(string(resp.TransitGateway.Options.DefaultRouteTableAssociation))
 		}
-		if resp.TransitGateway.Options.DefaultRouteTablePropagation != nil {
-			f2.DefaultRouteTablePropagation = resp.TransitGateway.Options.DefaultRouteTablePropagation
+		if resp.TransitGateway.Options.DefaultRouteTablePropagation != "" {
+			f2.DefaultRouteTablePropagation = aws.String(string(resp.TransitGateway.Options.DefaultRouteTablePropagation))
 		}
-		if resp.TransitGateway.Options.DnsSupport != nil {
-			f2.DNSSupport = resp.TransitGateway.Options.DnsSupport
+		if resp.TransitGateway.Options.DnsSupport != "" {
+			f2.DNSSupport = aws.String(string(resp.TransitGateway.Options.DnsSupport))
 		}
-		if resp.TransitGateway.Options.MulticastSupport != nil {
-			f2.MulticastSupport = resp.TransitGateway.Options.MulticastSupport
+		if resp.TransitGateway.Options.MulticastSupport != "" {
+			f2.MulticastSupport = aws.String(string(resp.TransitGateway.Options.MulticastSupport))
 		}
 		if resp.TransitGateway.Options.TransitGatewayCidrBlocks != nil {
-			f2f8 := []*string{}
-			for _, f2f8iter := range resp.TransitGateway.Options.TransitGatewayCidrBlocks {
-				var f2f8elem string
-				f2f8elem = *f2f8iter
-				f2f8 = append(f2f8, &f2f8elem)
-			}
-			f2.TransitGatewayCIDRBlocks = f2f8
+			f2.TransitGatewayCIDRBlocks = aws.StringSlice(resp.TransitGateway.Options.TransitGatewayCidrBlocks)
 		}
-		if resp.TransitGateway.Options.VpnEcmpSupport != nil {
-			f2.VPNECMPSupport = resp.TransitGateway.Options.VpnEcmpSupport
+		if resp.TransitGateway.Options.VpnEcmpSupport != "" {
+			f2.VPNECMPSupport = aws.String(string(resp.TransitGateway.Options.VpnEcmpSupport))
 		}
 		ko.Spec.Options = f2
 	} else {
@@ -289,8 +280,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.OwnerID = nil
 	}
-	if resp.TransitGateway.State != nil {
-		ko.Status.State = resp.TransitGateway.State
+	if resp.TransitGateway.State != "" {
+		ko.Status.State = aws.String(string(resp.TransitGateway.State))
 	} else {
 		ko.Status.State = nil
 	}
@@ -336,41 +327,35 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateTransitGatewayInput{}
 
 	if r.ko.Spec.Description != nil {
-		res.SetDescription(*r.ko.Spec.Description)
+		res.Description = r.ko.Spec.Description
 	}
 	if r.ko.Spec.Options != nil {
-		f1 := &svcsdk.TransitGatewayRequestOptions{}
+		f1 := &svcsdktypes.TransitGatewayRequestOptions{}
 		if r.ko.Spec.Options.AmazonSideASN != nil {
-			f1.SetAmazonSideAsn(*r.ko.Spec.Options.AmazonSideASN)
+			f1.AmazonSideAsn = r.ko.Spec.Options.AmazonSideASN
 		}
 		if r.ko.Spec.Options.AutoAcceptSharedAttachments != nil {
-			f1.SetAutoAcceptSharedAttachments(*r.ko.Spec.Options.AutoAcceptSharedAttachments)
+			f1.AutoAcceptSharedAttachments = svcsdktypes.AutoAcceptSharedAttachmentsValue(*r.ko.Spec.Options.AutoAcceptSharedAttachments)
 		}
 		if r.ko.Spec.Options.DefaultRouteTableAssociation != nil {
-			f1.SetDefaultRouteTableAssociation(*r.ko.Spec.Options.DefaultRouteTableAssociation)
+			f1.DefaultRouteTableAssociation = svcsdktypes.DefaultRouteTableAssociationValue(*r.ko.Spec.Options.DefaultRouteTableAssociation)
 		}
 		if r.ko.Spec.Options.DefaultRouteTablePropagation != nil {
-			f1.SetDefaultRouteTablePropagation(*r.ko.Spec.Options.DefaultRouteTablePropagation)
+			f1.DefaultRouteTablePropagation = svcsdktypes.DefaultRouteTablePropagationValue(*r.ko.Spec.Options.DefaultRouteTablePropagation)
 		}
 		if r.ko.Spec.Options.DNSSupport != nil {
-			f1.SetDnsSupport(*r.ko.Spec.Options.DNSSupport)
+			f1.DnsSupport = svcsdktypes.DnsSupportValue(*r.ko.Spec.Options.DNSSupport)
 		}
 		if r.ko.Spec.Options.MulticastSupport != nil {
-			f1.SetMulticastSupport(*r.ko.Spec.Options.MulticastSupport)
+			f1.MulticastSupport = svcsdktypes.MulticastSupportValue(*r.ko.Spec.Options.MulticastSupport)
 		}
 		if r.ko.Spec.Options.TransitGatewayCIDRBlocks != nil {
-			f1f6 := []*string{}
-			for _, f1f6iter := range r.ko.Spec.Options.TransitGatewayCIDRBlocks {
-				var f1f6elem string
-				f1f6elem = *f1f6iter
-				f1f6 = append(f1f6, &f1f6elem)
-			}
-			f1.SetTransitGatewayCidrBlocks(f1f6)
+			f1.TransitGatewayCidrBlocks = aws.ToStringSlice(r.ko.Spec.Options.TransitGatewayCIDRBlocks)
 		}
 		if r.ko.Spec.Options.VPNECMPSupport != nil {
-			f1.SetVpnEcmpSupport(*r.ko.Spec.Options.VPNECMPSupport)
+			f1.VpnEcmpSupport = svcsdktypes.VpnEcmpSupportValue(*r.ko.Spec.Options.VPNECMPSupport)
 		}
-		res.SetOptions(f1)
+		res.Options = f1
 	}
 
 	return res, nil
@@ -403,7 +388,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteTransitGatewayOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteTransitGatewayWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteTransitGateway(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteTransitGateway", err)
 	return nil, err
 }
@@ -416,7 +401,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteTransitGatewayInput{}
 
 	if r.ko.Status.TransitGatewayID != nil {
-		res.SetTransitGatewayId(*r.ko.Status.TransitGatewayID)
+		res.TransitGatewayId = r.ko.Status.TransitGatewayID
 	}
 
 	return res, nil
@@ -527,13 +512,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

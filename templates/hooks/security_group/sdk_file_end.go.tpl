@@ -21,11 +21,11 @@ func compare{{$sgRuleRefName}} (
 
 func (rm *resourceManager) new{{ $sgRuleRefName }}(
 	c svcapitypes.{{ $sgRuleRefName }},
-) *svcsdk.{{ $sgRuleRef.ShapeName }} {
-	res := &svcsdk.{{ $sgRuleRef.ShapeName }}{}
+) (*svcsdktypes.{{ $sgRuleRef.ShapeName }}, error) {
+	res := &svcsdktypes.{{ $sgRuleRef.ShapeName }}{}
 
 {{ GoCodeSetSDKForStruct $CRD "" "res" $sgRuleRef "" "c" 1 }}
-	return res
+	return res, nil
 }
 
 {{/* Helper method for tag support */}}
@@ -40,8 +40,8 @@ func (rm *resourceManager) new{{ $sgRuleRefName }}(
 
 func (rm *resourceManager) new{{ $securityGroupRefName }}(
 	    c svcapitypes.{{ $securityGroupRefName }},
-) *svcsdk.{{ $securityGroupRefName }} {
-	res := &svcsdk.{{ $securityGroupRefName }}{}
+) *svcsdktypes.{{ $securityGroupRefName }} {
+	res := &svcsdktypes.{{ $securityGroupRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $securityGroupRef "" "c" 1 }}
 	return res
 }
@@ -65,7 +65,7 @@ func (rm *resourceManager) new{{ $securityGroupRefName }}(
 // set{{ $sgRuleName }} sets a resource {{ $sgRuleName }} type
 // given the SDK type.
 func (rm *resourceManager) setResource{{ $sgRuleName }}(
-    resp *svcsdk.{{ $sgRuleName }},
+    resp *svcsdktypes.{{ $sgRuleName }},
 ) *svcapitypes.{{ $sgRuleName }} {
     res := &svcapitypes.{{ $sgRuleName }}{}
 
@@ -79,7 +79,7 @@ func (rm *resourceManager) setResource{{ $sgRuleName }}(
 // set{{ $ipPermName }} sets a resource {{ $ipPermName }} type
 // given the SDK type.
 func (rm *resourceManager) setResource{{ $ipPermName }}(
-    resp *svcsdk.IpPermission,
+    resp *svcsdktypes.IpPermission,
 ) *svcapitypes.{{ $ipPermName }} {
     res := &svcapitypes.{{ $ipPermName }}{}
 

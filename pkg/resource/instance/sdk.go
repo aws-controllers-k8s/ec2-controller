@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.Instance{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +76,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeInstancesOutput
-	resp, err = rm.sdkapi.DescribeInstancesWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeInstances(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeInstances", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -90,12 +94,13 @@ func (rm *resourceManager) sdkFind(
 	for _, iter0 := range resp.Reservations {
 		for _, elem := range iter0.Instances {
 			if elem.AmiLaunchIndex != nil {
-				ko.Status.AMILaunchIndex = elem.AmiLaunchIndex
+				amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
+				ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
 			} else {
 				ko.Status.AMILaunchIndex = nil
 			}
-			if elem.Architecture != nil {
-				ko.Status.Architecture = elem.Architecture
+			if elem.Architecture != "" {
+				ko.Status.Architecture = aws.String(string(elem.Architecture))
 			} else {
 				ko.Status.Architecture = nil
 			}
@@ -119,8 +124,8 @@ func (rm *resourceManager) sdkFind(
 			} else {
 				ko.Spec.BlockDeviceMappings = nil
 			}
-			if elem.BootMode != nil {
-				ko.Status.BootMode = elem.BootMode
+			if elem.BootMode != "" {
+				ko.Status.BootMode = aws.String(string(elem.BootMode))
 			} else {
 				ko.Status.BootMode = nil
 			}
@@ -131,8 +136,8 @@ func (rm *resourceManager) sdkFind(
 			}
 			if elem.CapacityReservationSpecification != nil {
 				f5 := &svcapitypes.CapacityReservationSpecification{}
-				if elem.CapacityReservationSpecification.CapacityReservationPreference != nil {
-					f5.CapacityReservationPreference = elem.CapacityReservationSpecification.CapacityReservationPreference
+				if elem.CapacityReservationSpecification.CapacityReservationPreference != "" {
+					f5.CapacityReservationPreference = aws.String(string(elem.CapacityReservationSpecification.CapacityReservationPreference))
 				}
 				if elem.CapacityReservationSpecification.CapacityReservationTarget != nil {
 					f5f1 := &svcapitypes.CapacityReservationTarget{}
@@ -151,10 +156,12 @@ func (rm *resourceManager) sdkFind(
 			if elem.CpuOptions != nil {
 				f6 := &svcapitypes.CPUOptionsRequest{}
 				if elem.CpuOptions.CoreCount != nil {
-					f6.CoreCount = elem.CpuOptions.CoreCount
+					coreCountCopy := int64(*elem.CpuOptions.CoreCount)
+					f6.CoreCount = &coreCountCopy
 				}
 				if elem.CpuOptions.ThreadsPerCore != nil {
-					f6.ThreadsPerCore = elem.CpuOptions.ThreadsPerCore
+					threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
+					f6.ThreadsPerCore = &threadsPerCoreCopy
 				}
 				ko.Spec.CPUOptions = f6
 			} else {
@@ -232,8 +239,8 @@ func (rm *resourceManager) sdkFind(
 			} else {
 				ko.Spec.HibernationOptions = nil
 			}
-			if elem.Hypervisor != nil {
-				ko.Status.Hypervisor = elem.Hypervisor
+			if elem.Hypervisor != "" {
+				ko.Status.Hypervisor = aws.String(string(elem.Hypervisor))
 			} else {
 				ko.Status.Hypervisor = nil
 			}
@@ -256,13 +263,13 @@ func (rm *resourceManager) sdkFind(
 			} else {
 				ko.Status.InstanceID = nil
 			}
-			if elem.InstanceLifecycle != nil {
-				ko.Status.InstanceLifecycle = elem.InstanceLifecycle
+			if elem.InstanceLifecycle != "" {
+				ko.Status.InstanceLifecycle = aws.String(string(elem.InstanceLifecycle))
 			} else {
 				ko.Status.InstanceLifecycle = nil
 			}
-			if elem.InstanceType != nil {
-				ko.Spec.InstanceType = elem.InstanceType
+			if elem.InstanceType != "" {
+				ko.Spec.InstanceType = aws.String(string(elem.InstanceType))
 			} else {
 				ko.Spec.InstanceType = nil
 			}
@@ -301,8 +308,8 @@ func (rm *resourceManager) sdkFind(
 			}
 			if elem.MaintenanceOptions != nil {
 				f24 := &svcapitypes.InstanceMaintenanceOptionsRequest{}
-				if elem.MaintenanceOptions.AutoRecovery != nil {
-					f24.AutoRecovery = elem.MaintenanceOptions.AutoRecovery
+				if elem.MaintenanceOptions.AutoRecovery != "" {
+					f24.AutoRecovery = aws.String(string(elem.MaintenanceOptions.AutoRecovery))
 				}
 				ko.Spec.MaintenanceOptions = f24
 			} else {
@@ -310,20 +317,21 @@ func (rm *resourceManager) sdkFind(
 			}
 			if elem.MetadataOptions != nil {
 				f25 := &svcapitypes.InstanceMetadataOptionsRequest{}
-				if elem.MetadataOptions.HttpEndpoint != nil {
-					f25.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+				if elem.MetadataOptions.HttpEndpoint != "" {
+					f25.HTTPEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
 				}
-				if elem.MetadataOptions.HttpProtocolIpv6 != nil {
-					f25.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+				if elem.MetadataOptions.HttpProtocolIpv6 != "" {
+					f25.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 				}
 				if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-					f25.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+					httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
+					f25.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
 				}
-				if elem.MetadataOptions.HttpTokens != nil {
-					f25.HTTPTokens = elem.MetadataOptions.HttpTokens
+				if elem.MetadataOptions.HttpTokens != "" {
+					f25.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
 				}
-				if elem.MetadataOptions.InstanceMetadataTags != nil {
-					f25.InstanceMetadataTags = elem.MetadataOptions.InstanceMetadataTags
+				if elem.MetadataOptions.InstanceMetadataTags != "" {
+					f25.InstanceMetadataTags = aws.String(string(elem.MetadataOptions.InstanceMetadataTags))
 				}
 				ko.Spec.MetadataOptions = f25
 			} else {
@@ -346,37 +354,37 @@ func (rm *resourceManager) sdkFind(
 						f27elem.InterfaceType = f27iter.InterfaceType
 					}
 					if f27iter.Ipv4Prefixes != nil {
-						f27elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
-						for _, f27elemf5iter := range f27iter.Ipv4Prefixes {
-							f27elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
-							if f27elemf5iter.Ipv4Prefix != nil {
-								f27elemf5elem.IPv4Prefix = f27elemf5iter.Ipv4Prefix
-							}
-							f27elemf5 = append(f27elemf5, f27elemf5elem)
-						}
-						f27elem.IPv4Prefixes = f27elemf5
-					}
-					if f27iter.Ipv6Addresses != nil {
-						f27elemf6 := []*svcapitypes.InstanceIPv6Address{}
-						for _, f27elemf6iter := range f27iter.Ipv6Addresses {
-							f27elemf6elem := &svcapitypes.InstanceIPv6Address{}
-							if f27elemf6iter.Ipv6Address != nil {
-								f27elemf6elem.IPv6Address = f27elemf6iter.Ipv6Address
+						f27elemf6 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+						for _, f27elemf6iter := range f27iter.Ipv4Prefixes {
+							f27elemf6elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+							if f27elemf6iter.Ipv4Prefix != nil {
+								f27elemf6elem.IPv4Prefix = f27elemf6iter.Ipv4Prefix
 							}
 							f27elemf6 = append(f27elemf6, f27elemf6elem)
 						}
-						f27elem.IPv6Addresses = f27elemf6
+						f27elem.IPv4Prefixes = f27elemf6
 					}
-					if f27iter.Ipv6Prefixes != nil {
-						f27elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
-						for _, f27elemf7iter := range f27iter.Ipv6Prefixes {
-							f27elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
-							if f27elemf7iter.Ipv6Prefix != nil {
-								f27elemf7elem.IPv6Prefix = f27elemf7iter.Ipv6Prefix
+					if f27iter.Ipv6Addresses != nil {
+						f27elemf7 := []*svcapitypes.InstanceIPv6Address{}
+						for _, f27elemf7iter := range f27iter.Ipv6Addresses {
+							f27elemf7elem := &svcapitypes.InstanceIPv6Address{}
+							if f27elemf7iter.Ipv6Address != nil {
+								f27elemf7elem.IPv6Address = f27elemf7iter.Ipv6Address
 							}
 							f27elemf7 = append(f27elemf7, f27elemf7elem)
 						}
-						f27elem.IPv6Prefixes = f27elemf7
+						f27elem.IPv6Addresses = f27elemf7
+					}
+					if f27iter.Ipv6Prefixes != nil {
+						f27elemf8 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+						for _, f27elemf8iter := range f27iter.Ipv6Prefixes {
+							f27elemf8elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+							if f27elemf8iter.Ipv6Prefix != nil {
+								f27elemf8elem.IPv6Prefix = f27elemf8iter.Ipv6Prefix
+							}
+							f27elemf8 = append(f27elemf8, f27elemf8elem)
+						}
+						f27elem.IPv6Prefixes = f27elemf8
 					}
 					if f27iter.NetworkInterfaceId != nil {
 						f27elem.NetworkInterfaceID = f27iter.NetworkInterfaceId
@@ -385,18 +393,18 @@ func (rm *resourceManager) sdkFind(
 						f27elem.PrivateIPAddress = f27iter.PrivateIpAddress
 					}
 					if f27iter.PrivateIpAddresses != nil {
-						f27elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
-						for _, f27elemf13iter := range f27iter.PrivateIpAddresses {
-							f27elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
-							if f27elemf13iter.Primary != nil {
-								f27elemf13elem.Primary = f27elemf13iter.Primary
+						f27elemf15 := []*svcapitypes.PrivateIPAddressSpecification{}
+						for _, f27elemf15iter := range f27iter.PrivateIpAddresses {
+							f27elemf15elem := &svcapitypes.PrivateIPAddressSpecification{}
+							if f27elemf15iter.Primary != nil {
+								f27elemf15elem.Primary = f27elemf15iter.Primary
 							}
-							if f27elemf13iter.PrivateIpAddress != nil {
-								f27elemf13elem.PrivateIPAddress = f27elemf13iter.PrivateIpAddress
+							if f27elemf15iter.PrivateIpAddress != nil {
+								f27elemf15elem.PrivateIPAddress = f27elemf15iter.PrivateIpAddress
 							}
-							f27elemf13 = append(f27elemf13, f27elemf13elem)
+							f27elemf15 = append(f27elemf15, f27elemf15elem)
 						}
-						f27elem.PrivateIPAddresses = f27elemf13
+						f27elem.PrivateIPAddresses = f27elemf15
 					}
 					if f27iter.SubnetId != nil {
 						f27elem.SubnetID = f27iter.SubnetId
@@ -430,20 +438,21 @@ func (rm *resourceManager) sdkFind(
 					f29.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 				}
 				if elem.Placement.PartitionNumber != nil {
-					f29.PartitionNumber = elem.Placement.PartitionNumber
+					partitionNumberCopy := int64(*elem.Placement.PartitionNumber)
+					f29.PartitionNumber = &partitionNumberCopy
 				}
 				if elem.Placement.SpreadDomain != nil {
 					f29.SpreadDomain = elem.Placement.SpreadDomain
 				}
-				if elem.Placement.Tenancy != nil {
-					f29.Tenancy = elem.Placement.Tenancy
+				if elem.Placement.Tenancy != "" {
+					f29.Tenancy = aws.String(string(elem.Placement.Tenancy))
 				}
 				ko.Spec.Placement = f29
 			} else {
 				ko.Spec.Placement = nil
 			}
-			if elem.Platform != nil {
-				ko.Status.Platform = elem.Platform
+			if elem.Platform != "" {
+				ko.Status.Platform = aws.String(string(elem.Platform))
 			} else {
 				ko.Status.Platform = nil
 			}
@@ -465,8 +474,8 @@ func (rm *resourceManager) sdkFind(
 				if elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord != nil {
 					f33.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord
 				}
-				if elem.PrivateDnsNameOptions.HostnameType != nil {
-					f33.HostnameType = elem.PrivateDnsNameOptions.HostnameType
+				if elem.PrivateDnsNameOptions.HostnameType != "" {
+					f33.HostnameType = aws.String(string(elem.PrivateDnsNameOptions.HostnameType))
 				}
 				ko.Spec.PrivateDNSNameOptions = f33
 			} else {
@@ -484,8 +493,8 @@ func (rm *resourceManager) sdkFind(
 					if f35iter.ProductCodeId != nil {
 						f35elem.ProductCodeID = f35iter.ProductCodeId
 					}
-					if f35iter.ProductCodeType != nil {
-						f35elem.ProductCodeType = f35iter.ProductCodeType
+					if f35iter.ProductCodeType != "" {
+						f35elem.ProductCodeType = aws.String(string(f35iter.ProductCodeType))
 					}
 					f35 = append(f35, f35elem)
 				}
@@ -513,17 +522,17 @@ func (rm *resourceManager) sdkFind(
 			} else {
 				ko.Status.RootDeviceName = nil
 			}
-			if elem.RootDeviceType != nil {
-				ko.Status.RootDeviceType = elem.RootDeviceType
+			if elem.RootDeviceType != "" {
+				ko.Status.RootDeviceType = aws.String(string(elem.RootDeviceType))
 			} else {
 				ko.Status.RootDeviceType = nil
 			}
 			if elem.SecurityGroups != nil {
 				f41 := []*string{}
 				for _, f41iter := range elem.SecurityGroups {
-					var f41elem string
-					f41elem = *f41iter.GroupName
-					f41 = append(f41, &f41elem)
+					var f41elem *string
+					f41elem = f41iter.GroupName
+					f41 = append(f41, f41elem)
 				}
 				ko.Spec.SecurityGroups = f41
 			} else {
@@ -547,10 +556,11 @@ func (rm *resourceManager) sdkFind(
 			if elem.State != nil {
 				f45 := &svcapitypes.InstanceState{}
 				if elem.State.Code != nil {
-					f45.Code = elem.State.Code
+					codeCopy := int64(*elem.State.Code)
+					f45.Code = &codeCopy
 				}
-				if elem.State.Name != nil {
-					f45.Name = elem.State.Name
+				if elem.State.Name != "" {
+					f45.Name = aws.String(string(elem.State.Name))
 				}
 				ko.Status.State = f45
 			} else {
@@ -609,8 +619,8 @@ func (rm *resourceManager) sdkFind(
 			} else {
 				ko.Status.UsageOperationUpdateTime = nil
 			}
-			if elem.VirtualizationType != nil {
-				ko.Status.VirtualizationType = elem.VirtualizationType
+			if elem.VirtualizationType != "" {
+				ko.Status.VirtualizationType = aws.String(string(elem.VirtualizationType))
 			} else {
 				ko.Status.VirtualizationType = nil
 			}
@@ -658,9 +668,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeInstancesInput{}
 
 	if r.ko.Status.InstanceID != nil {
-		f2 := []*string{}
-		f2 = append(f2, r.ko.Status.InstanceID)
-		res.SetInstanceIds(f2)
+		f2 := []string{}
+		f2 = append(f2, *r.ko.Status.InstanceID)
+		res.InstanceIds = f2
 	}
 
 	return res, nil
@@ -684,9 +694,9 @@ func (rm *resourceManager) sdkCreate(
 	}
 	updateTagSpecificationsInCreateRequest(desired, input)
 
-	var resp *svcsdk.Reservation
+	var resp *svcsdk.RunInstancesOutput
 	_ = resp
-	resp, err = rm.sdkapi.RunInstancesWithContext(ctx, input)
+	resp, err = rm.sdkapi.RunInstances(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "RunInstances", err)
 	if err != nil {
 		return nil, err
@@ -698,12 +708,13 @@ func (rm *resourceManager) sdkCreate(
 	found := false
 	for _, elem := range resp.Instances {
 		if elem.AmiLaunchIndex != nil {
-			ko.Status.AMILaunchIndex = elem.AmiLaunchIndex
+			amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
+			ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
 		} else {
 			ko.Status.AMILaunchIndex = nil
 		}
-		if elem.Architecture != nil {
-			ko.Status.Architecture = elem.Architecture
+		if elem.Architecture != "" {
+			ko.Status.Architecture = aws.String(string(elem.Architecture))
 		} else {
 			ko.Status.Architecture = nil
 		}
@@ -727,8 +738,8 @@ func (rm *resourceManager) sdkCreate(
 		} else {
 			ko.Spec.BlockDeviceMappings = nil
 		}
-		if elem.BootMode != nil {
-			ko.Status.BootMode = elem.BootMode
+		if elem.BootMode != "" {
+			ko.Status.BootMode = aws.String(string(elem.BootMode))
 		} else {
 			ko.Status.BootMode = nil
 		}
@@ -739,8 +750,8 @@ func (rm *resourceManager) sdkCreate(
 		}
 		if elem.CapacityReservationSpecification != nil {
 			f5 := &svcapitypes.CapacityReservationSpecification{}
-			if elem.CapacityReservationSpecification.CapacityReservationPreference != nil {
-				f5.CapacityReservationPreference = elem.CapacityReservationSpecification.CapacityReservationPreference
+			if elem.CapacityReservationSpecification.CapacityReservationPreference != "" {
+				f5.CapacityReservationPreference = aws.String(string(elem.CapacityReservationSpecification.CapacityReservationPreference))
 			}
 			if elem.CapacityReservationSpecification.CapacityReservationTarget != nil {
 				f5f1 := &svcapitypes.CapacityReservationTarget{}
@@ -759,10 +770,12 @@ func (rm *resourceManager) sdkCreate(
 		if elem.CpuOptions != nil {
 			f6 := &svcapitypes.CPUOptionsRequest{}
 			if elem.CpuOptions.CoreCount != nil {
-				f6.CoreCount = elem.CpuOptions.CoreCount
+				coreCountCopy := int64(*elem.CpuOptions.CoreCount)
+				f6.CoreCount = &coreCountCopy
 			}
 			if elem.CpuOptions.ThreadsPerCore != nil {
-				f6.ThreadsPerCore = elem.CpuOptions.ThreadsPerCore
+				threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
+				f6.ThreadsPerCore = &threadsPerCoreCopy
 			}
 			ko.Spec.CPUOptions = f6
 		} else {
@@ -840,8 +853,8 @@ func (rm *resourceManager) sdkCreate(
 		} else {
 			ko.Spec.HibernationOptions = nil
 		}
-		if elem.Hypervisor != nil {
-			ko.Status.Hypervisor = elem.Hypervisor
+		if elem.Hypervisor != "" {
+			ko.Status.Hypervisor = aws.String(string(elem.Hypervisor))
 		} else {
 			ko.Status.Hypervisor = nil
 		}
@@ -864,13 +877,13 @@ func (rm *resourceManager) sdkCreate(
 		} else {
 			ko.Status.InstanceID = nil
 		}
-		if elem.InstanceLifecycle != nil {
-			ko.Status.InstanceLifecycle = elem.InstanceLifecycle
+		if elem.InstanceLifecycle != "" {
+			ko.Status.InstanceLifecycle = aws.String(string(elem.InstanceLifecycle))
 		} else {
 			ko.Status.InstanceLifecycle = nil
 		}
-		if elem.InstanceType != nil {
-			ko.Spec.InstanceType = elem.InstanceType
+		if elem.InstanceType != "" {
+			ko.Spec.InstanceType = aws.String(string(elem.InstanceType))
 		} else {
 			ko.Spec.InstanceType = nil
 		}
@@ -909,8 +922,8 @@ func (rm *resourceManager) sdkCreate(
 		}
 		if elem.MaintenanceOptions != nil {
 			f24 := &svcapitypes.InstanceMaintenanceOptionsRequest{}
-			if elem.MaintenanceOptions.AutoRecovery != nil {
-				f24.AutoRecovery = elem.MaintenanceOptions.AutoRecovery
+			if elem.MaintenanceOptions.AutoRecovery != "" {
+				f24.AutoRecovery = aws.String(string(elem.MaintenanceOptions.AutoRecovery))
 			}
 			ko.Spec.MaintenanceOptions = f24
 		} else {
@@ -918,20 +931,21 @@ func (rm *resourceManager) sdkCreate(
 		}
 		if elem.MetadataOptions != nil {
 			f25 := &svcapitypes.InstanceMetadataOptionsRequest{}
-			if elem.MetadataOptions.HttpEndpoint != nil {
-				f25.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+			if elem.MetadataOptions.HttpEndpoint != "" {
+				f25.HTTPEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
 			}
-			if elem.MetadataOptions.HttpProtocolIpv6 != nil {
-				f25.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+			if elem.MetadataOptions.HttpProtocolIpv6 != "" {
+				f25.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 			}
 			if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-				f25.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+				httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
+				f25.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
 			}
-			if elem.MetadataOptions.HttpTokens != nil {
-				f25.HTTPTokens = elem.MetadataOptions.HttpTokens
+			if elem.MetadataOptions.HttpTokens != "" {
+				f25.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
 			}
-			if elem.MetadataOptions.InstanceMetadataTags != nil {
-				f25.InstanceMetadataTags = elem.MetadataOptions.InstanceMetadataTags
+			if elem.MetadataOptions.InstanceMetadataTags != "" {
+				f25.InstanceMetadataTags = aws.String(string(elem.MetadataOptions.InstanceMetadataTags))
 			}
 			ko.Spec.MetadataOptions = f25
 		} else {
@@ -954,37 +968,37 @@ func (rm *resourceManager) sdkCreate(
 					f27elem.InterfaceType = f27iter.InterfaceType
 				}
 				if f27iter.Ipv4Prefixes != nil {
-					f27elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
-					for _, f27elemf5iter := range f27iter.Ipv4Prefixes {
-						f27elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
-						if f27elemf5iter.Ipv4Prefix != nil {
-							f27elemf5elem.IPv4Prefix = f27elemf5iter.Ipv4Prefix
-						}
-						f27elemf5 = append(f27elemf5, f27elemf5elem)
-					}
-					f27elem.IPv4Prefixes = f27elemf5
-				}
-				if f27iter.Ipv6Addresses != nil {
-					f27elemf6 := []*svcapitypes.InstanceIPv6Address{}
-					for _, f27elemf6iter := range f27iter.Ipv6Addresses {
-						f27elemf6elem := &svcapitypes.InstanceIPv6Address{}
-						if f27elemf6iter.Ipv6Address != nil {
-							f27elemf6elem.IPv6Address = f27elemf6iter.Ipv6Address
+					f27elemf6 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+					for _, f27elemf6iter := range f27iter.Ipv4Prefixes {
+						f27elemf6elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+						if f27elemf6iter.Ipv4Prefix != nil {
+							f27elemf6elem.IPv4Prefix = f27elemf6iter.Ipv4Prefix
 						}
 						f27elemf6 = append(f27elemf6, f27elemf6elem)
 					}
-					f27elem.IPv6Addresses = f27elemf6
+					f27elem.IPv4Prefixes = f27elemf6
 				}
-				if f27iter.Ipv6Prefixes != nil {
-					f27elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
-					for _, f27elemf7iter := range f27iter.Ipv6Prefixes {
-						f27elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
-						if f27elemf7iter.Ipv6Prefix != nil {
-							f27elemf7elem.IPv6Prefix = f27elemf7iter.Ipv6Prefix
+				if f27iter.Ipv6Addresses != nil {
+					f27elemf7 := []*svcapitypes.InstanceIPv6Address{}
+					for _, f27elemf7iter := range f27iter.Ipv6Addresses {
+						f27elemf7elem := &svcapitypes.InstanceIPv6Address{}
+						if f27elemf7iter.Ipv6Address != nil {
+							f27elemf7elem.IPv6Address = f27elemf7iter.Ipv6Address
 						}
 						f27elemf7 = append(f27elemf7, f27elemf7elem)
 					}
-					f27elem.IPv6Prefixes = f27elemf7
+					f27elem.IPv6Addresses = f27elemf7
+				}
+				if f27iter.Ipv6Prefixes != nil {
+					f27elemf8 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+					for _, f27elemf8iter := range f27iter.Ipv6Prefixes {
+						f27elemf8elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+						if f27elemf8iter.Ipv6Prefix != nil {
+							f27elemf8elem.IPv6Prefix = f27elemf8iter.Ipv6Prefix
+						}
+						f27elemf8 = append(f27elemf8, f27elemf8elem)
+					}
+					f27elem.IPv6Prefixes = f27elemf8
 				}
 				if f27iter.NetworkInterfaceId != nil {
 					f27elem.NetworkInterfaceID = f27iter.NetworkInterfaceId
@@ -993,18 +1007,18 @@ func (rm *resourceManager) sdkCreate(
 					f27elem.PrivateIPAddress = f27iter.PrivateIpAddress
 				}
 				if f27iter.PrivateIpAddresses != nil {
-					f27elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
-					for _, f27elemf13iter := range f27iter.PrivateIpAddresses {
-						f27elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
-						if f27elemf13iter.Primary != nil {
-							f27elemf13elem.Primary = f27elemf13iter.Primary
+					f27elemf15 := []*svcapitypes.PrivateIPAddressSpecification{}
+					for _, f27elemf15iter := range f27iter.PrivateIpAddresses {
+						f27elemf15elem := &svcapitypes.PrivateIPAddressSpecification{}
+						if f27elemf15iter.Primary != nil {
+							f27elemf15elem.Primary = f27elemf15iter.Primary
 						}
-						if f27elemf13iter.PrivateIpAddress != nil {
-							f27elemf13elem.PrivateIPAddress = f27elemf13iter.PrivateIpAddress
+						if f27elemf15iter.PrivateIpAddress != nil {
+							f27elemf15elem.PrivateIPAddress = f27elemf15iter.PrivateIpAddress
 						}
-						f27elemf13 = append(f27elemf13, f27elemf13elem)
+						f27elemf15 = append(f27elemf15, f27elemf15elem)
 					}
-					f27elem.PrivateIPAddresses = f27elemf13
+					f27elem.PrivateIPAddresses = f27elemf15
 				}
 				if f27iter.SubnetId != nil {
 					f27elem.SubnetID = f27iter.SubnetId
@@ -1038,20 +1052,21 @@ func (rm *resourceManager) sdkCreate(
 				f29.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 			}
 			if elem.Placement.PartitionNumber != nil {
-				f29.PartitionNumber = elem.Placement.PartitionNumber
+				partitionNumberCopy := int64(*elem.Placement.PartitionNumber)
+				f29.PartitionNumber = &partitionNumberCopy
 			}
 			if elem.Placement.SpreadDomain != nil {
 				f29.SpreadDomain = elem.Placement.SpreadDomain
 			}
-			if elem.Placement.Tenancy != nil {
-				f29.Tenancy = elem.Placement.Tenancy
+			if elem.Placement.Tenancy != "" {
+				f29.Tenancy = aws.String(string(elem.Placement.Tenancy))
 			}
 			ko.Spec.Placement = f29
 		} else {
 			ko.Spec.Placement = nil
 		}
-		if elem.Platform != nil {
-			ko.Status.Platform = elem.Platform
+		if elem.Platform != "" {
+			ko.Status.Platform = aws.String(string(elem.Platform))
 		} else {
 			ko.Status.Platform = nil
 		}
@@ -1073,8 +1088,8 @@ func (rm *resourceManager) sdkCreate(
 			if elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord != nil {
 				f33.EnableResourceNameDNSARecord = elem.PrivateDnsNameOptions.EnableResourceNameDnsARecord
 			}
-			if elem.PrivateDnsNameOptions.HostnameType != nil {
-				f33.HostnameType = elem.PrivateDnsNameOptions.HostnameType
+			if elem.PrivateDnsNameOptions.HostnameType != "" {
+				f33.HostnameType = aws.String(string(elem.PrivateDnsNameOptions.HostnameType))
 			}
 			ko.Spec.PrivateDNSNameOptions = f33
 		} else {
@@ -1092,8 +1107,8 @@ func (rm *resourceManager) sdkCreate(
 				if f35iter.ProductCodeId != nil {
 					f35elem.ProductCodeID = f35iter.ProductCodeId
 				}
-				if f35iter.ProductCodeType != nil {
-					f35elem.ProductCodeType = f35iter.ProductCodeType
+				if f35iter.ProductCodeType != "" {
+					f35elem.ProductCodeType = aws.String(string(f35iter.ProductCodeType))
 				}
 				f35 = append(f35, f35elem)
 			}
@@ -1121,17 +1136,17 @@ func (rm *resourceManager) sdkCreate(
 		} else {
 			ko.Status.RootDeviceName = nil
 		}
-		if elem.RootDeviceType != nil {
-			ko.Status.RootDeviceType = elem.RootDeviceType
+		if elem.RootDeviceType != "" {
+			ko.Status.RootDeviceType = aws.String(string(elem.RootDeviceType))
 		} else {
 			ko.Status.RootDeviceType = nil
 		}
 		if elem.SecurityGroups != nil {
 			f41 := []*string{}
 			for _, f41iter := range elem.SecurityGroups {
-				var f41elem string
-				f41elem = *f41iter.GroupName
-				f41 = append(f41, &f41elem)
+				var f41elem *string
+				f41elem = f41iter.GroupName
+				f41 = append(f41, f41elem)
 			}
 			ko.Spec.SecurityGroups = f41
 		} else {
@@ -1155,10 +1170,11 @@ func (rm *resourceManager) sdkCreate(
 		if elem.State != nil {
 			f45 := &svcapitypes.InstanceState{}
 			if elem.State.Code != nil {
-				f45.Code = elem.State.Code
+				codeCopy := int64(*elem.State.Code)
+				f45.Code = &codeCopy
 			}
-			if elem.State.Name != nil {
-				f45.Name = elem.State.Name
+			if elem.State.Name != "" {
+				f45.Name = aws.String(string(elem.State.Name))
 			}
 			ko.Status.State = f45
 		} else {
@@ -1217,8 +1233,8 @@ func (rm *resourceManager) sdkCreate(
 		} else {
 			ko.Status.UsageOperationUpdateTime = nil
 		}
-		if elem.VirtualizationType != nil {
-			ko.Status.VirtualizationType = elem.VirtualizationType
+		if elem.VirtualizationType != "" {
+			ko.Status.VirtualizationType = aws.String(string(elem.VirtualizationType))
 		} else {
 			ko.Status.VirtualizationType = nil
 		}
@@ -1253,426 +1269,494 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.RunInstancesInput{}
 
 	if r.ko.Spec.BlockDeviceMappings != nil {
-		f0 := []*svcsdk.BlockDeviceMapping{}
+		f0 := []svcsdktypes.BlockDeviceMapping{}
 		for _, f0iter := range r.ko.Spec.BlockDeviceMappings {
-			f0elem := &svcsdk.BlockDeviceMapping{}
+			f0elem := &svcsdktypes.BlockDeviceMapping{}
 			if f0iter.DeviceName != nil {
-				f0elem.SetDeviceName(*f0iter.DeviceName)
+				f0elem.DeviceName = f0iter.DeviceName
 			}
 			if f0iter.EBS != nil {
-				f0elemf1 := &svcsdk.EbsBlockDevice{}
+				f0elemf1 := &svcsdktypes.EbsBlockDevice{}
 				if f0iter.EBS.DeleteOnTermination != nil {
-					f0elemf1.SetDeleteOnTermination(*f0iter.EBS.DeleteOnTermination)
+					f0elemf1.DeleteOnTermination = f0iter.EBS.DeleteOnTermination
 				}
 				if f0iter.EBS.Encrypted != nil {
-					f0elemf1.SetEncrypted(*f0iter.EBS.Encrypted)
+					f0elemf1.Encrypted = f0iter.EBS.Encrypted
 				}
 				if f0iter.EBS.IOPS != nil {
-					f0elemf1.SetIops(*f0iter.EBS.IOPS)
+					iopsCopy0 := *f0iter.EBS.IOPS
+					if iopsCopy0 > math.MaxInt32 || iopsCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Iops is of type int32")
+					}
+					iopsCopy := int32(iopsCopy0)
+					f0elemf1.Iops = &iopsCopy
 				}
 				if f0iter.EBS.KMSKeyID != nil {
-					f0elemf1.SetKmsKeyId(*f0iter.EBS.KMSKeyID)
+					f0elemf1.KmsKeyId = f0iter.EBS.KMSKeyID
 				}
 				if f0iter.EBS.OutpostARN != nil {
-					f0elemf1.SetOutpostArn(*f0iter.EBS.OutpostARN)
+					f0elemf1.OutpostArn = f0iter.EBS.OutpostARN
 				}
 				if f0iter.EBS.SnapshotID != nil {
-					f0elemf1.SetSnapshotId(*f0iter.EBS.SnapshotID)
+					f0elemf1.SnapshotId = f0iter.EBS.SnapshotID
 				}
 				if f0iter.EBS.Throughput != nil {
-					f0elemf1.SetThroughput(*f0iter.EBS.Throughput)
+					throughputCopy0 := *f0iter.EBS.Throughput
+					if throughputCopy0 > math.MaxInt32 || throughputCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Throughput is of type int32")
+					}
+					throughputCopy := int32(throughputCopy0)
+					f0elemf1.Throughput = &throughputCopy
 				}
 				if f0iter.EBS.VolumeSize != nil {
-					f0elemf1.SetVolumeSize(*f0iter.EBS.VolumeSize)
+					volumeSizeCopy0 := *f0iter.EBS.VolumeSize
+					if volumeSizeCopy0 > math.MaxInt32 || volumeSizeCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field VolumeSize is of type int32")
+					}
+					volumeSizeCopy := int32(volumeSizeCopy0)
+					f0elemf1.VolumeSize = &volumeSizeCopy
 				}
 				if f0iter.EBS.VolumeType != nil {
-					f0elemf1.SetVolumeType(*f0iter.EBS.VolumeType)
+					f0elemf1.VolumeType = svcsdktypes.VolumeType(*f0iter.EBS.VolumeType)
 				}
-				f0elem.SetEbs(f0elemf1)
+				f0elem.Ebs = f0elemf1
 			}
 			if f0iter.NoDevice != nil {
-				f0elem.SetNoDevice(*f0iter.NoDevice)
+				f0elem.NoDevice = f0iter.NoDevice
 			}
 			if f0iter.VirtualName != nil {
-				f0elem.SetVirtualName(*f0iter.VirtualName)
+				f0elem.VirtualName = f0iter.VirtualName
 			}
-			f0 = append(f0, f0elem)
+			f0 = append(f0, *f0elem)
 		}
-		res.SetBlockDeviceMappings(f0)
+		res.BlockDeviceMappings = f0
 	}
 	if r.ko.Spec.CapacityReservationSpecification != nil {
-		f1 := &svcsdk.CapacityReservationSpecification{}
+		f1 := &svcsdktypes.CapacityReservationSpecification{}
 		if r.ko.Spec.CapacityReservationSpecification.CapacityReservationPreference != nil {
-			f1.SetCapacityReservationPreference(*r.ko.Spec.CapacityReservationSpecification.CapacityReservationPreference)
+			f1.CapacityReservationPreference = svcsdktypes.CapacityReservationPreference(*r.ko.Spec.CapacityReservationSpecification.CapacityReservationPreference)
 		}
 		if r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget != nil {
-			f1f1 := &svcsdk.CapacityReservationTarget{}
+			f1f1 := &svcsdktypes.CapacityReservationTarget{}
 			if r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID != nil {
-				f1f1.SetCapacityReservationId(*r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID)
+				f1f1.CapacityReservationId = r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID
 			}
 			if r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN != nil {
-				f1f1.SetCapacityReservationResourceGroupArn(*r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN)
+				f1f1.CapacityReservationResourceGroupArn = r.ko.Spec.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN
 			}
-			f1.SetCapacityReservationTarget(f1f1)
+			f1.CapacityReservationTarget = f1f1
 		}
-		res.SetCapacityReservationSpecification(f1)
+		res.CapacityReservationSpecification = f1
 	}
 	if r.ko.Spec.CPUOptions != nil {
-		f2 := &svcsdk.CpuOptionsRequest{}
+		f2 := &svcsdktypes.CpuOptionsRequest{}
 		if r.ko.Spec.CPUOptions.CoreCount != nil {
-			f2.SetCoreCount(*r.ko.Spec.CPUOptions.CoreCount)
+			coreCountCopy0 := *r.ko.Spec.CPUOptions.CoreCount
+			if coreCountCopy0 > math.MaxInt32 || coreCountCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field CoreCount is of type int32")
+			}
+			coreCountCopy := int32(coreCountCopy0)
+			f2.CoreCount = &coreCountCopy
 		}
 		if r.ko.Spec.CPUOptions.ThreadsPerCore != nil {
-			f2.SetThreadsPerCore(*r.ko.Spec.CPUOptions.ThreadsPerCore)
+			threadsPerCoreCopy0 := *r.ko.Spec.CPUOptions.ThreadsPerCore
+			if threadsPerCoreCopy0 > math.MaxInt32 || threadsPerCoreCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field ThreadsPerCore is of type int32")
+			}
+			threadsPerCoreCopy := int32(threadsPerCoreCopy0)
+			f2.ThreadsPerCore = &threadsPerCoreCopy
 		}
-		res.SetCpuOptions(f2)
+		res.CpuOptions = f2
 	}
 	if r.ko.Spec.CreditSpecification != nil {
-		f3 := &svcsdk.CreditSpecificationRequest{}
+		f3 := &svcsdktypes.CreditSpecificationRequest{}
 		if r.ko.Spec.CreditSpecification.CPUCredits != nil {
-			f3.SetCpuCredits(*r.ko.Spec.CreditSpecification.CPUCredits)
+			f3.CpuCredits = r.ko.Spec.CreditSpecification.CPUCredits
 		}
-		res.SetCreditSpecification(f3)
+		res.CreditSpecification = f3
 	}
 	if r.ko.Spec.DisableAPIStop != nil {
-		res.SetDisableApiStop(*r.ko.Spec.DisableAPIStop)
+		res.DisableApiStop = r.ko.Spec.DisableAPIStop
 	}
 	if r.ko.Spec.DisableAPITermination != nil {
-		res.SetDisableApiTermination(*r.ko.Spec.DisableAPITermination)
+		res.DisableApiTermination = r.ko.Spec.DisableAPITermination
 	}
 	if r.ko.Spec.EBSOptimized != nil {
-		res.SetEbsOptimized(*r.ko.Spec.EBSOptimized)
+		res.EbsOptimized = r.ko.Spec.EBSOptimized
 	}
 	if r.ko.Spec.ElasticGPUSpecification != nil {
-		f7 := []*svcsdk.ElasticGpuSpecification{}
+		f7 := []svcsdktypes.ElasticGpuSpecification{}
 		for _, f7iter := range r.ko.Spec.ElasticGPUSpecification {
-			f7elem := &svcsdk.ElasticGpuSpecification{}
+			f7elem := &svcsdktypes.ElasticGpuSpecification{}
 			if f7iter.Type != nil {
-				f7elem.SetType(*f7iter.Type)
+				f7elem.Type = f7iter.Type
 			}
-			f7 = append(f7, f7elem)
+			f7 = append(f7, *f7elem)
 		}
-		res.SetElasticGpuSpecification(f7)
+		res.ElasticGpuSpecification = f7
 	}
 	if r.ko.Spec.ElasticInferenceAccelerators != nil {
-		f8 := []*svcsdk.ElasticInferenceAccelerator{}
+		f8 := []svcsdktypes.ElasticInferenceAccelerator{}
 		for _, f8iter := range r.ko.Spec.ElasticInferenceAccelerators {
-			f8elem := &svcsdk.ElasticInferenceAccelerator{}
+			f8elem := &svcsdktypes.ElasticInferenceAccelerator{}
 			if f8iter.Count != nil {
-				f8elem.SetCount(*f8iter.Count)
+				countCopy0 := *f8iter.Count
+				if countCopy0 > math.MaxInt32 || countCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field Count is of type int32")
+				}
+				countCopy := int32(countCopy0)
+				f8elem.Count = &countCopy
 			}
 			if f8iter.Type != nil {
-				f8elem.SetType(*f8iter.Type)
+				f8elem.Type = f8iter.Type
 			}
-			f8 = append(f8, f8elem)
+			f8 = append(f8, *f8elem)
 		}
-		res.SetElasticInferenceAccelerators(f8)
+		res.ElasticInferenceAccelerators = f8
 	}
 	if r.ko.Spec.EnclaveOptions != nil {
-		f9 := &svcsdk.EnclaveOptionsRequest{}
+		f9 := &svcsdktypes.EnclaveOptionsRequest{}
 		if r.ko.Spec.EnclaveOptions.Enabled != nil {
-			f9.SetEnabled(*r.ko.Spec.EnclaveOptions.Enabled)
+			f9.Enabled = r.ko.Spec.EnclaveOptions.Enabled
 		}
-		res.SetEnclaveOptions(f9)
+		res.EnclaveOptions = f9
 	}
 	if r.ko.Spec.HibernationOptions != nil {
-		f10 := &svcsdk.HibernationOptionsRequest{}
+		f10 := &svcsdktypes.HibernationOptionsRequest{}
 		if r.ko.Spec.HibernationOptions.Configured != nil {
-			f10.SetConfigured(*r.ko.Spec.HibernationOptions.Configured)
+			f10.Configured = r.ko.Spec.HibernationOptions.Configured
 		}
-		res.SetHibernationOptions(f10)
+		res.HibernationOptions = f10
 	}
 	if r.ko.Spec.IAMInstanceProfile != nil {
-		f11 := &svcsdk.IamInstanceProfileSpecification{}
+		f11 := &svcsdktypes.IamInstanceProfileSpecification{}
 		if r.ko.Spec.IAMInstanceProfile.ARN != nil {
-			f11.SetArn(*r.ko.Spec.IAMInstanceProfile.ARN)
+			f11.Arn = r.ko.Spec.IAMInstanceProfile.ARN
 		}
 		if r.ko.Spec.IAMInstanceProfile.Name != nil {
-			f11.SetName(*r.ko.Spec.IAMInstanceProfile.Name)
+			f11.Name = r.ko.Spec.IAMInstanceProfile.Name
 		}
-		res.SetIamInstanceProfile(f11)
+		res.IamInstanceProfile = f11
 	}
 	if r.ko.Spec.ImageID != nil {
-		res.SetImageId(*r.ko.Spec.ImageID)
+		res.ImageId = r.ko.Spec.ImageID
 	}
 	if r.ko.Spec.InstanceInitiatedShutdownBehavior != nil {
-		res.SetInstanceInitiatedShutdownBehavior(*r.ko.Spec.InstanceInitiatedShutdownBehavior)
+		res.InstanceInitiatedShutdownBehavior = svcsdktypes.ShutdownBehavior(*r.ko.Spec.InstanceInitiatedShutdownBehavior)
 	}
 	if r.ko.Spec.InstanceMarketOptions != nil {
-		f14 := &svcsdk.InstanceMarketOptionsRequest{}
+		f14 := &svcsdktypes.InstanceMarketOptionsRequest{}
 		if r.ko.Spec.InstanceMarketOptions.MarketType != nil {
-			f14.SetMarketType(*r.ko.Spec.InstanceMarketOptions.MarketType)
+			f14.MarketType = svcsdktypes.MarketType(*r.ko.Spec.InstanceMarketOptions.MarketType)
 		}
 		if r.ko.Spec.InstanceMarketOptions.SpotOptions != nil {
-			f14f1 := &svcsdk.SpotMarketOptions{}
+			f14f1 := &svcsdktypes.SpotMarketOptions{}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.BlockDurationMinutes != nil {
-				f14f1.SetBlockDurationMinutes(*r.ko.Spec.InstanceMarketOptions.SpotOptions.BlockDurationMinutes)
+				blockDurationMinutesCopy0 := *r.ko.Spec.InstanceMarketOptions.SpotOptions.BlockDurationMinutes
+				if blockDurationMinutesCopy0 > math.MaxInt32 || blockDurationMinutesCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field BlockDurationMinutes is of type int32")
+				}
+				blockDurationMinutesCopy := int32(blockDurationMinutesCopy0)
+				f14f1.BlockDurationMinutes = &blockDurationMinutesCopy
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior != nil {
-				f14f1.SetInstanceInterruptionBehavior(*r.ko.Spec.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior)
+				f14f1.InstanceInterruptionBehavior = svcsdktypes.InstanceInterruptionBehavior(*r.ko.Spec.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior)
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.MaxPrice != nil {
-				f14f1.SetMaxPrice(*r.ko.Spec.InstanceMarketOptions.SpotOptions.MaxPrice)
+				f14f1.MaxPrice = r.ko.Spec.InstanceMarketOptions.SpotOptions.MaxPrice
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.SpotInstanceType != nil {
-				f14f1.SetSpotInstanceType(*r.ko.Spec.InstanceMarketOptions.SpotOptions.SpotInstanceType)
+				f14f1.SpotInstanceType = svcsdktypes.SpotInstanceType(*r.ko.Spec.InstanceMarketOptions.SpotOptions.SpotInstanceType)
 			}
 			if r.ko.Spec.InstanceMarketOptions.SpotOptions.ValidUntil != nil {
-				f14f1.SetValidUntil(r.ko.Spec.InstanceMarketOptions.SpotOptions.ValidUntil.Time)
+				f14f1.ValidUntil = &r.ko.Spec.InstanceMarketOptions.SpotOptions.ValidUntil.Time
 			}
-			f14.SetSpotOptions(f14f1)
+			f14.SpotOptions = f14f1
 		}
-		res.SetInstanceMarketOptions(f14)
+		res.InstanceMarketOptions = f14
 	}
 	if r.ko.Spec.InstanceType != nil {
-		res.SetInstanceType(*r.ko.Spec.InstanceType)
+		res.InstanceType = svcsdktypes.InstanceType(*r.ko.Spec.InstanceType)
 	}
 	if r.ko.Spec.IPv6AddressCount != nil {
-		res.SetIpv6AddressCount(*r.ko.Spec.IPv6AddressCount)
+		ipv6AddressCountCopy0 := *r.ko.Spec.IPv6AddressCount
+		if ipv6AddressCountCopy0 > math.MaxInt32 || ipv6AddressCountCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field Ipv6AddressCount is of type int32")
+		}
+		ipv6AddressCountCopy := int32(ipv6AddressCountCopy0)
+		res.Ipv6AddressCount = &ipv6AddressCountCopy
 	}
 	if r.ko.Spec.IPv6Addresses != nil {
-		f17 := []*svcsdk.InstanceIpv6Address{}
+		f17 := []svcsdktypes.InstanceIpv6Address{}
 		for _, f17iter := range r.ko.Spec.IPv6Addresses {
-			f17elem := &svcsdk.InstanceIpv6Address{}
+			f17elem := &svcsdktypes.InstanceIpv6Address{}
 			if f17iter.IPv6Address != nil {
-				f17elem.SetIpv6Address(*f17iter.IPv6Address)
+				f17elem.Ipv6Address = f17iter.IPv6Address
 			}
-			f17 = append(f17, f17elem)
+			f17 = append(f17, *f17elem)
 		}
-		res.SetIpv6Addresses(f17)
+		res.Ipv6Addresses = f17
 	}
 	if r.ko.Spec.KernelID != nil {
-		res.SetKernelId(*r.ko.Spec.KernelID)
+		res.KernelId = r.ko.Spec.KernelID
 	}
 	if r.ko.Spec.KeyName != nil {
-		res.SetKeyName(*r.ko.Spec.KeyName)
+		res.KeyName = r.ko.Spec.KeyName
 	}
 	if r.ko.Spec.LaunchTemplate != nil {
-		f20 := &svcsdk.LaunchTemplateSpecification{}
+		f20 := &svcsdktypes.LaunchTemplateSpecification{}
 		if r.ko.Spec.LaunchTemplate.LaunchTemplateID != nil {
-			f20.SetLaunchTemplateId(*r.ko.Spec.LaunchTemplate.LaunchTemplateID)
+			f20.LaunchTemplateId = r.ko.Spec.LaunchTemplate.LaunchTemplateID
 		}
 		if r.ko.Spec.LaunchTemplate.LaunchTemplateName != nil {
-			f20.SetLaunchTemplateName(*r.ko.Spec.LaunchTemplate.LaunchTemplateName)
+			f20.LaunchTemplateName = r.ko.Spec.LaunchTemplate.LaunchTemplateName
 		}
 		if r.ko.Spec.LaunchTemplate.Version != nil {
-			f20.SetVersion(*r.ko.Spec.LaunchTemplate.Version)
+			f20.Version = r.ko.Spec.LaunchTemplate.Version
 		}
-		res.SetLaunchTemplate(f20)
+		res.LaunchTemplate = f20
 	}
 	if r.ko.Spec.LicenseSpecifications != nil {
-		f21 := []*svcsdk.LicenseConfigurationRequest{}
+		f21 := []svcsdktypes.LicenseConfigurationRequest{}
 		for _, f21iter := range r.ko.Spec.LicenseSpecifications {
-			f21elem := &svcsdk.LicenseConfigurationRequest{}
+			f21elem := &svcsdktypes.LicenseConfigurationRequest{}
 			if f21iter.LicenseConfigurationARN != nil {
-				f21elem.SetLicenseConfigurationArn(*f21iter.LicenseConfigurationARN)
+				f21elem.LicenseConfigurationArn = f21iter.LicenseConfigurationARN
 			}
-			f21 = append(f21, f21elem)
+			f21 = append(f21, *f21elem)
 		}
-		res.SetLicenseSpecifications(f21)
+		res.LicenseSpecifications = f21
 	}
 	if r.ko.Spec.MaintenanceOptions != nil {
-		f22 := &svcsdk.InstanceMaintenanceOptionsRequest{}
+		f22 := &svcsdktypes.InstanceMaintenanceOptionsRequest{}
 		if r.ko.Spec.MaintenanceOptions.AutoRecovery != nil {
-			f22.SetAutoRecovery(*r.ko.Spec.MaintenanceOptions.AutoRecovery)
+			f22.AutoRecovery = svcsdktypes.InstanceAutoRecoveryState(*r.ko.Spec.MaintenanceOptions.AutoRecovery)
 		}
-		res.SetMaintenanceOptions(f22)
+		res.MaintenanceOptions = f22
 	}
-	res.SetMaxCount(1)
+	res.MaxCount = aws.Int32(1)
 	if r.ko.Spec.MetadataOptions != nil {
-		f24 := &svcsdk.InstanceMetadataOptionsRequest{}
+		f24 := &svcsdktypes.InstanceMetadataOptionsRequest{}
 		if r.ko.Spec.MetadataOptions.HTTPEndpoint != nil {
-			f24.SetHttpEndpoint(*r.ko.Spec.MetadataOptions.HTTPEndpoint)
+			f24.HttpEndpoint = svcsdktypes.InstanceMetadataEndpointState(*r.ko.Spec.MetadataOptions.HTTPEndpoint)
 		}
 		if r.ko.Spec.MetadataOptions.HTTPProtocolIPv6 != nil {
-			f24.SetHttpProtocolIpv6(*r.ko.Spec.MetadataOptions.HTTPProtocolIPv6)
+			f24.HttpProtocolIpv6 = svcsdktypes.InstanceMetadataProtocolState(*r.ko.Spec.MetadataOptions.HTTPProtocolIPv6)
 		}
 		if r.ko.Spec.MetadataOptions.HTTPPutResponseHopLimit != nil {
-			f24.SetHttpPutResponseHopLimit(*r.ko.Spec.MetadataOptions.HTTPPutResponseHopLimit)
+			httpPutResponseHopLimitCopy0 := *r.ko.Spec.MetadataOptions.HTTPPutResponseHopLimit
+			if httpPutResponseHopLimitCopy0 > math.MaxInt32 || httpPutResponseHopLimitCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field HttpPutResponseHopLimit is of type int32")
+			}
+			httpPutResponseHopLimitCopy := int32(httpPutResponseHopLimitCopy0)
+			f24.HttpPutResponseHopLimit = &httpPutResponseHopLimitCopy
 		}
 		if r.ko.Spec.MetadataOptions.HTTPTokens != nil {
-			f24.SetHttpTokens(*r.ko.Spec.MetadataOptions.HTTPTokens)
+			f24.HttpTokens = svcsdktypes.HttpTokensState(*r.ko.Spec.MetadataOptions.HTTPTokens)
 		}
 		if r.ko.Spec.MetadataOptions.InstanceMetadataTags != nil {
-			f24.SetInstanceMetadataTags(*r.ko.Spec.MetadataOptions.InstanceMetadataTags)
+			f24.InstanceMetadataTags = svcsdktypes.InstanceMetadataTagsState(*r.ko.Spec.MetadataOptions.InstanceMetadataTags)
 		}
-		res.SetMetadataOptions(f24)
+		res.MetadataOptions = f24
 	}
-	res.SetMinCount(1)
+	res.MinCount = aws.Int32(1)
 	if r.ko.Spec.Monitoring != nil {
-		f26 := &svcsdk.RunInstancesMonitoringEnabled{}
+		f26 := &svcsdktypes.RunInstancesMonitoringEnabled{}
 		if r.ko.Spec.Monitoring.Enabled != nil {
-			f26.SetEnabled(*r.ko.Spec.Monitoring.Enabled)
+			f26.Enabled = r.ko.Spec.Monitoring.Enabled
 		}
-		res.SetMonitoring(f26)
+		res.Monitoring = f26
 	}
 	if r.ko.Spec.NetworkInterfaces != nil {
-		f27 := []*svcsdk.InstanceNetworkInterfaceSpecification{}
+		f27 := []svcsdktypes.InstanceNetworkInterfaceSpecification{}
 		for _, f27iter := range r.ko.Spec.NetworkInterfaces {
-			f27elem := &svcsdk.InstanceNetworkInterfaceSpecification{}
+			f27elem := &svcsdktypes.InstanceNetworkInterfaceSpecification{}
 			if f27iter.AssociateCarrierIPAddress != nil {
-				f27elem.SetAssociateCarrierIpAddress(*f27iter.AssociateCarrierIPAddress)
+				f27elem.AssociateCarrierIpAddress = f27iter.AssociateCarrierIPAddress
 			}
 			if f27iter.AssociatePublicIPAddress != nil {
-				f27elem.SetAssociatePublicIpAddress(*f27iter.AssociatePublicIPAddress)
+				f27elem.AssociatePublicIpAddress = f27iter.AssociatePublicIPAddress
 			}
 			if f27iter.DeleteOnTermination != nil {
-				f27elem.SetDeleteOnTermination(*f27iter.DeleteOnTermination)
+				f27elem.DeleteOnTermination = f27iter.DeleteOnTermination
 			}
 			if f27iter.Description != nil {
-				f27elem.SetDescription(*f27iter.Description)
+				f27elem.Description = f27iter.Description
 			}
 			if f27iter.DeviceIndex != nil {
-				f27elem.SetDeviceIndex(*f27iter.DeviceIndex)
+				deviceIndexCopy0 := *f27iter.DeviceIndex
+				if deviceIndexCopy0 > math.MaxInt32 || deviceIndexCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field DeviceIndex is of type int32")
+				}
+				deviceIndexCopy := int32(deviceIndexCopy0)
+				f27elem.DeviceIndex = &deviceIndexCopy
 			}
 			if f27iter.InterfaceType != nil {
-				f27elem.SetInterfaceType(*f27iter.InterfaceType)
+				f27elem.InterfaceType = f27iter.InterfaceType
 			}
 			if f27iter.IPv4PrefixCount != nil {
-				f27elem.SetIpv4PrefixCount(*f27iter.IPv4PrefixCount)
+				ipv4PrefixCountCopy0 := *f27iter.IPv4PrefixCount
+				if ipv4PrefixCountCopy0 > math.MaxInt32 || ipv4PrefixCountCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field Ipv4PrefixCount is of type int32")
+				}
+				ipv4PrefixCountCopy := int32(ipv4PrefixCountCopy0)
+				f27elem.Ipv4PrefixCount = &ipv4PrefixCountCopy
 			}
 			if f27iter.IPv4Prefixes != nil {
-				f27elemf7 := []*svcsdk.Ipv4PrefixSpecificationRequest{}
+				f27elemf7 := []svcsdktypes.Ipv4PrefixSpecificationRequest{}
 				for _, f27elemf7iter := range f27iter.IPv4Prefixes {
-					f27elemf7elem := &svcsdk.Ipv4PrefixSpecificationRequest{}
+					f27elemf7elem := &svcsdktypes.Ipv4PrefixSpecificationRequest{}
 					if f27elemf7iter.IPv4Prefix != nil {
-						f27elemf7elem.SetIpv4Prefix(*f27elemf7iter.IPv4Prefix)
+						f27elemf7elem.Ipv4Prefix = f27elemf7iter.IPv4Prefix
 					}
-					f27elemf7 = append(f27elemf7, f27elemf7elem)
+					f27elemf7 = append(f27elemf7, *f27elemf7elem)
 				}
-				f27elem.SetIpv4Prefixes(f27elemf7)
+				f27elem.Ipv4Prefixes = f27elemf7
 			}
 			if f27iter.IPv6AddressCount != nil {
-				f27elem.SetIpv6AddressCount(*f27iter.IPv6AddressCount)
+				ipv6AddressCountCopy0 := *f27iter.IPv6AddressCount
+				if ipv6AddressCountCopy0 > math.MaxInt32 || ipv6AddressCountCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field Ipv6AddressCount is of type int32")
+				}
+				ipv6AddressCountCopy := int32(ipv6AddressCountCopy0)
+				f27elem.Ipv6AddressCount = &ipv6AddressCountCopy
 			}
 			if f27iter.IPv6Addresses != nil {
-				f27elemf9 := []*svcsdk.InstanceIpv6Address{}
+				f27elemf9 := []svcsdktypes.InstanceIpv6Address{}
 				for _, f27elemf9iter := range f27iter.IPv6Addresses {
-					f27elemf9elem := &svcsdk.InstanceIpv6Address{}
+					f27elemf9elem := &svcsdktypes.InstanceIpv6Address{}
 					if f27elemf9iter.IPv6Address != nil {
-						f27elemf9elem.SetIpv6Address(*f27elemf9iter.IPv6Address)
+						f27elemf9elem.Ipv6Address = f27elemf9iter.IPv6Address
 					}
-					f27elemf9 = append(f27elemf9, f27elemf9elem)
+					f27elemf9 = append(f27elemf9, *f27elemf9elem)
 				}
-				f27elem.SetIpv6Addresses(f27elemf9)
+				f27elem.Ipv6Addresses = f27elemf9
 			}
 			if f27iter.IPv6PrefixCount != nil {
-				f27elem.SetIpv6PrefixCount(*f27iter.IPv6PrefixCount)
+				ipv6PrefixCountCopy0 := *f27iter.IPv6PrefixCount
+				if ipv6PrefixCountCopy0 > math.MaxInt32 || ipv6PrefixCountCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field Ipv6PrefixCount is of type int32")
+				}
+				ipv6PrefixCountCopy := int32(ipv6PrefixCountCopy0)
+				f27elem.Ipv6PrefixCount = &ipv6PrefixCountCopy
 			}
 			if f27iter.IPv6Prefixes != nil {
-				f27elemf11 := []*svcsdk.Ipv6PrefixSpecificationRequest{}
+				f27elemf11 := []svcsdktypes.Ipv6PrefixSpecificationRequest{}
 				for _, f27elemf11iter := range f27iter.IPv6Prefixes {
-					f27elemf11elem := &svcsdk.Ipv6PrefixSpecificationRequest{}
+					f27elemf11elem := &svcsdktypes.Ipv6PrefixSpecificationRequest{}
 					if f27elemf11iter.IPv6Prefix != nil {
-						f27elemf11elem.SetIpv6Prefix(*f27elemf11iter.IPv6Prefix)
+						f27elemf11elem.Ipv6Prefix = f27elemf11iter.IPv6Prefix
 					}
-					f27elemf11 = append(f27elemf11, f27elemf11elem)
+					f27elemf11 = append(f27elemf11, *f27elemf11elem)
 				}
-				f27elem.SetIpv6Prefixes(f27elemf11)
+				f27elem.Ipv6Prefixes = f27elemf11
 			}
 			if f27iter.NetworkCardIndex != nil {
-				f27elem.SetNetworkCardIndex(*f27iter.NetworkCardIndex)
+				networkCardIndexCopy0 := *f27iter.NetworkCardIndex
+				if networkCardIndexCopy0 > math.MaxInt32 || networkCardIndexCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field NetworkCardIndex is of type int32")
+				}
+				networkCardIndexCopy := int32(networkCardIndexCopy0)
+				f27elem.NetworkCardIndex = &networkCardIndexCopy
 			}
 			if f27iter.NetworkInterfaceID != nil {
-				f27elem.SetNetworkInterfaceId(*f27iter.NetworkInterfaceID)
+				f27elem.NetworkInterfaceId = f27iter.NetworkInterfaceID
 			}
 			if f27iter.PrivateIPAddress != nil {
-				f27elem.SetPrivateIpAddress(*f27iter.PrivateIPAddress)
+				f27elem.PrivateIpAddress = f27iter.PrivateIPAddress
 			}
 			if f27iter.PrivateIPAddresses != nil {
-				f27elemf15 := []*svcsdk.PrivateIpAddressSpecification{}
+				f27elemf15 := []svcsdktypes.PrivateIpAddressSpecification{}
 				for _, f27elemf15iter := range f27iter.PrivateIPAddresses {
-					f27elemf15elem := &svcsdk.PrivateIpAddressSpecification{}
+					f27elemf15elem := &svcsdktypes.PrivateIpAddressSpecification{}
 					if f27elemf15iter.Primary != nil {
-						f27elemf15elem.SetPrimary(*f27elemf15iter.Primary)
+						f27elemf15elem.Primary = f27elemf15iter.Primary
 					}
 					if f27elemf15iter.PrivateIPAddress != nil {
-						f27elemf15elem.SetPrivateIpAddress(*f27elemf15iter.PrivateIPAddress)
+						f27elemf15elem.PrivateIpAddress = f27elemf15iter.PrivateIPAddress
 					}
-					f27elemf15 = append(f27elemf15, f27elemf15elem)
+					f27elemf15 = append(f27elemf15, *f27elemf15elem)
 				}
-				f27elem.SetPrivateIpAddresses(f27elemf15)
+				f27elem.PrivateIpAddresses = f27elemf15
 			}
 			if f27iter.SecondaryPrivateIPAddressCount != nil {
-				f27elem.SetSecondaryPrivateIpAddressCount(*f27iter.SecondaryPrivateIPAddressCount)
+				secondaryPrivateIPAddressCountCopy0 := *f27iter.SecondaryPrivateIPAddressCount
+				if secondaryPrivateIPAddressCountCopy0 > math.MaxInt32 || secondaryPrivateIPAddressCountCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field SecondaryPrivateIpAddressCount is of type int32")
+				}
+				secondaryPrivateIPAddressCountCopy := int32(secondaryPrivateIPAddressCountCopy0)
+				f27elem.SecondaryPrivateIpAddressCount = &secondaryPrivateIPAddressCountCopy
 			}
 			if f27iter.SubnetID != nil {
-				f27elem.SetSubnetId(*f27iter.SubnetID)
+				f27elem.SubnetId = f27iter.SubnetID
 			}
-			f27 = append(f27, f27elem)
+			f27 = append(f27, *f27elem)
 		}
-		res.SetNetworkInterfaces(f27)
+		res.NetworkInterfaces = f27
 	}
 	if r.ko.Spec.Placement != nil {
-		f28 := &svcsdk.Placement{}
+		f28 := &svcsdktypes.Placement{}
 		if r.ko.Spec.Placement.Affinity != nil {
-			f28.SetAffinity(*r.ko.Spec.Placement.Affinity)
+			f28.Affinity = r.ko.Spec.Placement.Affinity
 		}
 		if r.ko.Spec.Placement.AvailabilityZone != nil {
-			f28.SetAvailabilityZone(*r.ko.Spec.Placement.AvailabilityZone)
+			f28.AvailabilityZone = r.ko.Spec.Placement.AvailabilityZone
 		}
 		if r.ko.Spec.Placement.GroupName != nil {
-			f28.SetGroupName(*r.ko.Spec.Placement.GroupName)
+			f28.GroupName = r.ko.Spec.Placement.GroupName
 		}
 		if r.ko.Spec.Placement.HostID != nil {
-			f28.SetHostId(*r.ko.Spec.Placement.HostID)
+			f28.HostId = r.ko.Spec.Placement.HostID
 		}
 		if r.ko.Spec.Placement.HostResourceGroupARN != nil {
-			f28.SetHostResourceGroupArn(*r.ko.Spec.Placement.HostResourceGroupARN)
+			f28.HostResourceGroupArn = r.ko.Spec.Placement.HostResourceGroupARN
 		}
 		if r.ko.Spec.Placement.PartitionNumber != nil {
-			f28.SetPartitionNumber(*r.ko.Spec.Placement.PartitionNumber)
+			partitionNumberCopy0 := *r.ko.Spec.Placement.PartitionNumber
+			if partitionNumberCopy0 > math.MaxInt32 || partitionNumberCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field PartitionNumber is of type int32")
+			}
+			partitionNumberCopy := int32(partitionNumberCopy0)
+			f28.PartitionNumber = &partitionNumberCopy
 		}
 		if r.ko.Spec.Placement.SpreadDomain != nil {
-			f28.SetSpreadDomain(*r.ko.Spec.Placement.SpreadDomain)
+			f28.SpreadDomain = r.ko.Spec.Placement.SpreadDomain
 		}
 		if r.ko.Spec.Placement.Tenancy != nil {
-			f28.SetTenancy(*r.ko.Spec.Placement.Tenancy)
+			f28.Tenancy = svcsdktypes.Tenancy(*r.ko.Spec.Placement.Tenancy)
 		}
-		res.SetPlacement(f28)
+		res.Placement = f28
 	}
 	if r.ko.Spec.PrivateDNSNameOptions != nil {
-		f29 := &svcsdk.PrivateDnsNameOptionsRequest{}
+		f29 := &svcsdktypes.PrivateDnsNameOptionsRequest{}
 		if r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord != nil {
-			f29.SetEnableResourceNameDnsAAAARecord(*r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord)
+			f29.EnableResourceNameDnsAAAARecord = r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord
 		}
 		if r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord != nil {
-			f29.SetEnableResourceNameDnsARecord(*r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord)
+			f29.EnableResourceNameDnsARecord = r.ko.Spec.PrivateDNSNameOptions.EnableResourceNameDNSARecord
 		}
 		if r.ko.Spec.PrivateDNSNameOptions.HostnameType != nil {
-			f29.SetHostnameType(*r.ko.Spec.PrivateDNSNameOptions.HostnameType)
+			f29.HostnameType = svcsdktypes.HostnameType(*r.ko.Spec.PrivateDNSNameOptions.HostnameType)
 		}
-		res.SetPrivateDnsNameOptions(f29)
+		res.PrivateDnsNameOptions = f29
 	}
 	if r.ko.Spec.PrivateIPAddress != nil {
-		res.SetPrivateIpAddress(*r.ko.Spec.PrivateIPAddress)
+		res.PrivateIpAddress = r.ko.Spec.PrivateIPAddress
 	}
 	if r.ko.Spec.RAMDiskID != nil {
-		res.SetRamdiskId(*r.ko.Spec.RAMDiskID)
+		res.RamdiskId = r.ko.Spec.RAMDiskID
 	}
 	if r.ko.Spec.SecurityGroupIDs != nil {
-		f32 := []*string{}
-		for _, f32iter := range r.ko.Spec.SecurityGroupIDs {
-			var f32elem string
-			f32elem = *f32iter
-			f32 = append(f32, &f32elem)
-		}
-		res.SetSecurityGroupIds(f32)
+		res.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.SecurityGroupIDs)
 	}
 	if r.ko.Spec.SecurityGroups != nil {
-		f33 := []*string{}
-		for _, f33iter := range r.ko.Spec.SecurityGroups {
-			var f33elem string
-			f33elem = *f33iter
-			f33 = append(f33, &f33elem)
-		}
-		res.SetSecurityGroups(f33)
+		res.SecurityGroups = aws.ToStringSlice(r.ko.Spec.SecurityGroups)
 	}
 	if r.ko.Spec.SubnetID != nil {
-		res.SetSubnetId(*r.ko.Spec.SubnetID)
+		res.SubnetId = r.ko.Spec.SubnetID
 	}
 	if r.ko.Spec.UserData != nil {
-		res.SetUserData(*r.ko.Spec.UserData)
+		res.UserData = r.ko.Spec.UserData
 	}
 
 	return res, nil
@@ -1708,7 +1792,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.TerminateInstancesOutput
 	_ = resp
-	resp, err = rm.sdkapi.TerminateInstancesWithContext(ctx, input)
+	resp, err = rm.sdkapi.TerminateInstances(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "TerminateInstances", err)
 	return nil, err
 }
@@ -1828,13 +1912,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

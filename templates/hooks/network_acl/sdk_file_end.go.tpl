@@ -43,8 +43,8 @@ func compare{{$memberRefName}} (
 
 func (rm *resourceManager) new{{ $rtRefName }}(
 	    c svcapitypes.{{ $rtRefName }},
-) *svcsdk.{{ $rtRefName }} {
-	res := &svcsdk.{{ $rtRefName }}{}
+) *svcsdktypes.{{ $rtRefName }} {
+	res := &svcsdktypes.{{ $rtRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $rtRef "" "c" 1 }}
 	return res
 }

@@ -12,8 +12,8 @@
 {{- $igwRefName = "Tag" }}
 func (rm *resourceManager) new{{ $igwRefName }}(
 	    c svcapitypes.{{ $igwRefName }},
-) *svcsdk.{{ $igwRefName }} {
-	res := &svcsdk.{{ $igwRefName }}{}
+) *svcsdktypes.{{ $igwRefName }} {
+	res := &svcsdktypes.{{ $igwRefName }}{}
 {{ GoCodeSetSDKForStruct $CRD "" "res" $igwRef "" "c" 1 }}
 	return res
 }

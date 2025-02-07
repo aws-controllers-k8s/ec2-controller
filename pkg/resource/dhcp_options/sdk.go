@@ -28,8 +28,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +42,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.DHCPOptions{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +50,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +75,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeDhcpOptionsOutput
-	resp, err = rm.sdkapi.DescribeDhcpOptionsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeDhcpOptions(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeDhcpOptions", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -98,11 +101,11 @@ func (rm *resourceManager) sdkFind(
 				if f0iter.Values != nil {
 					f0elemf1 := []*string{}
 					for _, f0elemf1iter := range f0iter.Values {
-						var f0elemf1elem string
+						var f0elemf1elem *string
 						if f0elemf1iter.Value != nil {
-							f0elemf1elem = *f0elemf1iter.Value
+							f0elemf1elem = f0elemf1iter.Value
 						}
-						f0elemf1 = append(f0elemf1, &f0elemf1elem)
+						f0elemf1 = append(f0elemf1, f0elemf1elem)
 					}
 					f0elem.Values = f0elemf1
 				}
@@ -171,9 +174,9 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeDhcpOptionsInput{}
 
 	if r.ko.Status.DHCPOptionsID != nil {
-		f0 := []*string{}
-		f0 = append(f0, r.ko.Status.DHCPOptionsID)
-		res.SetDhcpOptionsIds(f0)
+		f0 := []string{}
+		f0 = append(f0, *r.ko.Status.DHCPOptionsID)
+		res.DhcpOptionsIds = f0
 	}
 
 	return res, nil
@@ -199,7 +202,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateDhcpOptionsOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateDhcpOptionsWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateDhcpOptions(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateDhcpOptions", err)
 	if err != nil {
 		return nil, err
@@ -218,11 +221,11 @@ func (rm *resourceManager) sdkCreate(
 			if f0iter.Values != nil {
 				f0elemf1 := []*string{}
 				for _, f0elemf1iter := range f0iter.Values {
-					var f0elemf1elem string
+					var f0elemf1elem *string
 					if f0elemf1iter.Value != nil {
-						f0elemf1elem = *f0elemf1iter.Value
+						f0elemf1elem = f0elemf1iter.Value
 					}
-					f0elemf1 = append(f0elemf1, &f0elemf1elem)
+					f0elemf1 = append(f0elemf1, f0elemf1elem)
 				}
 				f0elem.Values = f0elemf1
 			}
@@ -277,24 +280,18 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateDhcpOptionsInput{}
 
 	if r.ko.Spec.DHCPConfigurations != nil {
-		f0 := []*svcsdk.NewDhcpConfiguration{}
+		f0 := []svcsdktypes.NewDhcpConfiguration{}
 		for _, f0iter := range r.ko.Spec.DHCPConfigurations {
-			f0elem := &svcsdk.NewDhcpConfiguration{}
+			f0elem := &svcsdktypes.NewDhcpConfiguration{}
 			if f0iter.Key != nil {
-				f0elem.SetKey(*f0iter.Key)
+				f0elem.Key = f0iter.Key
 			}
 			if f0iter.Values != nil {
-				f0elemf1 := []*string{}
-				for _, f0elemf1iter := range f0iter.Values {
-					var f0elemf1elem string
-					f0elemf1elem = *f0elemf1iter
-					f0elemf1 = append(f0elemf1, &f0elemf1elem)
-				}
-				f0elem.SetValues(f0elemf1)
+				f0elem.Values = aws.ToStringSlice(f0iter.Values)
 			}
-			f0 = append(f0, f0elem)
+			f0 = append(f0, *f0elem)
 		}
-		res.SetDhcpConfigurations(f0)
+		res.DhcpConfigurations = f0
 	}
 
 	return res, nil
@@ -334,7 +331,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeleteDhcpOptionsOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteDhcpOptionsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteDhcpOptions(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteDhcpOptions", err)
 	return nil, err
 }
@@ -347,7 +344,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeleteDhcpOptionsInput{}
 
 	if r.ko.Status.DHCPOptionsID != nil {
-		res.SetDhcpOptionsId(*r.ko.Status.DHCPOptionsID)
+		res.DhcpOptionsId = r.ko.Status.DHCPOptionsID
 	}
 
 	return res, nil
@@ -455,11 +452,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case "InvalidParameterValue":
 		return true
 	default:
@@ -469,13 +467,13 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) svcsdktypes.Tag {
+	res := svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
 	}
 
 	return res

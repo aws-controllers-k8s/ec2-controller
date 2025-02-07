@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.EC2{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.CapacityReservation{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,10 +76,11 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	var resp *svcsdk.DescribeCapacityReservationsOutput
-	resp, err = rm.sdkapi.DescribeCapacityReservationsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeCapacityReservations(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeCapacityReservations", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -99,9 +103,27 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.AvailabilityZoneID = nil
 		}
 		if elem.AvailableInstanceCount != nil {
-			ko.Status.AvailableInstanceCount = elem.AvailableInstanceCount
+			availableInstanceCountCopy := int64(*elem.AvailableInstanceCount)
+			ko.Status.AvailableInstanceCount = &availableInstanceCountCopy
 		} else {
 			ko.Status.AvailableInstanceCount = nil
+		}
+		if elem.CapacityAllocations != nil {
+			f3 := []*svcapitypes.CapacityAllocation{}
+			for _, f3iter := range elem.CapacityAllocations {
+				f3elem := &svcapitypes.CapacityAllocation{}
+				if f3iter.AllocationType != "" {
+					f3elem.AllocationType = aws.String(string(f3iter.AllocationType))
+				}
+				if f3iter.Count != nil {
+					countCopy := int64(*f3iter.Count)
+					f3elem.Count = &countCopy
+				}
+				f3 = append(f3, f3elem)
+			}
+			ko.Status.CapacityAllocations = f3
+		} else {
+			ko.Status.CapacityAllocations = nil
 		}
 		if elem.CapacityReservationArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
@@ -120,10 +142,28 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.CapacityReservationID = nil
 		}
+		if elem.CommitmentInfo != nil {
+			f7 := &svcapitypes.CapacityReservationCommitmentInfo{}
+			if elem.CommitmentInfo.CommitmentEndDate != nil {
+				f7.CommitmentEndDate = &metav1.Time{*elem.CommitmentInfo.CommitmentEndDate}
+			}
+			if elem.CommitmentInfo.CommittedInstanceCount != nil {
+				committedInstanceCountCopy := int64(*elem.CommitmentInfo.CommittedInstanceCount)
+				f7.CommittedInstanceCount = &committedInstanceCountCopy
+			}
+			ko.Status.CommitmentInfo = f7
+		} else {
+			ko.Status.CommitmentInfo = nil
+		}
 		if elem.CreateDate != nil {
 			ko.Status.CreateDate = &metav1.Time{*elem.CreateDate}
 		} else {
 			ko.Status.CreateDate = nil
+		}
+		if elem.DeliveryPreference != "" {
+			ko.Spec.DeliveryPreference = aws.String(string(elem.DeliveryPreference))
+		} else {
+			ko.Spec.DeliveryPreference = nil
 		}
 		if elem.EbsOptimized != nil {
 			ko.Spec.EBSOptimized = elem.EbsOptimized
@@ -135,8 +175,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.EndDate = nil
 		}
-		if elem.EndDateType != nil {
-			ko.Spec.EndDateType = elem.EndDateType
+		if elem.EndDateType != "" {
+			ko.Spec.EndDateType = aws.String(string(elem.EndDateType))
 		} else {
 			ko.Spec.EndDateType = nil
 		}
@@ -145,13 +185,13 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.EphemeralStorage = nil
 		}
-		if elem.InstanceMatchCriteria != nil {
-			ko.Spec.InstanceMatchCriteria = elem.InstanceMatchCriteria
+		if elem.InstanceMatchCriteria != "" {
+			ko.Spec.InstanceMatchCriteria = aws.String(string(elem.InstanceMatchCriteria))
 		} else {
 			ko.Spec.InstanceMatchCriteria = nil
 		}
-		if elem.InstancePlatform != nil {
-			ko.Spec.InstancePlatform = elem.InstancePlatform
+		if elem.InstancePlatform != "" {
+			ko.Spec.InstancePlatform = aws.String(string(elem.InstancePlatform))
 		} else {
 			ko.Spec.InstancePlatform = nil
 		}
@@ -175,41 +215,52 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.PlacementGroupARN = nil
 		}
-		if elem.StartDate != nil {
-			ko.Status.StartDate = &metav1.Time{*elem.StartDate}
+		if elem.ReservationType != "" {
+			ko.Status.ReservationType = aws.String(string(elem.ReservationType))
 		} else {
-			ko.Status.StartDate = nil
+			ko.Status.ReservationType = nil
 		}
-		if elem.State != nil {
-			ko.Status.State = elem.State
+		if elem.StartDate != nil {
+			ko.Spec.StartDate = &metav1.Time{*elem.StartDate}
+		} else {
+			ko.Spec.StartDate = nil
+		}
+		if elem.State != "" {
+			ko.Status.State = aws.String(string(elem.State))
 		} else {
 			ko.Status.State = nil
 		}
 		if elem.Tags != nil {
-			f19 := []*svcapitypes.Tag{}
-			for _, f19iter := range elem.Tags {
-				f19elem := &svcapitypes.Tag{}
-				if f19iter.Key != nil {
-					f19elem.Key = f19iter.Key
+			f23 := []*svcapitypes.Tag{}
+			for _, f23iter := range elem.Tags {
+				f23elem := &svcapitypes.Tag{}
+				if f23iter.Key != nil {
+					f23elem.Key = f23iter.Key
 				}
-				if f19iter.Value != nil {
-					f19elem.Value = f19iter.Value
+				if f23iter.Value != nil {
+					f23elem.Value = f23iter.Value
 				}
-				f19 = append(f19, f19elem)
+				f23 = append(f23, f23elem)
 			}
-			ko.Spec.Tags = f19
+			ko.Spec.Tags = f23
 		} else {
 			ko.Spec.Tags = nil
 		}
-		if elem.Tenancy != nil {
-			ko.Spec.Tenancy = elem.Tenancy
+		if elem.Tenancy != "" {
+			ko.Spec.Tenancy = aws.String(string(elem.Tenancy))
 		} else {
 			ko.Spec.Tenancy = nil
 		}
 		if elem.TotalInstanceCount != nil {
-			ko.Status.TotalInstanceCount = elem.TotalInstanceCount
+			totalInstanceCountCopy := int64(*elem.TotalInstanceCount)
+			ko.Status.TotalInstanceCount = &totalInstanceCountCopy
 		} else {
 			ko.Status.TotalInstanceCount = nil
+		}
+		if elem.UnusedReservationBillingOwnerId != nil {
+			ko.Status.UnusedReservationBillingOwnerID = elem.UnusedReservationBillingOwnerId
+		} else {
+			ko.Status.UnusedReservationBillingOwnerID = nil
 		}
 		found = true
 		break
@@ -240,12 +291,12 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribeCapacityReservationsInput{}
 
 	if r.ko.Status.CapacityReservationID != nil {
-		f0 := []*string{}
-		f0 = append(f0, r.ko.Status.CapacityReservationID)
-		res.SetCapacityReservationIds(f0)
+		f0 := []string{}
+		f0 = append(f0, *r.ko.Status.CapacityReservationID)
+		res.CapacityReservationIds = f0
 	}
 	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
+		res.DryRun = r.ko.Spec.DryRun
 	}
 
 	return res, nil
@@ -271,7 +322,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreateCapacityReservationOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreateCapacityReservationWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreateCapacityReservation(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateCapacityReservation", err)
 	if err != nil {
 		return nil, err
@@ -291,9 +342,27 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.AvailabilityZoneID = nil
 	}
 	if resp.CapacityReservation.AvailableInstanceCount != nil {
-		ko.Status.AvailableInstanceCount = resp.CapacityReservation.AvailableInstanceCount
+		availableInstanceCountCopy := int64(*resp.CapacityReservation.AvailableInstanceCount)
+		ko.Status.AvailableInstanceCount = &availableInstanceCountCopy
 	} else {
 		ko.Status.AvailableInstanceCount = nil
+	}
+	if resp.CapacityReservation.CapacityAllocations != nil {
+		f3 := []*svcapitypes.CapacityAllocation{}
+		for _, f3iter := range resp.CapacityReservation.CapacityAllocations {
+			f3elem := &svcapitypes.CapacityAllocation{}
+			if f3iter.AllocationType != "" {
+				f3elem.AllocationType = aws.String(string(f3iter.AllocationType))
+			}
+			if f3iter.Count != nil {
+				countCopy := int64(*f3iter.Count)
+				f3elem.Count = &countCopy
+			}
+			f3 = append(f3, f3elem)
+		}
+		ko.Status.CapacityAllocations = f3
+	} else {
+		ko.Status.CapacityAllocations = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -312,10 +381,28 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CapacityReservationID = nil
 	}
+	if resp.CapacityReservation.CommitmentInfo != nil {
+		f7 := &svcapitypes.CapacityReservationCommitmentInfo{}
+		if resp.CapacityReservation.CommitmentInfo.CommitmentEndDate != nil {
+			f7.CommitmentEndDate = &metav1.Time{*resp.CapacityReservation.CommitmentInfo.CommitmentEndDate}
+		}
+		if resp.CapacityReservation.CommitmentInfo.CommittedInstanceCount != nil {
+			committedInstanceCountCopy := int64(*resp.CapacityReservation.CommitmentInfo.CommittedInstanceCount)
+			f7.CommittedInstanceCount = &committedInstanceCountCopy
+		}
+		ko.Status.CommitmentInfo = f7
+	} else {
+		ko.Status.CommitmentInfo = nil
+	}
 	if resp.CapacityReservation.CreateDate != nil {
 		ko.Status.CreateDate = &metav1.Time{*resp.CapacityReservation.CreateDate}
 	} else {
 		ko.Status.CreateDate = nil
+	}
+	if resp.CapacityReservation.DeliveryPreference != "" {
+		ko.Spec.DeliveryPreference = aws.String(string(resp.CapacityReservation.DeliveryPreference))
+	} else {
+		ko.Spec.DeliveryPreference = nil
 	}
 	if resp.CapacityReservation.EbsOptimized != nil {
 		ko.Spec.EBSOptimized = resp.CapacityReservation.EbsOptimized
@@ -327,8 +414,8 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.EndDate = nil
 	}
-	if resp.CapacityReservation.EndDateType != nil {
-		ko.Spec.EndDateType = resp.CapacityReservation.EndDateType
+	if resp.CapacityReservation.EndDateType != "" {
+		ko.Spec.EndDateType = aws.String(string(resp.CapacityReservation.EndDateType))
 	} else {
 		ko.Spec.EndDateType = nil
 	}
@@ -337,13 +424,13 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.EphemeralStorage = nil
 	}
-	if resp.CapacityReservation.InstanceMatchCriteria != nil {
-		ko.Spec.InstanceMatchCriteria = resp.CapacityReservation.InstanceMatchCriteria
+	if resp.CapacityReservation.InstanceMatchCriteria != "" {
+		ko.Spec.InstanceMatchCriteria = aws.String(string(resp.CapacityReservation.InstanceMatchCriteria))
 	} else {
 		ko.Spec.InstanceMatchCriteria = nil
 	}
-	if resp.CapacityReservation.InstancePlatform != nil {
-		ko.Spec.InstancePlatform = resp.CapacityReservation.InstancePlatform
+	if resp.CapacityReservation.InstancePlatform != "" {
+		ko.Spec.InstancePlatform = aws.String(string(resp.CapacityReservation.InstancePlatform))
 	} else {
 		ko.Spec.InstancePlatform = nil
 	}
@@ -367,41 +454,52 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.PlacementGroupARN = nil
 	}
-	if resp.CapacityReservation.StartDate != nil {
-		ko.Status.StartDate = &metav1.Time{*resp.CapacityReservation.StartDate}
+	if resp.CapacityReservation.ReservationType != "" {
+		ko.Status.ReservationType = aws.String(string(resp.CapacityReservation.ReservationType))
 	} else {
-		ko.Status.StartDate = nil
+		ko.Status.ReservationType = nil
 	}
-	if resp.CapacityReservation.State != nil {
-		ko.Status.State = resp.CapacityReservation.State
+	if resp.CapacityReservation.StartDate != nil {
+		ko.Spec.StartDate = &metav1.Time{*resp.CapacityReservation.StartDate}
+	} else {
+		ko.Spec.StartDate = nil
+	}
+	if resp.CapacityReservation.State != "" {
+		ko.Status.State = aws.String(string(resp.CapacityReservation.State))
 	} else {
 		ko.Status.State = nil
 	}
 	if resp.CapacityReservation.Tags != nil {
-		f19 := []*svcapitypes.Tag{}
-		for _, f19iter := range resp.CapacityReservation.Tags {
-			f19elem := &svcapitypes.Tag{}
-			if f19iter.Key != nil {
-				f19elem.Key = f19iter.Key
+		f23 := []*svcapitypes.Tag{}
+		for _, f23iter := range resp.CapacityReservation.Tags {
+			f23elem := &svcapitypes.Tag{}
+			if f23iter.Key != nil {
+				f23elem.Key = f23iter.Key
 			}
-			if f19iter.Value != nil {
-				f19elem.Value = f19iter.Value
+			if f23iter.Value != nil {
+				f23elem.Value = f23iter.Value
 			}
-			f19 = append(f19, f19elem)
+			f23 = append(f23, f23elem)
 		}
-		ko.Spec.Tags = f19
+		ko.Spec.Tags = f23
 	} else {
 		ko.Spec.Tags = nil
 	}
-	if resp.CapacityReservation.Tenancy != nil {
-		ko.Spec.Tenancy = resp.CapacityReservation.Tenancy
+	if resp.CapacityReservation.Tenancy != "" {
+		ko.Spec.Tenancy = aws.String(string(resp.CapacityReservation.Tenancy))
 	} else {
 		ko.Spec.Tenancy = nil
 	}
 	if resp.CapacityReservation.TotalInstanceCount != nil {
-		ko.Status.TotalInstanceCount = resp.CapacityReservation.TotalInstanceCount
+		totalInstanceCountCopy := int64(*resp.CapacityReservation.TotalInstanceCount)
+		ko.Status.TotalInstanceCount = &totalInstanceCountCopy
 	} else {
 		ko.Status.TotalInstanceCount = nil
+	}
+	if resp.CapacityReservation.UnusedReservationBillingOwnerId != nil {
+		ko.Status.UnusedReservationBillingOwnerID = resp.CapacityReservation.UnusedReservationBillingOwnerId
+	} else {
+		ko.Status.UnusedReservationBillingOwnerID = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -417,49 +515,63 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreateCapacityReservationInput{}
 
 	if r.ko.Spec.AvailabilityZone != nil {
-		res.SetAvailabilityZone(*r.ko.Spec.AvailabilityZone)
+		res.AvailabilityZone = r.ko.Spec.AvailabilityZone
 	}
 	if r.ko.Spec.AvailabilityZoneID != nil {
-		res.SetAvailabilityZoneId(*r.ko.Spec.AvailabilityZoneID)
+		res.AvailabilityZoneId = r.ko.Spec.AvailabilityZoneID
 	}
 	if r.ko.Spec.ClientToken != nil {
-		res.SetClientToken(*r.ko.Spec.ClientToken)
+		res.ClientToken = r.ko.Spec.ClientToken
+	}
+	if r.ko.Spec.CommitmentDuration != nil {
+		res.CommitmentDuration = r.ko.Spec.CommitmentDuration
+	}
+	if r.ko.Spec.DeliveryPreference != nil {
+		res.DeliveryPreference = svcsdktypes.CapacityReservationDeliveryPreference(*r.ko.Spec.DeliveryPreference)
 	}
 	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
+		res.DryRun = r.ko.Spec.DryRun
 	}
 	if r.ko.Spec.EBSOptimized != nil {
-		res.SetEbsOptimized(*r.ko.Spec.EBSOptimized)
+		res.EbsOptimized = r.ko.Spec.EBSOptimized
 	}
 	if r.ko.Spec.EndDate != nil {
-		res.SetEndDate(r.ko.Spec.EndDate.Time)
+		res.EndDate = &r.ko.Spec.EndDate.Time
 	}
 	if r.ko.Spec.EndDateType != nil {
-		res.SetEndDateType(*r.ko.Spec.EndDateType)
+		res.EndDateType = svcsdktypes.EndDateType(*r.ko.Spec.EndDateType)
 	}
 	if r.ko.Spec.EphemeralStorage != nil {
-		res.SetEphemeralStorage(*r.ko.Spec.EphemeralStorage)
+		res.EphemeralStorage = r.ko.Spec.EphemeralStorage
 	}
 	if r.ko.Spec.InstanceCount != nil {
-		res.SetInstanceCount(*r.ko.Spec.InstanceCount)
+		instanceCountCopy0 := *r.ko.Spec.InstanceCount
+		if instanceCountCopy0 > math.MaxInt32 || instanceCountCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field InstanceCount is of type int32")
+		}
+		instanceCountCopy := int32(instanceCountCopy0)
+		res.InstanceCount = &instanceCountCopy
 	}
 	if r.ko.Spec.InstanceMatchCriteria != nil {
-		res.SetInstanceMatchCriteria(*r.ko.Spec.InstanceMatchCriteria)
+		res.InstanceMatchCriteria = svcsdktypes.InstanceMatchCriteria(*r.ko.Spec.InstanceMatchCriteria)
 	}
 	if r.ko.Spec.InstancePlatform != nil {
-		res.SetInstancePlatform(*r.ko.Spec.InstancePlatform)
+		res.InstancePlatform = svcsdktypes.CapacityReservationInstancePlatform(*r.ko.Spec.InstancePlatform)
 	}
 	if r.ko.Spec.InstanceType != nil {
-		res.SetInstanceType(*r.ko.Spec.InstanceType)
+		res.InstanceType = r.ko.Spec.InstanceType
 	}
 	if r.ko.Spec.OutpostARN != nil {
-		res.SetOutpostArn(*r.ko.Spec.OutpostARN)
+		res.OutpostArn = r.ko.Spec.OutpostARN
 	}
 	if r.ko.Spec.PlacementGroupARN != nil {
-		res.SetPlacementGroupArn(*r.ko.Spec.PlacementGroupARN)
+		res.PlacementGroupArn = r.ko.Spec.PlacementGroupARN
+	}
+	if r.ko.Spec.StartDate != nil {
+		res.StartDate = &r.ko.Spec.StartDate.Time
 	}
 	if r.ko.Spec.Tenancy != nil {
-		res.SetTenancy(*r.ko.Spec.Tenancy)
+		res.Tenancy = svcsdktypes.CapacityReservationTenancy(*r.ko.Spec.Tenancy)
 	}
 
 	return res, nil
@@ -500,7 +612,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.ModifyCapacityReservationOutput
 	_ = resp
-	resp, err = rm.sdkapi.ModifyCapacityReservationWithContext(ctx, input)
+	resp, err = rm.sdkapi.ModifyCapacityReservation(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyCapacityReservation", err)
 	if err != nil {
 		return nil, err
@@ -534,22 +646,30 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.ModifyCapacityReservationInput{}
 
 	if r.ko.Spec.AdditionalInfo != nil {
-		res.SetAdditionalInfo(*r.ko.Spec.AdditionalInfo)
+		res.AdditionalInfo = r.ko.Spec.AdditionalInfo
 	}
 	if r.ko.Status.CapacityReservationID != nil {
-		res.SetCapacityReservationId(*r.ko.Status.CapacityReservationID)
+		res.CapacityReservationId = r.ko.Status.CapacityReservationID
 	}
 	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
+		res.DryRun = r.ko.Spec.DryRun
 	}
 	if r.ko.Spec.EndDate != nil {
-		res.SetEndDate(r.ko.Spec.EndDate.Time)
+		res.EndDate = &r.ko.Spec.EndDate.Time
 	}
 	if r.ko.Spec.EndDateType != nil {
-		res.SetEndDateType(*r.ko.Spec.EndDateType)
+		res.EndDateType = svcsdktypes.EndDateType(*r.ko.Spec.EndDateType)
 	}
 	if r.ko.Spec.InstanceCount != nil {
-		res.SetInstanceCount(*r.ko.Spec.InstanceCount)
+		instanceCountCopy0 := *r.ko.Spec.InstanceCount
+		if instanceCountCopy0 > math.MaxInt32 || instanceCountCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field InstanceCount is of type int32")
+		}
+		instanceCountCopy := int32(instanceCountCopy0)
+		res.InstanceCount = &instanceCountCopy
+	}
+	if r.ko.Spec.InstanceMatchCriteria != nil {
+		res.InstanceMatchCriteria = svcsdktypes.InstanceMatchCriteria(*r.ko.Spec.InstanceMatchCriteria)
 	}
 
 	return res, nil
@@ -571,7 +691,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.CancelCapacityReservationOutput
 	_ = resp
-	resp, err = rm.sdkapi.CancelCapacityReservationWithContext(ctx, input)
+	resp, err = rm.sdkapi.CancelCapacityReservation(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "CancelCapacityReservation", err)
 	return nil, err
 }
@@ -584,10 +704,10 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.CancelCapacityReservationInput{}
 
 	if r.ko.Status.CapacityReservationID != nil {
-		res.SetCapacityReservationId(*r.ko.Status.CapacityReservationID)
+		res.CapacityReservationId = r.ko.Status.CapacityReservationID
 	}
 	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
+		res.DryRun = r.ko.Spec.DryRun
 	}
 
 	return res, nil
