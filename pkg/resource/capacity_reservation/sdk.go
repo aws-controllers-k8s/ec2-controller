@@ -295,9 +295,6 @@ func (rm *resourceManager) newListRequestPayload(
 		f0 = append(f0, *r.ko.Status.CapacityReservationID)
 		res.CapacityReservationIds = f0
 	}
-	if r.ko.Spec.DryRun != nil {
-		res.DryRun = r.ko.Spec.DryRun
-	}
 
 	return res, nil
 }
@@ -520,17 +517,11 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.AvailabilityZoneID != nil {
 		res.AvailabilityZoneId = r.ko.Spec.AvailabilityZoneID
 	}
-	if r.ko.Spec.ClientToken != nil {
-		res.ClientToken = r.ko.Spec.ClientToken
-	}
 	if r.ko.Spec.CommitmentDuration != nil {
 		res.CommitmentDuration = r.ko.Spec.CommitmentDuration
 	}
 	if r.ko.Spec.DeliveryPreference != nil {
 		res.DeliveryPreference = svcsdktypes.CapacityReservationDeliveryPreference(*r.ko.Spec.DeliveryPreference)
-	}
-	if r.ko.Spec.DryRun != nil {
-		res.DryRun = r.ko.Spec.DryRun
 	}
 	if r.ko.Spec.EBSOptimized != nil {
 		res.EbsOptimized = r.ko.Spec.EBSOptimized
@@ -651,9 +642,6 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	if r.ko.Status.CapacityReservationID != nil {
 		res.CapacityReservationId = r.ko.Status.CapacityReservationID
 	}
-	if r.ko.Spec.DryRun != nil {
-		res.DryRun = r.ko.Spec.DryRun
-	}
 	if r.ko.Spec.EndDate != nil {
 		res.EndDate = &r.ko.Spec.EndDate.Time
 	}
@@ -705,9 +693,6 @@ func (rm *resourceManager) newDeleteRequestPayload(
 
 	if r.ko.Status.CapacityReservationID != nil {
 		res.CapacityReservationId = r.ko.Status.CapacityReservationID
-	}
-	if r.ko.Spec.DryRun != nil {
-		res.DryRun = r.ko.Spec.DryRun
 	}
 
 	return res, nil

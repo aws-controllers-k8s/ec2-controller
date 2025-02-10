@@ -64,13 +64,6 @@ func newResourceDelta(
 			delta.Add("Spec.AvailabilityZoneID", a.ko.Spec.AvailabilityZoneID, b.ko.Spec.AvailabilityZoneID)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.ClientToken, b.ko.Spec.ClientToken) {
-		delta.Add("Spec.ClientToken", a.ko.Spec.ClientToken, b.ko.Spec.ClientToken)
-	} else if a.ko.Spec.ClientToken != nil && b.ko.Spec.ClientToken != nil {
-		if *a.ko.Spec.ClientToken != *b.ko.Spec.ClientToken {
-			delta.Add("Spec.ClientToken", a.ko.Spec.ClientToken, b.ko.Spec.ClientToken)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CommitmentDuration, b.ko.Spec.CommitmentDuration) {
 		delta.Add("Spec.CommitmentDuration", a.ko.Spec.CommitmentDuration, b.ko.Spec.CommitmentDuration)
 	} else if a.ko.Spec.CommitmentDuration != nil && b.ko.Spec.CommitmentDuration != nil {
@@ -83,13 +76,6 @@ func newResourceDelta(
 	} else if a.ko.Spec.DeliveryPreference != nil && b.ko.Spec.DeliveryPreference != nil {
 		if *a.ko.Spec.DeliveryPreference != *b.ko.Spec.DeliveryPreference {
 			delta.Add("Spec.DeliveryPreference", a.ko.Spec.DeliveryPreference, b.ko.Spec.DeliveryPreference)
-		}
-	}
-	if ackcompare.HasNilDifference(a.ko.Spec.DryRun, b.ko.Spec.DryRun) {
-		delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
-	} else if a.ko.Spec.DryRun != nil && b.ko.Spec.DryRun != nil {
-		if *a.ko.Spec.DryRun != *b.ko.Spec.DryRun {
-			delta.Add("Spec.DryRun", a.ko.Spec.DryRun, b.ko.Spec.DryRun)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized) {

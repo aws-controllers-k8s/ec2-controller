@@ -2076,11 +2076,6 @@ func (in *CapacityReservationSpec) DeepCopyInto(out *CapacityReservationSpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.ClientToken != nil {
-		in, out := &in.ClientToken, &out.ClientToken
-		*out = new(string)
-		**out = **in
-	}
 	if in.CommitmentDuration != nil {
 		in, out := &in.CommitmentDuration, &out.CommitmentDuration
 		*out = new(int64)
@@ -2089,11 +2084,6 @@ func (in *CapacityReservationSpec) DeepCopyInto(out *CapacityReservationSpec) {
 	if in.DeliveryPreference != nil {
 		in, out := &in.DeliveryPreference, &out.DeliveryPreference
 		*out = new(string)
-		**out = **in
-	}
-	if in.DryRun != nil {
-		in, out := &in.DryRun, &out.DryRun
-		*out = new(bool)
 		**out = **in
 	}
 	if in.EBSOptimized != nil {

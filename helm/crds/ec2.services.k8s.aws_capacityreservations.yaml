@@ -64,11 +64,6 @@ spec:
                 description: The ID of the Availability Zone in which to create the
                   Capacity Reservation.
                 type: string
-              clientToken:
-                description: |-
-                  Unique, case-sensitive identifier that you provide to ensure the idempotency
-                  of the request. For more information, see Ensure Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
-                type: string
               commitmentDuration:
                 description: |-
                   Required for future-dated Capacity Reservations only. To create a Capacity
@@ -95,13 +90,6 @@ spec:
 
                   The only supported value is incremental.
                 type: string
-              dryRun:
-                description: |-
-                  Checks whether you have the required permissions for the action, without
-                  actually making the request, and provides an error response. If you have
-                  the required permissions, the error response is DryRunOperation. Otherwise,
-                  it is UnauthorizedOperation.
-                type: boolean
               ebsOptimized:
                 description: |-
                   Indicates whether the Capacity Reservation supports EBS-optimized instances.

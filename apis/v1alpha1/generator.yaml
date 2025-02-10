@@ -10,6 +10,8 @@ ignore:
     - AllocateAddressInput.DryRun
     - AllocateAddressInput.TagSpecifications
     - CreateCapacityReservationInput.TagSpecifications
+    - CreateCapacityReservationInput.DryRun
+    - CreateCapacityReservationInput.ClientToken
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.DryRun

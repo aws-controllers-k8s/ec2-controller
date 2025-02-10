@@ -31,9 +31,6 @@ type CapacityReservationSpec struct {
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	// The ID of the Availability Zone in which to create the Capacity Reservation.
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
-	// Unique, case-sensitive identifier that you provide to ensure the idempotency
-	// of the request. For more information, see Ensure Idempotency (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html).
-	ClientToken *string `json:"clientToken,omitempty"`
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -55,11 +52,6 @@ type CapacityReservationSpec struct {
 	//
 	// The only supported value is incremental.
 	DeliveryPreference *string `json:"deliveryPreference,omitempty"`
-	// Checks whether you have the required permissions for the action, without
-	// actually making the request, and provides an error response. If you have
-	// the required permissions, the error response is DryRunOperation. Otherwise,
-	// it is UnauthorizedOperation.
-	DryRun *bool `json:"dryRun,omitempty"`
 	// Indicates whether the Capacity Reservation supports EBS-optimized instances.
 	// This optimization provides dedicated throughput to Amazon EBS and an optimized
 	// configuration stack to provide optimal I/O performance. This optimization
