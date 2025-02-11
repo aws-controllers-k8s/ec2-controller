@@ -298,3 +298,25 @@ class EC2Validator:
         assert (res_found is exists 
                 or
                 aws_res["VpcPeeringConnections"][0]["Status"]["Code"] == "deleted")
+        
+    def get_capacity_reservation(self, capacity_reservation_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_capacity_reservations(
+                CapacityReservationIds=[capacity_reservation_id]
+            )
+            if len(aws_res["CapacityReservations"]) > 0:
+                return aws_res["CapacityReservations"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def assert_capacity_reservation(self, capacity_reservation_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_capacity_reservations(CapacityReservationIds=[capacity_reservation_id])
+            res_found = len(aws_res["CapacityReservations"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert (res_found is exists 
+                or
+                aws_res["CapacityReservations"][0]["State"] == "cancelled")

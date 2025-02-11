@@ -39,6 +39,7 @@ import (
 	svctypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/ec2-controller/pkg/resource"
 
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/capacity_reservation"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/dhcp_options"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/elastic_ip_address"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/flow_log"

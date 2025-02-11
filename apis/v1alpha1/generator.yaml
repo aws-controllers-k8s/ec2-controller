@@ -9,6 +9,9 @@ ignore:
   field_paths:
     - AllocateAddressInput.DryRun
     - AllocateAddressInput.TagSpecifications
+    - CreateCapacityReservationInput.TagSpecifications
+    - CreateCapacityReservationInput.DryRun
+    - CreateCapacityReservationInput.ClientToken
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.DryRun
@@ -113,7 +116,7 @@ ignore:
     - IpamExternalResourceVerificationToken
     - VpcBlockPublicAccessExclusion
     - AccountAttribute
-    - CapacityReservation
+    # - CapacityReservation
     - CapacityReservationFleet
     - CarrierGateway
     - ClientVpnEndpoint
@@ -200,6 +203,10 @@ operations:
     operation_type: 
     - Create
     resource_name: ElasticIPAddress
+  CancelCapacityReservation:
+    operation_type:
+    - Delete 
+    resource_name: CapacityReservation
   DescribeAddresses:
     operation_type:
     - List
@@ -273,6 +280,32 @@ operations:
       - Update
     resource_name: VpcPeeringConnection
 resources:
+  CapacityReservation:
+    fields:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+      AdditionalInfo:
+        from:
+          operation: ModifyCapacityReservation
+          path: AdditionalInfo
+      CapacityReservationID:
+        print:
+          name: ID
+      State:
+        print:
+          name: STATE
+      StartDate:
+        print:
+          name: START_DATE
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/capacity_reservation/sdk_create_post_build_request.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/capacity_reservation/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_set_output:
+        template_path: hooks/capacity_reservation/sdk_update_post_set_output.go.tpl
   DhcpOptions:
     exceptions:
       terminal_codes:

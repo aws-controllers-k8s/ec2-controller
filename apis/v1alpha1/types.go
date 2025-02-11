@@ -456,12 +456,15 @@ type CancelledSpotInstanceRequest struct {
 
 // Information about instance capacity usage for a Capacity Reservation.
 type CapacityAllocation struct {
-	Count *int64 `json:"count,omitempty"`
+	AllocationType *string `json:"allocationType,omitempty"`
+	Count          *int64  `json:"count,omitempty"`
 }
 
 // Describes a Capacity Block extension. With an extension, you can extend the
 // duration of time for an existing Capacity Block.
 type CapacityBlockExtension struct {
+	AvailabilityZone                    *string      `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID                  *string      `json:"availabilityZoneID,omitempty"`
 	CapacityBlockExtensionDurationHours *int64       `json:"capacityBlockExtensionDurationHours,omitempty"`
 	CapacityBlockExtensionEndDate       *metav1.Time `json:"capacityBlockExtensionEndDate,omitempty"`
 	CapacityBlockExtensionPurchaseDate  *metav1.Time `json:"capacityBlockExtensionPurchaseDate,omitempty"`
@@ -475,6 +478,8 @@ type CapacityBlockExtension struct {
 
 // The recommended Capacity Block extension that fits your search requirements.
 type CapacityBlockExtensionOffering struct {
+	AvailabilityZone                    *string      `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID                  *string      `json:"availabilityZoneID,omitempty"`
 	CapacityBlockExtensionDurationHours *int64       `json:"capacityBlockExtensionDurationHours,omitempty"`
 	CapacityBlockExtensionEndDate       *metav1.Time `json:"capacityBlockExtensionEndDate,omitempty"`
 	CapacityBlockExtensionStartDate     *metav1.Time `json:"capacityBlockExtensionStartDate,omitempty"`
@@ -482,6 +487,7 @@ type CapacityBlockExtensionOffering struct {
 	InstanceCount                       *int64       `json:"instanceCount,omitempty"`
 	InstanceType                        *string      `json:"instanceType,omitempty"`
 	StartDate                           *metav1.Time `json:"startDate,omitempty"`
+	Tenancy                             *string      `json:"tenancy,omitempty"`
 	UpfrontFee                          *string      `json:"upfrontFee,omitempty"`
 }
 
@@ -495,35 +501,18 @@ type CapacityBlockOffering struct {
 	InstanceCount                *int64       `json:"instanceCount,omitempty"`
 	InstanceType                 *string      `json:"instanceType,omitempty"`
 	StartDate                    *metav1.Time `json:"startDate,omitempty"`
+	Tenancy                      *string      `json:"tenancy,omitempty"`
 	UpfrontFee                   *string      `json:"upfrontFee,omitempty"`
-}
-
-// Describes a Capacity Reservation.
-type CapacityReservation struct {
-	AvailabilityZone           *string      `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID         *string      `json:"availabilityZoneID,omitempty"`
-	AvailableInstanceCount     *int64       `json:"availableInstanceCount,omitempty"`
-	CapacityReservationARN     *string      `json:"capacityReservationARN,omitempty"`
-	CapacityReservationFleetID *string      `json:"capacityReservationFleetID,omitempty"`
-	CapacityReservationID      *string      `json:"capacityReservationID,omitempty"`
-	CreateDate                 *metav1.Time `json:"createDate,omitempty"`
-	EBSOptimized               *bool        `json:"ebsOptimized,omitempty"`
-	EndDate                    *metav1.Time `json:"endDate,omitempty"`
-	EphemeralStorage           *bool        `json:"ephemeralStorage,omitempty"`
-	InstanceType               *string      `json:"instanceType,omitempty"`
-	OwnerID                    *string      `json:"ownerID,omitempty"`
-	StartDate                  *metav1.Time `json:"startDate,omitempty"`
-	Tags                       []*Tag       `json:"tags,omitempty"`
-	TotalInstanceCount         *int64       `json:"totalInstanceCount,omitempty"`
 }
 
 // Information about a request to assign billing of the unused capacity of a
 // Capacity Reservation.
 type CapacityReservationBillingRequest struct {
-	CapacityReservationID *string      `json:"capacityReservationID,omitempty"`
-	LastUpdateTime        *metav1.Time `json:"lastUpdateTime,omitempty"`
-	RequestedBy           *string      `json:"requestedBy,omitempty"`
-	StatusMessage         *string      `json:"statusMessage,omitempty"`
+	CapacityReservationID           *string      `json:"capacityReservationID,omitempty"`
+	LastUpdateTime                  *metav1.Time `json:"lastUpdateTime,omitempty"`
+	RequestedBy                     *string      `json:"requestedBy,omitempty"`
+	StatusMessage                   *string      `json:"statusMessage,omitempty"`
+	UnusedReservationBillingOwnerID *string      `json:"unusedReservationBillingOwnerID,omitempty"`
 }
 
 // Information about your commitment for a future-dated Capacity Reservation.
@@ -550,7 +539,9 @@ type CapacityReservationGroup struct {
 
 // Information about a Capacity Reservation.
 type CapacityReservationInfo struct {
-	InstanceType *string `json:"instanceType,omitempty"`
+	AvailabilityZone *string `json:"availabilityZone,omitempty"`
+	InstanceType     *string `json:"instanceType,omitempty"`
+	Tenancy          *string `json:"tenancy,omitempty"`
 }
 
 // Describes an instance's Capacity Reservation targeting option.
@@ -593,6 +584,38 @@ type CapacityReservationTarget struct {
 type CapacityReservationTargetResponse struct {
 	CapacityReservationID               *string `json:"capacityReservationID,omitempty"`
 	CapacityReservationResourceGroupARN *string `json:"capacityReservationResourceGroupARN,omitempty"`
+}
+
+// Describes a Capacity Reservation.
+type CapacityReservation_SDK struct {
+	AvailabilityZone           *string               `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID         *string               `json:"availabilityZoneID,omitempty"`
+	AvailableInstanceCount     *int64                `json:"availableInstanceCount,omitempty"`
+	CapacityAllocations        []*CapacityAllocation `json:"capacityAllocations,omitempty"`
+	CapacityReservationARN     *string               `json:"capacityReservationARN,omitempty"`
+	CapacityReservationFleetID *string               `json:"capacityReservationFleetID,omitempty"`
+	CapacityReservationID      *string               `json:"capacityReservationID,omitempty"`
+	// Information about your commitment for a future-dated Capacity Reservation.
+	CommitmentInfo                  *CapacityReservationCommitmentInfo `json:"commitmentInfo,omitempty"`
+	CreateDate                      *metav1.Time                       `json:"createDate,omitempty"`
+	DeliveryPreference              *string                            `json:"deliveryPreference,omitempty"`
+	EBSOptimized                    *bool                              `json:"ebsOptimized,omitempty"`
+	EndDate                         *metav1.Time                       `json:"endDate,omitempty"`
+	EndDateType                     *string                            `json:"endDateType,omitempty"`
+	EphemeralStorage                *bool                              `json:"ephemeralStorage,omitempty"`
+	InstanceMatchCriteria           *string                            `json:"instanceMatchCriteria,omitempty"`
+	InstancePlatform                *string                            `json:"instancePlatform,omitempty"`
+	InstanceType                    *string                            `json:"instanceType,omitempty"`
+	OutpostARN                      *string                            `json:"outpostARN,omitempty"`
+	OwnerID                         *string                            `json:"ownerID,omitempty"`
+	PlacementGroupARN               *string                            `json:"placementGroupARN,omitempty"`
+	ReservationType                 *string                            `json:"reservationType,omitempty"`
+	StartDate                       *metav1.Time                       `json:"startDate,omitempty"`
+	State                           *string                            `json:"state,omitempty"`
+	Tags                            []*Tag                             `json:"tags,omitempty"`
+	Tenancy                         *string                            `json:"tenancy,omitempty"`
+	TotalInstanceCount              *int64                             `json:"totalInstanceCount,omitempty"`
+	UnusedReservationBillingOwnerID *string                            `json:"unusedReservationBillingOwnerID,omitempty"`
 }
 
 // Describes a carrier gateway.
@@ -1538,6 +1561,7 @@ type FleetCapacityReservation struct {
 	CapacityReservationID *string      `json:"capacityReservationID,omitempty"`
 	CreateDate            *metav1.Time `json:"createDate,omitempty"`
 	EBSOptimized          *bool        `json:"ebsOptimized,omitempty"`
+	InstancePlatform      *string      `json:"instancePlatform,omitempty"`
 	InstanceType          *string      `json:"instanceType,omitempty"`
 	TotalInstanceCount    *int64       `json:"totalInstanceCount,omitempty"`
 }
@@ -4056,6 +4080,7 @@ type ReservationFleetInstanceSpecification struct {
 	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
 	EBSOptimized       *bool   `json:"ebsOptimized,omitempty"`
+	InstancePlatform   *string `json:"instancePlatform,omitempty"`
 	InstanceType       *string `json:"instanceType,omitempty"`
 }
 
