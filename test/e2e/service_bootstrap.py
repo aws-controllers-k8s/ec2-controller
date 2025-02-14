@@ -26,7 +26,11 @@ def service_bootstrap() -> Resources:
     logging.getLogger().setLevel(logging.INFO)
 
     resources = BootstrapResources(
-        SharedTestVPC=VPC(name_prefix="e2e-test-vpc", num_public_subnet=1, num_private_subnet=0),
+        SharedTestVPC=VPC(
+            name_prefix="e2e-test-vpc", 
+            num_public_subnet=2,
+            num_private_subnet=0
+        ),
         FlowLogsBucket=Bucket(
             "ack-ec2-controller-flow-log-tests",
         ),
