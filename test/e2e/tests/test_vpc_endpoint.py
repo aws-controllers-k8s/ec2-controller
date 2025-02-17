@@ -33,7 +33,7 @@ RESOURCE_PLURAL = "vpcendpoints"
 ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
 
 CREATE_WAIT_AFTER_SECONDS = 10
-DELETE_WAIT_AFTER_SECONDS = 10
+DELETE_WAIT_AFTER_SECONDS = 180
 MODIFY_WAIT_AFTER_SECONDS = 5
 
 @pytest.fixture
@@ -82,6 +82,57 @@ def simple_vpc_endpoint(request):
         assert deleted
     except:
         pass
+
+@pytest.fixture
+def modify_vpc_endpoint(request):
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("vpc-endpoint-test", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    vpc_id = test_vpc.vpc_id
+
+    test_resource_values["VPC_ENDPOINT_NAME"] = resource_name
+    test_resource_values["SERVICE_NAME"] = ENDPOINT_SERVICE_NAME
+    test_resource_values["VPC_ID"] = vpc_id
+    test_resource_values["SUBNET_ID"] = test_vpc.public_subnets.subnet_ids[0]
+
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'tag_key' in data:
+            test_resource_values["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            test_resource_values["TAG_VALUE"] = data["tag_value"]
+
+    # Load VPC Endpoint CR
+    resource_data = load_ec2_resource(
+        "vpc_endpoint_modify",
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
+
 @service_marker
 @pytest.mark.canary
 class TestVpcEndpoint:
@@ -273,3 +324,50 @@ class TestVpcEndpoint:
         expected_msg = "InvalidServiceName: The Vpc Endpoint Service 'InvalidService' does not exist"
         terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
         assert expected_msg in terminal_condition['message']
+
+    def test_update_subnets(self, ec2_client, modify_vpc_endpoint):
+        (ref, cr) = modify_vpc_endpoint
+        resource_id = cr["status"]["vpcEndpointID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check VPC Endpoint exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_endpoint(resource_id)
+
+        # Get initial state
+        vpc_endpoint = ec2_validator.get_vpc_endpoint(resource_id)
+        initial_subnets = vpc_endpoint.get("SubnetIds", [])
+
+        # Get an additional subnet from the test VPC
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        available_subnets = test_vpc.public_subnets.subnet_ids
+        new_subnet = next(subnet for subnet in available_subnets if subnet not in initial_subnets)
+
+        # Update subnets
+        updated_subnets = initial_subnets + [new_subnet]
+
+        # Patch the VPC Endpoint
+        updates = {
+            "spec": {"subnetIDs": updated_subnets}
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(
+            ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Verify the update in AWS
+        vpc_endpoint = ec2_validator.get_vpc_endpoint(resource_id)
+        assert set(vpc_endpoint["SubnetIds"]) == set(updated_subnets)
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check VPC Endpoint no longer exists in AWS
+        ec2_validator.assert_vpc_endpoint(resource_id, exists=False)

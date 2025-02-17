@@ -21,6 +21,7 @@ import (
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
@@ -81,6 +82,67 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 		}
 	}
 
+	if !delta.DifferentExcept("Spec.Tags") {
+        return desired, nil
+    }
+
+	// Handle modifications that require ModifyVpcEndpoint API call
+	// avoid making the ModifyVpcEndpoint API call if only tags are modified
+	input := &svcsdk.ModifyVpcEndpointInput{
+		VpcEndpointId: latest.ko.Status.VPCEndpointID,
+	}
+
+	if delta.DifferentAt("Spec.SubnetIDs") {
+		toAdd, toRemove := calculateSubnetDifferences(
+			aws.ToStringSlice(desired.ko.Spec.SubnetIDs),
+			aws.ToStringSlice(latest.ko.Spec.SubnetIDs))
+		input.AddSubnetIds = toAdd
+		input.RemoveSubnetIds = toRemove
+	}
+
+	if delta.DifferentAt("Spec.RouteTableIDs") {
+		toAdd, toRemove := calculateSubnetDifferences(
+			aws.ToStringSlice(desired.ko.Spec.RouteTableIDs),
+			aws.ToStringSlice(latest.ko.Spec.RouteTableIDs))
+		input.AddRouteTableIds = toAdd
+		input.RemoveRouteTableIds = toRemove
+	}
+
+	if delta.DifferentAt("Spec.PolicyDocument") {
+		input.PolicyDocument = desired.ko.Spec.PolicyDocument
+	}
+
+	if delta.DifferentAt("Spec.PrivateDNSEnabled") {
+		input.PrivateDnsEnabled = desired.ko.Spec.PrivateDNSEnabled
+	}
+
+	if delta.DifferentAt("Spec.SecurityGroupIDs") {
+		toAdd, toRemove := calculateSubnetDifferences(
+			aws.ToStringSlice(desired.ko.Spec.SecurityGroupIDs),
+			aws.ToStringSlice(latest.ko.Spec.SecurityGroupIDs))
+		input.AddSecurityGroupIds = toAdd
+		input.RemoveSecurityGroupIds = toRemove
+	}
+
+	if delta.DifferentAt("Spec.DNSOptions") && desired.ko.Spec.DNSOptions != nil {
+		if desired.ko.Spec.DNSOptions != nil {
+			input.DnsOptions = &svcsdktypes.DnsOptionsSpecification{
+				DnsRecordIpType: svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType),
+			}
+		}
+	}
+
+	if delta.DifferentAt("Spec.IPAddressType") {
+		if desired.ko.Spec.IPAddressType != nil {
+			input.IpAddressType = svcsdktypes.IpAddressType(*desired.ko.Spec.IPAddressType)
+		}
+	}
+
+	_, err = rm.sdkapi.ModifyVpcEndpoint(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpoint", err)
+		if err != nil {
+			return nil, err
+	}
 	return updated, nil
 }
 
@@ -106,4 +168,45 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.Tags = requestedTags
 		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
+}
+
+// calculateSubnetDifferences returns two slices:
+// 1. Elements in desired that are not in latest (to add)
+// 2. Elements in latest that are not in desired (to remove)
+func calculateSubnetDifferences(desired, latest []string) ([]string, []string) {
+	if desired == nil {
+		desired = []string{}
+	}
+	if latest == nil {
+		latest = []string{}
+	}
+
+	desiredMap := make(map[string]bool)
+	latestMap := make(map[string]bool)
+
+	for _, id := range desired {
+		desiredMap[id] = true
+	}
+	for _, id := range latest {
+		latestMap[id] = true
+	}
+
+	var toAdd []string
+	var toRemove []string
+
+	// Find elements to add (in desired but not in latest)
+	for id := range desiredMap {
+		if !latestMap[id] {
+			toAdd = append(toAdd, id)
+		}
+	}
+
+	// Find elements to remove (in latest but not in desired)
+	for id := range latestMap {
+		if !desiredMap[id] {
+			toRemove = append(toRemove, id)
+		}
+	}
+
+	return toAdd, toRemove
 }
