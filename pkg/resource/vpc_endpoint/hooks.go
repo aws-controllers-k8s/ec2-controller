@@ -83,8 +83,8 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	}
 
 	if !delta.DifferentExcept("Spec.Tags") {
-        return desired, nil
-    }
+		return desired, nil
+	}
 
 	// Handle modifications that require ModifyVpcEndpoint API call
 	// avoid making the ModifyVpcEndpoint API call if only tags are modified
@@ -140,8 +140,8 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 
 	_, err = rm.sdkapi.ModifyVpcEndpoint(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpoint", err)
-		if err != nil {
-			return nil, err
+	if err != nil {
+		return nil, err
 	}
 	return updated, nil
 }
