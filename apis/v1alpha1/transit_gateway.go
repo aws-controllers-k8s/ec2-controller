@@ -26,12 +26,15 @@ import (
 type TransitGatewaySpec struct {
 
 	// A description of the transit gateway.
+
 	Description *string `json:"description,omitempty"`
 	// The transit gateway options.
+
 	Options *TransitGatewayRequestOptions `json:"options,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
@@ -42,7 +45,7 @@ type TransitGatewayStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

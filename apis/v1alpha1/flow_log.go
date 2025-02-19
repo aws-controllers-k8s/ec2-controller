@@ -31,26 +31,30 @@ type FlowLogSpec struct {
 	// This parameter is required if the destination type is cloud-watch-logs, or
 	// if the destination type is kinesis-data-firehose and the delivery stream
 	// and the resources to monitor are in different accounts.
+
 	DeliverLogsPermissionARN *string `json:"deliverLogsPermissionARN,omitempty"`
 	// The destination options.
+
 	DestinationOptions *DestinationOptionsRequest `json:"destinationOptions,omitempty"`
 	// The destination for the flow log data. The meaning of this parameter depends
 	// on the destination type.
 	//
-	//   - If the destination type is cloud-watch-logs, specify the ARN of a CloudWatch
-	//     Logs log group. For example: arn:aws:logs:region:account_id:log-group:my_group
-	//     Alternatively, use the LogGroupName parameter.
+	//    * If the destination type is cloud-watch-logs, specify the ARN of a CloudWatch
+	//    Logs log group. For example: arn:aws:logs:region:account_id:log-group:my_group
+	//    Alternatively, use the LogGroupName parameter.
 	//
-	//   - If the destination type is s3, specify the ARN of an S3 bucket. For
-	//     example: arn:aws:s3:::my_bucket/my_subfolder/ The subfolder is optional.
-	//     Note that you can't use AWSLogs as a subfolder name.
+	//    * If the destination type is s3, specify the ARN of an S3 bucket. For
+	//    example: arn:aws:s3:::my_bucket/my_subfolder/ The subfolder is optional.
+	//    Note that you can't use AWSLogs as a subfolder name.
 	//
-	//   - If the destination type is kinesis-data-firehose, specify the ARN of
-	//     a Kinesis Data Firehose delivery stream. For example: arn:aws:firehose:region:account_id:deliverystream:my_stream
+	//    * If the destination type is kinesis-data-firehose, specify the ARN of
+	//    a Kinesis Data Firehose delivery stream. For example: arn:aws:firehose:region:account_id:deliverystream:my_stream
+
 	LogDestination *string `json:"logDestination,omitempty"`
 	// The type of destination for the flow log data.
 	//
 	// Default: cloud-watch-logs
+
 	LogDestinationType *string `json:"logDestinationType,omitempty"`
 	// The fields to include in the flow log record. List the fields in the order
 	// in which they should appear. If you omit this parameter, the flow log is
@@ -61,11 +65,13 @@ type FlowLogSpec struct {
 	// in the Amazon Web Services Transit Gateway Guide.
 	//
 	// Specify the fields using the ${field-id} format, separated by spaces.
+
 	LogFormat *string `json:"logFormat,omitempty"`
 	// The name of a new or existing CloudWatch Logs log group where Amazon EC2
 	// publishes your flow logs.
 	//
 	// This parameter is valid only if the destination type is cloud-watch-logs.
+
 	LogGroupName *string `json:"logGroupName,omitempty"`
 	// The maximum interval of time during which a flow of packets is captured and
 	// aggregated into a flow log record. The possible values are 60 seconds (1
@@ -77,19 +83,26 @@ type FlowLogSpec struct {
 	// value that you specify.
 	//
 	// Default: 600
+
 	MaxAggregationInterval *int64 `json:"maxAggregationInterval,omitempty"`
+
 	// +kubebuilder:validation:Required
+
 	ResourceID *string `json:"resourceID"`
 	// The type of resource to monitor.
+
 	// +kubebuilder:validation:Required
+
 	ResourceType *string `json:"resourceType"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 	// The type of traffic to monitor (accepted traffic, rejected traffic, or all
 	// traffic). This parameter is not supported for transit gateway resource types.
 	// It is required for the other resource types.
+
 	TrafficType *string `json:"trafficType,omitempty"`
 }
 
@@ -100,7 +113,7 @@ type FlowLogStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

@@ -29,15 +29,18 @@ type InstanceSpec struct {
 	// volumes to attach to the instance at launch. For more information, see Block
 	// device mappings (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-device-mapping-concepts.html)
 	// in the Amazon EC2 User Guide.
+
 	BlockDeviceMappings []*BlockDeviceMapping `json:"blockDeviceMappings,omitempty"`
 	// Information about the Capacity Reservation targeting option. If you do not
 	// specify this parameter, the instance's Capacity Reservation preference defaults
 	// to open, which enables it to run in any open Capacity Reservation that has
 	// matching attributes (instance type, platform, Availability Zone, and tenancy).
+
 	CapacityReservationSpecification *CapacityReservationSpecification `json:"capacityReservationSpecification,omitempty"`
 	// The CPU options for the instance. For more information, see Optimize CPU
 	// options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html)
 	// in the Amazon EC2 User Guide.
+
 	CPUOptions *CPUOptionsRequest `json:"cpuOptions,omitempty"`
 	// The credit option for CPU usage of the burstable performance instance. Valid
 	// values are standard and unlimited. To change this attribute after launch,
@@ -48,9 +51,11 @@ type InstanceSpec struct {
 	// Default: standard (T2 instances) or unlimited (T3/T3a/T4g instances)
 	//
 	// For T3 instances with host tenancy, only standard is supported.
+
 	CreditSpecification *CreditSpecificationRequest `json:"creditSpecification,omitempty"`
 	// Indicates whether an instance is enabled for stop protection. For more information,
 	// see Stop protection (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html#Using_StopProtection).
+
 	DisableAPIStop *bool `json:"disableAPIStop,omitempty"`
 	// If you set this parameter to true, you can't terminate the instance using
 	// the Amazon EC2 console, CLI, or API; otherwise, you can. To change this attribute
@@ -59,6 +64,7 @@ type InstanceSpec struct {
 	// you can terminate the instance by running the shutdown command from the instance.
 	//
 	// Default: false
+
 	DisableAPITermination *bool `json:"disableAPITermination,omitempty"`
 	// Indicates whether the instance is optimized for Amazon EBS I/O. This optimization
 	// provides dedicated throughput to Amazon EBS and an optimized configuration
@@ -67,14 +73,17 @@ type InstanceSpec struct {
 	// an EBS-optimized instance.
 	//
 	// Default: false
+
 	EBSOptimized *bool `json:"ebsOptimized,omitempty"`
 	// An elastic GPU to associate with the instance.
 	//
 	// Amazon Elastic Graphics reached end of life on January 8, 2024.
+
 	ElasticGPUSpecification []*ElasticGPUSpecification `json:"elasticGPUSpecification,omitempty"`
 	// An elastic inference accelerator to associate with the instance.
 	//
 	// Amazon Elastic Inference is no longer available.
+
 	ElasticInferenceAccelerators []*ElasticInferenceAccelerator `json:"elasticInferenceAccelerators,omitempty"`
 	// Indicates whether the instance is enabled for Amazon Web Services Nitro Enclaves.
 	// For more information, see What is Amazon Web Services Nitro Enclaves? (https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html)
@@ -82,6 +91,7 @@ type InstanceSpec struct {
 	//
 	// You can't enable Amazon Web Services Nitro Enclaves and hibernation on the
 	// same instance.
+
 	EnclaveOptions *EnclaveOptionsRequest `json:"enclaveOptions,omitempty"`
 	// Indicates whether an instance is enabled for hibernation. This parameter
 	// is valid only if the instance meets the hibernation prerequisites (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html).
@@ -90,24 +100,30 @@ type InstanceSpec struct {
 	//
 	// You can't enable hibernation and Amazon Web Services Nitro Enclaves on the
 	// same instance.
+
 	HibernationOptions *HibernationOptionsRequest `json:"hibernationOptions,omitempty"`
 	// The name or Amazon Resource Name (ARN) of an IAM instance profile.
+
 	IAMInstanceProfile *IAMInstanceProfileSpecification `json:"iamInstanceProfile,omitempty"`
 	// The ID of the AMI. An AMI ID is required to launch an instance and must be
 	// specified here or in a launch template.
+
 	ImageID *string `json:"imageID,omitempty"`
 	// Indicates whether an instance stops or terminates when you initiate shutdown
 	// from the instance (using the operating system command for system shutdown).
 	//
 	// Default: stop
+
 	InstanceInitiatedShutdownBehavior *string `json:"instanceInitiatedShutdownBehavior,omitempty"`
 	// The market (purchasing) option for the instances.
 	//
 	// For RunInstances, persistent Spot Instance requests are only supported when
 	// InstanceInterruptionBehavior is set to either hibernate or stop.
+
 	InstanceMarketOptions *InstanceMarketOptionsRequest `json:"instanceMarketOptions,omitempty"`
 	// The instance type. For more information, see Amazon EC2 instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
 	// in the Amazon EC2 User Guide.
+
 	InstanceType *string `json:"instanceType,omitempty"`
 	// The number of IPv6 addresses to associate with the primary network interface.
 	// Amazon EC2 chooses the IPv6 addresses from the range of your subnet. You
@@ -117,6 +133,7 @@ type InstanceSpec struct {
 	//
 	// You cannot specify this option and the network interfaces option in the same
 	// request.
+
 	IPv6AddressCount *int64 `json:"ipv6AddressCount,omitempty"`
 	// The IPv6 addresses from the range of the subnet to associate with the primary
 	// network interface. You cannot specify this option and the option to assign
@@ -125,25 +142,31 @@ type InstanceSpec struct {
 	//
 	// You cannot specify this option and the network interfaces option in the same
 	// request.
+
 	IPv6Addresses []*InstanceIPv6Address `json:"ipv6Addresses,omitempty"`
 	// The ID of the kernel.
 	//
 	// We recommend that you use PV-GRUB instead of kernels and RAM disks. For more
 	// information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
 	// in the Amazon EC2 User Guide.
+
 	KernelID *string `json:"kernelID,omitempty"`
 	// The name of the key pair. You can create a key pair using CreateKeyPair (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html)
 	// or ImportKeyPair (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ImportKeyPair.html).
 	//
 	// If you do not specify a key pair, you can't connect to the instance unless
 	// you choose an AMI that is configured to allow users another way to log in.
+
 	KeyName *string `json:"keyName,omitempty"`
 	// The launch template. Any additional parameters that you specify for the new
 	// instance overwrite the corresponding parameters included in the launch template.
+
 	LaunchTemplate *LaunchTemplateSpecification `json:"launchTemplate,omitempty"`
 	// The license configurations.
+
 	LicenseSpecifications []*LicenseConfigurationRequest `json:"licenseSpecifications,omitempty"`
 	// The maintenance and recovery options for the instance.
+
 	MaintenanceOptions *InstanceMaintenanceOptionsRequest `json:"maintenanceOptions,omitempty"`
 	// The maximum number of instances to launch. If you specify a value that is
 	// more capacity than Amazon EC2 can launch in the target Availability Zone,
@@ -153,9 +176,11 @@ type InstanceSpec struct {
 	// Constraints: Between 1 and the quota for the specified instance type for
 	// your account for this Region. For more information, see Amazon EC2 instance
 	// type quotas (https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html).
+
 	MaxCount *int64 `json:"maxCount,omitempty"`
 	// The metadata options for the instance. For more information, see Instance
 	// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
+
 	MetadataOptions *InstanceMetadataOptionsRequest `json:"metadataOptions,omitempty"`
 	// The minimum number of instances to launch. If you specify a value that is
 	// more capacity than Amazon EC2 can provide in the target Availability Zone,
@@ -164,16 +189,21 @@ type InstanceSpec struct {
 	// Constraints: Between 1 and the quota for the specified instance type for
 	// your account for this Region. For more information, see Amazon EC2 instance
 	// type quotas (https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html).
+
 	MinCount *int64 `json:"minCount,omitempty"`
 	// Specifies whether detailed monitoring is enabled for the instance.
+
 	Monitoring *RunInstancesMonitoringEnabled `json:"monitoring,omitempty"`
 	// The network interfaces to associate with the instance.
+
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
 	// The placement for the instance.
+
 	Placement *Placement `json:"placement,omitempty"`
 	// The options for the instance hostname. The default values are inherited from
 	// the subnet. Applies only if creating a network interface, not attaching an
 	// existing one.
+
 	PrivateDNSNameOptions *PrivateDNSNameOptionsRequest `json:"privateDNSNameOptions,omitempty"`
 	// The primary IPv4 address. You must specify a value from the IPv4 address
 	// range of the subnet.
@@ -185,6 +215,7 @@ type InstanceSpec struct {
 	//
 	// You cannot specify this option and the network interfaces option in the same
 	// request.
+
 	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
 	// The ID of the RAM disk to select. Some kernels require additional drivers
 	// at launch. Check the kernel requirements for information about whether you
@@ -194,12 +225,14 @@ type InstanceSpec struct {
 	// We recommend that you use PV-GRUB instead of kernels and RAM disks. For more
 	// information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
 	// in the Amazon EC2 User Guide.
+
 	RAMDiskID *string `json:"ramDiskID,omitempty"`
 	// The IDs of the security groups. You can create a security group using CreateSecurityGroup
 	// (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html).
 	//
 	// If you specify a network interface, you must specify any security groups
 	// as part of the network interface instead of using this parameter.
+
 	SecurityGroupIDs []*string `json:"securityGroupIDs,omitempty"`
 	// [Default VPC] The names of the security groups.
 	//
@@ -207,20 +240,24 @@ type InstanceSpec struct {
 	// as part of the network interface instead of using this parameter.
 	//
 	// Default: Amazon EC2 uses the default security group.
+
 	SecurityGroups []*string `json:"securityGroups,omitempty"`
 	// The ID of the subnet to launch the instance into.
 	//
 	// If you specify a network interface, you must specify any subnets as part
 	// of the network interface instead of using this parameter.
+
 	SubnetID *string `json:"subnetID,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 	// The user data to make available to the instance. User data must be base64-encoded.
 	// Depending on the tool or SDK that you're using, the base64-encoding might
 	// be performed for you. For more information, see Work with instance user data
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html).
+
 	UserData *string `json:"userData,omitempty"`
 }
 
@@ -231,7 +268,7 @@ type InstanceStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

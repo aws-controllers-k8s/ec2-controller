@@ -28,9 +28,12 @@ type RouteTableSpec struct {
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
+
+	VPCID *string `json:"vpcID,omitempty"`
+
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
@@ -41,7 +44,7 @@ type RouteTableStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

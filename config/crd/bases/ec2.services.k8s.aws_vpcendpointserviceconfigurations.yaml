@@ -49,46 +49,26 @@ spec:
               of VpcEndpointServiceConfiguration.
             properties:
               acceptanceRequired:
-                description: |-
-                  Indicates whether requests from service consumers to create an endpoint to
-                  your service must be accepted manually.
                 type: boolean
               allowedPrincipals:
-                description: |-
-                  The Amazon Resource Names (ARN) of the principals. Permissions are granted
-                  to the principals in this list. To grant permissions to all principals, specify
-                  an asterisk (*).
                 items:
                   type: string
                 type: array
               gatewayLoadBalancerARNs:
-                description: The Amazon Resource Names (ARNs) of the Gateway Load
-                  Balancers.
                 items:
                   type: string
                 type: array
               networkLoadBalancerARNs:
-                description: The Amazon Resource Names (ARNs) of the Network Load
-                  Balancers.
                 items:
                   type: string
                 type: array
               privateDNSName:
-                description: |-
-                  (Interface endpoint configuration) The private DNS name to assign to the
-                  VPC endpoint service.
                 type: string
               supportedIPAddressTypes:
-                description: The supported IP address types. The possible values are
-                  ipv4 and ipv6.
                 items:
                   type: string
                 type: array
               tags:
-                description: |-
-                  The tags. The value parameter is required, but if you don't want the tag
-                  to have a value, specify the parameter with no value, and we set the value
-                  to an empty string.
                 items:
                   description: Describes a tag.
                   properties:
@@ -144,7 +124,7 @@ spec:
                 type: array
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

@@ -46,7 +46,7 @@ spec:
               acceptRequest:
                 type: boolean
               accepterPeeringConnectionOptions:
-                description: The VPC peering connection options for the accepter VPC.
+                description: The VPC peering connection options.
                 properties:
                   allowDNSResolutionFromRemoteVPC:
                     type: boolean
@@ -56,22 +56,10 @@ spec:
                     type: boolean
                 type: object
               peerOwnerID:
-                description: |-
-                  The Amazon Web Services account ID of the owner of the accepter VPC.
-
-                  Default: Your Amazon Web Services account ID
                 type: string
               peerRegion:
-                description: |-
-                  The Region code for the accepter VPC, if the accepter VPC is located in a
-                  Region other than the Region in which you make the request.
-
-                  Default: The Region in which you make the request.
                 type: string
               peerVPCID:
-                description: |-
-                  The ID of the VPC with which you are creating the VPC peering connection.
-                  You must specify this parameter in the request.
                 type: string
               peerVPCRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -91,8 +79,7 @@ spec:
                     type: object
                 type: object
               requesterPeeringConnectionOptions:
-                description: The VPC peering connection options for the requester
-                  VPC.
+                description: The VPC peering connection options.
                 properties:
                   allowDNSResolutionFromRemoteVPC:
                     type: boolean
@@ -102,10 +89,6 @@ spec:
                     type: boolean
                 type: object
               tags:
-                description: |-
-                  The tags. The value parameter is required, but if you don't want the tag
-                  to have a value, specify the parameter with no value, and we set the value
-                  to an empty string.
                 items:
                   description: Describes a tag.
                   properties:
@@ -116,8 +99,6 @@ spec:
                   type: object
                 type: array
               vpcID:
-                description: The ID of the requester VPC. You must specify this parameter
-                  in the request.
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -212,7 +193,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

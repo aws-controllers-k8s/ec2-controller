@@ -26,11 +26,15 @@ import (
 type CapacityReservationSpec struct {
 
 	// Reserved for future use.
+
 	AdditionalInfo *string `json:"additionalInfo,omitempty"`
 	// The Availability Zone in which to create the Capacity Reservation.
+
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	// The ID of the Availability Zone in which to create the Capacity Reservation.
+
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
+	//
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -42,7 +46,9 @@ type CapacityReservationSpec struct {
 	// after it has been delivered.
 	//
 	// For more information, see Commitment duration (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-concepts.html#cr-commitment-duration).
+
 	CommitmentDuration *int64 `json:"commitmentDuration,omitempty"`
+	//
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -51,12 +57,14 @@ type CapacityReservationSpec struct {
 	// requested date and time.
 	//
 	// The only supported value is incremental.
+
 	DeliveryPreference *string `json:"deliveryPreference,omitempty"`
 	// Indicates whether the Capacity Reservation supports EBS-optimized instances.
 	// This optimization provides dedicated throughput to Amazon EBS and an optimized
 	// configuration stack to provide optimal I/O performance. This optimization
 	// isn't available with all instance types. Additional usage charges apply when
 	// using an EBS- optimized instance.
+
 	EBSOptimized *bool `json:"ebsOptimized,omitempty"`
 	// The date and time at which the Capacity Reservation expires. When a Capacity
 	// Reservation expires, the reserved capacity is released and you can no longer
@@ -73,18 +81,21 @@ type CapacityReservationSpec struct {
 	//
 	// If you are requesting a future-dated Capacity Reservation, you can't specify
 	// an end date and time that is within the commitment duration.
+
 	EndDate *metav1.Time `json:"endDate,omitempty"`
 	// Indicates the way in which the Capacity Reservation ends. A Capacity Reservation
 	// can have one of the following end types:
 	//
-	//   - unlimited - The Capacity Reservation remains active until you explicitly
-	//     cancel it. Do not provide an EndDate if the EndDateType is unlimited.
+	//    * unlimited - The Capacity Reservation remains active until you explicitly
+	//    cancel it. Do not provide an EndDate if the EndDateType is unlimited.
 	//
-	//   - limited - The Capacity Reservation expires automatically at a specified
-	//     date and time. You must provide an EndDate value if the EndDateType value
-	//     is limited.
+	//    * limited - The Capacity Reservation expires automatically at a specified
+	//    date and time. You must provide an EndDate value if the EndDateType value
+	//    is limited.
+
 	EndDateType *string `json:"endDateType,omitempty"`
 	// Deprecated.
+
 	EphemeralStorage *bool `json:"ephemeralStorage,omitempty"`
 	// The number of instances for which to reserve capacity.
 	//
@@ -94,28 +105,33 @@ type CapacityReservationSpec struct {
 	// (25 * m5.xlarge = 100 vCPUs).
 	//
 	// Valid range: 1 - 1000
+
 	// +kubebuilder:validation:Required
+
 	InstanceCount *int64 `json:"instanceCount"`
 	// Indicates the type of instance launches that the Capacity Reservation accepts.
 	// The options include:
 	//
-	//   - open - The Capacity Reservation automatically matches all instances
-	//     that have matching attributes (instance type, platform, and Availability
-	//     Zone). Instances that have matching attributes run in the Capacity Reservation
-	//     automatically without specifying any additional parameters.
+	//    * open - The Capacity Reservation automatically matches all instances
+	//    that have matching attributes (instance type, platform, and Availability
+	//    Zone). Instances that have matching attributes run in the Capacity Reservation
+	//    automatically without specifying any additional parameters.
 	//
-	//   - targeted - The Capacity Reservation only accepts instances that have
-	//     matching attributes (instance type, platform, and Availability Zone),
-	//     and explicitly target the Capacity Reservation. This ensures that only
-	//     permitted instances can use the reserved capacity.
+	//    * targeted - The Capacity Reservation only accepts instances that have
+	//    matching attributes (instance type, platform, and Availability Zone),
+	//    and explicitly target the Capacity Reservation. This ensures that only
+	//    permitted instances can use the reserved capacity.
 	//
 	// If you are requesting a future-dated Capacity Reservation, you must specify
 	// targeted.
 	//
 	// Default: open
+
 	InstanceMatchCriteria *string `json:"instanceMatchCriteria,omitempty"`
 	// The type of operating system for which to reserve capacity.
+
 	// +kubebuilder:validation:Required
+
 	InstancePlatform *string `json:"instancePlatform"`
 	// The instance type for which to reserve capacity.
 	//
@@ -124,20 +140,27 @@ type CapacityReservationSpec struct {
 	//
 	// For more information, see Instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
 	// in the Amazon EC2 User Guide.
+
 	// +kubebuilder:validation:Required
+
 	InstanceType *string `json:"instanceType"`
+	//
 	// Not supported for future-dated Capacity Reservations.
 	//
 	// The Amazon Resource Name (ARN) of the Outpost on which to create the Capacity
 	// Reservation.
+
 	OutpostARN *string `json:"outpostARN,omitempty"`
+	//
 	// Not supported for future-dated Capacity Reservations.
 	//
 	// The Amazon Resource Name (ARN) of the cluster placement group in which to
 	// create the Capacity Reservation. For more information, see Capacity Reservations
 	// for cluster placement groups (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-cpg.html)
 	// in the Amazon EC2 User Guide.
+
 	PlacementGroupARN *string `json:"placementGroupARN,omitempty"`
+	//
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -146,19 +169,22 @@ type CapacityReservationSpec struct {
 	//
 	// You can request a future-dated Capacity Reservation between 5 and 120 days
 	// in advance.
+
 	StartDate *metav1.Time `json:"startDate,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 	// Indicates the tenancy of the Capacity Reservation. A Capacity Reservation
 	// can have one of the following tenancy settings:
 	//
-	//   - default - The Capacity Reservation is created on hardware that is shared
-	//     with other Amazon Web Services accounts.
+	//    * default - The Capacity Reservation is created on hardware that is shared
+	//    with other Amazon Web Services accounts.
 	//
-	//   - dedicated - The Capacity Reservation is created on single-tenant hardware
-	//     that is dedicated to a single Amazon Web Services account.
+	//    * dedicated - The Capacity Reservation is created on single-tenant hardware
+	//    that is dedicated to a single Amazon Web Services account.
+
 	Tenancy *string `json:"tenancy,omitempty"`
 }
 
@@ -169,7 +195,7 @@ type CapacityReservationStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

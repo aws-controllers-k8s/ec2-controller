@@ -24,23 +24,28 @@ import (
 type ElasticIPAddressSpec struct {
 
 	// The Elastic IP address to recover or an IPv4 address from an address pool.
+
 	Address *string `json:"address,omitempty"`
 	// The ID of a customer-owned address pool. Use this parameter to let Amazon
 	// EC2 select an address from the address pool. Alternatively, specify a specific
 	// address from the address pool.
+
 	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
 	// A unique set of Availability Zones, Local Zones, or Wavelength Zones from
 	// which Amazon Web Services advertises IP addresses. Use this parameter to
 	// limit the IP address to this location. IP addresses cannot move between network
 	// border groups.
+
 	NetworkBorderGroup *string `json:"networkBorderGroup,omitempty"`
 	// The ID of an address pool that you own. Use this parameter to let Amazon
 	// EC2 select an address from the address pool. To specify a specific address
 	// from the address pool, use the Address parameter instead.
+
 	PublicIPv4Pool *string `json:"publicIPv4Pool,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
@@ -51,7 +56,7 @@ type ElasticIPAddressStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

@@ -25,23 +25,30 @@ type VPCEndpointServiceConfigurationSpec struct {
 
 	// Indicates whether requests from service consumers to create an endpoint to
 	// your service must be accepted manually.
+
 	AcceptanceRequired *bool `json:"acceptanceRequired,omitempty"`
 	// The Amazon Resource Names (ARN) of the principals. Permissions are granted
 	// to the principals in this list. To grant permissions to all principals, specify
 	// an asterisk (*).
+
 	AllowedPrincipals []*string `json:"allowedPrincipals,omitempty"`
 	// The Amazon Resource Names (ARNs) of the Gateway Load Balancers.
+
 	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
 	// The Amazon Resource Names (ARNs) of the Network Load Balancers.
+
 	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
 	// (Interface endpoint configuration) The private DNS name to assign to the
 	// VPC endpoint service.
+
 	PrivateDNSName *string `json:"privateDNSName,omitempty"`
 	// The supported IP address types. The possible values are ipv4 and ipv6.
+
 	SupportedIPAddressTypes []*string `json:"supportedIPAddressTypes,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
@@ -52,7 +59,7 @@ type VPCEndpointServiceConfigurationStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

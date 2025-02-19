@@ -113,10 +113,6 @@ spec:
                   type: object
                 type: array
               tags:
-                description: |-
-                  The tags. The value parameter is required, but if you don't want the tag
-                  to have a value, specify the parameter with no value, and we set the value
-                  to an empty string.
                 items:
                   description: Describes a tag.
                   properties:
@@ -127,7 +123,6 @@ spec:
                   type: object
                 type: array
               vpcID:
-                description: The ID of the VPC.
                 type: string
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
@@ -181,7 +176,7 @@ spec:
                 type: object
               conditions:
                 description: |-
-                  All CRS managed by ACK have a common `Status.Conditions` member that
+                  All CRs managed by ACK have a common `Status.Conditions` member that
                   contains a collection of `ackv1alpha1.Condition` objects that describe
                   the various terminal states of the CR and its backend AWS service API
                   resource

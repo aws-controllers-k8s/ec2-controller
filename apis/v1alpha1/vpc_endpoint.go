@@ -26,13 +26,16 @@ import (
 type VPCEndpointSpec struct {
 
 	// The DNS options for the endpoint.
+
 	DNSOptions *DNSOptionsSpecification `json:"dnsOptions,omitempty"`
 	// The IP address type for the endpoint.
+
 	IPAddressType *string `json:"ipAddressType,omitempty"`
 	// (Interface and gateway endpoints) A policy to attach to the endpoint that
 	// controls access to the service. The policy must be in valid JSON format.
 	// If this parameter is not specified, we attach a default policy that allows
 	// full access to the service.
+
 	PolicyDocument *string `json:"policyDocument,omitempty"`
 	// (Interface endpoint) Indicates whether to associate a private hosted zone
 	// with the specified VPC. The private hosted zone contains a record set for
@@ -47,32 +50,44 @@ type VPCEndpointSpec struct {
 	// set the VPC attributes.
 	//
 	// Default: true
+
 	PrivateDNSEnabled *bool `json:"privateDNSEnabled,omitempty"`
 	// (Gateway endpoint) The route table IDs.
-	RouteTableIDs  []*string                                  `json:"routeTableIDs,omitempty"`
+
+	RouteTableIDs []*string `json:"routeTableIDs,omitempty"`
+
 	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
 	// (Interface endpoint) The IDs of the security groups to associate with the
 	// endpoint network interfaces. If this parameter is not specified, we use the
 	// default security group for the VPC.
-	SecurityGroupIDs  []*string                                  `json:"securityGroupIDs,omitempty"`
+
+	SecurityGroupIDs []*string `json:"securityGroupIDs,omitempty"`
+
 	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
 	// The name of the endpoint service.
+
 	ServiceName *string `json:"serviceName,omitempty"`
 	// (Interface and Gateway Load Balancer endpoints) The IDs of the subnets in
 	// which to create endpoint network interfaces. For a Gateway Load Balancer
 	// endpoint, you can specify only one subnet.
-	SubnetIDs  []*string                                  `json:"subnetIDs,omitempty"`
+
+	SubnetIDs []*string `json:"subnetIDs,omitempty"`
+
 	SubnetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRefs,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 	// The type of endpoint.
 	//
 	// Default: Gateway
+
 	VPCEndpointType *string `json:"vpcEndpointType,omitempty"`
 	// The ID of the VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
+
+	VPCID *string `json:"vpcID,omitempty"`
+
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
@@ -83,7 +98,7 @@ type VPCEndpointStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource

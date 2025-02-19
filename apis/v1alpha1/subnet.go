@@ -37,37 +37,54 @@ type SubnetSpec struct {
 	//
 	// To create a subnet in an Outpost, set this value to the Availability Zone
 	// for the Outpost and specify the Outpost ARN.
+
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	// The AZ ID or the Local Zone ID of the subnet.
+
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
 	// The IPv4 network range for the subnet, in CIDR notation. For example, 10.0.0.0/24.
 	// We modify the specified CIDR block to its canonical form; for example, if
 	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
 	//
 	// This parameter is not supported for an IPv6 only subnet.
-	CIDRBlock                       *string `json:"cidrBlock,omitempty"`
-	CustomerOwnedIPv4Pool           *string `json:"customerOwnedIPv4Pool,omitempty"`
-	EnableDNS64                     *bool   `json:"enableDNS64,omitempty"`
-	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
-	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
-	HostnameType                    *string `json:"hostnameType,omitempty"`
+
+	CIDRBlock *string `json:"cidrBlock,omitempty"`
+
+	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
+
+	EnableDNS64 *bool `json:"enableDNS64,omitempty"`
+
+	EnableResourceNameDNSAAAARecord *bool `json:"enableResourceNameDNSAAAARecord,omitempty"`
+
+	EnableResourceNameDNSARecord *bool `json:"enableResourceNameDNSARecord,omitempty"`
+
+	HostnameType *string `json:"hostnameType,omitempty"`
 	// The IPv6 network range for the subnet, in CIDR notation. This parameter is
 	// required for an IPv6 only subnet.
+
 	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
 	// Indicates whether to create an IPv6 only subnet.
-	IPv6Native          *bool `json:"ipv6Native,omitempty"`
+
+	IPv6Native *bool `json:"ipv6Native,omitempty"`
+
 	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
 	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
 	// ARN, you must also specify the Availability Zone of the Outpost subnet.
-	OutpostARN     *string                                    `json:"outpostARN,omitempty"`
+
+	OutpostARN *string `json:"outpostARN,omitempty"`
+
 	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
-	RouteTables    []*string                                  `json:"routeTables,omitempty"`
+
+	RouteTables []*string `json:"routeTables,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
+
 	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
+
+	VPCID *string `json:"vpcID,omitempty"`
+
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
@@ -78,7 +95,7 @@ type SubnetStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
