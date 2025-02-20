@@ -48,6 +48,9 @@ func (rm *resourceManager) syncRoutes(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
 	defer func(err error) { exit(err) }(err)
+
+	// To determine the required updates to the route table, the routes to be
+	// added and deleted will be collected first.
 	toAdd := []*svcapitypes.CreateRouteInput{}
 	toDelete := []*svcapitypes.CreateRouteInput{}
 
@@ -65,18 +68,27 @@ func (rm *resourceManager) syncRoutes(
 	}
 
 	switch {
+	// If the route table is created all routes need to be added.
 	case delta == nil:
 		toAdd = removeLocalRoute(desired.ko.Spec.Routes)
+	// If there are changes to the routes in the delta ...
 	case delta.DifferentAt("Spec.Routes"):
+		// ... iterate over all the differences ...
 		for _, diff := range delta.Differences {
+			// ... and if the current one is regarding the routes ...
 			if diff.Path.Contains("Spec.Routes") {
+				// ... take the routes to add from the left side of the diff ...
 				toAdd = diff.A.([]*svcapitypes.CreateRouteInput)
+				// ... and the routes to delete from the right side (see the
+				// customPreCompare function for information on the diff
+				// structure).
 				toDelete = diff.B.([]*svcapitypes.CreateRouteInput)
 			}
 		}
 	default: // nothing to do
 	}
 
+	// Finally delete and add the routes that were collected.
 	for _, route := range toDelete {
 		rlog.Debug("deleting route from route table")
 		if err = rm.deleteRoute(ctx, latest, *route); err != nil {
@@ -201,6 +213,8 @@ var computeTagsDelta = tags.ComputeTagsDelta
 
 // customPreCompare ensures that default values of types are initialised and
 // server side defaults are excluded from the delta.
+// The left side (`A`) of any `Spec.Routes` diff contains the routes to add, the
+// right side (`B`) the routes that must be deleted.
 func customPreCompare(
 	delta *ackcompare.Delta,
 	a *resource,
