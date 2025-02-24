@@ -93,6 +93,55 @@ def simple_network_acl(request):
     except:
         pass
 
+@pytest.fixture
+def network_acl_with_default_rules(request):
+    resource_name = random_suffix_name("network-acl-default-rules", 32)
+    resource_file = "network_acl_with_default_rules"
+    resources = get_bootstrap_resources()
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["NETWORK_ACL_NAME"] = resource_name
+    replacements["VPC_ID"] = resources.SharedTestVPC.vpc_id
+    replacements["CIDR_BLOCK"] = "10.0.0.0/24"
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'vpc_id' in data:
+            replacements["VPC_ID"] = data['vpc_id']
+        if 'cidr_block' in data:
+            replacements["CIDR_BLOCK"] = data['cidr_block']
+        if 'resource_file' in data:
+            resource_file = data['resource_file']
+
+    # Load NetworkACL CR with default rules
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestNetworkACLs:
@@ -324,3 +373,40 @@ class TestNetworkACLs:
 
         # Check networkAcl no longer exists in AWS
         ec2_validator.assert_network_acl(resource_id, exists=False)
+
+    def test_default_rules_not_duplicated_on_create(self, ec2_client, network_acl_with_default_rules):
+        (ref, cr) = network_acl_with_default_rules
+        network_acl_id = cr["status"]["id"]
+
+        # Check NetworkACL exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_network_acl(network_acl_id)
+
+        resource = k8s.get_resource(ref)
+
+        # Count how many rules with number 32767 exist in the spec
+        default_rule_count = 0
+        for entry in resource["spec"]["entries"]:
+            if entry.get("ruleNumber") == 32767:
+                default_rule_count += 1
+
+        # default rules are no op
+        assert default_rule_count == 0
+
+        # Verify custom rule
+        custom_rule_exists = False
+        for entry in resource["spec"]["entries"]:
+            if entry.get("ruleNumber") == 100:
+                custom_rule_exists = True
+                break
+
+        assert custom_rule_exists, "Custom rule with ruleNumber 100 not found in spec"
+
+        # Clean up
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Verify the NetworkACL was deleted
+        ec2_validator.assert_network_acl(network_acl_id, exists=False)
