@@ -213,8 +213,9 @@ var computeTagsDelta = tags.ComputeTagsDelta
 
 // customPreCompare ensures that default values of types are initialised and
 // server side defaults are excluded from the delta.
-// The left side (`A`) of any `Spec.Routes` diff contains the routes to add, the
-// right side (`B`) the routes that must be deleted.
+// The left side (`A`) of any `Spec.Routes` diff contains the routes that are
+// desired, but do not exist. Analogously, the right side (`B`) contains the
+// routes that exist, but are not desired.
 func customPreCompare(
 	delta *ackcompare.Delta,
 	a *resource,
@@ -223,8 +224,8 @@ func customPreCompare(
 	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
 
-	toAdd := []*svcapitypes.CreateRouteInput{}
-	toDelete := b.ko.Spec.DeepCopy().Routes
+	desired := []*svcapitypes.CreateRouteInput{}
+	latest := b.ko.Spec.DeepCopy().Routes
 
 	remove := func(s []*svcapitypes.CreateRouteInput, i int) []*svcapitypes.CreateRouteInput {
 		if i < len(s)-1 { // if not last element just copy the last element to where the removed element was
@@ -233,24 +234,22 @@ func customPreCompare(
 		return s[:len(s)-1]
 	}
 
-	// Routes that are desired, but not in latest, need to be added.
-	// Routes that are in latest, but not desired, need to be deleted.
-	// Everything else, we don't touch.
+	// Routes that are desired, but already exist in latest, can be ignored.
 	for _, routeA := range a.ko.Spec.Routes {
 		found := false
-		for idx, routeB := range toDelete {
+		for idx, routeB := range latest {
 			if found = reflect.DeepEqual(routeA, routeB); found {
-				toDelete = remove(toDelete, idx)
+				latest = remove(latest, idx)
 				break
 			}
 		}
 		if !found {
-			toAdd = append(toAdd, routeA.DeepCopy())
+			desired = append(desired, routeA.DeepCopy())
 		}
 	}
 
-	if len(toAdd) > 0 || len(toDelete) > 0 {
-		delta.Add("Spec.Routes", toAdd, toDelete)
+	if len(desired) > 0 || len(latest) > 0 {
+		delta.Add("Spec.Routes", desired, latest)
 	}
 }
 
