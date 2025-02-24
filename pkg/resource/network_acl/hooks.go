@@ -88,10 +88,10 @@ func (rm *resourceManager) requiredFieldsMissingForCreateNetworkAcl(
 
 func (rm *resourceManager) createEntries(
 	ctx context.Context,
-	r *resource,
+	desired *resource,
 ) error {
-	if r.ko.Spec.Entries != nil {
-		if err := rm.syncEntries(ctx, r, nil); err != nil {
+	if desired.ko.Spec.Entries != nil {
+		if err := rm.syncEntries(ctx, desired, nil); err != nil {
 			return err
 		}
 	}
@@ -351,7 +351,6 @@ func (rm *resourceManager) syncEntries(
 			toAdd = append(toAdd, desiredEntry)
 		}
 	}
-
 	if latest != nil {
 		// Filter out AWS default rules from latest entries before comparison
 		// to ensure consistent state management between desired and actual
@@ -380,6 +379,11 @@ func (rm *resourceManager) syncEntries(
 				toAdd[index] = nil
 			}
 		}
+	}
+
+	// During create latest is nil, just add the entries when sync is called via createEntries
+	if latest == nil {
+		toAdd = append(toAdd, desired.ko.Spec.Entries...)
 	}
 
 	for _, entry := range toAdd {
