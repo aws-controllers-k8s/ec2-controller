@@ -224,8 +224,7 @@ func customPreCompare(
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
 
 	toAdd := []*svcapitypes.CreateRouteInput{}
-	toDelete := make([]*svcapitypes.CreateRouteInput, len(b.ko.Spec.Routes))
-	copy(toDelete, b.ko.Spec.Routes) // Copy of the routes from b, that will be reduced while iterating
+	toDelete := b.ko.Spec.DeepCopy().Routes
 
 	remove := func(s []*svcapitypes.CreateRouteInput, i int) []*svcapitypes.CreateRouteInput {
 		if i < len(s)-1 { // if not last element just copy the last element to where the removed element was
@@ -246,7 +245,7 @@ func customPreCompare(
 			}
 		}
 		if !found {
-			toAdd = append(toAdd, routeA)
+			toAdd = append(toAdd, routeA.DeepCopy())
 		}
 	}
 
