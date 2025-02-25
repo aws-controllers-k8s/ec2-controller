@@ -7,7 +7,6 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCustomerPreCompare(t *testing.T) {
@@ -27,6 +26,13 @@ func TestCustomerPreCompare(t *testing.T) {
 					Routes: routes,
 				},
 			},
+		}
+	}
+
+	assertRoutesIdentical := func(t *testing.T, a, b []*svcapitypes.CreateRouteInput) {
+		assert.Len(t, a, len(b))
+		for i := range a {
+			assert.EqualValues(t, a[i], b[i])
 		}
 	}
 
@@ -87,14 +93,13 @@ func TestCustomerPreCompare(t *testing.T) {
 				diffA := diff.A.([]*svcapitypes.CreateRouteInput)
 				diffB := diff.B.([]*svcapitypes.CreateRouteInput)
 				assert.True(t, diff.Path.Contains("Spec.Routes"))
-				require.Equal(t, len(tti.toAdd), len(diffA))
-				require.Equal(t, len(tti.toDelete), len(diffB))
-				for i := range tti.toAdd {
-					assert.Equal(t, tti.toAdd[i], diffA[i])
-				}
-				for i := range tti.toDelete {
-					assert.Equal(t, tti.toDelete[i], diffB[i])
-				}
+				assert.ElementsMatch(t, tti.desiredRoutes, diffA)
+				assert.ElementsMatch(t, tti.latestRoutes, diffB)
+
+				// Check the different routes are identified correctly
+				toAdd, toDelete := filterDifferentRoutes(tti.desiredRoutes, tti.latestRoutes)
+				assertRoutesIdentical(t, tti.toAdd, toAdd)
+				assertRoutesIdentical(t, tti.toDelete, toDelete)
 			}
 		})
 	}
