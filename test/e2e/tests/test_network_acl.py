@@ -391,9 +391,46 @@ class TestNetworkACLs:
                 default_rule_count += 1
 
         # default rules are no op
-        assert default_rule_count == 0
+        assert default_rule_count == 2, "Default rules should not be added to spec when not explicitly defined"
 
         # Verify custom rule
+        custom_rule_exists = False
+        for entry in resource["spec"]["entries"]:
+            if entry.get("ruleNumber") == 100:
+                custom_rule_exists = True
+                break
+
+        assert custom_rule_exists, "Custom rule with ruleNumber 100 not found in spec"
+
+        # Clean up
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Verify the NetworkACL was deleted
+        ec2_validator.assert_network_acl(network_acl_id, exists=False)
+
+    def test_default_rules_not_added_to_spec(self, ec2_client, simple_network_acl):
+        (ref, cr) = simple_network_acl
+        network_acl_id = cr["status"]["id"]
+
+        # Check NetworkACL exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_network_acl(network_acl_id)
+
+        resource = k8s.get_resource(ref)
+
+        # Count how many rules with number 32767 exist in the spec
+        default_rule_count = 0
+        for entry in resource["spec"]["entries"]:
+            if entry.get("ruleNumber") == 32767:
+                default_rule_count += 1
+
+        # Verify no default rules were added to spec
+        assert default_rule_count == 0, "Default rules should not be added to spec when not explicitly defined"
+
+        # Verify custom rule exists
         custom_rule_exists = False
         for entry in resource["spec"]["entries"]:
             if entry.get("ruleNumber") == 100:
