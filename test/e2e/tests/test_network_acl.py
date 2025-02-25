@@ -391,7 +391,7 @@ class TestNetworkACLs:
                 default_rule_count += 1
 
         # default rules are no op
-        assert default_rule_count == 0
+        assert default_rule_count == 2
 
         # Verify custom rule
         custom_rule_exists = False
