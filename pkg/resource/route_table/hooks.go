@@ -49,11 +49,6 @@ func (rm *resourceManager) syncRoutes(
 	exit := rlog.Trace("rm.syncRoutes")
 	defer func(err error) { exit(err) }(err)
 
-	// To determine the required updates to the route table, the routes to be
-	// added and deleted will be collected first.
-	toAdd := []*svcapitypes.CreateRouteInput{}
-	toDelete := []*svcapitypes.CreateRouteInput{}
-
 	if latest != nil {
 		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, latest.ko.Spec.Routes)
 		if err != nil {
@@ -67,24 +62,15 @@ func (rm *resourceManager) syncRoutes(
 		}
 	}
 
+	var toAdd, toDelete []*svcapitypes.CreateRouteInput
+
 	switch {
 	// If the route table is created all routes need to be added.
 	case delta == nil:
 		toAdd = removeLocalRoute(desired.ko.Spec.Routes)
 	// If there are changes to the routes in the delta ...
 	case delta.DifferentAt("Spec.Routes"):
-		// ... iterate over all the differences ...
-		for _, diff := range delta.Differences {
-			// ... and if the current one is regarding the routes ...
-			if diff.Path.Contains("Spec.Routes") {
-				// ... take the routes to add from the left side of the diff ...
-				toAdd = diff.A.([]*svcapitypes.CreateRouteInput)
-				// ... and the routes to delete from the right side (see the
-				// customPreCompare function for information on the diff
-				// structure).
-				toDelete = diff.B.([]*svcapitypes.CreateRouteInput)
-			}
-		}
+		toAdd, toDelete = filterDifferentRoutes(desired.ko.Spec.Routes, latest.ko.Spec.Routes)
 	default: // nothing to do
 	}
 
@@ -224,8 +210,18 @@ func customPreCompare(
 	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
 
-	desired := []*svcapitypes.CreateRouteInput{}
-	latest := b.ko.Spec.DeepCopy().Routes
+	desired, latest := filterDifferentRoutes(a.ko.Spec.Routes, b.ko.Spec.Routes)
+
+	if len(desired) > 0 || len(latest) > 0 {
+		delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
+	}
+}
+
+// filterDifferentRoutes compares the desired and latest routes. It returns the
+// routes that are different and must be added or deleted.
+func filterDifferentRoutes(desired, latest []*svcapitypes.CreateRouteInput) (toAdd, toDelete []*svcapitypes.CreateRouteInput) {
+	toDelete = make([]*svcapitypes.CreateRouteInput, len(latest))
+	copy(toDelete, latest)
 
 	remove := func(s []*svcapitypes.CreateRouteInput, i int) []*svcapitypes.CreateRouteInput {
 		if i < len(s)-1 { // if not last element just copy the last element to where the removed element was
@@ -234,23 +230,24 @@ func customPreCompare(
 		return s[:len(s)-1]
 	}
 
-	// Routes that are desired, but already exist in latest, can be ignored.
-	for _, routeA := range a.ko.Spec.Routes {
+	// Routes that are desired, but already exist in latest, can be ignored. The
+	// toDelete slice is a copy of latest and will be slowly modified so that at
+	// the end it only contains routes that exist in latest, but are not
+	// desired.
+	for _, routeA := range desired {
 		found := false
-		for idx, routeB := range latest {
+		for idx, routeB := range toDelete {
 			if found = reflect.DeepEqual(routeA, routeB); found {
-				latest = remove(latest, idx)
+				toDelete = remove(toDelete, idx)
 				break
 			}
 		}
 		if !found {
-			desired = append(desired, routeA.DeepCopy())
+			toAdd = append(toAdd, routeA.DeepCopy())
 		}
 	}
 
-	if len(desired) > 0 || len(latest) > 0 {
-		delta.Add("Spec.Routes", desired, latest)
-	}
+	return toAdd, toDelete
 }
 
 // removeLocalRoute will filter out any routes that have a gateway ID that
