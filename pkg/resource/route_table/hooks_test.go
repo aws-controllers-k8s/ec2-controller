@@ -97,7 +97,7 @@ func TestCustomerPreCompare(t *testing.T) {
 				assert.ElementsMatch(t, tti.latestRoutes, diffB)
 
 				// Check the different routes are identified correctly
-				toAdd, toDelete := filterDifferentRoutes(tti.desiredRoutes, tti.latestRoutes)
+				toAdd, toDelete := getRoutesDifference(tti.desiredRoutes, tti.latestRoutes)
 				assertRoutesIdentical(t, tti.toAdd, toAdd)
 				assertRoutesIdentical(t, tti.toDelete, toDelete)
 			}

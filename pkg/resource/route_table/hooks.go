@@ -33,7 +33,7 @@ func (rm *resourceManager) createRoutes(
 	ctx context.Context,
 	r *resource,
 ) error {
-	if err := rm.syncRoutes(ctx, r, nil, nil); err != nil {
+	if err := rm.syncRoutes(ctx, r, nil); err != nil {
 		return err
 	}
 	return nil
@@ -43,7 +43,6 @@ func (rm *resourceManager) syncRoutes(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	delta *ackcompare.Delta,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
@@ -62,19 +61,12 @@ func (rm *resourceManager) syncRoutes(
 		}
 	}
 
-	var toAdd, toDelete []*svcapitypes.CreateRouteInput
+	// Get the routes that need to be added and deleted, by checking for
+	// differences between desired and latest.
+	toAdd, toDelete := getRoutesDifference(desired.ko.Spec.Routes, latest.ko.Spec.Routes)
 
-	switch {
-	// If the route table is created all routes need to be added.
-	case delta == nil:
-		toAdd = removeLocalRoute(desired.ko.Spec.Routes)
-	// If there are changes to the routes in the delta ...
-	case delta.DifferentAt("Spec.Routes"):
-		toAdd, toDelete = filterDifferentRoutes(desired.ko.Spec.Routes, latest.ko.Spec.Routes)
-	default: // nothing to do
-	}
-
-	// Finally delete and add the routes that were collected.
+	// Delete and add the routes that were found to be different between desired
+	// and latest.
 	for _, route := range toDelete {
 		rlog.Debug("deleting route from route table")
 		if err = rm.deleteRoute(ctx, latest, *route); err != nil {
@@ -155,7 +147,7 @@ func (rm *resourceManager) customUpdateRouteTable(
 	}
 
 	if delta.DifferentAt("Spec.Routes") {
-		if err := rm.syncRoutes(ctx, desired, latest, delta); err != nil {
+		if err := rm.syncRoutes(ctx, desired, latest); err != nil {
 			return nil, err
 		}
 		// A ReadOne call is made to refresh Status.RouteStatuses
@@ -210,16 +202,16 @@ func customPreCompare(
 	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
 
-	desired, latest := filterDifferentRoutes(a.ko.Spec.Routes, b.ko.Spec.Routes)
+	desired, latest := getRoutesDifference(a.ko.Spec.Routes, b.ko.Spec.Routes)
 
 	if len(desired) > 0 || len(latest) > 0 {
 		delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
 	}
 }
 
-// filterDifferentRoutes compares the desired and latest routes. It returns the
+// getRoutesDifference compares the desired and latest routes. It returns the
 // routes that are different and must be added or deleted.
-func filterDifferentRoutes(desired, latest []*svcapitypes.CreateRouteInput) (toAdd, toDelete []*svcapitypes.CreateRouteInput) {
+func getRoutesDifference(desired, latest []*svcapitypes.CreateRouteInput) (toAdd, toDelete []*svcapitypes.CreateRouteInput) {
 	toDelete = make([]*svcapitypes.CreateRouteInput, len(latest))
 	copy(toDelete, latest)
 
