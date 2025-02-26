@@ -303,6 +303,14 @@ func (rm *resourceManager) upsertNewAssociations(
 	return nil
 }
 
+// The function filters out AWS-managed default rules (rule #32767) from both desired
+// and latest states to prevent interference with AWS's automatic management of these
+// rules and to maintain GitOps compatibility.
+//
+// Default rules behavior:
+//   - If default rules (rule #32767) are explicitly defined in the spec, they will remain in the spec
+//   - If default rules are not defined in the spec, they will be ignored during sync
+//     operations and not be added to the spec
 func (rm *resourceManager) syncEntries(
 	ctx context.Context,
 	desired *resource,
@@ -316,6 +324,19 @@ func (rm *resourceManager) syncEntries(
 	toDelete := []*svcapitypes.NetworkACLEntry{}
 	toUpdate := []*svcapitypes.NetworkACLEntry{}
 
+	// Filter out AWS default rules (rule #32767) from desired entries to ensure
+	// they don't interfere with GitOps workflows. These rules are automatically
+	// managed by AWS and should not be included in the desired state.
+	filteredDesiredEntries := []*svcapitypes.NetworkACLEntry{}
+	for _, entry := range desired.ko.Spec.Entries {
+		if entry.RuleNumber != nil && *entry.RuleNumber == int64(DefaultRuleNumber) {
+			continue
+		}
+		filteredDesiredEntries = append(filteredDesiredEntries, entry)
+	}
+	desired.ko.Spec.Entries = filteredDesiredEntries
+
+	// Check for duplicate rule numbers within the same direction (egress/ingress)
 	uniqEntries := lo.UniqBy(desired.ko.Spec.Entries, func(entry *svcapitypes.NetworkACLEntry) string {
 		return strconv.FormatBool(*entry.Egress) + strconv.Itoa(int(*entry.RuleNumber))
 	})
@@ -324,25 +345,26 @@ func (rm *resourceManager) syncEntries(
 		return errors.New("multple rules with the same rule number and Egress in the desired spec")
 	}
 
+	// Identify new entries that need to be created
 	for _, desiredEntry := range desired.ko.Spec.Entries {
-
-		if *((*desiredEntry).RuleNumber) == int64(DefaultRuleNumber) {
-			// no-op for default route
-			continue
-		}
-
 		if latest != nil && !containsEntry(latest.ko.Spec.Entries, desiredEntry) {
-			// a desired rule is not in the latest resource; therefore, create
 			toAdd = append(toAdd, desiredEntry)
 		}
 	}
 
 	if latest != nil {
-		for _, latestEntry := range latest.ko.Spec.Entries {
-			if *((*latestEntry).RuleNumber) == int64(DefaultRuleNumber) {
-				// no-op for default route
+		// Filter out AWS default rules from latest entries before comparison
+		// to ensure consistent state management between desired and actual
+		filteredLatestEntries := []*svcapitypes.NetworkACLEntry{}
+		for _, entry := range latest.ko.Spec.Entries {
+			if entry.RuleNumber != nil && *entry.RuleNumber == int64(DefaultRuleNumber) {
 				continue
 			}
+			filteredLatestEntries = append(filteredLatestEntries, entry)
+		}
+
+		// Identify entries that need to be deleted (exist in latest but not in desired)
+		for _, latestEntry := range filteredLatestEntries {
 			if !containsEntry(desired.ko.Spec.Entries, latestEntry) {
 				// entry is in latest resource, but not in desired resource; therefore, delete
 				toDelete = append(toDelete, latestEntry)
