@@ -24,6 +24,7 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
+from e2e import distribution
 
 RESOURCE_PLURAL = "launchtemplates"
 
@@ -107,15 +108,23 @@ class TestLaunchTemplate:
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        # Only user tags should be present in Spec
-        resource = k8s.get_resource(ref)
-        assert len(resource["spec"]["tags"]) == 1
-        assert resource["spec"]["tags"][0]["key"] == "newtagkey"
-        assert resource["spec"]["tags"][0]["value"] == "newtagvalue"
 
-        # Check user and ack tags on aws 
-        launch_template = ec2_validator.get_launch_template(resource_id)
-        assert len(launch_template['Tags']) == 3
+        # Only user tags should be present in Spec
+        arn = cr['status']['ackResourceMetadata']['arn']
+        assert 'tags' in cr['spec']
+        user_tags = cr['spec']['tags']
+
+        response_tags = distribution.get_tags(arn)
+
+        tags.assert_ack_system_tags(
+            tags=response_tags,
+        )
+
+        user_tags = [{"Key": d["key"], "Value": d["value"]} for d in user_tags]
+        tags.assert_equal_without_ack_tags(
+            expected=user_tags,
+            actual=response_tags,
+        )
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 

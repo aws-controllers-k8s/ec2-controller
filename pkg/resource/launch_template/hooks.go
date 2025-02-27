@@ -19,13 +19,17 @@ import (
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	svcsdk "github.com/aws/aws-sdk-go/service/ec2"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 func (rm *resourceManager) setDefaultTemplateVersion(r *resource, input *svcsdk.ModifyLaunchTemplateInput) error {
 
 	if r.ko.Spec.DefaultVersionNumber != nil {
-		input.SetDefaultVersion(strconv.Itoa(int(*r.ko.Spec.DefaultVersionNumber)))
+
+		defaultVersion := strconv.FormatInt(*r.ko.Spec.DefaultVersionNumber, 10)
+		input.DefaultVersion = &defaultVersion
+
 	}
 
 	return nil
@@ -37,28 +41,29 @@ func (rm *resourceManager) setDefaultTemplateVersion(r *resource, input *svcsdk.
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateLaunchTemplateInput) {
 	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdk.TagSpecification{}
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
 
 	if r.ko.Spec.Tags != nil {
 
-		requestedTags := []*svcsdk.Tag{}
+		requestedTags := []svcsdktypes.Tag{}
 		for _, desiredTag := range r.ko.Spec.Tags {
 
 			// Add in tags defined in the Spec
-			tag := &svcsdk.Tag{}
+			tag := svcsdktypes.Tag{}
 			if desiredTag.Key != nil && desiredTag.Value != nil {
 				{
 
-					tag.SetKey(*desiredTag.Key)
-					tag.SetValue(*desiredTag.Value)
+					tag.Key = desiredTag.Key
+					tag.Value = desiredTag.Value
+
 				}
 				requestedTags = append(requestedTags, tag)
 			}
 
 		}
-		desiredTagSpecs.SetResourceType("launch-template")
-		desiredTagSpecs.SetTags(requestedTags)
-		input.TagSpecifications = []*svcsdk.TagSpecification{&desiredTagSpecs}
+		desiredTagSpecs.ResourceType = svcsdktypes.ResourceTypeLaunchTemplate
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
 }
 
@@ -74,7 +79,7 @@ func (rm *resourceManager) syncTags(
 		exit(err)
 	}(err)
 
-	resourceId := []*string{latest.ko.Status.LaunchTemplateID}
+	resourceId := []string{*latest.ko.Status.LaunchTemplateID}
 
 	toAdd, toDelete := computeTagsDelta(
 		desired.ko.Spec.Tags, latest.ko.Spec.Tags,
@@ -82,7 +87,7 @@ func (rm *resourceManager) syncTags(
 
 	if len(toDelete) > 0 {
 		rlog.Debug("removing tags from launchtemplate resource", "tags", toDelete)
-		_, err = rm.sdkapi.DeleteTagsWithContext(
+		_, err = rm.sdkapi.DeleteTags(
 			ctx,
 			&svcsdk.DeleteTagsInput{
 				Resources: resourceId,
@@ -98,7 +103,7 @@ func (rm *resourceManager) syncTags(
 
 	if len(toAdd) > 0 {
 		rlog.Debug("adding tags to launchtemplate resource", "tags", toAdd)
-		_, err = rm.sdkapi.CreateTagsWithContext(
+		_, err = rm.sdkapi.CreateTags(
 			ctx,
 			&svcsdk.CreateTagsInput{
 				Resources: resourceId,
@@ -116,12 +121,12 @@ func (rm *resourceManager) syncTags(
 
 // sdkTags converts *svcapitypes.Tag array to a *svcsdk.Tag array
 func (rm *resourceManager) sdkTags(
-	tags []*svcapitypes.Tag,
-) (sdktags []*svcsdk.Tag) {
+	tags []svcapitypes.Tag,
+) (sdktags []svcsdktypes.Tag) {
 
 	for _, i := range tags {
-		sdktag := rm.newTag(*i)
-		sdktags = append(sdktags, sdktag)
+		sdktag := rm.newTag(i)
+		sdktags = append(sdktags, *sdktag)
 	}
 
 	return sdktags
@@ -129,13 +134,14 @@ func (rm *resourceManager) sdkTags(
 
 func (rm *resourceManager) newTag(
 	c svcapitypes.Tag,
-) *svcsdk.Tag {
-	res := &svcsdk.Tag{}
+) *svcsdktypes.Tag {
+	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
-		res.SetKey(*c.Key)
+		res.Key = c.Key
 	}
 	if c.Value != nil {
-		res.SetValue(*c.Value)
+		res.Value = c.Value
+
 	}
 
 	return res
@@ -145,7 +151,7 @@ func (rm *resourceManager) newTag(
 func computeTagsDelta(
 	desired []*svcapitypes.Tag,
 	latest []*svcapitypes.Tag,
-) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
+) (toAdd []svcapitypes.Tag, toDelete []svcapitypes.Tag) {
 
 	desiredTags := map[string]string{}
 	for _, tag := range desired {
@@ -160,14 +166,14 @@ func computeTagsDelta(
 	for _, tag := range desired {
 		val, ok := latestTags[*tag.Key]
 		if !ok || val != *tag.Value {
-			toAdd = append(toAdd, tag)
+			toAdd = append(toAdd, *tag)
 		}
 	}
 
 	for _, tag := range latest {
 		_, ok := desiredTags[*tag.Key]
 		if !ok {
-			toDelete = append(toDelete, tag)
+			toDelete = append(toDelete, *tag)
 		}
 	}
 
