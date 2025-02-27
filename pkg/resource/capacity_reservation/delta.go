@@ -43,13 +43,6 @@ func newResourceDelta(
 		return delta
 	}
 
-	if ackcompare.HasNilDifference(a.ko.Spec.AdditionalInfo, b.ko.Spec.AdditionalInfo) {
-		delta.Add("Spec.AdditionalInfo", a.ko.Spec.AdditionalInfo, b.ko.Spec.AdditionalInfo)
-	} else if a.ko.Spec.AdditionalInfo != nil && b.ko.Spec.AdditionalInfo != nil {
-		if *a.ko.Spec.AdditionalInfo != *b.ko.Spec.AdditionalInfo {
-			delta.Add("Spec.AdditionalInfo", a.ko.Spec.AdditionalInfo, b.ko.Spec.AdditionalInfo)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AvailabilityZone, b.ko.Spec.AvailabilityZone) {
 		delta.Add("Spec.AvailabilityZone", a.ko.Spec.AvailabilityZone, b.ko.Spec.AvailabilityZone)
 	} else if a.ko.Spec.AvailabilityZone != nil && b.ko.Spec.AvailabilityZone != nil {
@@ -154,9 +147,6 @@ func newResourceDelta(
 		if !a.ko.Spec.StartDate.Equal(b.ko.Spec.StartDate) {
 			delta.Add("Spec.StartDate", a.ko.Spec.StartDate, b.ko.Spec.StartDate)
 		}
-	}
-	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Tenancy, b.ko.Spec.Tenancy) {
 		delta.Add("Spec.Tenancy", a.ko.Spec.Tenancy, b.ko.Spec.Tenancy)

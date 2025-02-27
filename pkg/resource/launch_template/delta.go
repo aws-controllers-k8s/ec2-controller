@@ -43,6 +43,13 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.AdditionalInfo, b.ko.Spec.AdditionalInfo) {
+		delta.Add("Spec.AdditionalInfo", a.ko.Spec.AdditionalInfo, b.ko.Spec.AdditionalInfo)
+	} else if a.ko.Spec.AdditionalInfo != nil && b.ko.Spec.AdditionalInfo != nil {
+		if *a.ko.Spec.AdditionalInfo != *b.ko.Spec.AdditionalInfo {
+			delta.Add("Spec.AdditionalInfo", a.ko.Spec.AdditionalInfo, b.ko.Spec.AdditionalInfo)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber) {
 		delta.Add("Spec.DefaultVersionNumber", a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber)
 	} else if a.ko.Spec.DefaultVersionNumber != nil && b.ko.Spec.DefaultVersionNumber != nil {
@@ -92,6 +99,13 @@ func newResourceDelta(
 		if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.CPUOptions, b.ko.Spec.LaunchTemplateData.CPUOptions) {
 			delta.Add("Spec.LaunchTemplateData.CPUOptions", a.ko.Spec.LaunchTemplateData.CPUOptions, b.ko.Spec.LaunchTemplateData.CPUOptions)
 		} else if a.ko.Spec.LaunchTemplateData.CPUOptions != nil && b.ko.Spec.LaunchTemplateData.CPUOptions != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp, b.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp) {
+				delta.Add("Spec.LaunchTemplateData.CPUOptions.AmdSevSnp", a.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp, b.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp)
+			} else if a.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp != nil && b.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp != nil {
+				if *a.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp != *b.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp {
+					delta.Add("Spec.LaunchTemplateData.CPUOptions.AmdSevSnp", a.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp, b.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp)
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount, b.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount) {
 				delta.Add("Spec.LaunchTemplateData.CPUOptions.CoreCount", a.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount, b.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount)
 			} else if a.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount != nil && b.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount != nil {
@@ -317,6 +331,13 @@ func newResourceDelta(
 					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes)
 				}
 			}
+			if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes) {
+				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes)
+			} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes) > 0 {
+				if !ackcompare.SliceStringPEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes)
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BareMetal", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal)
 			} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal != nil {
@@ -339,6 +360,21 @@ func newResourceDelta(
 				} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min != nil {
 					if *a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min != *b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min {
 						delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min)
+					}
+				}
+			}
+			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors) {
+				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors)
+			} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors != nil {
+				if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU)
+				} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU != nil {
+					if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References) != len(b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References) {
+						delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References)
+					} else if len(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References) > 0 {
+						if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References) {
+							delta.Add("Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References", a.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References)
+						}
 					}
 				}
 			}
@@ -384,6 +420,13 @@ func newResourceDelta(
 					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes", a.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes, b.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes)
 				}
 			}
+			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice) {
+				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice", a.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice)
+			} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice != nil {
+				if *a.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice != *b.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice", a.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice)
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU) {
 				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU", a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU)
 			} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU != nil {
@@ -417,6 +460,24 @@ func newResourceDelta(
 				} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min != nil {
 					if *a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min != *b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min {
 						delta.Add("Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min", a.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min, b.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min)
+					}
+				}
+			}
+			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps) {
+				delta.Add("Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps", a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps)
+			} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps != nil {
+				if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max", a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max)
+				} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max != nil {
+					if *a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max != *b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max {
+						delta.Add("Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max", a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max)
+					}
+				}
+				if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min) {
+					delta.Add("Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min", a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min)
+				} else if a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min != nil && b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min != nil {
+					if *a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min != *b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min {
+						delta.Add("Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min", a.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min, b.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min)
 					}
 				}
 			}
@@ -609,6 +670,13 @@ func newResourceDelta(
 					delta.Add("Spec.LaunchTemplateData.Placement.AvailabilityZone", a.ko.Spec.LaunchTemplateData.Placement.AvailabilityZone, b.ko.Spec.LaunchTemplateData.Placement.AvailabilityZone)
 				}
 			}
+			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.Placement.GroupID, b.ko.Spec.LaunchTemplateData.Placement.GroupID) {
+				delta.Add("Spec.LaunchTemplateData.Placement.GroupID", a.ko.Spec.LaunchTemplateData.Placement.GroupID, b.ko.Spec.LaunchTemplateData.Placement.GroupID)
+			} else if a.ko.Spec.LaunchTemplateData.Placement.GroupID != nil && b.ko.Spec.LaunchTemplateData.Placement.GroupID != nil {
+				if *a.ko.Spec.LaunchTemplateData.Placement.GroupID != *b.ko.Spec.LaunchTemplateData.Placement.GroupID {
+					delta.Add("Spec.LaunchTemplateData.Placement.GroupID", a.ko.Spec.LaunchTemplateData.Placement.GroupID, b.ko.Spec.LaunchTemplateData.Placement.GroupID)
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData.Placement.GroupName, b.ko.Spec.LaunchTemplateData.Placement.GroupName) {
 				delta.Add("Spec.LaunchTemplateData.Placement.GroupName", a.ko.Spec.LaunchTemplateData.Placement.GroupName, b.ko.Spec.LaunchTemplateData.Placement.GroupName)
 			} else if a.ko.Spec.LaunchTemplateData.Placement.GroupName != nil && b.ko.Spec.LaunchTemplateData.Placement.GroupName != nil {
@@ -720,8 +788,12 @@ func newResourceDelta(
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
-	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	} else if len(a.ko.Spec.Tags) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VersionDescription, b.ko.Spec.VersionDescription) {
 		delta.Add("Spec.VersionDescription", a.ko.Spec.VersionDescription, b.ko.Spec.VersionDescription)

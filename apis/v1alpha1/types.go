@@ -218,6 +218,7 @@ type AnalysisPacketHeader struct {
 // Describes a route table route.
 type AnalysisRouteTableRoute struct {
 	CarrierGatewayID            *string `json:"carrierGatewayID,omitempty"`
+	CoreNetworkARN              *string `json:"coreNetworkARN,omitempty"`
 	DestinationCIDR             *string `json:"destinationCIDR,omitempty"`
 	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
 	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
@@ -250,6 +251,7 @@ type AssignedPrivateIPAddress struct {
 
 // Information about the associated IAM roles.
 type AssociatedRole struct {
+	AssociatedRoleARN       *string `json:"associatedRoleARN,omitempty"`
 	CertificateS3BucketName *string `json:"certificateS3BucketName,omitempty"`
 	CertificateS3ObjectKey  *string `json:"certificateS3ObjectKey,omitempty"`
 	EncryptionKMSKeyID      *string `json:"encryptionKMSKeyID,omitempty"`
@@ -366,6 +368,21 @@ type BaselineEBSBandwidthMbpsRequest struct {
 	Min *int64 `json:"min,omitempty"`
 }
 
+// The baseline performance to consider, using an instance family as a baseline
+// reference. The instance family establishes the lowest acceptable level of
+// performance. Amazon EC2 uses this baseline to guide instance type selection,
+// but there is no guarantee that the selected instance types will always exceed
+// the baseline for every application.
+//
+// Currently, this parameter only supports CPU performance as a baseline performance
+// factor. For example, specifying c6i would use the CPU performance of the
+// c6i family as the baseline reference.
+type BaselinePerformanceFactorsRequest struct {
+	// The CPU performance to consider, using an instance family as the baseline
+	// reference.
+	CPU *CPUPerformanceFactorRequest `json:"cpu,omitempty"`
+}
+
 // Describes a block device mapping, which defines the EBS volumes and instance
 // store volumes to attach to an instance at launch.
 type BlockDeviceMapping struct {
@@ -432,6 +449,12 @@ type CPUOptions struct {
 type CPUOptionsRequest struct {
 	CoreCount      *int64 `json:"coreCount,omitempty"`
 	ThreadsPerCore *int64 `json:"threadsPerCore,omitempty"`
+}
+
+// The CPU performance to consider, using an instance family as the baseline
+// reference.
+type CPUPerformanceFactorRequest struct {
+	References []*PerformanceFactorReferenceRequest `json:"references,omitempty"`
 }
 
 // Describes a Spot Fleet error.
@@ -798,8 +821,10 @@ type CoipCIDR struct {
 
 // Describes a customer-owned address pool.
 type CoipPool struct {
-	PoolCIDRs []*string `json:"poolCIDRs,omitempty"`
-	Tags      []*Tag    `json:"tags,omitempty"`
+	LocalGatewayRouteTableID *string   `json:"localGatewayRouteTableID,omitempty"`
+	PoolARN                  *string   `json:"poolARN,omitempty"`
+	PoolCIDRs                []*string `json:"poolCIDRs,omitempty"`
+	Tags                     []*Tag    `json:"tags,omitempty"`
 }
 
 // Describes the client connection logging options for the Client VPN endpoint.
@@ -1240,16 +1265,17 @@ type EBSStatusDetails struct {
 
 // The EC2 Instance Connect Endpoint.
 type EC2InstanceConnectEndpoint struct {
-	AvailabilityZone *string      `json:"availabilityZone,omitempty"`
-	CreatedAt        *metav1.Time `json:"createdAt,omitempty"`
-	DNSName          *string      `json:"dnsName,omitempty"`
-	FipsDNSName      *string      `json:"fipsDNSName,omitempty"`
-	OwnerID          *string      `json:"ownerID,omitempty"`
-	PreserveClientIP *bool        `json:"preserveClientIP,omitempty"`
-	StateMessage     *string      `json:"stateMessage,omitempty"`
-	SubnetID         *string      `json:"subnetID,omitempty"`
-	Tags             []*Tag       `json:"tags,omitempty"`
-	VPCID            *string      `json:"vpcID,omitempty"`
+	AvailabilityZone           *string      `json:"availabilityZone,omitempty"`
+	CreatedAt                  *metav1.Time `json:"createdAt,omitempty"`
+	DNSName                    *string      `json:"dnsName,omitempty"`
+	FipsDNSName                *string      `json:"fipsDNSName,omitempty"`
+	InstanceConnectEndpointARN *string      `json:"instanceConnectEndpointARN,omitempty"`
+	OwnerID                    *string      `json:"ownerID,omitempty"`
+	PreserveClientIP           *bool        `json:"preserveClientIP,omitempty"`
+	StateMessage               *string      `json:"stateMessage,omitempty"`
+	SubnetID                   *string      `json:"subnetID,omitempty"`
+	Tags                       []*Tag       `json:"tags,omitempty"`
+	VPCID                      *string      `json:"vpcID,omitempty"`
 }
 
 // ENA Express uses Amazon Web Services Scalable Reliable Datagram (SRD) technology
@@ -1403,6 +1429,7 @@ type Explanation struct {
 	CIDRs             []*string `json:"cidrs,omitempty"`
 	Direction         *string   `json:"direction,omitempty"`
 	ExplanationCode   *string   `json:"explanationCode,omitempty"`
+	LoadBalancerARN   *string   `json:"loadBalancerARN,omitempty"`
 	MissingComponent  *string   `json:"missingComponent,omitempty"`
 	PacketField       *string   `json:"packetField,omitempty"`
 	Protocols         []*string `json:"protocols,omitempty"`
@@ -1546,6 +1573,7 @@ type FirewallStatefulRule struct {
 	Direction    *string   `json:"direction,omitempty"`
 	Protocol     *string   `json:"protocol,omitempty"`
 	RuleAction   *string   `json:"ruleAction,omitempty"`
+	RuleGroupARN *string   `json:"ruleGroupARN,omitempty"`
 	Sources      []*string `json:"sources,omitempty"`
 }
 
@@ -1553,6 +1581,7 @@ type FirewallStatefulRule struct {
 type FirewallStatelessRule struct {
 	Destinations []*string `json:"destinations,omitempty"`
 	RuleAction   *string   `json:"ruleAction,omitempty"`
+	RuleGroupARN *string   `json:"ruleGroupARN,omitempty"`
 	Sources      []*string `json:"sources,omitempty"`
 }
 
@@ -1563,11 +1592,8 @@ type FleetCapacityReservation struct {
 	CapacityReservationID *string      `json:"capacityReservationID,omitempty"`
 	CreateDate            *metav1.Time `json:"createDate,omitempty"`
 	EBSOptimized          *bool        `json:"ebsOptimized,omitempty"`
-<<<<<<< HEAD
-	InstancePlatform      *string      `json:"instancePlatform,omitempty"`
-=======
 	FulfilledCapacity     *float64     `json:"fulfilledCapacity,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
+	InstancePlatform      *string      `json:"instancePlatform,omitempty"`
 	InstanceType          *string      `json:"instanceType,omitempty"`
 	TotalInstanceCount    *int64       `json:"totalInstanceCount,omitempty"`
 }
@@ -1588,49 +1614,55 @@ type FleetData struct {
 
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverrides struct {
-<<<<<<< HEAD
-	AvailabilityZone *string `json:"availabilityZone,omitempty"`
-	ImageID          *string `json:"imageID,omitempty"`
-	InstanceType     *string `json:"instanceType,omitempty"`
-	MaxPrice         *string `json:"maxPrice,omitempty"`
-	SubnetID         *string `json:"subnetID,omitempty"`
-=======
 	AvailabilityZone *string  `json:"availabilityZone,omitempty"`
+	ImageID          *string  `json:"imageID,omitempty"`
 	InstanceType     *string  `json:"instanceType,omitempty"`
 	MaxPrice         *string  `json:"maxPrice,omitempty"`
 	Priority         *float64 `json:"priority,omitempty"`
 	SubnetID         *string  `json:"subnetID,omitempty"`
 	WeightedCapacity *float64 `json:"weightedCapacity,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverridesRequest struct {
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
-<<<<<<< HEAD
 	ImageID          *string `json:"imageID,omitempty"`
-	InstanceType     *string `json:"instanceType,omitempty"`
-	MaxPrice         *string `json:"maxPrice,omitempty"`
-=======
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//
-	// When you specify multiple parameters, you get instance types that satisfy
-	// all of the specified parameters. If you specify multiple values for a parameter,
+	// You must specify VCpuCount and MemoryMiB. All other attributes are optional.
+	// Any unspecified optional attribute is set to its default.
+	//
+	// When you specify multiple attributes, you get instance types that satisfy
+	// all of the specified attributes. If you specify multiple values for an attribute,
 	// you get instance types that satisfy any of the specified values.
 	//
-	// You must specify VCpuCount and MemoryMiB. All other parameters are optional.
-	// Any unspecified optional parameter is set to its default.
+	// To limit the list of instance types from which Amazon EC2 can identify matching
+	// instance types, you can use one of the following parameters, but not both
+	// in the same request:
 	//
-	// For more information, see Attribute-based instance type selection for EC2
-	// Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html),
-	// Attribute-based instance type selection for Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-attribute-based-instance-type-selection.html),
+	//    * AllowedInstanceTypes - The instance types to include in the list. All
+	//    other instance types are ignored, even if they match your specified attributes.
+	//
+	//    * ExcludedInstanceTypes - The instance types to exclude from the list,
+	//    even if they match your specified attributes.
+	//
+	// If you specify InstanceRequirements, you can't specify InstanceType.
+	//
+	// Attribute-based instance type selection is only supported when using Auto
+	// Scaling groups, EC2 Fleet, and Spot Fleet to launch instances. If you plan
+	// to use the launch template in the launch instance wizard (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-instance-wizard.html),
+	// or with the RunInstances (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html)
+	// API or AWS::EC2::Instance (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html)
+	// Amazon Web Services CloudFormation resource, you can't specify InstanceRequirements.
+	//
+	// For more information, see Specify attributes for instance type selection
+	// for EC2 Fleet or Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html)
 	// and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
 	// in the Amazon EC2 User Guide.
 	InstanceRequirements *InstanceRequirementsRequest `json:"instanceRequirements,omitempty"`
 	InstanceType         *string                      `json:"instanceType,omitempty"`
 	MaxPrice             *string                      `json:"maxPrice,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 	// Describes the placement of an instance.
 	Placement        *Placement `json:"placement,omitempty"`
 	Priority         *float64   `json:"priority,omitempty"`
@@ -1835,6 +1867,7 @@ type IKEVersionsRequestListValue struct {
 type IPAM struct {
 	Description                       *string `json:"description,omitempty"`
 	EnablePrivateGua                  *bool   `json:"enablePrivateGua,omitempty"`
+	IPAMARN                           *string `json:"ipamARN,omitempty"`
 	IPAMRegion                        *string `json:"ipamRegion,omitempty"`
 	OwnerID                           *string `json:"ownerID,omitempty"`
 	ResourceDiscoveryAssociationCount *int64  `json:"resourceDiscoveryAssociationCount,omitempty"`
@@ -1919,11 +1952,13 @@ type IPAMDiscoveryFailureReason struct {
 // can use a verification token to validate that you control a public IP address
 // range when you bring an IP address range to Amazon Web Services (BYOIP).
 type IPAMExternalResourceVerificationToken struct {
-	IPAMRegion *string      `json:"ipamRegion,omitempty"`
-	NotAfter   *metav1.Time `json:"notAfter,omitempty"`
-	Tags       []*Tag       `json:"tags,omitempty"`
-	TokenName  *string      `json:"tokenName,omitempty"`
-	TokenValue *string      `json:"tokenValue,omitempty"`
+	IPAMARN                                  *string      `json:"ipamARN,omitempty"`
+	IPAMExternalResourceVerificationTokenARN *string      `json:"ipamExternalResourceVerificationTokenARN,omitempty"`
+	IPAMRegion                               *string      `json:"ipamRegion,omitempty"`
+	NotAfter                                 *metav1.Time `json:"notAfter,omitempty"`
+	Tags                                     []*Tag       `json:"tags,omitempty"`
+	TokenName                                *string      `json:"tokenName,omitempty"`
+	TokenValue                               *string      `json:"tokenValue,omitempty"`
 }
 
 // The operating Regions for an IPAM. Operating Regions are Amazon Web Services
@@ -1951,8 +1986,11 @@ type IPAMOrganizationalUnitExclusion struct {
 type IPAMPool struct {
 	AutoImport           *bool   `json:"autoImport,omitempty"`
 	Description          *string `json:"description,omitempty"`
+	IPAMARN              *string `json:"ipamARN,omitempty"`
+	IPAMPoolARN          *string `json:"ipamPoolARN,omitempty"`
 	IPAMPoolID           *string `json:"ipamPoolID,omitempty"`
 	IPAMRegion           *string `json:"ipamRegion,omitempty"`
+	IPAMScopeARN         *string `json:"ipamScopeARN,omitempty"`
 	Locale               *string `json:"locale,omitempty"`
 	OwnerID              *string `json:"ownerID,omitempty"`
 	PoolDepth            *int64  `json:"poolDepth,omitempty"`
@@ -2036,6 +2074,7 @@ type IPAMResourceDiscovery struct {
 // is a resource discovery that has been associated with an IPAM. IPAM aggregates
 // the resource CIDRs discovered by the associated resource discovery.
 type IPAMResourceDiscoveryAssociation struct {
+	IPAMARN                             *string `json:"ipamARN,omitempty"`
 	IPAMRegion                          *string `json:"ipamRegion,omitempty"`
 	IPAMResourceDiscoveryAssociationARN *string `json:"ipamResourceDiscoveryAssociationARN,omitempty"`
 	IsDefault                           *bool   `json:"isDefault,omitempty"`
@@ -2062,12 +2101,14 @@ type IPAMResourceTag struct {
 // For more information, see How IPAM works (https://docs.aws.amazon.com/vpc/latest/ipam/how-it-works-ipam.html)
 // in the Amazon VPC IPAM User Guide.
 type IPAMScope struct {
-	Description *string `json:"description,omitempty"`
-	IPAMRegion  *string `json:"ipamRegion,omitempty"`
-	IsDefault   *bool   `json:"isDefault,omitempty"`
-	OwnerID     *string `json:"ownerID,omitempty"`
-	PoolCount   *int64  `json:"poolCount,omitempty"`
-	Tags        []*Tag  `json:"tags,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	IPAMARN      *string `json:"ipamARN,omitempty"`
+	IPAMRegion   *string `json:"ipamRegion,omitempty"`
+	IPAMScopeARN *string `json:"ipamScopeARN,omitempty"`
+	IsDefault    *bool   `json:"isDefault,omitempty"`
+	OwnerID      *string `json:"ownerID,omitempty"`
+	PoolCount    *int64  `json:"poolCount,omitempty"`
+	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes the permissions for a security group rule.
@@ -2604,26 +2645,21 @@ type InstancePrivateIPAddress struct {
 // and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
 // in the Amazon EC2 User Guide.
 type InstanceRequirements struct {
-<<<<<<< HEAD
-	MaxSpotPriceAsPercentageOfOptimalOnDemandPrice *int64 `json:"maxSpotPriceAsPercentageOfOptimalOnDemandPrice,omitempty"`
-	OnDemandMaxPricePercentageOverLowestPrice      *int64 `json:"onDemandMaxPricePercentageOverLowestPrice,omitempty"`
-	RequireHibernateSupport                        *bool  `json:"requireHibernateSupport,omitempty"`
-	SpotMaxPricePercentageOverLowestPrice          *int64 `json:"spotMaxPricePercentageOverLowestPrice,omitempty"`
-=======
-	AcceleratorManufacturers                  []*string `json:"acceleratorManufacturers,omitempty"`
-	AcceleratorNames                          []*string `json:"acceleratorNames,omitempty"`
-	AcceleratorTypes                          []*string `json:"acceleratorTypes,omitempty"`
-	BareMetal                                 *string   `json:"bareMetal,omitempty"`
-	BurstablePerformance                      *string   `json:"burstablePerformance,omitempty"`
-	CPUManufacturers                          []*string `json:"cpuManufacturers,omitempty"`
-	ExcludedInstanceTypes                     []*string `json:"excludedInstanceTypes,omitempty"`
-	InstanceGenerations                       []*string `json:"instanceGenerations,omitempty"`
-	LocalStorage                              *string   `json:"localStorage,omitempty"`
-	LocalStorageTypes                         []*string `json:"localStorageTypes,omitempty"`
-	OnDemandMaxPricePercentageOverLowestPrice *int64    `json:"onDemandMaxPricePercentageOverLowestPrice,omitempty"`
-	RequireHibernateSupport                   *bool     `json:"requireHibernateSupport,omitempty"`
-	SpotMaxPricePercentageOverLowestPrice     *int64    `json:"spotMaxPricePercentageOverLowestPrice,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
+	AcceleratorManufacturers                       []*string `json:"acceleratorManufacturers,omitempty"`
+	AcceleratorNames                               []*string `json:"acceleratorNames,omitempty"`
+	AcceleratorTypes                               []*string `json:"acceleratorTypes,omitempty"`
+	AllowedInstanceTypes                           []*string `json:"allowedInstanceTypes,omitempty"`
+	BareMetal                                      *string   `json:"bareMetal,omitempty"`
+	BurstablePerformance                           *string   `json:"burstablePerformance,omitempty"`
+	CPUManufacturers                               []*string `json:"cpuManufacturers,omitempty"`
+	ExcludedInstanceTypes                          []*string `json:"excludedInstanceTypes,omitempty"`
+	InstanceGenerations                            []*string `json:"instanceGenerations,omitempty"`
+	LocalStorage                                   *string   `json:"localStorage,omitempty"`
+	LocalStorageTypes                              []*string `json:"localStorageTypes,omitempty"`
+	MaxSpotPriceAsPercentageOfOptimalOnDemandPrice *int64    `json:"maxSpotPriceAsPercentageOfOptimalOnDemandPrice,omitempty"`
+	OnDemandMaxPricePercentageOverLowestPrice      *int64    `json:"onDemandMaxPricePercentageOverLowestPrice,omitempty"`
+	RequireHibernateSupport                        *bool     `json:"requireHibernateSupport,omitempty"`
+	SpotMaxPricePercentageOverLowestPrice          *int64    `json:"spotMaxPricePercentageOverLowestPrice,omitempty"`
 }
 
 // The attributes for the instance types. When you specify instance attributes,
@@ -2660,12 +2696,6 @@ type InstanceRequirements struct {
 // and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
 // in the Amazon EC2 User Guide.
 type InstanceRequirementsRequest struct {
-<<<<<<< HEAD
-	MaxSpotPriceAsPercentageOfOptimalOnDemandPrice *int64 `json:"maxSpotPriceAsPercentageOfOptimalOnDemandPrice,omitempty"`
-	OnDemandMaxPricePercentageOverLowestPrice      *int64 `json:"onDemandMaxPricePercentageOverLowestPrice,omitempty"`
-	RequireHibernateSupport                        *bool  `json:"requireHibernateSupport,omitempty"`
-	SpotMaxPricePercentageOverLowestPrice          *int64 `json:"spotMaxPricePercentageOverLowestPrice,omitempty"`
-=======
 	// The minimum and maximum number of accelerators (GPUs, FPGAs, or Amazon Web
 	// Services Inferentia chips) on an instance. To exclude accelerator-enabled
 	// instance types, set Max to 0.
@@ -2675,21 +2705,43 @@ type InstanceRequirementsRequest struct {
 	// The minimum and maximum amount of total accelerator memory, in MiB.
 	AcceleratorTotalMemoryMiB *AcceleratorTotalMemoryMiBRequest `json:"acceleratorTotalMemoryMiB,omitempty"`
 	AcceleratorTypes          []*string                         `json:"acceleratorTypes,omitempty"`
+	AllowedInstanceTypes      []*string                         `json:"allowedInstanceTypes,omitempty"`
 	BareMetal                 *string                           `json:"bareMetal,omitempty"`
 	// The minimum and maximum baseline bandwidth to Amazon EBS, in Mbps. For more
 	// information, see Amazon EBS–optimized instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html)
 	// in the Amazon EC2 User Guide.
 	BaselineEBSBandwidthMbps *BaselineEBSBandwidthMbpsRequest `json:"baselineEBSBandwidthMbps,omitempty"`
-	BurstablePerformance     *string                          `json:"burstablePerformance,omitempty"`
-	CPUManufacturers         []*string                        `json:"cpuManufacturers,omitempty"`
-	ExcludedInstanceTypes    []*string                        `json:"excludedInstanceTypes,omitempty"`
-	InstanceGenerations      []*string                        `json:"instanceGenerations,omitempty"`
-	LocalStorage             *string                          `json:"localStorage,omitempty"`
-	LocalStorageTypes        []*string                        `json:"localStorageTypes,omitempty"`
+	// The baseline performance to consider, using an instance family as a baseline
+	// reference. The instance family establishes the lowest acceptable level of
+	// performance. Amazon EC2 uses this baseline to guide instance type selection,
+	// but there is no guarantee that the selected instance types will always exceed
+	// the baseline for every application.
+	//
+	// Currently, this parameter only supports CPU performance as a baseline performance
+	// factor. For example, specifying c6i would use the CPU performance of the
+	// c6i family as the baseline reference.
+	BaselinePerformanceFactors                     *BaselinePerformanceFactorsRequest `json:"baselinePerformanceFactors,omitempty"`
+	BurstablePerformance                           *string                            `json:"burstablePerformance,omitempty"`
+	CPUManufacturers                               []*string                          `json:"cpuManufacturers,omitempty"`
+	ExcludedInstanceTypes                          []*string                          `json:"excludedInstanceTypes,omitempty"`
+	InstanceGenerations                            []*string                          `json:"instanceGenerations,omitempty"`
+	LocalStorage                                   *string                            `json:"localStorage,omitempty"`
+	LocalStorageTypes                              []*string                          `json:"localStorageTypes,omitempty"`
+	MaxSpotPriceAsPercentageOfOptimalOnDemandPrice *int64                             `json:"maxSpotPriceAsPercentageOfOptimalOnDemandPrice,omitempty"`
 	// The minimum and maximum amount of memory per vCPU, in GiB.
 	MemoryGiBPerVCPU *MemoryGiBPerVCPURequest `json:"memoryGiBPerVCPU,omitempty"`
 	// The minimum and maximum amount of memory, in MiB.
 	MemoryMiB *MemoryMiBRequest `json:"memoryMiB,omitempty"`
+	// The minimum and maximum amount of network bandwidth, in gigabits per second
+	// (Gbps).
+	//
+	// Setting the minimum bandwidth does not guarantee that your instance will
+	// achieve the minimum bandwidth. Amazon EC2 will identify instance types that
+	// support the specified minimum bandwidth, but the actual bandwidth of your
+	// instance might go below the specified minimum at times. For more information,
+	// see Available instance bandwidth (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html#available-instance-bandwidth)
+	// in the Amazon EC2 User Guide.
+	NetworkBandwidthGbps *NetworkBandwidthGbpsRequest `json:"networkBandwidthGbps,omitempty"`
 	// The minimum and maximum number of network interfaces.
 	NetworkInterfaceCount                     *NetworkInterfaceCountRequest `json:"networkInterfaceCount,omitempty"`
 	OnDemandMaxPricePercentageOverLowestPrice *int64                        `json:"onDemandMaxPricePercentageOverLowestPrice,omitempty"`
@@ -2711,20 +2763,37 @@ type InstanceRequirementsWithMetadataRequest struct {
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//
-	// When you specify multiple parameters, you get instance types that satisfy
-	// all of the specified parameters. If you specify multiple values for a parameter,
+	// You must specify VCpuCount and MemoryMiB. All other attributes are optional.
+	// Any unspecified optional attribute is set to its default.
+	//
+	// When you specify multiple attributes, you get instance types that satisfy
+	// all of the specified attributes. If you specify multiple values for an attribute,
 	// you get instance types that satisfy any of the specified values.
 	//
-	// You must specify VCpuCount and MemoryMiB. All other parameters are optional.
-	// Any unspecified optional parameter is set to its default.
+	// To limit the list of instance types from which Amazon EC2 can identify matching
+	// instance types, you can use one of the following parameters, but not both
+	// in the same request:
 	//
-	// For more information, see Attribute-based instance type selection for EC2
-	// Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html),
-	// Attribute-based instance type selection for Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-attribute-based-instance-type-selection.html),
+	//    * AllowedInstanceTypes - The instance types to include in the list. All
+	//    other instance types are ignored, even if they match your specified attributes.
+	//
+	//    * ExcludedInstanceTypes - The instance types to exclude from the list,
+	//    even if they match your specified attributes.
+	//
+	// If you specify InstanceRequirements, you can't specify InstanceType.
+	//
+	// Attribute-based instance type selection is only supported when using Auto
+	// Scaling groups, EC2 Fleet, and Spot Fleet to launch instances. If you plan
+	// to use the launch template in the launch instance wizard (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-instance-wizard.html),
+	// or with the RunInstances (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html)
+	// API or AWS::EC2::Instance (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html)
+	// Amazon Web Services CloudFormation resource, you can't specify InstanceRequirements.
+	//
+	// For more information, see Specify attributes for instance type selection
+	// for EC2 Fleet or Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html)
 	// and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
 	// in the Amazon EC2 User Guide.
 	InstanceRequirements *InstanceRequirementsRequest `json:"instanceRequirements,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // The instance details to specify which volumes should be snapshotted.
@@ -2941,24 +3010,9 @@ type LaunchSpecification struct {
 	RAMDiskID         *string                                  `json:"ramDiskID,omitempty"`
 	SecurityGroups    []*GroupIdentifier                       `json:"securityGroups,omitempty"`
 	SubnetID          *string                                  `json:"subnetID,omitempty"`
+	UserData          *string                                  `json:"userData,omitempty"`
 }
 
-<<<<<<< HEAD
-// Describes a launch template.
-type LaunchTemplate struct {
-	CreateTime           *metav1.Time `json:"createTime,omitempty"`
-	CreatedBy            *string      `json:"createdBy,omitempty"`
-	DefaultVersionNumber *int64       `json:"defaultVersionNumber,omitempty"`
-	LatestVersionNumber  *int64       `json:"latestVersionNumber,omitempty"`
-	LaunchTemplateID     *string      `json:"launchTemplateID,omitempty"`
-	// Describes whether the resource is managed by an service provider and, if
-	// so, describes the service provider that manages it.
-	Operator *OperatorResponse `json:"operator,omitempty"`
-	Tags     []*Tag            `json:"tags,omitempty"`
-}
-
-=======
->>>>>>> ec64d1c (added fixes as per comments)
 // Describes a block device mapping.
 type LaunchTemplateBlockDeviceMapping struct {
 	DeviceName  *string `json:"deviceName,omitempty"`
@@ -3224,6 +3278,7 @@ type LaunchTemplateOverrides struct {
 type LaunchTemplatePlacement struct {
 	Affinity             *string `json:"affinity,omitempty"`
 	AvailabilityZone     *string `json:"availabilityZone,omitempty"`
+	GroupID              *string `json:"groupID,omitempty"`
 	GroupName            *string `json:"groupName,omitempty"`
 	HostID               *string `json:"hostID,omitempty"`
 	HostResourceGroupARN *string `json:"hostResourceGroupARN,omitempty"`
@@ -3236,6 +3291,7 @@ type LaunchTemplatePlacement struct {
 type LaunchTemplatePlacementRequest struct {
 	Affinity             *string `json:"affinity,omitempty"`
 	AvailabilityZone     *string `json:"availabilityZone,omitempty"`
+	GroupID              *string `json:"groupID,omitempty"`
 	GroupName            *string `json:"groupName,omitempty"`
 	HostID               *string `json:"hostID,omitempty"`
 	HostResourceGroupARN *string `json:"hostResourceGroupARN,omitempty"`
@@ -3298,23 +3354,16 @@ type LaunchTemplateTagSpecificationRequest struct {
 
 // Describes a launch template version.
 type LaunchTemplateVersion struct {
-<<<<<<< HEAD
-	CreateTime       *metav1.Time `json:"createTime,omitempty"`
-	CreatedBy        *string      `json:"createdBy,omitempty"`
-	DefaultVersion   *bool        `json:"defaultVersion,omitempty"`
-	LaunchTemplateID *string      `json:"launchTemplateID,omitempty"`
-	// Describes whether the resource is managed by an service provider and, if
-	// so, describes the service provider that manages it.
-	Operator      *OperatorResponse `json:"operator,omitempty"`
-	VersionNumber *int64            `json:"versionNumber,omitempty"`
-=======
 	CreateTime         *metav1.Time `json:"createTime,omitempty"`
 	CreatedBy          *string      `json:"createdBy,omitempty"`
 	DefaultVersion     *bool        `json:"defaultVersion,omitempty"`
 	LaunchTemplateID   *string      `json:"launchTemplateID,omitempty"`
 	LaunchTemplateName *string      `json:"launchTemplateName,omitempty"`
-	VersionDescription *string      `json:"versionDescription,omitempty"`
-	VersionNumber      *int64       `json:"versionNumber,omitempty"`
+	// Describes whether the resource is managed by an service provider and, if
+	// so, describes the service provider that manages it.
+	Operator           *OperatorResponse `json:"operator,omitempty"`
+	VersionDescription *string           `json:"versionDescription,omitempty"`
+	VersionNumber      *int64            `json:"versionNumber,omitempty"`
 }
 
 // Describes a launch template.
@@ -3325,8 +3374,10 @@ type LaunchTemplate_SDK struct {
 	LatestVersionNumber  *int64       `json:"latestVersionNumber,omitempty"`
 	LaunchTemplateID     *string      `json:"launchTemplateID,omitempty"`
 	LaunchTemplateName   *string      `json:"launchTemplateName,omitempty"`
-	Tags                 []*Tag       `json:"tags,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
+	// Describes whether the resource is managed by an service provider and, if
+	// so, describes the service provider that manages it.
+	Operator *OperatorResponse `json:"operator,omitempty"`
+	Tags     []*Tag            `json:"tags,omitempty"`
 }
 
 // Describes the monitoring for the instance.
@@ -3370,44 +3421,50 @@ type LocalGateway struct {
 
 // Describes a route for a local gateway route table.
 type LocalGatewayRoute struct {
-	CoipPoolID              *string `json:"coipPoolID,omitempty"`
-	DestinationCIDRBlock    *string `json:"destinationCIDRBlock,omitempty"`
-	DestinationPrefixListID *string `json:"destinationPrefixListID,omitempty"`
-	NetworkInterfaceID      *string `json:"networkInterfaceID,omitempty"`
-	OwnerID                 *string `json:"ownerID,omitempty"`
-	SubnetID                *string `json:"subnetID,omitempty"`
-}
-
-// Describes a local gateway route table.
-type LocalGatewayRouteTable struct {
-	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
-	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
-	OutpostARN               *string `json:"outpostARN,omitempty"`
-	OwnerID                  *string `json:"ownerID,omitempty"`
-	State                    *string `json:"state,omitempty"`
-	// Describes a state change.
-	StateReason *StateReason `json:"stateReason,omitempty"`
-	Tags        []*Tag       `json:"tags,omitempty"`
+	CoipPoolID                *string `json:"coipPoolID,omitempty"`
+	DestinationCIDRBlock      *string `json:"destinationCIDRBlock,omitempty"`
+	DestinationPrefixListID   *string `json:"destinationPrefixListID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	NetworkInterfaceID        *string `json:"networkInterfaceID,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	SubnetID                  *string `json:"subnetID,omitempty"`
 }
 
 // Describes an association between a local gateway route table and a VPC.
 type LocalGatewayRouteTableVPCAssociation struct {
-	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
-	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
-	OwnerID                  *string `json:"ownerID,omitempty"`
-	State                    *string `json:"state,omitempty"`
-	Tags                     []*Tag  `json:"tags,omitempty"`
-	VPCID                    *string `json:"vpcID,omitempty"`
+	LocalGatewayID            *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	State                     *string `json:"state,omitempty"`
+	Tags                      []*Tag  `json:"tags,omitempty"`
+	VPCID                     *string `json:"vpcID,omitempty"`
 }
 
 // Describes an association between a local gateway route table and a virtual
 // interface group.
 type LocalGatewayRouteTableVirtualInterfaceGroupAssociation struct {
-	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
-	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
-	OwnerID                  *string `json:"ownerID,omitempty"`
-	State                    *string `json:"state,omitempty"`
-	Tags                     []*Tag  `json:"tags,omitempty"`
+	LocalGatewayID            *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	State                     *string `json:"state,omitempty"`
+	Tags                      []*Tag  `json:"tags,omitempty"`
+}
+
+// Describes a local gateway route table.
+type LocalGatewayRouteTable_SDK struct {
+	LocalGatewayID            *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	Mode                      *string `json:"mode,omitempty"`
+	OutpostARN                *string `json:"outpostARN,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	State                     *string `json:"state,omitempty"`
+	// Describes a state change.
+	StateReason *StateReason `json:"stateReason,omitempty"`
+	Tags        []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes a local gateway virtual interface.
@@ -3439,6 +3496,11 @@ type LockedSnapshotsInfo struct {
 	SnapshotID             *string      `json:"snapshotID,omitempty"`
 }
 
+// Information about the EC2 Mac Dedicated Host.
+type MacHost struct {
+	HostID *string `json:"hostID,omitempty"`
+}
+
 // Details for Site-to-Site VPN tunnel endpoint maintenance events.
 type MaintenanceDetails struct {
 	LastMaintenanceApplied      *metav1.Time `json:"lastMaintenanceApplied,omitempty"`
@@ -3451,6 +3513,7 @@ type ManagedPrefixList struct {
 	AddressFamily  *string `json:"addressFamily,omitempty"`
 	MaxEntries     *int64  `json:"maxEntries,omitempty"`
 	OwnerID        *string `json:"ownerID,omitempty"`
+	PrefixListARN  *string `json:"prefixListARN,omitempty"`
 	PrefixListID   *string `json:"prefixListID,omitempty"`
 	PrefixListName *string `json:"prefixListName,omitempty"`
 	StateMessage   *string `json:"stateMessage,omitempty"`
@@ -3641,41 +3704,75 @@ type NetworkACL_SDK struct {
 	VPCID        *string                  `json:"vpcID,omitempty"`
 }
 
+// The minimum and maximum amount of network bandwidth, in gigabits per second
+// (Gbps).
+//
+// Setting the minimum bandwidth does not guarantee that your instance will
+// achieve the minimum bandwidth. Amazon EC2 will identify instance types that
+// support the specified minimum bandwidth, but the actual bandwidth of your
+// instance might go below the specified minimum at times. For more information,
+// see Available instance bandwidth (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html#available-instance-bandwidth)
+// in the Amazon EC2 User Guide.
+type NetworkBandwidthGbps struct {
+	Max *float64 `json:"max,omitempty"`
+	Min *float64 `json:"min,omitempty"`
+}
+
+// The minimum and maximum amount of network bandwidth, in gigabits per second
+// (Gbps).
+//
+// Setting the minimum bandwidth does not guarantee that your instance will
+// achieve the minimum bandwidth. Amazon EC2 will identify instance types that
+// support the specified minimum bandwidth, but the actual bandwidth of your
+// instance might go below the specified minimum at times. For more information,
+// see Available instance bandwidth (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html#available-instance-bandwidth)
+// in the Amazon EC2 User Guide.
+type NetworkBandwidthGbpsRequest struct {
+	Max *float64 `json:"max,omitempty"`
+	Min *float64 `json:"min,omitempty"`
+}
+
 // Describes a Network Access Scope.
 type NetworkInsightsAccessScope struct {
-	CreatedDate *metav1.Time `json:"createdDate,omitempty"`
-	Tags        []*Tag       `json:"tags,omitempty"`
-	UpdatedDate *metav1.Time `json:"updatedDate,omitempty"`
+	CreatedDate                   *metav1.Time `json:"createdDate,omitempty"`
+	NetworkInsightsAccessScopeARN *string      `json:"networkInsightsAccessScopeARN,omitempty"`
+	Tags                          []*Tag       `json:"tags,omitempty"`
+	UpdatedDate                   *metav1.Time `json:"updatedDate,omitempty"`
 }
 
 // Describes a Network Access Scope analysis.
 type NetworkInsightsAccessScopeAnalysis struct {
-	AnalyzedEniCount *int64       `json:"analyzedEniCount,omitempty"`
-	EndDate          *metav1.Time `json:"endDate,omitempty"`
-	StartDate        *metav1.Time `json:"startDate,omitempty"`
-	StatusMessage    *string      `json:"statusMessage,omitempty"`
-	Tags             []*Tag       `json:"tags,omitempty"`
-	WarningMessage   *string      `json:"warningMessage,omitempty"`
+	AnalyzedEniCount                      *int64       `json:"analyzedEniCount,omitempty"`
+	EndDate                               *metav1.Time `json:"endDate,omitempty"`
+	NetworkInsightsAccessScopeAnalysisARN *string      `json:"networkInsightsAccessScopeAnalysisARN,omitempty"`
+	StartDate                             *metav1.Time `json:"startDate,omitempty"`
+	StatusMessage                         *string      `json:"statusMessage,omitempty"`
+	Tags                                  []*Tag       `json:"tags,omitempty"`
+	WarningMessage                        *string      `json:"warningMessage,omitempty"`
 }
 
 // Describes a network insights analysis.
 type NetworkInsightsAnalysis struct {
-	AdditionalAccounts []*string    `json:"additionalAccounts,omitempty"`
-	NetworkPathFound   *bool        `json:"networkPathFound,omitempty"`
-	StartDate          *metav1.Time `json:"startDate,omitempty"`
-	StatusMessage      *string      `json:"statusMessage,omitempty"`
-	SuggestedAccounts  []*string    `json:"suggestedAccounts,omitempty"`
-	Tags               []*Tag       `json:"tags,omitempty"`
-	WarningMessage     *string      `json:"warningMessage,omitempty"`
+	AdditionalAccounts         []*string    `json:"additionalAccounts,omitempty"`
+	NetworkInsightsAnalysisARN *string      `json:"networkInsightsAnalysisARN,omitempty"`
+	NetworkPathFound           *bool        `json:"networkPathFound,omitempty"`
+	StartDate                  *metav1.Time `json:"startDate,omitempty"`
+	StatusMessage              *string      `json:"statusMessage,omitempty"`
+	SuggestedAccounts          []*string    `json:"suggestedAccounts,omitempty"`
+	Tags                       []*Tag       `json:"tags,omitempty"`
+	WarningMessage             *string      `json:"warningMessage,omitempty"`
 }
 
 // Describes a path.
 type NetworkInsightsPath struct {
-	CreatedDate     *metav1.Time `json:"createdDate,omitempty"`
-	Destination     *string      `json:"destination,omitempty"`
-	DestinationPort *int64       `json:"destinationPort,omitempty"`
-	Source          *string      `json:"source,omitempty"`
-	Tags            []*Tag       `json:"tags,omitempty"`
+	CreatedDate            *metav1.Time `json:"createdDate,omitempty"`
+	Destination            *string      `json:"destination,omitempty"`
+	DestinationARN         *string      `json:"destinationARN,omitempty"`
+	DestinationPort        *int64       `json:"destinationPort,omitempty"`
+	NetworkInsightsPathARN *string      `json:"networkInsightsPathARN,omitempty"`
+	Source                 *string      `json:"source,omitempty"`
+	SourceARN              *string      `json:"sourceARN,omitempty"`
+	Tags                   []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes a network interface.
@@ -4239,20 +4336,6 @@ type RequestLaunchTemplateData struct {
 	// must be specified in the request.
 	CPUOptions *LaunchTemplateCPUOptionsRequest `json:"cpuOptions,omitempty"`
 	// The credit option for CPU usage of a T instance.
-<<<<<<< HEAD
-	CreditSpecification               *CreditSpecificationRequest `json:"creditSpecification,omitempty"`
-	DisableAPIStop                    *bool                       `json:"disableAPIStop,omitempty"`
-	DisableAPITermination             *bool                       `json:"disableAPITermination,omitempty"`
-	EBSOptimized                      *bool                       `json:"ebsOptimized,omitempty"`
-	ImageID                           *string                     `json:"imageID,omitempty"`
-	InstanceInitiatedShutdownBehavior *string                     `json:"instanceInitiatedShutdownBehavior,omitempty"`
-	InstanceType                      *string                     `json:"instanceType,omitempty"`
-	KernelID                          *string                     `json:"kernelID,omitempty"`
-	KeyName                           *string                     `json:"keyName,omitempty"`
-	RAMDiskID                         *string                     `json:"ramDiskID,omitempty"`
-	SecurityGroupIDs                  []*string                   `json:"securityGroupIDs,omitempty"`
-	SecurityGroups                    []*string                   `json:"securityGroups,omitempty"`
-=======
 	CreditSpecification          *CreditSpecificationRequest                  `json:"creditSpecification,omitempty"`
 	DisableAPIStop               *bool                                        `json:"disableAPIStop,omitempty"`
 	DisableAPITermination        *bool                                        `json:"disableAPITermination,omitempty"`
@@ -4275,16 +4358,34 @@ type RequestLaunchTemplateData struct {
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//
-	// When you specify multiple parameters, you get instance types that satisfy
-	// all of the specified parameters. If you specify multiple values for a parameter,
+	// You must specify VCpuCount and MemoryMiB. All other attributes are optional.
+	// Any unspecified optional attribute is set to its default.
+	//
+	// When you specify multiple attributes, you get instance types that satisfy
+	// all of the specified attributes. If you specify multiple values for an attribute,
 	// you get instance types that satisfy any of the specified values.
 	//
-	// You must specify VCpuCount and MemoryMiB. All other parameters are optional.
-	// Any unspecified optional parameter is set to its default.
+	// To limit the list of instance types from which Amazon EC2 can identify matching
+	// instance types, you can use one of the following parameters, but not both
+	// in the same request:
 	//
-	// For more information, see Attribute-based instance type selection for EC2
-	// Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html),
-	// Attribute-based instance type selection for Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-attribute-based-instance-type-selection.html),
+	//    * AllowedInstanceTypes - The instance types to include in the list. All
+	//    other instance types are ignored, even if they match your specified attributes.
+	//
+	//    * ExcludedInstanceTypes - The instance types to exclude from the list,
+	//    even if they match your specified attributes.
+	//
+	// If you specify InstanceRequirements, you can't specify InstanceType.
+	//
+	// Attribute-based instance type selection is only supported when using Auto
+	// Scaling groups, EC2 Fleet, and Spot Fleet to launch instances. If you plan
+	// to use the launch template in the launch instance wizard (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-instance-wizard.html),
+	// or with the RunInstances (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html)
+	// API or AWS::EC2::Instance (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html)
+	// Amazon Web Services CloudFormation resource, you can't specify InstanceRequirements.
+	//
+	// For more information, see Specify attributes for instance type selection
+	// for EC2 Fleet or Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html)
 	// and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
 	// in the Amazon EC2 User Guide.
 	InstanceRequirements  *InstanceRequirementsRequest                 `json:"instanceRequirements,omitempty"`
@@ -4296,7 +4397,7 @@ type RequestLaunchTemplateData struct {
 	MaintenanceOptions *LaunchTemplateInstanceMaintenanceOptionsRequest `json:"maintenanceOptions,omitempty"`
 	// The metadata options for the instance. For more information, see Instance
 	// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
-	// in the Amazon Elastic Compute Cloud User Guide.
+	// in the Amazon EC2 User Guide.
 	MetadataOptions *LaunchTemplateInstanceMetadataOptionsRequest `json:"metadataOptions,omitempty"`
 	// Describes the monitoring for the instance.
 	Monitoring        *LaunchTemplatesMonitoringRequest                             `json:"monitoring,omitempty"`
@@ -4310,7 +4411,6 @@ type RequestLaunchTemplateData struct {
 	SecurityGroups        []*string                                   `json:"securityGroups,omitempty"`
 	TagSpecifications     []*LaunchTemplateTagSpecificationRequest    `json:"tagSpecifications,omitempty"`
 	UserData              *string                                     `json:"userData,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // Describes the launch specification for an instance.
@@ -4327,6 +4427,7 @@ type RequestSpotLaunchSpecification struct {
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
 	RAMDiskID         *string                                  `json:"ramDiskID,omitempty"`
 	SubnetID          *string                                  `json:"subnetID,omitempty"`
+	UserData          *string                                  `json:"userData,omitempty"`
 }
 
 // Describes a launch request for one or more instances, and includes owner,
@@ -4463,6 +4564,7 @@ type ResponseLaunchTemplateData struct {
 	RAMDiskID        *string           `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs []*string         `json:"securityGroupIDs,omitempty"`
 	SecurityGroups   []*string         `json:"securityGroups,omitempty"`
+	UserData         *string           `json:"userData,omitempty"`
 }
 
 // A security group rule removed with RevokeSecurityGroupEgress (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RevokeSecurityGroupEgress.html)
@@ -4531,8 +4633,14 @@ type RouteTable_SDK struct {
 	VPCID           *string                  `json:"vpcID,omitempty"`
 }
 
+// Describes the rule options for a stateful rule group.
+type RuleGroupRuleOptionsPair struct {
+	RuleGroupARN *string `json:"ruleGroupARN,omitempty"`
+}
+
 // Describes the type of a stateful rule group.
 type RuleGroupTypePair struct {
+	RuleGroupARN  *string `json:"ruleGroupARN,omitempty"`
 	RuleGroupType *string `json:"ruleGroupType,omitempty"`
 }
 
@@ -4842,15 +4950,6 @@ type SlotStartTimeRangeRequest struct {
 
 // Describes the snapshot created from the imported disk.
 type SnapshotDetail struct {
-<<<<<<< HEAD
-	Description   *string `json:"description,omitempty"`
-	DeviceName    *string `json:"deviceName,omitempty"`
-	Format        *string `json:"format,omitempty"`
-	Progress      *string `json:"progress,omitempty"`
-	SnapshotID    *string `json:"snapshotID,omitempty"`
-	Status        *string `json:"status,omitempty"`
-	StatusMessage *string `json:"statusMessage,omitempty"`
-=======
 	Description   *string  `json:"description,omitempty"`
 	DeviceName    *string  `json:"deviceName,omitempty"`
 	DiskImageSize *float64 `json:"diskImageSize,omitempty"`
@@ -4859,8 +4958,6 @@ type SnapshotDetail struct {
 	SnapshotID    *string  `json:"snapshotID,omitempty"`
 	Status        *string  `json:"status,omitempty"`
 	StatusMessage *string  `json:"statusMessage,omitempty"`
-	URL           *string  `json:"url,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // The disk container object for the import snapshot request.
@@ -4894,16 +4991,6 @@ type SnapshotRecycleBinInfo struct {
 
 // Details about the import snapshot task.
 type SnapshotTaskDetail struct {
-<<<<<<< HEAD
-	Description   *string `json:"description,omitempty"`
-	Encrypted     *bool   `json:"encrypted,omitempty"`
-	Format        *string `json:"format,omitempty"`
-	KMSKeyID      *string `json:"kmsKeyID,omitempty"`
-	Progress      *string `json:"progress,omitempty"`
-	SnapshotID    *string `json:"snapshotID,omitempty"`
-	Status        *string `json:"status,omitempty"`
-	StatusMessage *string `json:"statusMessage,omitempty"`
-=======
 	Description   *string  `json:"description,omitempty"`
 	DiskImageSize *float64 `json:"diskImageSize,omitempty"`
 	Encrypted     *bool    `json:"encrypted,omitempty"`
@@ -4913,8 +5000,6 @@ type SnapshotTaskDetail struct {
 	SnapshotID    *string  `json:"snapshotID,omitempty"`
 	Status        *string  `json:"status,omitempty"`
 	StatusMessage *string  `json:"statusMessage,omitempty"`
-	URL           *string  `json:"url,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // Provides information about a snapshot's storage tier.
@@ -4962,11 +5047,8 @@ type SpotFleetLaunchSpecification struct {
 	SecurityGroups     []*GroupIdentifier                       `json:"securityGroups,omitempty"`
 	SpotPrice          *string                                  `json:"spotPrice,omitempty"`
 	SubnetID           *string                                  `json:"subnetID,omitempty"`
-<<<<<<< HEAD
-=======
 	UserData           *string                                  `json:"userData,omitempty"`
 	WeightedCapacity   *float64                                 `json:"weightedCapacity,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // Describes whether monitoring is enabled.
@@ -4983,22 +5065,23 @@ type SpotFleetRequestConfig struct {
 
 // Describes the configuration of a Spot Fleet request.
 type SpotFleetRequestConfigData struct {
-	ClientToken                      *string      `json:"clientToken,omitempty"`
-	Context                          *string      `json:"context,omitempty"`
-	FulfilledCapacity                *float64     `json:"fulfilledCapacity,omitempty"`
-	IAMFleetRole                     *string      `json:"iamFleetRole,omitempty"`
-	InstanceInterruptionBehavior     *string      `json:"instanceInterruptionBehavior,omitempty"`
-	InstancePoolsToUseCount          *int64       `json:"instancePoolsToUseCount,omitempty"`
-	OnDemandFulfilledCapacity        *float64     `json:"onDemandFulfilledCapacity,omitempty"`
-	OnDemandMaxTotalPrice            *string      `json:"onDemandMaxTotalPrice,omitempty"`
-	OnDemandTargetCapacity           *int64       `json:"onDemandTargetCapacity,omitempty"`
-	ReplaceUnhealthyInstances        *bool        `json:"replaceUnhealthyInstances,omitempty"`
-	SpotMaxTotalPrice                *string      `json:"spotMaxTotalPrice,omitempty"`
-	SpotPrice                        *string      `json:"spotPrice,omitempty"`
-	TargetCapacity                   *int64       `json:"targetCapacity,omitempty"`
-	TerminateInstancesWithExpiration *bool        `json:"terminateInstancesWithExpiration,omitempty"`
-	ValidFrom                        *metav1.Time `json:"validFrom,omitempty"`
-	ValidUntil                       *metav1.Time `json:"validUntil,omitempty"`
+	ClientToken                      *string             `json:"clientToken,omitempty"`
+	Context                          *string             `json:"context,omitempty"`
+	FulfilledCapacity                *float64            `json:"fulfilledCapacity,omitempty"`
+	IAMFleetRole                     *string             `json:"iamFleetRole,omitempty"`
+	InstanceInterruptionBehavior     *string             `json:"instanceInterruptionBehavior,omitempty"`
+	InstancePoolsToUseCount          *int64              `json:"instancePoolsToUseCount,omitempty"`
+	OnDemandFulfilledCapacity        *float64            `json:"onDemandFulfilledCapacity,omitempty"`
+	OnDemandMaxTotalPrice            *string             `json:"onDemandMaxTotalPrice,omitempty"`
+	OnDemandTargetCapacity           *int64              `json:"onDemandTargetCapacity,omitempty"`
+	ReplaceUnhealthyInstances        *bool               `json:"replaceUnhealthyInstances,omitempty"`
+	SpotMaxTotalPrice                *string             `json:"spotMaxTotalPrice,omitempty"`
+	SpotPrice                        *string             `json:"spotPrice,omitempty"`
+	TagSpecifications                []*TagSpecification `json:"tagSpecifications,omitempty"`
+	TargetCapacity                   *int64              `json:"targetCapacity,omitempty"`
+	TerminateInstancesWithExpiration *bool               `json:"terminateInstancesWithExpiration,omitempty"`
+	ValidFrom                        *metav1.Time        `json:"validFrom,omitempty"`
+	ValidUntil                       *metav1.Time        `json:"validUntil,omitempty"`
 }
 
 // The tags for a Spot Fleet resource.
@@ -5809,6 +5892,7 @@ type VPCBlockPublicAccessExclusion struct {
 	DeletionTimestamp   *metav1.Time `json:"deletionTimestamp,omitempty"`
 	LastUpdateTimestamp *metav1.Time `json:"lastUpdateTimestamp,omitempty"`
 	Reason              *string      `json:"reason,omitempty"`
+	ResourceARN         *string      `json:"resourceARN,omitempty"`
 	Tags                []*Tag       `json:"tags,omitempty"`
 }
 
@@ -6049,7 +6133,13 @@ type ValidationError struct {
 	Message *string `json:"message,omitempty"`
 }
 
-<<<<<<< HEAD
+// The error codes and error messages that are returned for the parameters or
+// parameter combinations that are not valid when a new launch template or new
+// version of a launch template is created.
+type ValidationWarning struct {
+	Errors []*ValidationError `json:"errors,omitempty"`
+}
+
 // An Amazon Web Services Verified Access endpoint specifies the application
 // that Amazon Web Services Verified Access provides access to. It must be attached
 // to an Amazon Web Services Verified Access group. An Amazon Web Services Verified
@@ -6244,13 +6334,6 @@ type VerifiedAccessTrustProvider struct {
 type VerifiedAccessTrustProviderCondensed struct {
 	Description                   *string `json:"description,omitempty"`
 	VerifiedAccessTrustProviderID *string `json:"verifiedAccessTrustProviderID,omitempty"`
-=======
-// The error codes and error messages that are returned for the parameters or
-// parameter combinations that are not valid when a new launch template or new
-// version of a launch template is created.
-type ValidationWarning struct {
-	Errors []*ValidationError `json:"errors,omitempty"`
->>>>>>> ec64d1c (added fixes as per comments)
 }
 
 // Describes an EBS volume.

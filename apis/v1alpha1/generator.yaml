@@ -101,7 +101,6 @@ ignore:
     - SecurityGroupRule.GroupOwnerId
     - SecurityGroupRule.ReferencedGroupInfo
     - TerminateInstancesInput.DryRun
-<<<<<<< HEAD
     - InstanceIpv6Address.IsPrimaryIpv6
     - InstanceNetworkInterfaceSpecification.PrimaryIpv6
     - NatGatewayAddress.AssociationId
@@ -112,10 +111,9 @@ ignore:
     - SubnetIpv6CidrBlockAssociation.Ipv6AddressAttribute
     - VpcIpv6CidrBlockAssociation.IpSource
     - VpcIpv6CidrBlockAssociation.Ipv6AddressAttribute
-=======
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
->>>>>>> ec64d1c (added fixes as per comments)
+    - CreateLaunchTemplateInput.TagSpecifications
   resource_names:
     - CapacityReservationBySplitting
     - IpamExternalResourceVerificationToken
@@ -286,10 +284,6 @@ operations:
       - Update
     resource_name: VpcPeeringConnection
 resources:
-<<<<<<< HEAD
-  CapacityReservation:
-    fields:
-=======
   LaunchTemplate:
     exceptions:
       errors:
@@ -297,7 +291,6 @@ resources:
           code: InvalidLaunchTemplateName.NotFoundException
       terminal_codes:
         - InvalidParameterValue
-        - InvalidTagSpecification
     fields:
       LaunchTemplateID:
         is_primary_key: true
@@ -313,12 +306,10 @@ resources:
         print:
           path: Status.latestVersionNumber
           name: LatestVersion
->>>>>>> ec64d1c (added fixes as per comments)
       Tags:
         from:
           operation: CreateTags
           path: Tags
-<<<<<<< HEAD
       AdditionalInfo:
         from:
           operation: ModifyCapacityReservation
@@ -339,7 +330,6 @@ resources:
         template_path: hooks/capacity_reservation/sdk_update_pre_build_request.go.tpl
       sdk_update_post_set_output:
         template_path: hooks/capacity_reservation/sdk_update_post_set_output.go.tpl
-=======
         compare:
           is_ignored: True
     tags:
@@ -359,11 +349,16 @@ resources:
           input_fields:
             LaunchTemplateName: Name
     hooks:
+      sdk_create_post_build_request:
+       template_path: hooks/launch_template/sdk_create_post_build_request.go.tpl 
+      sdk_update_pre_build_request:
+        template_path: hooks/launch_template/sdk_update_pre_build_request.go.tpl
       sdk_update_post_build_request:
         template_path: hooks/launch_template/sdk_update_post_build_request.go.tpl
+      sdk_update_post_set_output:
+        template_path: hooks/launch_template/sdk_update_post_set_output.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl
->>>>>>> ec64d1c (added fixes as per comments)
   DhcpOptions:
     exceptions:
       terminal_codes:

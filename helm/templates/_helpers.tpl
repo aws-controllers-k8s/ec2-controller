@@ -79,6 +79,7 @@ rules:
   - instances
   - internetgateways
   - launchtemplates
+  - localgatewayroutetables
   - natgateways
   - networkacls
   - routetables
@@ -107,6 +108,7 @@ rules:
   - instances/status
   - internetgateways/status
   - launchtemplates/status
+  - localgatewayroutetables/status
   - natgateways/status
   - networkacls/status
   - routetables/status

@@ -14,17 +14,7 @@ spec:
     singular: capacityreservation
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .status.capacityReservationID
-      name: ID
-      type: string
-    - jsonPath: .spec.startDate
-      name: START_DATE
-      type: date
-    - jsonPath: .status.state
-      name: STATE
-      type: string
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: CapacityReservation is the Schema for the CapacityReservations
@@ -53,9 +43,6 @@ spec:
 
               Describes a Capacity Reservation.
             properties:
-              additionalInfo:
-                description: Reserved for future use.
-                type: string
               availabilityZone:
                 description: The Availability Zone in which to create the Capacity
                   Reservation.
@@ -205,20 +192,6 @@ spec:
                   in advance.
                 format: date-time
                 type: string
-              tags:
-                description: |-
-                  The tags. The value parameter is required, but if you don't want the tag
-                  to have a value, specify the parameter with no value, and we set the value
-                  to an empty string.
-                items:
-                  description: Describes a tag.
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
               tenancy:
                 description: |-
                   Indicates the tenancy of the Capacity Reservation. A Capacity Reservation
@@ -391,6 +364,17 @@ spec:
                      constraints. You can view unsupported requests for 30 days. The Capacity
                      Reservation will not be delivered.
                 type: string
+              tags:
+                description: Any tags assigned to the Capacity Reservation.
+                items:
+                  description: Describes a tag.
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
               totalInstanceCount:
                 description: |-
                   The total number of instances for which the Capacity Reservation reserves

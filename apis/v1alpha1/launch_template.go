@@ -24,7 +24,10 @@ import (
 //
 // Describes a launch template.
 type LaunchTemplateSpec struct {
-	DefaultVersionNumber *int64 `json:"defaultVersionNumber,omitempty"`
+
+	// Reserved for future use.
+	AdditionalInfo       *string `json:"additionalInfo,omitempty"`
+	DefaultVersionNumber *int64  `json:"defaultVersionNumber,omitempty"`
 	// The information for the launch template.
 	// +kubebuilder:validation:Required
 	LaunchTemplateData *RequestLaunchTemplateData `json:"launchTemplateData"`
@@ -64,6 +67,9 @@ type LaunchTemplateStatus struct {
 	// The ID of the launch template.
 	// +kubebuilder:validation:Optional
 	LaunchTemplateID *string `json:"launchTemplateID,omitempty"`
+	// The entity that manages the launch template.
+	// +kubebuilder:validation:Optional
+	Operator *OperatorResponse `json:"operator,omitempty"`
 }
 
 // LaunchTemplate is the Schema for the LaunchTemplates API

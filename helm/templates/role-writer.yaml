@@ -16,6 +16,7 @@ rules:
   - instances
   - internetgateways
   - launchtemplates
+  - localgatewayroutetables
   - natgateways
   - networkacls
   - routetables
@@ -44,6 +45,7 @@ rules:
   - instances
   - internetgateways
   - launchtemplates
+  - localgatewayroutetables
   - natgateways
   - networkacls
   - routetables

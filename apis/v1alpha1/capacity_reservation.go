@@ -25,8 +25,6 @@ import (
 // Describes a Capacity Reservation.
 type CapacityReservationSpec struct {
 
-	// Reserved for future use.
-	AdditionalInfo *string `json:"additionalInfo,omitempty"`
 	// The Availability Zone in which to create the Capacity Reservation.
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	// The ID of the Availability Zone in which to create the Capacity Reservation.
@@ -147,10 +145,6 @@ type CapacityReservationSpec struct {
 	// You can request a future-dated Capacity Reservation between 5 and 120 days
 	// in advance.
 	StartDate *metav1.Time `json:"startDate,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
 	// Indicates the tenancy of the Capacity Reservation. A Capacity Reservation
 	// can have one of the following tenancy settings:
 	//
@@ -239,6 +233,9 @@ type CapacityReservationStatus struct {
 	//    Reservation will not be delivered.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
+	// Any tags assigned to the Capacity Reservation.
+	// +kubebuilder:validation:Optional
+	Tags []*Tag `json:"tags,omitempty"`
 	// The total number of instances for which the Capacity Reservation reserves
 	// capacity.
 	// +kubebuilder:validation:Optional
@@ -252,9 +249,6 @@ type CapacityReservationStatus struct {
 // CapacityReservation is the Schema for the CapacityReservations API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.capacityReservationID`
-// +kubebuilder:printcolumn:name="START_DATE",type=date,priority=0,JSONPath=`.spec.startDate`
-// +kubebuilder:printcolumn:name="STATE",type=string,priority=0,JSONPath=`.status.state`
 type CapacityReservation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

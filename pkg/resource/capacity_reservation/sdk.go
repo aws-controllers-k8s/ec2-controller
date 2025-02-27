@@ -242,9 +242,9 @@ func (rm *resourceManager) sdkFind(
 				}
 				f23 = append(f23, f23elem)
 			}
-			ko.Spec.Tags = f23
+			ko.Status.Tags = f23
 		} else {
-			ko.Spec.Tags = nil
+			ko.Status.Tags = nil
 		}
 		if elem.Tenancy != "" {
 			ko.Spec.Tenancy = aws.String(string(elem.Tenancy))
@@ -315,7 +315,6 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	updateTagSpecificationsInCreateRequest(desired, input)
 
 	var resp *svcsdk.CreateCapacityReservationOutput
 	_ = resp
@@ -478,9 +477,9 @@ func (rm *resourceManager) sdkCreate(
 			}
 			f23 = append(f23, f23elem)
 		}
-		ko.Spec.Tags = f23
+		ko.Status.Tags = f23
 	} else {
-		ko.Spec.Tags = nil
+		ko.Status.Tags = nil
 	}
 	if resp.CapacityReservation.Tenancy != "" {
 		ko.Spec.Tenancy = aws.String(string(resp.CapacityReservation.Tenancy))
@@ -581,21 +580,6 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
-
-	if delta.DifferentAt("Spec.Tags") {
-		if err := syncTags(
-			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.CapacityReservationID,
-			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
-		); err != nil {
-			return nil, err
-		}
-	}
-
-	// Only continue if something other than Tags has changed in the Spec
-	if !delta.DifferentExcept("Spec.Tags") {
-		return desired, nil
-	}
-
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
@@ -613,17 +597,6 @@ func (rm *resourceManager) sdkUpdate(
 	ko := desired.ko.DeepCopy()
 
 	rm.setStatusDefaults(ko)
-
-	// Explicitly call sdkFind to fetch the latest resource state
-	latestCopy, err := rm.sdkFind(ctx, desired)
-	if err != nil {
-		return nil, err
-	}
-
-	ko.Status.AvailableInstanceCount = latestCopy.ko.Status.AvailableInstanceCount
-	ko.Status.TotalInstanceCount = latestCopy.ko.Status.TotalInstanceCount
-	ko.Status.State = latestCopy.ko.Status.State
-
 	return &resource{ko}, nil
 }
 
@@ -636,9 +609,6 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.ModifyCapacityReservationInput, error) {
 	res := &svcsdk.ModifyCapacityReservationInput{}
 
-	if r.ko.Spec.AdditionalInfo != nil {
-		res.AdditionalInfo = r.ko.Spec.AdditionalInfo
-	}
 	if r.ko.Status.CapacityReservationID != nil {
 		res.CapacityReservationId = r.ko.Status.CapacityReservationID
 	}
