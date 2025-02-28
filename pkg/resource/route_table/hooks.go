@@ -62,7 +62,14 @@ func (rm *resourceManager) syncRoutes(
 
 	// Get the routes that need to be added and deleted, by checking for
 	// differences between desired and latest.
-	toAdd, toDelete := getRoutesDifference(desired.ko.Spec.Routes, latest.ko.Spec.Routes)
+	var toAdd, toDelete []*svcapitypes.CreateRouteInput
+	if latest != nil {
+		toAdd, toDelete = getRoutesDifference(desired.ko.Spec.Routes, latest.ko.Spec.Routes)
+	} else {
+		// If method is called from the createRoutes method, then latest is nil
+		// and all routes must be added, as non exist yet.
+		toAdd = desired.ko.Spec.Routes
+	}
 
 	// Delete and add the routes that were found to be different between desired
 	// and latest.
