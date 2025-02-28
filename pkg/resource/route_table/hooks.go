@@ -15,7 +15,6 @@ package route_table
 
 import (
 	"context"
-	"reflect"
 	"strings"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -229,8 +228,9 @@ func getRoutesDifference(desired, latest []*svcapitypes.CreateRouteInput) (toAdd
 	for _, routeA := range desired {
 		found := false
 		for idx, routeB := range toDelete {
-			if found = reflect.DeepEqual(routeA, routeB); found {
+			if delta := compareCreateRouteInput(routeA, routeB); len(delta.Differences) == 0 {
 				toDelete = remove(toDelete, idx)
+				found = true
 				break
 			}
 		}
