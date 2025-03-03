@@ -48,12 +48,14 @@ func (rm *resourceManager) syncRoutes(
 	defer func(err error) { exit(err) }(err)
 
 	if latest != nil {
+		latest.ko.Spec.Routes = removeLocalRoute(latest.ko.Spec.Routes)
 		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, latest.ko.Spec.Routes)
 		if err != nil {
 			return err
 		}
 	}
 	if desired != nil {
+		desired.ko.Spec.Routes = removeLocalRoute(desired.ko.Spec.Routes)
 		desired.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, desired.ko.Spec.Routes)
 		if err != nil {
 			return err
