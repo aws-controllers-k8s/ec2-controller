@@ -26,6 +26,7 @@ from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 from e2e import distribution
+from acktest import tags
 
 RESOURCE_PLURAL = "launchtemplates"
 
