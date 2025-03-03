@@ -320,3 +320,13 @@ class EC2Validator:
         assert (res_found is exists 
                 or
                 aws_res["CapacityReservations"][0]["State"] == "cancelled")
+    
+    def assert_launch_template(self, launch_template_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            res_found = len(aws_res["LaunchTemplates"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
