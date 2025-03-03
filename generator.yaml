@@ -111,6 +111,9 @@ ignore:
     - SubnetIpv6CidrBlockAssociation.Ipv6AddressAttribute
     - VpcIpv6CidrBlockAssociation.IpSource
     - VpcIpv6CidrBlockAssociation.Ipv6AddressAttribute
+    - CreateLaunchTemplateInput.DryRun
+    - CreateLaunchTemplateInput.ClientToken
+    - CreateLaunchTemplateInput.TagSpecifications
   resource_names:
     - CapacityReservationBySplitting
     - IpamExternalResourceVerificationToken
@@ -142,7 +145,7 @@ ignore:
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
-    - LaunchTemplate
+    #- LaunchTemplate
     - LocalGatewayRouteTable
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
@@ -219,6 +222,8 @@ operations:
     output_wrapper_field_path: NatGateway
   CreateNetworkAcl:
     output_wrapper_field_path: NetworkAcl
+  CreateLaunchTemplate:
+    output_wrapper_field_path: LaunchTemplate
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   CreateRouteTable:
@@ -280,6 +285,57 @@ operations:
       - Update
     resource_name: VpcPeeringConnection
 resources:
+  LaunchTemplate:
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateName.NotFoundException
+      terminal_codes:
+        - InvalidParameterValue
+    fields:
+      LaunchTemplateID:
+        is_primary_key: true
+        print:
+          path: Status.LaunchTemplateID
+          name: LaunchTemplateID
+      DefaultVersionNumber:
+        type: int
+        print:
+          path: Status.defaultVersionNumber
+          name: DefaultVersion
+      LatestVersionNumber:
+        print:
+          path: Status.latestVersionNumber
+          name: LatestVersion
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    renames:
+      operations:
+        CreateLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+          output_fields:
+            LaunchTemplateId: LaunchTemplateId
+        DeleteLaunchTemplate:
+          input_fields:
+            LaunchTemplateId: LaunchTemplateId
+            LaunchTemplateName: Name
+        DescribeLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+    hooks:
+      sdk_create_post_build_request:
+       template_path: hooks/launch_template/sdk_create_post_build_request.go.tpl 
+      sdk_update_pre_build_request:
+        template_path: hooks/launch_template/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/launch_template/sdk_update_post_build_request.go.tpl
+      sdk_update_post_set_output:
+        template_path: hooks/launch_template/sdk_update_post_set_output.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/launch_template/sdk_delete_post_build_request.go.tpl
   CapacityReservation:
     fields:
       Tags:
