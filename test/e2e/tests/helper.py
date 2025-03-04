@@ -339,3 +339,26 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             return None
 
+    def get_launch_template_tags(self, launch_template_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_tags(
+                Filters=[
+                    {
+                        'Name': 'resource-id',
+                        'Values': [
+                            launch_template_id,
+                        ]
+                    },
+                    {
+                        'Name': 'resource-type',
+                        'Values': [
+                            'launch-template',
+                        ]
+                    },
+                ]
+            )
+            if len(aws_res["Tags"]) > 0:
+                return aws_res["Tags"]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None

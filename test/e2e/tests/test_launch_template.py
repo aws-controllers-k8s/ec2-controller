@@ -25,7 +25,6 @@ from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
-from e2e import distribution
 from acktest import tags
 
 RESOURCE_PLURAL = "launchtemplates"
@@ -110,11 +109,10 @@ class TestLaunchTemplate:
         # Check resource synced successfully
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        arn = cr['status']['ackResourceMetadata']['arn']
         assert 'tags' in cr['spec']
         user_tags = cr['spec']['tags']
 
-        response_tags = distribution.get_tags(arn)
+        response_tags = ec2_validator.get_launch_template_tags(resource_id)
 
         tags.assert_ack_system_tags(
             tags=response_tags,
