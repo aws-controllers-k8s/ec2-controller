@@ -122,7 +122,7 @@ class TestLaunchTemplate:
         
         user_tags = [{"Key": d["key"], "Value": d["value"]} for d in user_tags]
         tags.assert_equal_without_ack_tags(
-            expected=update_tags,
+            expected=user_tags,
             actual=response_tags,
         )
 
