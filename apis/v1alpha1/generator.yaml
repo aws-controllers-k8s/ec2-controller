@@ -535,6 +535,8 @@ resources:
       Routes:
         custom_field:
           list_of: CreateRouteInput
+        compare:
+          is_ignored: true
       RouteTableID:
         print:
           path: Status.RouteTableID

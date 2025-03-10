@@ -46,52 +46,35 @@ func (rm *resourceManager) syncRoutes(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncRoutes")
 	defer func(err error) { exit(err) }(err)
-	toAdd := []*svcapitypes.CreateRouteInput{}
-	toDelete := []*svcapitypes.CreateRouteInput{}
 
 	if latest != nil {
+		latest.ko.Spec.Routes = removeLocalRoute(latest.ko.Spec.Routes)
 		latest.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, latest.ko.Spec.Routes)
 		if err != nil {
 			return err
 		}
 	}
 	if desired != nil {
+		desired.ko.Spec.Routes = removeLocalRoute(desired.ko.Spec.Routes)
 		desired.ko.Spec.Routes, err = rm.excludeAWSRoute(ctx, desired.ko.Spec.Routes)
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, desiredRoute := range desired.ko.Spec.Routes {
-		if (*desiredRoute).GatewayID != nil && *desiredRoute.GatewayID == LocalRouteGateway {
-			// no-op for default route
-			continue
-		}
-		if latestRoute := getMatchingRoute(desiredRoute, latest); latestRoute != nil {
-			delta := compareCreateRouteInput(desiredRoute, latestRoute)
-			if len(delta.Differences) > 0 {
-				// "update" route by deleting old route and adding the new route
-				toDelete = append(toDelete, latestRoute)
-				toAdd = append(toAdd, desiredRoute)
-			}
-		} else {
-			// a desired route is not in latest; therefore, create
-			toAdd = append(toAdd, desiredRoute)
-		}
-	}
+	// Get the routes that need to be added and deleted, by checking for
+	// differences between desired and latest.
+	var toAdd, toDelete []*svcapitypes.CreateRouteInput
 	if latest != nil {
-		for _, latestRoute := range latest.ko.Spec.Routes {
-			if (*latestRoute).GatewayID != nil && *latestRoute.GatewayID == LocalRouteGateway {
-				// no-op for default route
-				continue
-			}
-			if desiredRoute := getMatchingRoute(latestRoute, desired); desiredRoute == nil {
-				// latest has a route that is not desired; therefore, delete
-				toDelete = append(toDelete, latestRoute)
-			}
-		}
+		toAdd, toDelete = getRoutesDifference(desired.ko.Spec.Routes, latest.ko.Spec.Routes)
+	} else {
+		// If method is called from the createRoutes method, then latest is nil
+		// and all routes must be added, as non exist yet.
+		toAdd = desired.ko.Spec.Routes
 	}
 
+	// Delete and add the routes that were found to be different between desired
+	// and latest.
 	for _, route := range toDelete {
 		rlog.Debug("deleting route from route table")
 		if err = rm.deleteRoute(ctx, latest, *route); err != nil {
@@ -102,60 +85,6 @@ func (rm *resourceManager) syncRoutes(
 		rlog.Debug("adding route to route table")
 		if err = rm.createRoute(ctx, desired, *route); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func getMatchingRoute(
-	routeToMatch *svcapitypes.CreateRouteInput,
-	resource *resource,
-) *svcapitypes.CreateRouteInput {
-	if resource == nil {
-		return nil
-	}
-
-	for _, route := range resource.ko.Spec.Routes {
-		delta := compareCreateRouteInput(routeToMatch, route)
-		if len(delta.Differences) == 0 {
-			return route
-		} else {
-			if routeToMatch.CarrierGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.CarrierGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.EgressOnlyInternetGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.EgressOnlyInternetGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.GatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.GatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.LocalGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.LocalGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.NATGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.NATGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.TransitGatewayID != nil {
-				if !delta.DifferentAt("CreateRouteInput.TransitGatewayID") {
-					return route
-				}
-			}
-			if routeToMatch.VPCPeeringConnectionID != nil {
-				if !delta.DifferentAt("CreateRouteInput.VPCPeeringConnectionID") {
-					return route
-				}
-			}
 		}
 	}
 
@@ -270,6 +199,9 @@ var computeTagsDelta = tags.ComputeTagsDelta
 
 // customPreCompare ensures that default values of types are initialised and
 // server side defaults are excluded from the delta.
+// The left side (`A`) of any `Spec.Routes` diff contains the routes that are
+// desired, but do not exist. Analogously, the right side (`B`) contains the
+// routes that exist, but are not desired.
 func customPreCompare(
 	delta *ackcompare.Delta,
 	a *resource,
@@ -277,6 +209,46 @@ func customPreCompare(
 ) {
 	a.ko.Spec.Routes = removeLocalRoute(a.ko.Spec.Routes)
 	b.ko.Spec.Routes = removeLocalRoute(b.ko.Spec.Routes)
+
+	desired, latest := getRoutesDifference(a.ko.Spec.Routes, b.ko.Spec.Routes)
+
+	if len(desired) > 0 || len(latest) > 0 {
+		delta.Add("Spec.Routes", a.ko.Spec.Routes, b.ko.Spec.Routes)
+	}
+}
+
+// getRoutesDifference compares the desired and latest routes. It returns the
+// routes that are different and must be added or deleted.
+func getRoutesDifference(desired, latest []*svcapitypes.CreateRouteInput) (toAdd, toDelete []*svcapitypes.CreateRouteInput) {
+	toDelete = make([]*svcapitypes.CreateRouteInput, len(latest))
+	copy(toDelete, latest)
+
+	remove := func(s []*svcapitypes.CreateRouteInput, i int) []*svcapitypes.CreateRouteInput {
+		if i < len(s)-1 { // if not last element just copy the last element to where the removed element was
+			s[i] = s[len(s)-1]
+		}
+		return s[:len(s)-1]
+	}
+
+	// Routes that are desired, but already exist in latest, can be ignored. The
+	// toDelete slice is a copy of latest and will be slowly modified so that at
+	// the end it only contains routes that exist in latest, but are not
+	// desired.
+	for _, routeA := range desired {
+		found := false
+		for idx, routeB := range toDelete {
+			if delta := compareCreateRouteInput(routeA, routeB); len(delta.Differences) == 0 {
+				toDelete = remove(toDelete, idx)
+				found = true
+				break
+			}
+		}
+		if !found {
+			toAdd = append(toAdd, routeA.DeepCopy())
+		}
+	}
+
+	return toAdd, toDelete
 }
 
 // removeLocalRoute will filter out any routes that have a gateway ID that
