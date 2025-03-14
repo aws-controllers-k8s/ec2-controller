@@ -299,7 +299,7 @@ resources:
           path: Status.LaunchTemplateID
           name: LaunchTemplateID
       DefaultVersionNumber:
-        type: int
+        #type: int
         print:
           path: Status.defaultVersionNumber
           name: DefaultVersion

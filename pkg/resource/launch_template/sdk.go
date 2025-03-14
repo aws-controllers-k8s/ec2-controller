@@ -1067,6 +1067,14 @@ func (rm *resourceManager) sdkUpdate(
 			return nil, err
 		}
 	}
+	
+	if delta.DifferentAt("Spec.LaunchTemplateData") {
+		if err := rm.syncLaunchTemplateData(ctx, desired, latest); err != nil {
+			return nil, err
+		}
+	}
+	
+
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
