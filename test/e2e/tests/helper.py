@@ -320,3 +320,45 @@ class EC2Validator:
         assert (res_found is exists 
                 or
                 aws_res["CapacityReservations"][0]["State"] == "cancelled")
+    
+    def assert_launch_template(self, launch_template_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            res_found = len(aws_res["LaunchTemplates"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
+    def get_launch_template(self, launch_template_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_launch_templates(LaunchTemplateIds=[launch_template_id])
+            if len(aws_res["LaunchTemplates"]) > 0:
+                return aws_res["LaunchTemplates"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def get_launch_template_tags(self, launch_template_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_tags(
+                Filters=[
+                    {
+                        'Name': 'resource-id',
+                        'Values': [
+                            launch_template_id,
+                        ]
+                    },
+                    {
+                        'Name': 'resource-type',
+                        'Values': [
+                            'launch-template',
+                        ]
+                    },
+                ]
+            )
+            if len(aws_res["Tags"]) > 0:
+                return aws_res["Tags"]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
