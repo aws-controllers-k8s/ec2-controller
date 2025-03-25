@@ -214,6 +214,27 @@ class EC2Validator:
             pass
         assert res_found is exists
 
+    def get_transit_gateway_vpc_attachment(self, attachment_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_transit_gateway_vpc_attachments(TransitGatewayAttachmentIds=[attachment_id])
+            if len(aws_res["TransitGateways"]) > 0:
+                return aws_res["TransitGateways"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def assert_transit_gateway_vpc_attachment(self, tgw_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_transit_gateway_vpc_attachments(TransitGatewayAttachmentIds=[tgw_id])
+            tgw = aws_res["TransitGateways"][0]
+            # TransitGateway may take awhile to be removed server-side, so 
+            # treat 'deleting' and 'deleted' states as resource no longer existing
+            res_found = tgw is not None and tgw['State'] != "deleting" and tgw['State'] != "deleted"
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
     def get_vpc(self, vpc_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_vpcs(VpcIds=[vpc_id])

@@ -904,7 +904,9 @@ type CreateRouteInput struct {
 
 // Describes the options for a VPC attachment.
 type CreateTransitGatewayVPCAttachmentRequestOptions struct {
+	ApplianceModeSupport            *string `json:"applianceModeSupport,omitempty"`
 	DNSSupport                      *string `json:"dnsSupport,omitempty"`
+	IPv6Support                     *string `json:"ipv6Support,omitempty"`
 	SecurityGroupReferencingSupport *string `json:"securityGroupReferencingSupport,omitempty"`
 }
 
@@ -3320,7 +3322,9 @@ type ModifyTransitGatewayOptions struct {
 
 // Describes the options for a VPC attachment.
 type ModifyTransitGatewayVPCAttachmentRequestOptions struct {
+	ApplianceModeSupport            *string `json:"applianceModeSupport,omitempty"`
 	DNSSupport                      *string `json:"dnsSupport,omitempty"`
+	IPv6Support                     *string `json:"ipv6Support,omitempty"`
 	SecurityGroupReferencingSupport *string `json:"securityGroupReferencingSupport,omitempty"`
 }
 
@@ -5077,7 +5081,8 @@ type TrafficMirrorTarget struct {
 // Describes an association between a resource attachment and a transit gateway
 // route table.
 type TransitGatewayAssociation struct {
-	ResourceID *string `json:"resourceID,omitempty"`
+	ResourceID                 *string `json:"resourceID,omitempty"`
+	TransitGatewayAttachmentID *string `json:"transitGatewayAttachmentID,omitempty"`
 }
 
 // Describes an attachment between a resource and a transit gateway.
@@ -5085,6 +5090,7 @@ type TransitGatewayAttachment struct {
 	CreationTime               *metav1.Time `json:"creationTime,omitempty"`
 	ResourceID                 *string      `json:"resourceID,omitempty"`
 	ResourceOwnerID            *string      `json:"resourceOwnerID,omitempty"`
+	State                      *string      `json:"state,omitempty"`
 	Tags                       []*Tag       `json:"tags,omitempty"`
 	TransitGatewayAttachmentID *string      `json:"transitGatewayAttachmentID,omitempty"`
 	TransitGatewayID           *string      `json:"transitGatewayID,omitempty"`
@@ -5111,15 +5117,19 @@ type TransitGatewayAttachmentPropagation struct {
 
 // Describes a transit gateway Connect attachment.
 type TransitGatewayConnect struct {
-	CreationTime     *metav1.Time `json:"creationTime,omitempty"`
-	Tags             []*Tag       `json:"tags,omitempty"`
-	TransitGatewayID *string      `json:"transitGatewayID,omitempty"`
+	CreationTime                        *metav1.Time `json:"creationTime,omitempty"`
+	State                               *string      `json:"state,omitempty"`
+	Tags                                []*Tag       `json:"tags,omitempty"`
+	TransitGatewayAttachmentID          *string      `json:"transitGatewayAttachmentID,omitempty"`
+	TransitGatewayID                    *string      `json:"transitGatewayID,omitempty"`
+	TransportTransitGatewayAttachmentID *string      `json:"transportTransitGatewayAttachmentID,omitempty"`
 }
 
 // Describes a transit gateway Connect peer.
 type TransitGatewayConnectPeer struct {
-	CreationTime *metav1.Time `json:"creationTime,omitempty"`
-	Tags         []*Tag       `json:"tags,omitempty"`
+	CreationTime               *metav1.Time `json:"creationTime,omitempty"`
+	Tags                       []*Tag       `json:"tags,omitempty"`
+	TransitGatewayAttachmentID *string      `json:"transitGatewayAttachmentID,omitempty"`
 }
 
 // Describes the Connect peer details.
@@ -5217,6 +5227,7 @@ type TransitGatewayOptions struct {
 type TransitGatewayPeeringAttachment struct {
 	AccepterTransitGatewayAttachmentID *string      `json:"accepterTransitGatewayAttachmentID,omitempty"`
 	CreationTime                       *metav1.Time `json:"creationTime,omitempty"`
+	State                              *string      `json:"state,omitempty"`
 	Tags                               []*Tag       `json:"tags,omitempty"`
 	TransitGatewayAttachmentID         *string      `json:"transitGatewayAttachmentID,omitempty"`
 }
@@ -5245,7 +5256,8 @@ type TransitGatewayPolicyTable struct {
 
 // Describes a transit gateway policy table association.
 type TransitGatewayPolicyTableAssociation struct {
-	ResourceID *string `json:"resourceID,omitempty"`
+	ResourceID                 *string `json:"resourceID,omitempty"`
+	TransitGatewayAttachmentID *string `json:"transitGatewayAttachmentID,omitempty"`
 }
 
 // Describes a transit gateway policy table entry
@@ -5255,7 +5267,8 @@ type TransitGatewayPolicyTableEntry struct {
 
 // Describes a transit gateway prefix list attachment.
 type TransitGatewayPrefixListAttachment struct {
-	ResourceID *string `json:"resourceID,omitempty"`
+	ResourceID                 *string `json:"resourceID,omitempty"`
+	TransitGatewayAttachmentID *string `json:"transitGatewayAttachmentID,omitempty"`
 }
 
 // Describes a prefix list reference.
@@ -5268,6 +5281,7 @@ type TransitGatewayPrefixListReference struct {
 // Describes route propagation.
 type TransitGatewayPropagation struct {
 	ResourceID                 *string `json:"resourceID,omitempty"`
+	TransitGatewayAttachmentID *string `json:"transitGatewayAttachmentID,omitempty"`
 	TransitGatewayRouteTableID *string `json:"transitGatewayRouteTableID,omitempty"`
 }
 
@@ -5311,6 +5325,7 @@ type TransitGatewayRouteTableAnnouncement struct {
 	CreationTime         *metav1.Time `json:"creationTime,omitempty"`
 	PeerCoreNetworkID    *string      `json:"peerCoreNetworkID,omitempty"`
 	PeerTransitGatewayID *string      `json:"peerTransitGatewayID,omitempty"`
+	PeeringAttachmentID  *string      `json:"peeringAttachmentID,omitempty"`
 	Tags                 []*Tag       `json:"tags,omitempty"`
 	TransitGatewayID     *string      `json:"transitGatewayID,omitempty"`
 }
@@ -5338,21 +5353,26 @@ type TransitGatewayRouteTableRoute struct {
 	State           *string `json:"state,omitempty"`
 }
 
-// Describes a VPC attachment.
-type TransitGatewayVPCAttachment struct {
-	CreationTime               *metav1.Time `json:"creationTime,omitempty"`
-	SubnetIDs                  []*string    `json:"subnetIDs,omitempty"`
-	Tags                       []*Tag       `json:"tags,omitempty"`
-	TransitGatewayAttachmentID *string      `json:"transitGatewayAttachmentID,omitempty"`
-	TransitGatewayID           *string      `json:"transitGatewayID,omitempty"`
-	VPCID                      *string      `json:"vpcID,omitempty"`
-	VPCOwnerID                 *string      `json:"vpcOwnerID,omitempty"`
-}
-
 // Describes the VPC attachment options.
 type TransitGatewayVPCAttachmentOptions struct {
+	ApplianceModeSupport            *string `json:"applianceModeSupport,omitempty"`
 	DNSSupport                      *string `json:"dnsSupport,omitempty"`
+	IPv6Support                     *string `json:"ipv6Support,omitempty"`
 	SecurityGroupReferencingSupport *string `json:"securityGroupReferencingSupport,omitempty"`
+}
+
+// Describes a VPC attachment.
+type TransitGatewayVPCAttachment_SDK struct {
+	CreationTime *metav1.Time `json:"creationTime,omitempty"`
+	// Describes the VPC attachment options.
+	Options                    *TransitGatewayVPCAttachmentOptions `json:"options,omitempty"`
+	State                      *string                             `json:"state,omitempty"`
+	SubnetIDs                  []*string                           `json:"subnetIDs,omitempty"`
+	Tags                       []*Tag                              `json:"tags,omitempty"`
+	TransitGatewayAttachmentID *string                             `json:"transitGatewayAttachmentID,omitempty"`
+	TransitGatewayID           *string                             `json:"transitGatewayID,omitempty"`
+	VPCID                      *string                             `json:"vpcID,omitempty"`
+	VPCOwnerID                 *string                             `json:"vpcOwnerID,omitempty"`
 }
 
 // Describes a transit gateway.
@@ -5687,13 +5707,14 @@ type VPNConnectionOptions struct {
 
 // Describes VPN connection options.
 type VPNConnectionOptionsSpecification struct {
-	EnableAcceleration    *bool   `json:"enableAcceleration,omitempty"`
-	LocalIPv4NetworkCIDR  *string `json:"localIPv4NetworkCIDR,omitempty"`
-	LocalIPv6NetworkCIDR  *string `json:"localIPv6NetworkCIDR,omitempty"`
-	OutsideIPAddressType  *string `json:"outsideIPAddressType,omitempty"`
-	RemoteIPv4NetworkCIDR *string `json:"remoteIPv4NetworkCIDR,omitempty"`
-	RemoteIPv6NetworkCIDR *string `json:"remoteIPv6NetworkCIDR,omitempty"`
-	StaticRoutesOnly      *bool   `json:"staticRoutesOnly,omitempty"`
+	EnableAcceleration                  *bool   `json:"enableAcceleration,omitempty"`
+	LocalIPv4NetworkCIDR                *string `json:"localIPv4NetworkCIDR,omitempty"`
+	LocalIPv6NetworkCIDR                *string `json:"localIPv6NetworkCIDR,omitempty"`
+	OutsideIPAddressType                *string `json:"outsideIPAddressType,omitempty"`
+	RemoteIPv4NetworkCIDR               *string `json:"remoteIPv4NetworkCIDR,omitempty"`
+	RemoteIPv6NetworkCIDR               *string `json:"remoteIPv6NetworkCIDR,omitempty"`
+	StaticRoutesOnly                    *bool   `json:"staticRoutesOnly,omitempty"`
+	TransportTransitGatewayAttachmentID *string `json:"transportTransitGatewayAttachmentID,omitempty"`
 }
 
 // Describes a virtual private gateway.

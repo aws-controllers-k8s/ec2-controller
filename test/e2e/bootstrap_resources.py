@@ -18,6 +18,7 @@ from acktest.bootstrapping import Resources
 from acktest.bootstrapping.elbv2 import NetworkLoadBalancer
 from acktest.bootstrapping.s3 import Bucket
 from acktest.bootstrapping.vpc import VPC
+from acktest.bootstrapping.vpc import TransitGateway
 from e2e import bootstrap_directory
 
 @dataclass
@@ -26,6 +27,7 @@ class BootstrapResources(Resources):
     SharedTestVPC: VPC
     AdoptedVPC: VPC
     NetworkLoadBalancer: NetworkLoadBalancer
+    TestTransitGateway: TransitGateway
 
 _bootstrap_resources = None
 

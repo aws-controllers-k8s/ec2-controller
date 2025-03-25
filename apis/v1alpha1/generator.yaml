@@ -46,6 +46,8 @@ ignore:
     - CreateSubnetInput.Ipv6NetmaskLength
     - CreateSubnetInput.TagSpecifications
     - CreateSubnetOutput.Subnet.BlockPublicAccessStates
+    - CreateTransitGatewayVpcAttachmentInput.DryRun
+    - CreateTransitGatewayVpcAttachmentInput.TagSpecifications
     - CreateTransitGatewayInput.DryRun
     - CreateTransitGatewayInput.Options.SecurityGroupReferencingSupport
     - CreateTransitGatewayInput.TagSpecifications
@@ -181,7 +183,7 @@ ignore:
     - TransitGatewayRouteTable
     - TransitGatewayRoute
     - TransitGatewayRouteTableAnnouncement
-    - TransitGatewayVpcAttachment
+    # - TransitGatewayVpcAttachment
     #- TransitGateway
     - VerifiedAccessEndpoint
     - VerifiedAccessGroup
@@ -279,6 +281,8 @@ operations:
     operation_type:
       - Update
     resource_name: VpcPeeringConnection
+  DescribeTransitGatewayVpcAttachments:
+    custom_check_required_fields_missing_method: checkForMissingRequiredFields
 resources:
   CapacityReservation:
     fields:
@@ -799,6 +803,54 @@ resources:
         template_path: hooks/transit_gateway/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateTransitGateway
+  TransitGatewayVpcAttachment:
+    renames:
+      operations:
+        CreateTransitGatewayVpcAttachment:
+          output_fields:
+            TransitGatewayAttachmentId: ID
+        DescribeTransitGatewayVpcAttachments:
+          input_fields:
+            TransitGatewayAttachmentIds: ID
+          output_fields:
+            TransitGatewayAttachmentId: ID
+        ModifyTransitGatewayVpcAttachment:
+          input_fields:
+            TransitGatewayAttachmentId: ID
+        DeleteTransitGatewayVpcAttachment:
+          input_fields:
+            TransitGatewayAttachmentId: ID
+    fields:
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+      SubnetIds:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      TransitGatewayId:
+        references:
+          resource: TransitGateway
+          path: Status.TransitGatewayID
+      ID:
+        is_primary_key: true
+        print:
+          path: Status.ID
+          name: ID
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/transit_gateway_vpc_attachment/sdk_create_post_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/transit_gateway_vpc_attachment/sdk_read_many_post_set_output.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/transit_gateway_vpc_attachment/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/transit_gateway_vpc_attachment/sdk_update_post_build_request.go.tpl
   Vpc:
     update_operation:
       custom_method_name: customUpdateVPC

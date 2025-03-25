@@ -21,6 +21,7 @@ rules:
   - securitygroups
   - subnets
   - transitgateways
+  - transitgatewayvpcattachments
   - vpcs
   - vpcendpoints
   - vpcendpointserviceconfigurations
