@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.defaultVersionNumber
+    - jsonPath: .status.defaultVersionNumber
       name: DefaultVersion
       type: integer
     - jsonPath: .status.latestVersionNumber
@@ -52,9 +52,6 @@ spec:
 
               Describes a launch template.
             properties:
-              defaultVersionNumber:
-                format: int64
-                type: integer
               launchTemplateData:
                 description: The information for the launch template.
                 properties:
@@ -730,6 +727,11 @@ spec:
               createdBy:
                 description: The principal that created the launch template.
                 type: string
+              defaultVersionNumber:
+                description: The version number of the default version of the launch
+                  template.
+                format: int64
+                type: integer
               latestVersionNumber:
                 description: The version number of the latest version of the launch
                   template.

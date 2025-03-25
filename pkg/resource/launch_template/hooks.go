@@ -17,9 +17,11 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -28,12 +30,8 @@ import (
 
 func (rm *resourceManager) setDefaultTemplateVersion(r *resource, input *svcsdk.ModifyLaunchTemplateInput) error {
 
-	if r.ko.Spec.DefaultVersionNumber != nil {
-
-		defaultVersion := strconv.FormatInt(*r.ko.Spec.DefaultVersionNumber, 10)
-		input.DefaultVersion = &defaultVersion
-
-	}
+	newDefaultVersion := *r.ko.Status.LatestVersionNumber + 1
+	input.DefaultVersion = aws.String(strconv.FormatInt(newDefaultVersion, 10))
 
 	return nil
 }
@@ -184,19 +182,29 @@ func computeTagsDelta(
 
 }
 
-// create method for resourcemanager with name syncLaunchTemplateData
-func (rm *resourceManager) syncLaunchTemplateData(
+func customPreCompare(delta *ackcompare.Delta, a *resource, b *resource) {
+
+	if !reflect.DeepEqual(a.ko.Spec.VersionDescription, b.ko.Spec.VersionDescription) {
+		delta.Add("Spec.VersionDescription", a.ko.Spec.VersionDescription, b.ko.Spec.VersionDescription)
+	}
+	if !reflect.DeepEqual(a.ko.Spec.LaunchTemplateData, b.ko.Spec.LaunchTemplateData) {
+		delta.Add("Spec.LaunchTemplateData", a.ko.Spec.LaunchTemplateData, b.ko.Spec.LaunchTemplateData)
+	}
+
+}
+
+// method to create new template version on every update of the launchtemplatedata
+func (rm *resourceManager) CreateLaunchTemplateVersion(
 	ctx context.Context,
 	r *resource,
 ) (err error) {
 	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.syncLaunchTemplateData")
+	exit := rlog.Trace("rm.CreateLaunchTemplateVersion")
 	defer func(err error) {
 		exit(err)
 	}(err)
 
 	input := &svcsdk.CreateLaunchTemplateVersionInput{}
-
 	input.LaunchTemplateId = r.ko.Status.LaunchTemplateID
 	input.VersionDescription = r.ko.Spec.VersionDescription
 
@@ -959,10 +967,11 @@ func (rm *resourceManager) syncLaunchTemplateData(
 	}
 
 	// create newlaunchtemplateversion
-	resp, err := rm.sdkapi.CreateLaunchTemplateVersion(ctx, input)
+	_, err = rm.sdkapi.CreateLaunchTemplateVersion(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateLaunchTemplateVersion", err)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
+	return nil
 }

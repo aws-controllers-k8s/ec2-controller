@@ -103,9 +103,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.CreatedBy = nil
 		}
 		if elem.DefaultVersionNumber != nil {
-			ko.Spec.DefaultVersionNumber = elem.DefaultVersionNumber
+			ko.Status.DefaultVersionNumber = elem.DefaultVersionNumber
 		} else {
-			ko.Spec.DefaultVersionNumber = nil
+			ko.Status.DefaultVersionNumber = nil
 		}
 		if elem.LatestVersionNumber != nil {
 			ko.Status.LatestVersionNumber = elem.LatestVersionNumber
@@ -222,9 +222,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.CreatedBy = nil
 	}
 	if resp.LaunchTemplate.DefaultVersionNumber != nil {
-		ko.Spec.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
+		ko.Status.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
 	} else {
-		ko.Spec.DefaultVersionNumber = nil
+		ko.Status.DefaultVersionNumber = nil
 	}
 	if resp.LaunchTemplate.LatestVersionNumber != nil {
 		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
@@ -1062,91 +1062,25 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
-	if delta.DifferentAt("Spec.Tags") {
-		if err := rm.syncTags(ctx, desired, latest); err != nil {
-			return nil, err
-		}
-	}
-	
-	if delta.DifferentAt("Spec.LaunchTemplateData") {
-		if err := rm.syncLaunchTemplateData(ctx, desired, latest); err != nil {
-			return nil, err
-		}
-	}
-	
-
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
 	}
-	if err := rm.setDefaultTemplateVersion(desired, input); err != nil {
+
+	if err := rm.syncTags(ctx, desired, latest); err != nil {
 		return nil, err
 	}
 
-	var resp *svcsdk.ModifyLaunchTemplateOutput
+	var resp *svcsdk.CreateLaunchTemplateVersionOutput
 	_ = resp
-	resp, err = rm.sdkapi.ModifyLaunchTemplate(ctx, input)
-	rm.metrics.RecordAPICall("UPDATE", "ModifyLaunchTemplate", err)
+	resp, err = rm.sdkapi.CreateLaunchTemplateVersion(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "CreateLaunchTemplateVersion", err)
 	if err != nil {
 		return nil, err
 	}
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
-
-	if resp.LaunchTemplate.CreateTime != nil {
-		ko.Status.CreateTime = &metav1.Time{*resp.LaunchTemplate.CreateTime}
-	} else {
-		ko.Status.CreateTime = nil
-	}
-	if resp.LaunchTemplate.CreatedBy != nil {
-		ko.Status.CreatedBy = resp.LaunchTemplate.CreatedBy
-	} else {
-		ko.Status.CreatedBy = nil
-	}
-	if resp.LaunchTemplate.DefaultVersionNumber != nil {
-		ko.Spec.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
-	} else {
-		ko.Spec.DefaultVersionNumber = nil
-	}
-	if resp.LaunchTemplate.LatestVersionNumber != nil {
-		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
-	} else {
-		ko.Status.LatestVersionNumber = nil
-	}
-	if resp.LaunchTemplate.LaunchTemplateId != nil {
-		ko.Status.LaunchTemplateID = resp.LaunchTemplate.LaunchTemplateId
-	} else {
-		ko.Status.LaunchTemplateID = nil
-	}
-	if resp.LaunchTemplate.Operator != nil {
-		f6 := &svcapitypes.OperatorResponse{}
-		if resp.LaunchTemplate.Operator.Managed != nil {
-			f6.Managed = resp.LaunchTemplate.Operator.Managed
-		}
-		if resp.LaunchTemplate.Operator.Principal != nil {
-			f6.Principal = resp.LaunchTemplate.Operator.Principal
-		}
-		ko.Status.Operator = f6
-	} else {
-		ko.Status.Operator = nil
-	}
-	if resp.LaunchTemplate.Tags != nil {
-		f7 := []*svcapitypes.Tag{}
-		for _, f7iter := range resp.LaunchTemplate.Tags {
-			f7elem := &svcapitypes.Tag{}
-			if f7iter.Key != nil {
-				f7elem.Key = f7iter.Key
-			}
-			if f7iter.Value != nil {
-				f7elem.Value = f7iter.Value
-			}
-			f7 = append(f7, f7elem)
-		}
-		ko.Spec.Tags = f7
-	} else {
-		ko.Spec.Tags = nil
-	}
 
 	rm.setStatusDefaults(ko)
 	if desired.ko.Spec.Tags != nil {
@@ -1176,11 +1110,771 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	ctx context.Context,
 	r *resource,
 	delta *ackcompare.Delta,
-) (*svcsdk.ModifyLaunchTemplateInput, error) {
-	res := &svcsdk.ModifyLaunchTemplateInput{}
+) (*svcsdk.CreateLaunchTemplateVersionInput, error) {
+	res := &svcsdk.CreateLaunchTemplateVersionInput{}
 
+	if r.ko.Spec.LaunchTemplateData != nil {
+		f2 := &svcsdktypes.RequestLaunchTemplateData{}
+		if r.ko.Spec.LaunchTemplateData.BlockDeviceMappings != nil {
+			f2f0 := []svcsdktypes.LaunchTemplateBlockDeviceMappingRequest{}
+			for _, f2f0iter := range r.ko.Spec.LaunchTemplateData.BlockDeviceMappings {
+				f2f0elem := &svcsdktypes.LaunchTemplateBlockDeviceMappingRequest{}
+				if f2f0iter.DeviceName != nil {
+					f2f0elem.DeviceName = f2f0iter.DeviceName
+				}
+				if f2f0iter.EBS != nil {
+					f2f0elemf1 := &svcsdktypes.LaunchTemplateEbsBlockDeviceRequest{}
+					if f2f0iter.EBS.DeleteOnTermination != nil {
+						f2f0elemf1.DeleteOnTermination = f2f0iter.EBS.DeleteOnTermination
+					}
+					if f2f0iter.EBS.Encrypted != nil {
+						f2f0elemf1.Encrypted = f2f0iter.EBS.Encrypted
+					}
+					if f2f0iter.EBS.IOPS != nil {
+						iopsCopy0 := *f2f0iter.EBS.IOPS
+						if iopsCopy0 > math.MaxInt32 || iopsCopy0 < math.MinInt32 {
+							return nil, fmt.Errorf("error: field Iops is of type int32")
+						}
+						iopsCopy := int32(iopsCopy0)
+						f2f0elemf1.Iops = &iopsCopy
+					}
+					if f2f0iter.EBS.KMSKeyID != nil {
+						f2f0elemf1.KmsKeyId = f2f0iter.EBS.KMSKeyID
+					}
+					if f2f0iter.EBS.SnapshotID != nil {
+						f2f0elemf1.SnapshotId = f2f0iter.EBS.SnapshotID
+					}
+					if f2f0iter.EBS.Throughput != nil {
+						throughputCopy0 := *f2f0iter.EBS.Throughput
+						if throughputCopy0 > math.MaxInt32 || throughputCopy0 < math.MinInt32 {
+							return nil, fmt.Errorf("error: field Throughput is of type int32")
+						}
+						throughputCopy := int32(throughputCopy0)
+						f2f0elemf1.Throughput = &throughputCopy
+					}
+					if f2f0iter.EBS.VolumeSize != nil {
+						volumeSizeCopy0 := *f2f0iter.EBS.VolumeSize
+						if volumeSizeCopy0 > math.MaxInt32 || volumeSizeCopy0 < math.MinInt32 {
+							return nil, fmt.Errorf("error: field VolumeSize is of type int32")
+						}
+						volumeSizeCopy := int32(volumeSizeCopy0)
+						f2f0elemf1.VolumeSize = &volumeSizeCopy
+					}
+					if f2f0iter.EBS.VolumeType != nil {
+						f2f0elemf1.VolumeType = svcsdktypes.VolumeType(*f2f0iter.EBS.VolumeType)
+					}
+					f2f0elem.Ebs = f2f0elemf1
+				}
+				if f2f0iter.NoDevice != nil {
+					f2f0elem.NoDevice = f2f0iter.NoDevice
+				}
+				if f2f0iter.VirtualName != nil {
+					f2f0elem.VirtualName = f2f0iter.VirtualName
+				}
+				f2f0 = append(f2f0, *f2f0elem)
+			}
+			f2.BlockDeviceMappings = f2f0
+		}
+		if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification != nil {
+			f2f1 := &svcsdktypes.LaunchTemplateCapacityReservationSpecificationRequest{}
+			if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference != nil {
+				f2f1.CapacityReservationPreference = svcsdktypes.CapacityReservationPreference(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference)
+			}
+			if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget != nil {
+				f2f1f1 := &svcsdktypes.CapacityReservationTarget{}
+				if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID != nil {
+					f2f1f1.CapacityReservationId = r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID
+				}
+				if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN != nil {
+					f2f1f1.CapacityReservationResourceGroupArn = r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN
+				}
+				f2f1.CapacityReservationTarget = f2f1f1
+			}
+			f2.CapacityReservationSpecification = f2f1
+		}
+		if r.ko.Spec.LaunchTemplateData.CPUOptions != nil {
+			f2f2 := &svcsdktypes.LaunchTemplateCpuOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp != nil {
+				f2f2.AmdSevSnp = svcsdktypes.AmdSevSnpSpecification(*r.ko.Spec.LaunchTemplateData.CPUOptions.AmdSevSnp)
+			}
+			if r.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount != nil {
+				coreCountCopy0 := *r.ko.Spec.LaunchTemplateData.CPUOptions.CoreCount
+				if coreCountCopy0 > math.MaxInt32 || coreCountCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field CoreCount is of type int32")
+				}
+				coreCountCopy := int32(coreCountCopy0)
+				f2f2.CoreCount = &coreCountCopy
+			}
+			if r.ko.Spec.LaunchTemplateData.CPUOptions.ThreadsPerCore != nil {
+				threadsPerCoreCopy0 := *r.ko.Spec.LaunchTemplateData.CPUOptions.ThreadsPerCore
+				if threadsPerCoreCopy0 > math.MaxInt32 || threadsPerCoreCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field ThreadsPerCore is of type int32")
+				}
+				threadsPerCoreCopy := int32(threadsPerCoreCopy0)
+				f2f2.ThreadsPerCore = &threadsPerCoreCopy
+			}
+			f2.CpuOptions = f2f2
+		}
+		if r.ko.Spec.LaunchTemplateData.CreditSpecification != nil {
+			f2f3 := &svcsdktypes.CreditSpecificationRequest{}
+			if r.ko.Spec.LaunchTemplateData.CreditSpecification.CPUCredits != nil {
+				f2f3.CpuCredits = r.ko.Spec.LaunchTemplateData.CreditSpecification.CPUCredits
+			}
+			f2.CreditSpecification = f2f3
+		}
+		if r.ko.Spec.LaunchTemplateData.DisableAPIStop != nil {
+			f2.DisableApiStop = r.ko.Spec.LaunchTemplateData.DisableAPIStop
+		}
+		if r.ko.Spec.LaunchTemplateData.DisableAPITermination != nil {
+			f2.DisableApiTermination = r.ko.Spec.LaunchTemplateData.DisableAPITermination
+		}
+		if r.ko.Spec.LaunchTemplateData.EBSOptimized != nil {
+			f2.EbsOptimized = r.ko.Spec.LaunchTemplateData.EBSOptimized
+		}
+		if r.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications != nil {
+			f2f7 := []svcsdktypes.ElasticGpuSpecification{}
+			for _, f2f7iter := range r.ko.Spec.LaunchTemplateData.ElasticGPUSpecifications {
+				f2f7elem := &svcsdktypes.ElasticGpuSpecification{}
+				if f2f7iter.Type != nil {
+					f2f7elem.Type = f2f7iter.Type
+				}
+				f2f7 = append(f2f7, *f2f7elem)
+			}
+			f2.ElasticGpuSpecifications = f2f7
+		}
+		if r.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators != nil {
+			f2f8 := []svcsdktypes.LaunchTemplateElasticInferenceAccelerator{}
+			for _, f2f8iter := range r.ko.Spec.LaunchTemplateData.ElasticInferenceAccelerators {
+				f2f8elem := &svcsdktypes.LaunchTemplateElasticInferenceAccelerator{}
+				if f2f8iter.Count != nil {
+					countCopy0 := *f2f8iter.Count
+					if countCopy0 > math.MaxInt32 || countCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Count is of type int32")
+					}
+					countCopy := int32(countCopy0)
+					f2f8elem.Count = &countCopy
+				}
+				if f2f8iter.Type != nil {
+					f2f8elem.Type = f2f8iter.Type
+				}
+				f2f8 = append(f2f8, *f2f8elem)
+			}
+			f2.ElasticInferenceAccelerators = f2f8
+		}
+		if r.ko.Spec.LaunchTemplateData.EnclaveOptions != nil {
+			f2f9 := &svcsdktypes.LaunchTemplateEnclaveOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.EnclaveOptions.Enabled != nil {
+				f2f9.Enabled = r.ko.Spec.LaunchTemplateData.EnclaveOptions.Enabled
+			}
+			f2.EnclaveOptions = f2f9
+		}
+		if r.ko.Spec.LaunchTemplateData.HibernationOptions != nil {
+			f2f10 := &svcsdktypes.LaunchTemplateHibernationOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.HibernationOptions.Configured != nil {
+				f2f10.Configured = r.ko.Spec.LaunchTemplateData.HibernationOptions.Configured
+			}
+			f2.HibernationOptions = f2f10
+		}
+		if r.ko.Spec.LaunchTemplateData.IAMInstanceProfile != nil {
+			f2f11 := &svcsdktypes.LaunchTemplateIamInstanceProfileSpecificationRequest{}
+			if r.ko.Spec.LaunchTemplateData.IAMInstanceProfile.ARN != nil {
+				f2f11.Arn = r.ko.Spec.LaunchTemplateData.IAMInstanceProfile.ARN
+			}
+			if r.ko.Spec.LaunchTemplateData.IAMInstanceProfile.Name != nil {
+				f2f11.Name = r.ko.Spec.LaunchTemplateData.IAMInstanceProfile.Name
+			}
+			f2.IamInstanceProfile = f2f11
+		}
+		if r.ko.Spec.LaunchTemplateData.ImageID != nil {
+			f2.ImageId = r.ko.Spec.LaunchTemplateData.ImageID
+		}
+		if r.ko.Spec.LaunchTemplateData.InstanceInitiatedShutdownBehavior != nil {
+			f2.InstanceInitiatedShutdownBehavior = svcsdktypes.ShutdownBehavior(*r.ko.Spec.LaunchTemplateData.InstanceInitiatedShutdownBehavior)
+		}
+		if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions != nil {
+			f2f14 := &svcsdktypes.LaunchTemplateInstanceMarketOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.MarketType != nil {
+				f2f14.MarketType = svcsdktypes.MarketType(*r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.MarketType)
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions != nil {
+				f2f14f1 := &svcsdktypes.LaunchTemplateSpotMarketOptionsRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.BlockDurationMinutes != nil {
+					blockDurationMinutesCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.BlockDurationMinutes
+					if blockDurationMinutesCopy0 > math.MaxInt32 || blockDurationMinutesCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field BlockDurationMinutes is of type int32")
+					}
+					blockDurationMinutesCopy := int32(blockDurationMinutesCopy0)
+					f2f14f1.BlockDurationMinutes = &blockDurationMinutesCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior != nil {
+					f2f14f1.InstanceInterruptionBehavior = svcsdktypes.InstanceInterruptionBehavior(*r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.InstanceInterruptionBehavior)
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.MaxPrice != nil {
+					f2f14f1.MaxPrice = r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.MaxPrice
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.SpotInstanceType != nil {
+					f2f14f1.SpotInstanceType = svcsdktypes.SpotInstanceType(*r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.SpotInstanceType)
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.ValidUntil != nil {
+					f2f14f1.ValidUntil = &r.ko.Spec.LaunchTemplateData.InstanceMarketOptions.SpotOptions.ValidUntil.Time
+				}
+				f2f14.SpotOptions = f2f14f1
+			}
+			f2.InstanceMarketOptions = f2f14
+		}
+		if r.ko.Spec.LaunchTemplateData.InstanceRequirements != nil {
+			f2f15 := &svcsdktypes.InstanceRequirementsRequest{}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorCount != nil {
+				f2f15f0 := &svcsdktypes.AcceleratorCountRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorCount.Max != nil {
+					maxCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorCount.Max
+					if maxCopy0 > math.MaxInt32 || maxCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Max is of type int32")
+					}
+					maxCopy := int32(maxCopy0)
+					f2f15f0.Max = &maxCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorCount.Min != nil {
+					minCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorCount.Min
+					if minCopy0 > math.MaxInt32 || minCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Min is of type int32")
+					}
+					minCopy := int32(minCopy0)
+					f2f15f0.Min = &minCopy
+				}
+				f2f15.AcceleratorCount = f2f15f0
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers != nil {
+				f2f15f1 := []svcsdktypes.AcceleratorManufacturer{}
+				for _, f2f15f1iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorManufacturers {
+					var f2f15f1elem string
+					f2f15f1elem = string(*f2f15f1iter)
+					f2f15f1 = append(f2f15f1, svcsdktypes.AcceleratorManufacturer(f2f15f1elem))
+				}
+				f2f15.AcceleratorManufacturers = f2f15f1
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames != nil {
+				f2f15f2 := []svcsdktypes.AcceleratorName{}
+				for _, f2f15f2iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorNames {
+					var f2f15f2elem string
+					f2f15f2elem = string(*f2f15f2iter)
+					f2f15f2 = append(f2f15f2, svcsdktypes.AcceleratorName(f2f15f2elem))
+				}
+				f2f15.AcceleratorNames = f2f15f2
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB != nil {
+				f2f15f3 := &svcsdktypes.AcceleratorTotalMemoryMiBRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB.Max != nil {
+					maxCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB.Max
+					if maxCopy0 > math.MaxInt32 || maxCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Max is of type int32")
+					}
+					maxCopy := int32(maxCopy0)
+					f2f15f3.Max = &maxCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB.Min != nil {
+					minCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTotalMemoryMiB.Min
+					if minCopy0 > math.MaxInt32 || minCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Min is of type int32")
+					}
+					minCopy := int32(minCopy0)
+					f2f15f3.Min = &minCopy
+				}
+				f2f15.AcceleratorTotalMemoryMiB = f2f15f3
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes != nil {
+				f2f15f4 := []svcsdktypes.AcceleratorType{}
+				for _, f2f15f4iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.AcceleratorTypes {
+					var f2f15f4elem string
+					f2f15f4elem = string(*f2f15f4iter)
+					f2f15f4 = append(f2f15f4, svcsdktypes.AcceleratorType(f2f15f4elem))
+				}
+				f2f15.AcceleratorTypes = f2f15f4
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes != nil {
+				f2f15.AllowedInstanceTypes = aws.ToStringSlice(r.ko.Spec.LaunchTemplateData.InstanceRequirements.AllowedInstanceTypes)
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal != nil {
+				f2f15.BareMetal = svcsdktypes.BareMetal(*r.ko.Spec.LaunchTemplateData.InstanceRequirements.BareMetal)
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps != nil {
+				f2f15f7 := &svcsdktypes.BaselineEbsBandwidthMbpsRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Max != nil {
+					maxCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Max
+					if maxCopy0 > math.MaxInt32 || maxCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Max is of type int32")
+					}
+					maxCopy := int32(maxCopy0)
+					f2f15f7.Max = &maxCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min != nil {
+					minCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselineEBSBandwidthMbps.Min
+					if minCopy0 > math.MaxInt32 || minCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Min is of type int32")
+					}
+					minCopy := int32(minCopy0)
+					f2f15f7.Min = &minCopy
+				}
+				f2f15.BaselineEbsBandwidthMbps = f2f15f7
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors != nil {
+				f2f15f8 := &svcsdktypes.BaselinePerformanceFactorsRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU != nil {
+					f2f15f8f0 := &svcsdktypes.CpuPerformanceFactorRequest{}
+					if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References != nil {
+						f2f15f8f0f0 := []svcsdktypes.PerformanceFactorReferenceRequest{}
+						for _, f2f15f8f0f0iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.BaselinePerformanceFactors.CPU.References {
+							f2f15f8f0f0elem := &svcsdktypes.PerformanceFactorReferenceRequest{}
+							if f2f15f8f0f0iter.InstanceFamily != nil {
+								f2f15f8f0f0elem.InstanceFamily = f2f15f8f0f0iter.InstanceFamily
+							}
+							f2f15f8f0f0 = append(f2f15f8f0f0, *f2f15f8f0f0elem)
+						}
+						f2f15f8f0.References = f2f15f8f0f0
+					}
+					f2f15f8.Cpu = f2f15f8f0
+				}
+				f2f15.BaselinePerformanceFactors = f2f15f8
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.BurstablePerformance != nil {
+				f2f15.BurstablePerformance = svcsdktypes.BurstablePerformance(*r.ko.Spec.LaunchTemplateData.InstanceRequirements.BurstablePerformance)
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers != nil {
+				f2f15f10 := []svcsdktypes.CpuManufacturer{}
+				for _, f2f15f10iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.CPUManufacturers {
+					var f2f15f10elem string
+					f2f15f10elem = string(*f2f15f10iter)
+					f2f15f10 = append(f2f15f10, svcsdktypes.CpuManufacturer(f2f15f10elem))
+				}
+				f2f15.CpuManufacturers = f2f15f10
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes != nil {
+				f2f15.ExcludedInstanceTypes = aws.ToStringSlice(r.ko.Spec.LaunchTemplateData.InstanceRequirements.ExcludedInstanceTypes)
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations != nil {
+				f2f15f12 := []svcsdktypes.InstanceGeneration{}
+				for _, f2f15f12iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.InstanceGenerations {
+					var f2f15f12elem string
+					f2f15f12elem = string(*f2f15f12iter)
+					f2f15f12 = append(f2f15f12, svcsdktypes.InstanceGeneration(f2f15f12elem))
+				}
+				f2f15.InstanceGenerations = f2f15f12
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage != nil {
+				f2f15.LocalStorage = svcsdktypes.LocalStorage(*r.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorage)
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes != nil {
+				f2f15f14 := []svcsdktypes.LocalStorageType{}
+				for _, f2f15f14iter := range r.ko.Spec.LaunchTemplateData.InstanceRequirements.LocalStorageTypes {
+					var f2f15f14elem string
+					f2f15f14elem = string(*f2f15f14iter)
+					f2f15f14 = append(f2f15f14, svcsdktypes.LocalStorageType(f2f15f14elem))
+				}
+				f2f15.LocalStorageTypes = f2f15f14
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice != nil {
+				maxSpotPriceAsPercentageOfOptimalOnDemandPriceCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice
+				if maxSpotPriceAsPercentageOfOptimalOnDemandPriceCopy0 > math.MaxInt32 || maxSpotPriceAsPercentageOfOptimalOnDemandPriceCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field MaxSpotPriceAsPercentageOfOptimalOnDemandPrice is of type int32")
+				}
+				maxSpotPriceAsPercentageOfOptimalOnDemandPriceCopy := int32(maxSpotPriceAsPercentageOfOptimalOnDemandPriceCopy0)
+				f2f15.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice = &maxSpotPriceAsPercentageOfOptimalOnDemandPriceCopy
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU != nil {
+				f2f15f16 := &svcsdktypes.MemoryGiBPerVCpuRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU.Max != nil {
+					f2f15f16.Max = r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU.Max
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU.Min != nil {
+					f2f15f16.Min = r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryGiBPerVCPU.Min
+				}
+				f2f15.MemoryGiBPerVCpu = f2f15f16
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB != nil {
+				f2f15f17 := &svcsdktypes.MemoryMiBRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Max != nil {
+					maxCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Max
+					if maxCopy0 > math.MaxInt32 || maxCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Max is of type int32")
+					}
+					maxCopy := int32(maxCopy0)
+					f2f15f17.Max = &maxCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min != nil {
+					minCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.MemoryMiB.Min
+					if minCopy0 > math.MaxInt32 || minCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Min is of type int32")
+					}
+					minCopy := int32(minCopy0)
+					f2f15f17.Min = &minCopy
+				}
+				f2f15.MemoryMiB = f2f15f17
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps != nil {
+				f2f15f18 := &svcsdktypes.NetworkBandwidthGbpsRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max != nil {
+					f2f15f18.Max = r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Max
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min != nil {
+					f2f15f18.Min = r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkBandwidthGbps.Min
+				}
+				f2f15.NetworkBandwidthGbps = f2f15f18
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkInterfaceCount != nil {
+				f2f15f19 := &svcsdktypes.NetworkInterfaceCountRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkInterfaceCount.Max != nil {
+					maxCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkInterfaceCount.Max
+					if maxCopy0 > math.MaxInt32 || maxCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Max is of type int32")
+					}
+					maxCopy := int32(maxCopy0)
+					f2f15f19.Max = &maxCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkInterfaceCount.Min != nil {
+					minCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.NetworkInterfaceCount.Min
+					if minCopy0 > math.MaxInt32 || minCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Min is of type int32")
+					}
+					minCopy := int32(minCopy0)
+					f2f15f19.Min = &minCopy
+				}
+				f2f15.NetworkInterfaceCount = f2f15f19
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.OnDemandMaxPricePercentageOverLowestPrice != nil {
+				onDemandMaxPricePercentageOverLowestPriceCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.OnDemandMaxPricePercentageOverLowestPrice
+				if onDemandMaxPricePercentageOverLowestPriceCopy0 > math.MaxInt32 || onDemandMaxPricePercentageOverLowestPriceCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field OnDemandMaxPricePercentageOverLowestPrice is of type int32")
+				}
+				onDemandMaxPricePercentageOverLowestPriceCopy := int32(onDemandMaxPricePercentageOverLowestPriceCopy0)
+				f2f15.OnDemandMaxPricePercentageOverLowestPrice = &onDemandMaxPricePercentageOverLowestPriceCopy
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.RequireHibernateSupport != nil {
+				f2f15.RequireHibernateSupport = r.ko.Spec.LaunchTemplateData.InstanceRequirements.RequireHibernateSupport
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice != nil {
+				spotMaxPricePercentageOverLowestPriceCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice
+				if spotMaxPricePercentageOverLowestPriceCopy0 > math.MaxInt32 || spotMaxPricePercentageOverLowestPriceCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field SpotMaxPricePercentageOverLowestPrice is of type int32")
+				}
+				spotMaxPricePercentageOverLowestPriceCopy := int32(spotMaxPricePercentageOverLowestPriceCopy0)
+				f2f15.SpotMaxPricePercentageOverLowestPrice = &spotMaxPricePercentageOverLowestPriceCopy
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.TotalLocalStorageGB != nil {
+				f2f15f23 := &svcsdktypes.TotalLocalStorageGBRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.TotalLocalStorageGB.Max != nil {
+					f2f15f23.Max = r.ko.Spec.LaunchTemplateData.InstanceRequirements.TotalLocalStorageGB.Max
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.TotalLocalStorageGB.Min != nil {
+					f2f15f23.Min = r.ko.Spec.LaunchTemplateData.InstanceRequirements.TotalLocalStorageGB.Min
+				}
+				f2f15.TotalLocalStorageGB = f2f15f23
+			}
+			if r.ko.Spec.LaunchTemplateData.InstanceRequirements.VCPUCount != nil {
+				f2f15f24 := &svcsdktypes.VCpuCountRangeRequest{}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.VCPUCount.Max != nil {
+					maxCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.VCPUCount.Max
+					if maxCopy0 > math.MaxInt32 || maxCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Max is of type int32")
+					}
+					maxCopy := int32(maxCopy0)
+					f2f15f24.Max = &maxCopy
+				}
+				if r.ko.Spec.LaunchTemplateData.InstanceRequirements.VCPUCount.Min != nil {
+					minCopy0 := *r.ko.Spec.LaunchTemplateData.InstanceRequirements.VCPUCount.Min
+					if minCopy0 > math.MaxInt32 || minCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Min is of type int32")
+					}
+					minCopy := int32(minCopy0)
+					f2f15f24.Min = &minCopy
+				}
+				f2f15.VCpuCount = f2f15f24
+			}
+			f2.InstanceRequirements = f2f15
+		}
+		if r.ko.Spec.LaunchTemplateData.InstanceType != nil {
+			f2.InstanceType = svcsdktypes.InstanceType(*r.ko.Spec.LaunchTemplateData.InstanceType)
+		}
+		if r.ko.Spec.LaunchTemplateData.KernelID != nil {
+			f2.KernelId = r.ko.Spec.LaunchTemplateData.KernelID
+		}
+		if r.ko.Spec.LaunchTemplateData.KeyName != nil {
+			f2.KeyName = r.ko.Spec.LaunchTemplateData.KeyName
+		}
+		if r.ko.Spec.LaunchTemplateData.LicenseSpecifications != nil {
+			f2f19 := []svcsdktypes.LaunchTemplateLicenseConfigurationRequest{}
+			for _, f2f19iter := range r.ko.Spec.LaunchTemplateData.LicenseSpecifications {
+				f2f19elem := &svcsdktypes.LaunchTemplateLicenseConfigurationRequest{}
+				if f2f19iter.LicenseConfigurationARN != nil {
+					f2f19elem.LicenseConfigurationArn = f2f19iter.LicenseConfigurationARN
+				}
+				f2f19 = append(f2f19, *f2f19elem)
+			}
+			f2.LicenseSpecifications = f2f19
+		}
+		if r.ko.Spec.LaunchTemplateData.MaintenanceOptions != nil {
+			f2f20 := &svcsdktypes.LaunchTemplateInstanceMaintenanceOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.MaintenanceOptions.AutoRecovery != nil {
+				f2f20.AutoRecovery = svcsdktypes.LaunchTemplateAutoRecoveryState(*r.ko.Spec.LaunchTemplateData.MaintenanceOptions.AutoRecovery)
+			}
+			f2.MaintenanceOptions = f2f20
+		}
+		if r.ko.Spec.LaunchTemplateData.MetadataOptions != nil {
+			f2f21 := &svcsdktypes.LaunchTemplateInstanceMetadataOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPEndpoint != nil {
+				f2f21.HttpEndpoint = svcsdktypes.LaunchTemplateInstanceMetadataEndpointState(*r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPEndpoint)
+			}
+			if r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPProtocolIPv6 != nil {
+				f2f21.HttpProtocolIpv6 = svcsdktypes.LaunchTemplateInstanceMetadataProtocolIpv6(*r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPProtocolIPv6)
+			}
+			if r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPPutResponseHopLimit != nil {
+				httpPutResponseHopLimitCopy0 := *r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPPutResponseHopLimit
+				if httpPutResponseHopLimitCopy0 > math.MaxInt32 || httpPutResponseHopLimitCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field HttpPutResponseHopLimit is of type int32")
+				}
+				httpPutResponseHopLimitCopy := int32(httpPutResponseHopLimitCopy0)
+				f2f21.HttpPutResponseHopLimit = &httpPutResponseHopLimitCopy
+			}
+			if r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPTokens != nil {
+				f2f21.HttpTokens = svcsdktypes.LaunchTemplateHttpTokensState(*r.ko.Spec.LaunchTemplateData.MetadataOptions.HTTPTokens)
+			}
+			if r.ko.Spec.LaunchTemplateData.MetadataOptions.InstanceMetadataTags != nil {
+				f2f21.InstanceMetadataTags = svcsdktypes.LaunchTemplateInstanceMetadataTagsState(*r.ko.Spec.LaunchTemplateData.MetadataOptions.InstanceMetadataTags)
+			}
+			f2.MetadataOptions = f2f21
+		}
+		if r.ko.Spec.LaunchTemplateData.Monitoring != nil {
+			f2f22 := &svcsdktypes.LaunchTemplatesMonitoringRequest{}
+			if r.ko.Spec.LaunchTemplateData.Monitoring.Enabled != nil {
+				f2f22.Enabled = r.ko.Spec.LaunchTemplateData.Monitoring.Enabled
+			}
+			f2.Monitoring = f2f22
+		}
+		if r.ko.Spec.LaunchTemplateData.NetworkInterfaces != nil {
+			f2f23 := []svcsdktypes.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{}
+			for _, f2f23iter := range r.ko.Spec.LaunchTemplateData.NetworkInterfaces {
+				f2f23elem := &svcsdktypes.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{}
+				if f2f23iter.AssociateCarrierIPAddress != nil {
+					f2f23elem.AssociateCarrierIpAddress = f2f23iter.AssociateCarrierIPAddress
+				}
+				if f2f23iter.AssociatePublicIPAddress != nil {
+					f2f23elem.AssociatePublicIpAddress = f2f23iter.AssociatePublicIPAddress
+				}
+				if f2f23iter.DeleteOnTermination != nil {
+					f2f23elem.DeleteOnTermination = f2f23iter.DeleteOnTermination
+				}
+				if f2f23iter.Description != nil {
+					f2f23elem.Description = f2f23iter.Description
+				}
+				if f2f23iter.DeviceIndex != nil {
+					deviceIndexCopy0 := *f2f23iter.DeviceIndex
+					if deviceIndexCopy0 > math.MaxInt32 || deviceIndexCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field DeviceIndex is of type int32")
+					}
+					deviceIndexCopy := int32(deviceIndexCopy0)
+					f2f23elem.DeviceIndex = &deviceIndexCopy
+				}
+				if f2f23iter.Groups != nil {
+					f2f23elem.Groups = aws.ToStringSlice(f2f23iter.Groups)
+				}
+				if f2f23iter.InterfaceType != nil {
+					f2f23elem.InterfaceType = f2f23iter.InterfaceType
+				}
+				if f2f23iter.IPv4PrefixCount != nil {
+					ipv4PrefixCountCopy0 := *f2f23iter.IPv4PrefixCount
+					if ipv4PrefixCountCopy0 > math.MaxInt32 || ipv4PrefixCountCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Ipv4PrefixCount is of type int32")
+					}
+					ipv4PrefixCountCopy := int32(ipv4PrefixCountCopy0)
+					f2f23elem.Ipv4PrefixCount = &ipv4PrefixCountCopy
+				}
+				if f2f23iter.IPv4Prefixes != nil {
+					f2f23elemf8 := []svcsdktypes.Ipv4PrefixSpecificationRequest{}
+					for _, f2f23elemf8iter := range f2f23iter.IPv4Prefixes {
+						f2f23elemf8elem := &svcsdktypes.Ipv4PrefixSpecificationRequest{}
+						if f2f23elemf8iter.IPv4Prefix != nil {
+							f2f23elemf8elem.Ipv4Prefix = f2f23elemf8iter.IPv4Prefix
+						}
+						f2f23elemf8 = append(f2f23elemf8, *f2f23elemf8elem)
+					}
+					f2f23elem.Ipv4Prefixes = f2f23elemf8
+				}
+				if f2f23iter.IPv6AddressCount != nil {
+					ipv6AddressCountCopy0 := *f2f23iter.IPv6AddressCount
+					if ipv6AddressCountCopy0 > math.MaxInt32 || ipv6AddressCountCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Ipv6AddressCount is of type int32")
+					}
+					ipv6AddressCountCopy := int32(ipv6AddressCountCopy0)
+					f2f23elem.Ipv6AddressCount = &ipv6AddressCountCopy
+				}
+				if f2f23iter.IPv6Addresses != nil {
+					f2f23elemf10 := []svcsdktypes.InstanceIpv6AddressRequest{}
+					for _, f2f23elemf10iter := range f2f23iter.IPv6Addresses {
+						f2f23elemf10elem := &svcsdktypes.InstanceIpv6AddressRequest{}
+						if f2f23elemf10iter.IPv6Address != nil {
+							f2f23elemf10elem.Ipv6Address = f2f23elemf10iter.IPv6Address
+						}
+						f2f23elemf10 = append(f2f23elemf10, *f2f23elemf10elem)
+					}
+					f2f23elem.Ipv6Addresses = f2f23elemf10
+				}
+				if f2f23iter.IPv6PrefixCount != nil {
+					ipv6PrefixCountCopy0 := *f2f23iter.IPv6PrefixCount
+					if ipv6PrefixCountCopy0 > math.MaxInt32 || ipv6PrefixCountCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Ipv6PrefixCount is of type int32")
+					}
+					ipv6PrefixCountCopy := int32(ipv6PrefixCountCopy0)
+					f2f23elem.Ipv6PrefixCount = &ipv6PrefixCountCopy
+				}
+				if f2f23iter.IPv6Prefixes != nil {
+					f2f23elemf12 := []svcsdktypes.Ipv6PrefixSpecificationRequest{}
+					for _, f2f23elemf12iter := range f2f23iter.IPv6Prefixes {
+						f2f23elemf12elem := &svcsdktypes.Ipv6PrefixSpecificationRequest{}
+						if f2f23elemf12iter.IPv6Prefix != nil {
+							f2f23elemf12elem.Ipv6Prefix = f2f23elemf12iter.IPv6Prefix
+						}
+						f2f23elemf12 = append(f2f23elemf12, *f2f23elemf12elem)
+					}
+					f2f23elem.Ipv6Prefixes = f2f23elemf12
+				}
+				if f2f23iter.NetworkCardIndex != nil {
+					networkCardIndexCopy0 := *f2f23iter.NetworkCardIndex
+					if networkCardIndexCopy0 > math.MaxInt32 || networkCardIndexCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field NetworkCardIndex is of type int32")
+					}
+					networkCardIndexCopy := int32(networkCardIndexCopy0)
+					f2f23elem.NetworkCardIndex = &networkCardIndexCopy
+				}
+				if f2f23iter.NetworkInterfaceID != nil {
+					f2f23elem.NetworkInterfaceId = f2f23iter.NetworkInterfaceID
+				}
+				if f2f23iter.PrimaryIPv6 != nil {
+					f2f23elem.PrimaryIpv6 = f2f23iter.PrimaryIPv6
+				}
+				if f2f23iter.PrivateIPAddress != nil {
+					f2f23elem.PrivateIpAddress = f2f23iter.PrivateIPAddress
+				}
+				if f2f23iter.PrivateIPAddresses != nil {
+					f2f23elemf17 := []svcsdktypes.PrivateIpAddressSpecification{}
+					for _, f2f23elemf17iter := range f2f23iter.PrivateIPAddresses {
+						f2f23elemf17elem := &svcsdktypes.PrivateIpAddressSpecification{}
+						if f2f23elemf17iter.Primary != nil {
+							f2f23elemf17elem.Primary = f2f23elemf17iter.Primary
+						}
+						if f2f23elemf17iter.PrivateIPAddress != nil {
+							f2f23elemf17elem.PrivateIpAddress = f2f23elemf17iter.PrivateIPAddress
+						}
+						f2f23elemf17 = append(f2f23elemf17, *f2f23elemf17elem)
+					}
+					f2f23elem.PrivateIpAddresses = f2f23elemf17
+				}
+				if f2f23iter.SecondaryPrivateIPAddressCount != nil {
+					secondaryPrivateIPAddressCountCopy0 := *f2f23iter.SecondaryPrivateIPAddressCount
+					if secondaryPrivateIPAddressCountCopy0 > math.MaxInt32 || secondaryPrivateIPAddressCountCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field SecondaryPrivateIpAddressCount is of type int32")
+					}
+					secondaryPrivateIPAddressCountCopy := int32(secondaryPrivateIPAddressCountCopy0)
+					f2f23elem.SecondaryPrivateIpAddressCount = &secondaryPrivateIPAddressCountCopy
+				}
+				if f2f23iter.SubnetID != nil {
+					f2f23elem.SubnetId = f2f23iter.SubnetID
+				}
+				f2f23 = append(f2f23, *f2f23elem)
+			}
+			f2.NetworkInterfaces = f2f23
+		}
+		if r.ko.Spec.LaunchTemplateData.Placement != nil {
+			f2f24 := &svcsdktypes.LaunchTemplatePlacementRequest{}
+			if r.ko.Spec.LaunchTemplateData.Placement.Affinity != nil {
+				f2f24.Affinity = r.ko.Spec.LaunchTemplateData.Placement.Affinity
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.AvailabilityZone != nil {
+				f2f24.AvailabilityZone = r.ko.Spec.LaunchTemplateData.Placement.AvailabilityZone
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.GroupID != nil {
+				f2f24.GroupId = r.ko.Spec.LaunchTemplateData.Placement.GroupID
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.GroupName != nil {
+				f2f24.GroupName = r.ko.Spec.LaunchTemplateData.Placement.GroupName
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.HostID != nil {
+				f2f24.HostId = r.ko.Spec.LaunchTemplateData.Placement.HostID
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.HostResourceGroupARN != nil {
+				f2f24.HostResourceGroupArn = r.ko.Spec.LaunchTemplateData.Placement.HostResourceGroupARN
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.PartitionNumber != nil {
+				partitionNumberCopy0 := *r.ko.Spec.LaunchTemplateData.Placement.PartitionNumber
+				if partitionNumberCopy0 > math.MaxInt32 || partitionNumberCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field PartitionNumber is of type int32")
+				}
+				partitionNumberCopy := int32(partitionNumberCopy0)
+				f2f24.PartitionNumber = &partitionNumberCopy
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.SpreadDomain != nil {
+				f2f24.SpreadDomain = r.ko.Spec.LaunchTemplateData.Placement.SpreadDomain
+			}
+			if r.ko.Spec.LaunchTemplateData.Placement.Tenancy != nil {
+				f2f24.Tenancy = svcsdktypes.Tenancy(*r.ko.Spec.LaunchTemplateData.Placement.Tenancy)
+			}
+			f2.Placement = f2f24
+		}
+		if r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions != nil {
+			f2f25 := &svcsdktypes.LaunchTemplatePrivateDnsNameOptionsRequest{}
+			if r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord != nil {
+				f2f25.EnableResourceNameDnsAAAARecord = r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions.EnableResourceNameDNSAAAARecord
+			}
+			if r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions.EnableResourceNameDNSARecord != nil {
+				f2f25.EnableResourceNameDnsARecord = r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions.EnableResourceNameDNSARecord
+			}
+			if r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions.HostnameType != nil {
+				f2f25.HostnameType = svcsdktypes.HostnameType(*r.ko.Spec.LaunchTemplateData.PrivateDNSNameOptions.HostnameType)
+			}
+			f2.PrivateDnsNameOptions = f2f25
+		}
+		if r.ko.Spec.LaunchTemplateData.RAMDiskID != nil {
+			f2.RamDiskId = r.ko.Spec.LaunchTemplateData.RAMDiskID
+		}
+		if r.ko.Spec.LaunchTemplateData.SecurityGroupIDs != nil {
+			f2.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.LaunchTemplateData.SecurityGroupIDs)
+		}
+		if r.ko.Spec.LaunchTemplateData.SecurityGroups != nil {
+			f2.SecurityGroups = aws.ToStringSlice(r.ko.Spec.LaunchTemplateData.SecurityGroups)
+		}
+		if r.ko.Spec.LaunchTemplateData.TagSpecifications != nil {
+			f2f29 := []svcsdktypes.LaunchTemplateTagSpecificationRequest{}
+			for _, f2f29iter := range r.ko.Spec.LaunchTemplateData.TagSpecifications {
+				f2f29elem := &svcsdktypes.LaunchTemplateTagSpecificationRequest{}
+				if f2f29iter.ResourceType != nil {
+					f2f29elem.ResourceType = svcsdktypes.ResourceType(*f2f29iter.ResourceType)
+				}
+				if f2f29iter.Tags != nil {
+					f2f29elemf1 := []svcsdktypes.Tag{}
+					for _, f2f29elemf1iter := range f2f29iter.Tags {
+						f2f29elemf1elem := &svcsdktypes.Tag{}
+						if f2f29elemf1iter.Key != nil {
+							f2f29elemf1elem.Key = f2f29elemf1iter.Key
+						}
+						if f2f29elemf1iter.Value != nil {
+							f2f29elemf1elem.Value = f2f29elemf1iter.Value
+						}
+						f2f29elemf1 = append(f2f29elemf1, *f2f29elemf1elem)
+					}
+					f2f29elem.Tags = f2f29elemf1
+				}
+				f2f29 = append(f2f29, *f2f29elem)
+			}
+			f2.TagSpecifications = f2f29
+		}
+		if r.ko.Spec.LaunchTemplateData.UserData != nil {
+			f2.UserData = r.ko.Spec.LaunchTemplateData.UserData
+		}
+		res.LaunchTemplateData = f2
+	}
 	if r.ko.Status.LaunchTemplateID != nil {
 		res.LaunchTemplateId = r.ko.Status.LaunchTemplateID
+	}
+	if r.ko.Spec.VersionDescription != nil {
+		res.VersionDescription = r.ko.Spec.VersionDescription
 	}
 
 	return res, nil

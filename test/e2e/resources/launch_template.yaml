@@ -1,12 +1,22 @@
 apiVersion: ec2.services.k8s.aws/v1alpha1
 kind: LaunchTemplate
 metadata:
-  name: $LAUNCH_TEMPLATE_NAME
+  name: newtemplate
 spec:
-  name: $LAUNCH_TEMPLATE_NAME
-  versionDescription: $VERSION_DESCRIPTION
+  name: newtemplate
+  versionDescription: newtemplate version 5
   launchTemplateData:
-    instanceType: t2.micro
+    instanceType: t2.large
+    monitoring:
+      enabled: false
+    networkInterfaces:
+      - privateIPAddress: 10.10.23.25
   tags:
     - key: name
       value: ack-launch-template
+    - key: environment
+      value: dev
+    - key: team
+      value: devops
+
+

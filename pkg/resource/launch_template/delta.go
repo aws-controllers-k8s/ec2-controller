@@ -42,14 +42,8 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	customPreCompare(delta, a, b)
 
-	if ackcompare.HasNilDifference(a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber) {
-		delta.Add("Spec.DefaultVersionNumber", a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber)
-	} else if a.ko.Spec.DefaultVersionNumber != nil && b.ko.Spec.DefaultVersionNumber != nil {
-		if *a.ko.Spec.DefaultVersionNumber != *b.ko.Spec.DefaultVersionNumber {
-			delta.Add("Spec.DefaultVersionNumber", a.ko.Spec.DefaultVersionNumber, b.ko.Spec.DefaultVersionNumber)
-		}
-	}
 	if ackcompare.HasNilDifference(a.ko.Spec.LaunchTemplateData, b.ko.Spec.LaunchTemplateData) {
 		delta.Add("Spec.LaunchTemplateData", a.ko.Spec.LaunchTemplateData, b.ko.Spec.LaunchTemplateData)
 	} else if a.ko.Spec.LaunchTemplateData != nil && b.ko.Spec.LaunchTemplateData != nil {
