@@ -402,6 +402,12 @@ class TestNetworkACLs:
 
         assert custom_rule_exists, "Custom rule with ruleNumber 100 not found in spec"
 
+        # Check Entries exist default  in AWS
+        ec2_validator.assert_entry(network_acl_id, 32767, "True")
+        ec2_validator.assert_entry(network_acl_id, 32767, "False")
+        # check custom rule
+        ec2_validator.assert_entry(network_acl_id, 100, "True")
+
         # Clean up
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
@@ -438,6 +444,13 @@ class TestNetworkACLs:
                 break
 
         assert custom_rule_exists, "Custom rule with ruleNumber 100 not found in spec"
+
+
+        # Check Entries exist default  in AWS
+        ec2_validator.assert_entry(network_acl_id, 32767, "True")
+        ec2_validator.assert_entry(network_acl_id, 32767, "False")
+        # check custom rule
+        ec2_validator.assert_entry(network_acl_id, 100, "True")
 
         # Clean up
         _, deleted = k8s.delete_custom_resource(ref)
