@@ -707,6 +707,8 @@ resources:
           input_fields:
             NetworkAclId: Id    
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/network_acl/sdk_create_post_build_request.go.tpl
       sdk_file_end:

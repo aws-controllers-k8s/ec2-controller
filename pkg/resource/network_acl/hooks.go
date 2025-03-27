@@ -88,10 +88,11 @@ func (rm *resourceManager) requiredFieldsMissingForCreateNetworkAcl(
 
 func (rm *resourceManager) createEntries(
 	ctx context.Context,
-	r *resource,
+	desired *resource,
 ) error {
-	if r.ko.Spec.Entries != nil {
-		if err := rm.syncEntries(ctx, r, nil); err != nil {
+	filteredEntries := filterDefaultRules(desired.ko.Spec.Entries)
+	for _, entry := range filteredEntries {
+		if err := rm.createEntry(ctx, desired, *entry); err != nil {
 			return err
 		}
 	}
@@ -324,18 +325,6 @@ func (rm *resourceManager) syncEntries(
 	toDelete := []*svcapitypes.NetworkACLEntry{}
 	toUpdate := []*svcapitypes.NetworkACLEntry{}
 
-	// Filter out AWS default rules (rule #32767) from desired entries to ensure
-	// they don't interfere with GitOps workflows. These rules are automatically
-	// managed by AWS and should not be included in the desired state.
-	filteredDesiredEntries := []*svcapitypes.NetworkACLEntry{}
-	for _, entry := range desired.ko.Spec.Entries {
-		if entry.RuleNumber != nil && *entry.RuleNumber == int64(DefaultRuleNumber) {
-			continue
-		}
-		filteredDesiredEntries = append(filteredDesiredEntries, entry)
-	}
-	desired.ko.Spec.Entries = filteredDesiredEntries
-
 	// Check for duplicate rule numbers within the same direction (egress/ingress)
 	uniqEntries := lo.UniqBy(desired.ko.Spec.Entries, func(entry *svcapitypes.NetworkACLEntry) string {
 		return strconv.FormatBool(*entry.Egress) + strconv.Itoa(int(*entry.RuleNumber))
@@ -351,20 +340,9 @@ func (rm *resourceManager) syncEntries(
 			toAdd = append(toAdd, desiredEntry)
 		}
 	}
-
 	if latest != nil {
-		// Filter out AWS default rules from latest entries before comparison
-		// to ensure consistent state management between desired and actual
-		filteredLatestEntries := []*svcapitypes.NetworkACLEntry{}
-		for _, entry := range latest.ko.Spec.Entries {
-			if entry.RuleNumber != nil && *entry.RuleNumber == int64(DefaultRuleNumber) {
-				continue
-			}
-			filteredLatestEntries = append(filteredLatestEntries, entry)
-		}
-
 		// Identify entries that need to be deleted (exist in latest but not in desired)
-		for _, latestEntry := range filteredLatestEntries {
+		for _, latestEntry := range latest.ko.Spec.Entries {
 			if !containsEntry(desired.ko.Spec.Entries, latestEntry) {
 				// entry is in latest resource, but not in desired resource; therefore, delete
 				toDelete = append(toDelete, latestEntry)
@@ -610,4 +588,27 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 		desiredTagSpecs.Tags = requestedTags
 		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
 	}
+}
+
+// Filter out AWS default rules from latest entries before comparison
+// to ensure consistent state management between desired and actual
+func customPreCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	a.ko.Spec.Entries = filterDefaultRules(a.ko.Spec.Entries)
+	b.ko.Spec.Entries = filterDefaultRules(b.ko.Spec.Entries)
+}
+
+// filter default rules 32767
+func filterDefaultRules(entries []*svcapitypes.NetworkACLEntry) []*svcapitypes.NetworkACLEntry {
+	filteredEntries := []*svcapitypes.NetworkACLEntry{}
+	for _, entry := range entries {
+		if entry.RuleNumber != nil && *entry.RuleNumber == int64(DefaultRuleNumber) {
+			continue
+		}
+		filteredEntries = append(filteredEntries, entry)
+	}
+	return filteredEntries
 }
