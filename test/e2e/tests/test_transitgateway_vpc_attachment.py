@@ -100,7 +100,7 @@ class TestTransitGatewayVPCAttachment:
         )
         
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
-        attachment_id = cr["status"]["transitGatewayAttachmentID"]
+        attachment_id = cr["status"]["id"]
 
         # Check TGW Attachment exists and verify initial tags
         ec2_validator = EC2Validator(ec2_client)
@@ -155,7 +155,7 @@ class TestTransitGatewayVPCAttachment:
             wait_periods=MAX_WAIT_FOR_SYNCED_SECONDS,
         )
 
-        attachment_id = cr["status"]["transitGatewayAttachmentID"]
+        attachment_id = cr["status"]["id"]
 
         # Update options
         updates = {
@@ -192,7 +192,7 @@ class TestTransitGatewayVPCAttachment:
             wait_periods=MAX_WAIT_FOR_SYNCED_SECONDS,
         )
 
-        attachment_id = cr["status"]["transitGatewayAttachmentID"]
+        attachment_id = cr["status"]["id"]
 
         # Update subnet ids
         test_vpc = get_bootstrap_resources().SharedTestVPC
