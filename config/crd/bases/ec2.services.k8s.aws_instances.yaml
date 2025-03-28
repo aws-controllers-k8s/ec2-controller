@@ -173,7 +173,7 @@ spec:
 
                     A specification for an Elastic Graphics accelerator.
                   properties:
-                    type_:
+                    type:
                       type: string
                   type: object
                 type: array
