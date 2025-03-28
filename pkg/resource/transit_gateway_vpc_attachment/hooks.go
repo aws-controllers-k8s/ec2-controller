@@ -14,11 +14,30 @@
 package transit_gateway_vpc_attachment
 
 import (
-	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
+	"fmt"
+
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+
+	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
+
+var StatusAvailable = svcsdktypes.TransitGatewayAttachmentStateAvailable
+
+// requeueWaitUntilCanModify returns a `ackrequeue.RequeueNeededAfter` struct
+// explaining the cluster cannot be modified until it reaches an active status.
+func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeeded {
+	if r.ko.Status.State == nil {
+		return nil
+	}
+	status := *r.ko.Status.State
+	return ackrequeue.Needed(
+		fmt.Errorf("transitGatewayAttachment is in '%s' and state, cannot be modified until '%s'",
+			status, StatusAvailable),
+	)
+}
 
 // updateTagSpecificationsInCreateRequest adds
 // Tags defined in the Spec to CreateDhcpOptionsInput.TagSpecification
@@ -47,7 +66,6 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 func compareSubnetIDs(desiredSubnetIDs, latestSubnetIDs []*string) ([]string, []string) {
 
 	toAdd, toRemove := []string{}, []string{}
-
 	desired, latest := aws.ToStringSlice(desiredSubnetIDs), aws.ToStringSlice(latestSubnetIDs)
 
 	for _, d := range desired {

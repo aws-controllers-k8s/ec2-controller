@@ -14,5 +14,5 @@
 	}
 
 	if *latest.ko.Status.State != string(svcsdktypes.TransitGatewayAttachmentStateAvailable) {
-		
+		return desired, requeueWaitUntilCanModify(desired)
 	}

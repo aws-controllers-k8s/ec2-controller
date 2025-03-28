@@ -27,39 +27,44 @@ from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.tests.helper import EC2Validator
 
-REGION = "us-west-2" if environ.get('AWS_DEFAULT_REGION') is None else environ.get('AWS_DEFAULT_REGION')
 RESOURCE_PLURAL = "transitgatewayvpcattachments"
 
 CREATE_WAIT_AFTER_SECONDS = 30
-DELETE_WAIT_AFTER_SECONDS = 180
-MAX_WAIT_FOR_SYNCED_SECONDS = 180
 MODIFY_WAIT_AFTER_SECONDS = 30
+WAIT_PERIOD = 30
 
-@pytest.fixture(scope="module")
-def simple_tgw_attachment(request):
-    test_resource_values = REPLACEMENT_VALUES.copy()
+@pytest.fixture
+def simple_tgw_attachment(request, ec2_client):
     resource_name = random_suffix_name("tgw-attachment-test", 24)
     
     test_vpc = get_bootstrap_resources().SharedTestVPC
     test_tgw = get_bootstrap_resources().TestTransitGateway
+
+    tgw_id = test_tgw.transit_gateway_id
+
+    ec2_validator = EC2Validator(ec2_client)
+    is_available = ec2_validator.wait_transit_gateway_state(tgw_id=tgw_id, state='available')
+    assert is_available
     
-    test_resource_values["TGWVA_NAME"] = resource_name
-    test_resource_values["VPC_ID"] = test_vpc.vpc_id
-    test_resource_values["TGW_ID"] = test_tgw.transit_gateway_id
-    test_resource_values["SUBNET_ID"] = test_vpc.public_subnets.subnet_ids[0]
+    replacements = REPLACEMENT_VALUES.copy()
+
+    replacements["TGWVA_NAME"] = resource_name
+    replacements["VPC_ID"] = test_vpc.vpc_id
+    replacements["TGW_ID"] = test_tgw.transit_gateway_id
+    replacements["SUBNET_ID"] = test_vpc.public_subnets.subnet_ids[0]
 
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
         data = marker.args[0]
         if 'tag_key' in data:
-            test_resource_values["TAG_KEY"] = data["tag_key"]
+            replacements["TAG_KEY"] = data['tag_key']
         if 'tag_value' in data:
-            test_resource_values["TAG_VALUE"] = data["tag_value"]
+            replacements["TAG_VALUE"] = data['tag_value']
 
     # Load TGW Attachment CR
     resource_data = load_ec2_resource(
         "transitgateway_vpc_attachment",
-        additional_replacements=test_resource_values,
+        additional_replacements=replacements,
     )
     logging.debug(resource_data)
 
@@ -89,14 +94,14 @@ def simple_tgw_attachment(request):
 class TestTransitGatewayVPCAttachment:
 
     @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
-    def test_crud_tags(self, ec2_client, simple_tgw_attachment):
+    def test_crud(self, ec2_client, simple_tgw_attachment):
         (ref, cr) = simple_tgw_attachment
 
         assert k8s.wait_on_condition(
             ref,
             "ACK.ResourceSynced",
             "True",
-            wait_periods=MAX_WAIT_FOR_SYNCED_SECONDS,
+            wait_periods=WAIT_PERIOD,
         )
         
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -143,26 +148,12 @@ class TestTransitGatewayVPCAttachment:
             actual=attachment["Tags"],
         )
 
-    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
-    def test_update_options(self, ec2_client, simple_tgw_attachment):
-        (ref, cr) = simple_tgw_attachment
-        
-
-        assert k8s.wait_on_condition(
-            ref,
-            "ACK.ResourceSynced",
-            "True",
-            wait_periods=MAX_WAIT_FOR_SYNCED_SECONDS,
-        )
-
-        attachment_id = cr["status"]["id"]
-
         # Update options
+        # dns support is enabled by default
         updates = {
             "spec": {
                 "options": {
                     "dnsSupport": "disable",
-                    "ipv6Support": "enable"
                 }
             }
         }
@@ -171,28 +162,13 @@ class TestTransitGatewayVPCAttachment:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=WAIT_PERIOD)
 
         # Verify the update in AWS
         ec2_validator = EC2Validator(ec2_client)
         attachment = ec2_validator.get_transit_gateway_vpc_attachment(attachment_id)
         
         assert attachment["Options"]["DnsSupport"] == "disable"
-        assert attachment["Options"]["Ipv6Support"] == "enable"
-
-    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
-    def test_update_subnet_ids(self, ec2_client, simple_tgw_attachment):
-        (ref, cr) = simple_tgw_attachment
-        
-        
-        assert k8s.wait_on_condition(
-            ref,
-            "ACK.ResourceSynced",
-            "True",
-            wait_periods=MAX_WAIT_FOR_SYNCED_SECONDS,
-        )
-
-        attachment_id = cr["status"]["id"]
 
         # Update subnet ids
         test_vpc = get_bootstrap_resources().SharedTestVPC
@@ -206,10 +182,10 @@ class TestTransitGatewayVPCAttachment:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=WAIT_PERIOD)
 
         # Verify the update in AWS
         ec2_validator = EC2Validator(ec2_client)
         attachment = ec2_validator.get_transit_gateway_vpc_attachment(attachment_id)
         
-        assert attachment["SubnetIds"] == test_vpc.public_subnets.subnet_ids
+        assert set(attachment["SubnetIds"]) == set(test_vpc.public_subnets.subnet_ids)

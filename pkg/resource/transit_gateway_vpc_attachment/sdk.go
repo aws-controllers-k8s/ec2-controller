@@ -168,12 +168,6 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-
-	if ko.Status.State != nil && *ko.Status.State != string(svcsdktypes.TransitGatewayAttachmentStateAvailable) {
-		// Setting resource synced condition to false will trigger a requeue of
-		// the resource. No need to return a requeue error here.
-		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
-	}
 	return &resource{ko}, nil
 }
 
@@ -371,7 +365,7 @@ func (rm *resourceManager) sdkUpdate(
 	}
 
 	if *latest.ko.Status.State != string(svcsdktypes.TransitGatewayAttachmentStateAvailable) {
-
+		return desired, requeueWaitUntilCanModify(desired)
 	}
 
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
