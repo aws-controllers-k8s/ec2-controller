@@ -84,6 +84,7 @@ rules:
   - securitygroups
   - subnets
   - transitgateways
+  - transitgatewayvpcattachments
   - vpcendpoints
   - vpcendpointserviceconfigurations
   - vpcpeeringconnections
@@ -111,6 +112,7 @@ rules:
   - securitygroups/status
   - subnets/status
   - transitgateways/status
+  - transitgatewayvpcattachments/status
   - vpcendpoints/status
   - vpcendpointserviceconfigurations/status
   - vpcpeeringconnections/status

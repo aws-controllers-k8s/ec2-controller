@@ -18,6 +18,7 @@ import logging
 from acktest.bootstrapping import Resources, BootstrapFailureException
 from acktest.bootstrapping.elbv2 import NetworkLoadBalancer
 from acktest.bootstrapping.vpc import VPC
+from acktest.bootstrapping.vpc import TransitGateway
 from acktest.bootstrapping.s3 import Bucket
 from e2e import bootstrap_directory
 from e2e.bootstrap_resources import BootstrapResources
@@ -35,7 +36,8 @@ def service_bootstrap() -> Resources:
             "ack-ec2-controller-flow-log-tests",
         ),
         NetworkLoadBalancer=NetworkLoadBalancer("e2e-vpc-ep-service-test"),
-        AdoptedVPC=VPC(name_prefix="e2e-adopted-vpc", num_public_subnet=1, num_private_subnet=0)
+        AdoptedVPC=VPC(name_prefix="e2e-adopted-vpc", num_public_subnet=1, num_private_subnet=0),
+        TestTransitGateway=TransitGateway()
     )
 
     try:

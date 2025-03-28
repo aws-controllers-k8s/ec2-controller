@@ -51,6 +51,7 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/security_group"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/subnet"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/transit_gateway"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/transit_gateway_vpc_attachment"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint_service_configuration"

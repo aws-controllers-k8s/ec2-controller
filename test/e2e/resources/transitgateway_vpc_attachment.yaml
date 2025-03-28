@@ -1,0 +1,12 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: TransitGatewayVPCAttachment
+metadata:
+  name: $TGWVA_NAME
+spec:
+  vpcID: $VPC_ID
+  subnetIDs:
+    - $SUBNET_ID
+  transitGatewayID: $TGW_ID
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

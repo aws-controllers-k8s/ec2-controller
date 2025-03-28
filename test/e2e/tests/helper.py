@@ -15,6 +15,7 @@
 """
 
 from typing import Union, Dict
+import time
 
 
 class EC2Validator:
@@ -206,6 +207,42 @@ class EC2Validator:
         res_found = False
         try:
             aws_res = self.ec2_client.describe_transit_gateways(TransitGatewayIds=[tgw_id])
+            tgw = aws_res["TransitGateways"][0]
+            # TransitGateway may take awhile to be removed server-side, so 
+            # treat 'deleting' and 'deleted' states as resource no longer existing
+            res_found = tgw is not None and tgw['State'] != "deleting" and tgw['State'] != "deleted"
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists
+
+    def wait_transit_gateway_state(self, tgw_id: str, state: str):
+        is_state = False
+        max_tries = 5
+        try:
+            for tries in range(max_tries):
+                transit_gateway = self.ec2_client.describe_transit_gateways(TransitGatewayIds=[tgw_id])
+                if transit_gateway['TransitGateways'][0]['State'] == state:
+                    is_state=True
+                    break
+                else:
+                    time.sleep(30)
+        except:
+            pass
+        return is_state
+
+    def get_transit_gateway_vpc_attachment(self, attachment_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_transit_gateway_vpc_attachments(TransitGatewayAttachmentIds=[attachment_id])
+            if len(aws_res["TransitGatewayVpcAttachments"]) > 0:
+                return aws_res["TransitGatewayVpcAttachments"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def assert_transit_gateway_vpc_attachment(self, tgw_id: str, exists=True):
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_transit_gateway_vpc_attachments(TransitGatewayAttachmentIds=[tgw_id])
             tgw = aws_res["TransitGateways"][0]
             # TransitGateway may take awhile to be removed server-side, so 
             # treat 'deleting' and 'deleted' states as resource no longer existing
