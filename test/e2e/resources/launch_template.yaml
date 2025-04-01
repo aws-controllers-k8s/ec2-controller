@@ -1,0 +1,13 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplate
+metadata:
+  name: $LAUNCH_TEMPLATE_NAME
+spec:
+  name: $LAUNCH_TEMPLATE_NAME
+  data:
+    instanceType: t2.nano
+    monitoring:
+      enabled: false
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE

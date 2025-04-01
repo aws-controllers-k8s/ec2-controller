@@ -113,6 +113,11 @@ ignore:
     - SubnetIpv6CidrBlockAssociation.Ipv6AddressAttribute
     - VpcIpv6CidrBlockAssociation.IpSource
     - VpcIpv6CidrBlockAssociation.Ipv6AddressAttribute
+    - CreateLaunchTemplateInput.DryRun
+    - CreateLaunchTemplateInput.ClientToken
+    - CreateLaunchTemplateInput.TagSpecifications
+    - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
+    - CreateLaunchTemplateVersionOutput.LaunchTemplateVersion.DefaultVersion
   resource_names:
     - CapacityReservationBySplitting
     - IpamExternalResourceVerificationToken
@@ -144,7 +149,7 @@ ignore:
     - IpamScope
     - KeyPair
     - LaunchTemplateVersion
-    - LaunchTemplate
+    # - LaunchTemplate
     - LocalGatewayRouteTable
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
@@ -217,6 +222,18 @@ operations:
     operation_type:
     - Delete
     resource_name: ElasticIPAddress
+  CreateLaunchTemplate:
+    operation_type:
+      - Create
+    output_wrapper_field_path: LaunchTemplate
+    resource_name: LaunchTemplate
+  CreateLaunchTemplateVersion:
+    operation_type:
+      - Update
+    output_wrapper_field_path: LaunchTemplateVersion
+    resource_name: LaunchTemplate
+  DescribeLaunchTemplates:
+    custom_check_required_fields_missing_method: checkForMissingRequiredFields
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
   CreateNetworkAcl:
@@ -485,6 +502,67 @@ resources:
         template_path: hooks/internet_gateway/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateInternetGateway
+  LaunchTemplate:
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/launch_template/sdk_create_post_build_request.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/launch_template/sdk_update_pre_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/launch_template/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/launch_template/sdk_file_end.go.tpl
+    exceptions:
+      errors:
+        404:
+          code: InvalidLaunchTemplateName.NotFoundException
+    renames:
+      operations:
+        CreateLaunchTemplate:
+          input_fields:
+            LaunchTemplateName: Name
+            LaunchTemplateData: Data
+          output_fields:
+            LaunchTemplateId: ID
+            # Note: maybe we can rename this to just version?
+            # thoughts...
+            DefaultVersionNumber: DefaultVersion
+            LatestVersionNumber: LatestVersion
+        CreateLaunchTemplateVersion:
+          input_fields:
+            LaunchTemplateId: ID
+            LaunchTemplateData: Data
+          output_fields:
+            LaunchTemplateData: Data
+            LaunchTemplateId: ID
+            VersionNumber: LatestVersion
+        DeleteLaunchTemplate:
+          input_fields:
+            LaunchTemplateId: ID
+        DescribeLaunchTemplates:
+          input_fields:
+            LaunchTemplateIds: ID
+          output_fields:
+            LatestVersionNumber: LatestVersion
+            DefaultVersionNumber: DefaultVersion
+    fields:
+      ID:
+        is_primary_key: true
+        print:
+          path: Status.ID
+          name: ID
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags    
+      DefaultVersion:
+        from:
+          operation: ModifyLaunchTemplate
+          path: LaunchTemplate.DefaultVersionNumber
+      Data.ElasticInferenceAccelerators.Type:
+        go_tag: json:"type,omitempty"
+      Data.ElasticGPUSpecifications.Type:
+        go_tag: json:"type,omitempty"
   NatGateway:
     exceptions:
       terminal_codes:
