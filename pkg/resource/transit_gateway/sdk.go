@@ -177,6 +177,13 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	if isResourceDeleted(&resource{ko}) {
+		return nil, ackerr.NotFound
+	}
+	if isResourcePending(&resource{ko}) {
+		return nil, ackrequeue.Needed(fmt.Errorf("resource is pending"))
+	}
+
 	return &resource{ko}, nil
 }
 

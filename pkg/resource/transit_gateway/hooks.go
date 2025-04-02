@@ -24,6 +24,22 @@ import (
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
 
+func isResourceDeleted(r *resource) bool {
+	if r.ko.Status.State == nil {
+		return true
+	}
+	status := *r.ko.Status.State
+	return status == string(svcsdktypes.TransitGatewayStateDeleted)
+}
+
+func isResourcePending(r *resource) bool {
+	if r.ko.Status.State == nil {
+		return false
+	}
+	status := *r.ko.Status.State
+	return status == string(svcsdktypes.TransitGatewayStatePending)
+}
+
 func (rm *resourceManager) customUpdateTransitGateway(
 	ctx context.Context,
 	desired *resource,
