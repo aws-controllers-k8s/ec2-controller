@@ -24,6 +24,22 @@ import (
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
 
+func isResourceDeleted(r *resource) bool {
+	if r.ko.Status.State == nil {
+		return true
+	}
+	status := *r.ko.Status.State
+	return status == string(svcsdktypes.NatGatewayStateDeleted)
+}
+
+func isResourcePending(r *resource) bool {
+	if r.ko.Status.State == nil {
+		return false
+	}
+	status := *r.ko.Status.State
+	return status == string(svcsdktypes.NatGatewayStatePending)
+}
+
 func (rm *resourceManager) customUpdateNATGateway(
 	ctx context.Context,
 	desired *resource,
@@ -40,6 +56,7 @@ func (rm *resourceManager) customUpdateNATGateway(
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
+	updated.ko.Status = latest.ko.Status
 
 	if delta.DifferentAt("Spec.Tags") {
 		if err := tags.Sync(
