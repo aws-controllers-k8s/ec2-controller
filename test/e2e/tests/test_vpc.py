@@ -230,6 +230,7 @@ class TestVpc:
         resource = k8s.get_resource(ref)
         assert len(resource["spec"]["tags"]) == 0
 
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
@@ -282,7 +283,7 @@ class TestVpc:
         }
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
-
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         # Make sure default security group rule is deleted
         assert not contains_default_sg_rule(ec2_client, resource_id)
 
@@ -480,6 +481,7 @@ class TestVpc:
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         # Re-Validate CIDR Blocks State
         vpc = ec2_validator.get_vpc(resource_id)
         assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState']['State'] == "associated"
