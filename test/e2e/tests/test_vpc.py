@@ -31,7 +31,7 @@ PRIMARY_CIDR_DEFAULT = "10.0.0.0/16"
 
 CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
-MODIFY_WAIT_AFTER_SECONDS = 5
+MODIFY_WAIT_AFTER_SECONDS = 15
 
 def get_vpc_attribute(ec2_client, vpc_id: str, attribute_name: str) -> dict:
     return ec2_client.describe_vpc_attribute(Attribute=attribute_name, VpcId=vpc_id)
@@ -269,6 +269,7 @@ class TestVpc:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
+        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         # Check VPC exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc(resource_id)
