@@ -1,4 +1,8 @@
 
+	// This prevents reference resolution errors when adopting existing resources where these fields are not provided in the manifest.
+	if ko.Spec.VPCID == nil && ko.Status.RequesterVPCInfo != nil && ko.Status.RequesterVPCInfo.VPCID != nil {
+		ko.Spec.VPCID = ko.Status.RequesterVPCInfo.VPCID
+	}
 
 	if r.ko.Spec.AccepterPeeringConnectionOptions != nil {
 		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
