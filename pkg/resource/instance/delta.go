@@ -516,6 +516,9 @@ func newResourceDelta(
 			delta.Add("Spec.SubnetID", a.ko.Spec.SubnetID, b.ko.Spec.SubnetID)
 		}
 	}
+	if !reflect.DeepEqual(a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef) {
+		delta.Add("Spec.SubnetRef", a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef)
+	}
 	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
 	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
 	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {

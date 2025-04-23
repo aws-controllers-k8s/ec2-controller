@@ -380,6 +380,14 @@ resources:
       SecurityGroups:
         set:
           - from: GroupName
+      LaunchTemplate.LaunchTemplateID:
+        references:
+          resource: LaunchTemplate
+          path: Status.ID
+      SubnetID:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
       Tags:
         from:
           operation: CreateTags

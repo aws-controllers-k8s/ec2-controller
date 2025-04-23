@@ -325,6 +325,20 @@ spec:
                     type: string
                   launchTemplateName:
                     type: string
+                  launchTemplateRef:
+                    description: Reference field for LaunchTemplateID
+                    properties:
+                      from:
+                        description: |-
+                          AWSResourceReference provides all the values necessary to reference another
+                          k8s resource for finding the identifier(Id/ARN/Name)
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        type: object
+                    type: object
                   version:
                     type: string
                 type: object
@@ -554,6 +568,23 @@ spec:
                   If you specify a network interface, you must specify any subnets as part
                   of the network interface instead of using this parameter.
                 type: string
+              subnetRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                  \ name: my-api"
+                properties:
+                  from:
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                type: object
               tags:
                 description: |-
                   The tags. The value parameter is required, but if you don't want the tag
