@@ -3465,7 +3465,9 @@ type LaunchTemplatePrivateDNSNameOptionsRequest struct {
 type LaunchTemplateSpecification struct {
 	LaunchTemplateID   *string `json:"launchTemplateID,omitempty"`
 	LaunchTemplateName *string `json:"launchTemplateName,omitempty"`
-	Version            *string `json:"version,omitempty"`
+	// Reference field for LaunchTemplateID
+	LaunchTemplateRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"launchTemplateRef,omitempty"`
+	Version           *string                                  `json:"version,omitempty"`
 }
 
 // The options for Spot Instances.

@@ -11620,6 +11620,11 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.SubnetRef != nil {
+		in, out := &in.SubnetRef, &out.SubnetRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
 		*out = make([]*Tag, len(*in))
@@ -14328,6 +14333,11 @@ func (in *LaunchTemplateSpecification) DeepCopyInto(out *LaunchTemplateSpecifica
 		in, out := &in.LaunchTemplateName, &out.LaunchTemplateName
 		*out = new(string)
 		**out = **in
+	}
+	if in.LaunchTemplateRef != nil {
+		in, out := &in.LaunchTemplateRef, &out.LaunchTemplateRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Version != nil {
 		in, out := &in.Version, &out.Version

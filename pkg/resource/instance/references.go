@@ -17,9 +17,14 @@ package instance
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -31,6 +36,16 @@ import (
 // values.
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if ko.Spec.LaunchTemplate != nil {
+		if ko.Spec.LaunchTemplate.LaunchTemplateRef != nil {
+			ko.Spec.LaunchTemplate.LaunchTemplateID = nil
+		}
+	}
+
+	if ko.Spec.SubnetRef != nil {
+		ko.Spec.SubnetID = nil
+	}
 
 	return &resource{ko}
 }
@@ -47,11 +62,205 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	return res, false, nil
+	ko := rm.concreteResource(res).ko
+
+	resourceHasReferences := false
+	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForLaunchTemplate_LaunchTemplateID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForSubnetID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	return &resource{ko}, resourceHasReferences, err
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.Instance) error {
+
+	if ko.Spec.LaunchTemplate != nil {
+		if ko.Spec.LaunchTemplate.LaunchTemplateRef != nil && ko.Spec.LaunchTemplate.LaunchTemplateID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("LaunchTemplate.LaunchTemplateID", "LaunchTemplate.LaunchTemplateRef")
+		}
+	}
+
+	if ko.Spec.SubnetRef != nil && ko.Spec.SubnetID != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("SubnetID", "SubnetRef")
+	}
+	return nil
+}
+
+// resolveReferenceForLaunchTemplate_LaunchTemplateID reads the resource referenced
+// from LaunchTemplate.LaunchTemplateRef field and sets the LaunchTemplate.LaunchTemplateID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForLaunchTemplate_LaunchTemplateID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Instance,
+) (hasReferences bool, err error) {
+	if ko.Spec.LaunchTemplate != nil {
+		if ko.Spec.LaunchTemplate.LaunchTemplateRef != nil && ko.Spec.LaunchTemplate.LaunchTemplateRef.From != nil {
+			hasReferences = true
+			arr := ko.Spec.LaunchTemplate.LaunchTemplateRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: LaunchTemplate.LaunchTemplateRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
+			}
+			obj := &svcapitypes.LaunchTemplate{}
+			if err := getReferencedResourceState_LaunchTemplate(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.LaunchTemplate.LaunchTemplateID = (*string)(obj.Status.ID)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_LaunchTemplate looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_LaunchTemplate(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.LaunchTemplate,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"LaunchTemplate",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"LaunchTemplate",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"LaunchTemplate",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"LaunchTemplate",
+			namespace, name,
+			"Status.ID")
+	}
+	return nil
+}
+
+// resolveReferenceForSubnetID reads the resource referenced
+// from SubnetRef field and sets the SubnetID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForSubnetID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.Instance,
+) (hasReferences bool, err error) {
+	if ko.Spec.SubnetRef != nil && ko.Spec.SubnetRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.SubnetRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SubnetRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
+		}
+		obj := &svcapitypes.Subnet{}
+		if err := getReferencedResourceState_Subnet(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.SubnetID = (*string)(obj.Status.SubnetID)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_Subnet looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Subnet(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.Subnet,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Subnet",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Subnet",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Subnet",
+			namespace, name)
+	}
+	if obj.Status.SubnetID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Subnet",
+			namespace, name,
+			"Status.SubnetID")
+	}
 	return nil
 }

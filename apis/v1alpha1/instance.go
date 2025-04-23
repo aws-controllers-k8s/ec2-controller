@@ -212,7 +212,8 @@ type InstanceSpec struct {
 	//
 	// If you specify a network interface, you must specify any subnets as part
 	// of the network interface instead of using this parameter.
-	SubnetID *string `json:"subnetID,omitempty"`
+	SubnetID  *string                                  `json:"subnetID,omitempty"`
+	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
