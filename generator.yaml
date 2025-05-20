@@ -329,6 +329,8 @@ resources:
         template_path: hooks/capacity_reservation/sdk_update_post_set_output.go.tpl
       post_set_resource_identifiers:
         template_path: hooks/capacity_reservation/post_set_resource_identifiers.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/capacity_reservation/sdk_read_many_post_set_output.go.tpl
   DhcpOptions:
     exceptions:
       terminal_codes:
