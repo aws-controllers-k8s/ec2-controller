@@ -609,7 +609,10 @@ spec:
                 format: int64
                 type: integer
               name:
-                description: A name for the launch template.
+                description: |-
+                  A name for the launch template.
+
+                  Regex Pattern: `^[a-zA-Z0-9\(\)\.\-/_]+$`
                 type: string
               tags:
                 description: |-
