@@ -270,6 +270,14 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	// set the instance count in spec from the total instance count in status,
+	// without this there's no diff detected for this field in the desired object and latest state in aws
+	// causing update calls to have no effect at all
+	if ko.Status.TotalInstanceCount != nil {
+		ko.Spec.InstanceCount = ko.Status.TotalInstanceCount
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -599,6 +607,15 @@ func (rm *resourceManager) sdkUpdate(
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
 	if err != nil {
 		return nil, err
+	}
+
+	// If additionalInfo field is being updated, other fields cannot be modified simultaneously,
+	// hence we reset them or else we run into InvalidParameterCombination error
+	if input.AdditionalInfo != nil {
+		input.InstanceCount = nil
+		input.EndDate = nil
+		input.EndDateType = ""
+		input.InstanceMatchCriteria = ""
 	}
 
 	var resp *svcsdk.ModifyCapacityReservationOutput
