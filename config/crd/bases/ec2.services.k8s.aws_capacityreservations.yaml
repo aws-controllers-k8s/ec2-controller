@@ -183,6 +183,8 @@ spec:
 
                   The Amazon Resource Name (ARN) of the Outpost on which to create the Capacity
                   Reservation.
+
+                  Regex Pattern: `^arn:aws([a-z-]+)?:outposts:[a-z\d-]+:\d{12}:outpost/op-[a-f0-9]{17}$`
                 type: string
               placementGroupARN:
                 description: |-
@@ -192,6 +194,8 @@ spec:
                   create the Capacity Reservation. For more information, see Capacity Reservations
                   for cluster placement groups (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-cpg.html)
                   in the Amazon EC2 User Guide.
+
+                  Regex Pattern: `^arn:aws([a-z-]+)?:ec2:[a-z\d-]+:\d{12}:placement-group/^.{1,255}$`
                 type: string
               startDate:
                 description: |-
@@ -401,6 +405,8 @@ spec:
                 description: |-
                   The ID of the Amazon Web Services account to which billing of the unused
                   capacity of the Capacity Reservation is assigned.
+
+                  Regex Pattern: `^[0-9]{12}$`
                 type: string
             type: object
         type: object
