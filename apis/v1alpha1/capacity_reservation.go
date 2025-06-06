@@ -130,6 +130,8 @@ type CapacityReservationSpec struct {
 	//
 	// The Amazon Resource Name (ARN) of the Outpost on which to create the Capacity
 	// Reservation.
+	//
+	// Regex Pattern: `^arn:aws([a-z-]+)?:outposts:[a-z\d-]+:\d{12}:outpost/op-[a-f0-9]{17}$`
 	OutpostARN *string `json:"outpostARN,omitempty"`
 	// Not supported for future-dated Capacity Reservations.
 	//
@@ -137,6 +139,8 @@ type CapacityReservationSpec struct {
 	// create the Capacity Reservation. For more information, see Capacity Reservations
 	// for cluster placement groups (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-cpg.html)
 	// in the Amazon EC2 User Guide.
+	//
+	// Regex Pattern: `^arn:aws([a-z-]+)?:ec2:[a-z\d-]+:\d{12}:placement-group/^.{1,255}$`
 	PlacementGroupARN *string `json:"placementGroupARN,omitempty"`
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
@@ -245,6 +249,8 @@ type CapacityReservationStatus struct {
 	TotalInstanceCount *int64 `json:"totalInstanceCount,omitempty"`
 	// The ID of the Amazon Web Services account to which billing of the unused
 	// capacity of the Capacity Reservation is assigned.
+	//
+	// Regex Pattern: `^[0-9]{12}$`
 	// +kubebuilder:validation:Optional
 	UnusedReservationBillingOwnerID *string `json:"unusedReservationBillingOwnerID,omitempty"`
 }
