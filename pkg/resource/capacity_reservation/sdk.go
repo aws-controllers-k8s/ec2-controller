@@ -278,6 +278,10 @@ func (rm *resourceManager) sdkFind(
 		ko.Spec.InstanceCount = ko.Status.TotalInstanceCount
 	}
 
+	// the AdditionalInfo field is not returned by DescribeCapacityReservations API
+	// so we must explicitly set it to nil before returning ko
+	ko.Spec.AdditionalInfo = nil
+
 	return &resource{ko}, nil
 }
 
@@ -611,11 +615,13 @@ func (rm *resourceManager) sdkUpdate(
 
 	// If additionalInfo field is being updated, other fields cannot be modified simultaneously,
 	// hence we reset them or else we run into InvalidParameterCombination error
-	if input.AdditionalInfo != nil {
+	if delta.DifferentAt("Spec.AdditionalInfo") {
 		input.InstanceCount = nil
 		input.EndDate = nil
 		input.EndDateType = ""
 		input.InstanceMatchCriteria = ""
+	} else {
+		input.AdditionalInfo = nil
 	}
 
 	var resp *svcsdk.ModifyCapacityReservationOutput
