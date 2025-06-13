@@ -270,6 +270,14 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+
+	// set the instance count in spec from the total instance count in status,
+	// without this there's no diff detected for this field in the desired object and latest state in aws
+	// causing update calls to have no effect at all
+	if ko.Status.TotalInstanceCount != nil {
+		ko.Spec.InstanceCount = ko.Status.TotalInstanceCount
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -600,6 +608,25 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
+
+	// If additionalInfo field is being updated, other fields cannot be modified simultaneously,
+	// hence we update it separately or else we run into InvalidParameterCombination error
+	if input.AdditionalInfo != nil {
+		// update call with additional info only
+		additionalInfoInput := &svcsdk.ModifyCapacityReservationInput{
+			CapacityReservationId: input.CapacityReservationId,
+			AdditionalInfo:        input.AdditionalInfo,
+		}
+
+		_, err = rm.sdkapi.ModifyCapacityReservation(ctx, additionalInfoInput)
+		rm.metrics.RecordAPICall("UPDATE", "ModifyCapacityReservation", err)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// set additionalInfo to nil here because it has already been handled
+	input.AdditionalInfo = nil
 
 	var resp *svcsdk.ModifyCapacityReservationOutput
 	_ = resp
