@@ -271,7 +271,7 @@ func (rm *resourceManager) IsSynced(ctx context.Context, res acktypes.AWSResourc
 	if r.ko.Status.ServiceState == nil {
 		return false, nil
 	}
-	serviceStateCandidates := []string{"available"}
+	serviceStateCandidates := []string{"Available"}
 	if !ackutil.InStrings(*r.ko.Status.ServiceState, serviceStateCandidates) {
 		return false, nil
 	}

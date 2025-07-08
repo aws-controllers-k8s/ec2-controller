@@ -150,6 +150,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.PrivateDNSNameConfiguration = nil
 		}
 		if elem.ServiceId != nil {
+			if ko.Status.ServiceID == nil || *elem.ServiceId != *ko.Status.ServiceID {
+				continue
+			}
 			ko.Status.ServiceID = elem.ServiceId
 		} else {
 			ko.Status.ServiceID = nil
