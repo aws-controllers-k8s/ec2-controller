@@ -254,12 +254,6 @@ operations:
     operation_type:
       - Delete
     resource_name: VpcEndpointServiceConfiguration
-  CreateVpcEndpointServiceConfiguration:
-    output_wrapper_field_path: ServiceConfiguration
-  DeleteVpcEndpointServiceConfigurations:
-    operation_type:
-      - Delete
-    resource_name: VpcEndpointServiceConfiguration
   CreateFlowLogs:
     operation_type:
     - Create
@@ -1068,7 +1062,10 @@ resources:
       when:
       - path: Status.ServiceState
         in:
-        - available
+        - Available
+    list_operation:
+      match_fields:
+        - ServiceId
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl

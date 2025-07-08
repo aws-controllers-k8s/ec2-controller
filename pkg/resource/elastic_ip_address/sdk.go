@@ -100,10 +100,8 @@ func (rm *resourceManager) sdkFind(
 	found := false
 	for _, elem := range resp.Addresses {
 		if elem.AllocationId != nil {
-			if ko.Status.AllocationID != nil {
-				if *elem.AllocationId != *ko.Status.AllocationID {
-					continue
-				}
+			if ko.Status.AllocationID == nil || *elem.AllocationId != *ko.Status.AllocationID {
+				continue
 			}
 			ko.Status.AllocationID = elem.AllocationId
 		} else {

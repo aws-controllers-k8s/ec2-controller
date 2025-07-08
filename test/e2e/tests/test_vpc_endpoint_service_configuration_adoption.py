@@ -27,6 +27,7 @@ from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.replacement_values import REPLACEMENT_VALUES
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
+from acktest import tags
 
 from e2e.tests.helper import EC2Validator
 
@@ -41,11 +42,13 @@ MODIFY_WAIT_AFTER_SECONDS = 5
 @pytest.fixture
 def vpc_endpoint_service_adoption():
     replacements = REPLACEMENT_VALUES.copy()
-    resource_name = random_suffix_name("vpc-es-adoption", 32)
+    resource_name = random_suffix_name("vpc-es-adoption", 24)
     service_id = get_bootstrap_resources().AdoptedVpcEndpointService.service_id
-    replacements["VPC_ADOPTION_NAME"] = resource_name
+    assert service_id is not None
+
+    replacements["VPC_ENDPOINT_SERVICE_ADOPTED_NAME"] = resource_name
     replacements["ADOPTION_POLICY"] = "adopt"
-    replacements["ADOPTION_FIELDS"] = f"{{\\\"serviceId\\\": \\\"{service_id}\\\"}}"
+    replacements["ADOPTION_FIELDS"] = f"{{\\\"serviceID\\\": \\\"{service_id}\\\"}}"
 
     resource_data = load_ec2_resource(
         "vpc_endpoint_service_adoption",
@@ -77,6 +80,8 @@ class TestVpcAdoption:
     def test_vpc_endpoint_service_configuration_adopt_update(self, ec2_client, vpc_endpoint_service_adoption):
         (ref, cr) = vpc_endpoint_service_adoption
 
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
         assert cr is not None
         assert 'status' in cr
         assert 'serviceID' in cr['status']
@@ -90,12 +95,16 @@ class TestVpcAdoption:
         ec2_validator.assert_vpc_endpoint_service_configuration(resource_id)
 
         endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
-        assert len(endpoint_service_config['Tags']) == 1
-        current_tag = endpoint_service_config['Tags'][0]
-        new_tag = {'Key': 'TestName', 'Value': 'test-value'}
 
+        actual_tags = endpoint_service_config['Tags']
+        tags.assert_ack_system_tags(actual_tags)
+
+        name_tag = next((tag for tag in actual_tags if tag['Key'] == 'Name'), None)
+        assert name_tag is not None
+
+        new_tag = {'Key': 'TestName', 'Value': 'test-value'}
         updates = {
-            "spec": {"tags": [current_tag, new_tag]}
+            "spec": {"tags": [name_tag, new_tag]}
         }
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
@@ -103,9 +112,10 @@ class TestVpcAdoption:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
-        assert len(endpoint_service_config['Tags']) == 2
-        assert endpoint_service_config['Tags'][0] == current_tag
-        assert endpoint_service_config['Tags'][1] == new_tag
+        tags.assert_equal_without_ack_tags(
+            actual=endpoint_service_config['Tags'],
+            expected=[name_tag, new_tag],
+        )
 
 
 
