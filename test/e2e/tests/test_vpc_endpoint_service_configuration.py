@@ -100,6 +100,8 @@ class TestVpcEndpointServiceConfiguration:
         # Check VPC Endpoint Service exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc_endpoint_service_configuration(resource_id)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
 
         # Check that the allowedPrincipal is properly set
         allowed_principals = ec2_validator.get_vpc_endpoint_service_permissions(resource_id)
