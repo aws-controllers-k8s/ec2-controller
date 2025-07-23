@@ -94,27 +94,33 @@ class TestVpcAdoption:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc_endpoint_service_configuration(resource_id)
 
-        endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
+        updated_endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
 
-        actual_tags = endpoint_service_config['Tags']
+        actual_tags = updated_endpoint_service_config['Tags']
         tags.assert_ack_system_tags(actual_tags)
 
         name_tag = next((tag for tag in actual_tags if tag['Key'] == 'Name'), None)
         assert name_tag is not None
 
-        new_tag = {'Key': 'TestName', 'Value': 'test-value'}
+        name_tag = {'key': 'Name', 'value': name_tag['Value']}
+        new_tag = {'key': 'TestName', 'value': 'test-value'}
         updates = {
             "spec": {"tags": [name_tag, new_tag]}
         }
+        
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
     
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
+        updated_endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
+        assert updated_endpoint_service_config is not None
+        assert 'Tags' in updated_endpoint_service_config
+        
+        expected_tags = [{"Key": name_tag['key'], "Value": name_tag['value']},  {"Key": new_tag['key'], "Value": new_tag['value']}]
         tags.assert_equal_without_ack_tags(
-            actual=endpoint_service_config['Tags'],
-            expected=[name_tag, new_tag],
+            actual=updated_endpoint_service_config['Tags'],
+            expected=expected_tags,
         )
 
 

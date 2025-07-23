@@ -157,4 +157,11 @@ func (rm *resourceManager) setAdditionalFields(
 	return &resource{ko}, nil
 }
 
+// checkForMissingRequiredFields validates that all fields required for making a ReadMany
+// API call are present in the resource's object. Need to use a custom method a current code-gen
+// implementation does not include fields marked with is_primary_key.
+func (rm *resourceManager) checkForMissingRequiredFields(r *resource) bool {
+	return r.ko.Status.ServiceID == nil
+}
+
 var syncTags = tags.Sync

@@ -74,6 +74,9 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
+	if r.ko.Status.ServiceID != nil {
+		input.ServiceIds = []string{*r.ko.Status.ServiceID}
+	}
 	var resp *svcsdk.DescribeVpcEndpointServiceConfigurationsOutput
 	resp, err = rm.sdkapi.DescribeVpcEndpointServiceConfigurations(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpointServiceConfigurations", err)
@@ -150,8 +153,10 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.PrivateDNSNameConfiguration = nil
 		}
 		if elem.ServiceId != nil {
-			if ko.Status.ServiceID == nil || *elem.ServiceId != *ko.Status.ServiceID {
-				continue
+			if ko.Status.ServiceID != nil {
+				if *elem.ServiceId != *ko.Status.ServiceID {
+					continue
+				}
 			}
 			ko.Status.ServiceID = elem.ServiceId
 		} else {
@@ -227,7 +232,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return false
+	return rm.checkForMissingRequiredFields(r)
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
