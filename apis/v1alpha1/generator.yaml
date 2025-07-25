@@ -250,12 +250,8 @@ operations:
     resource_name: VpcEndpoint
   CreateVpcEndpointServiceConfiguration:
     output_wrapper_field_path: ServiceConfiguration
-  DeleteVpcEndpointServiceConfigurations:
-    operation_type:
-      - Delete
-    resource_name: VpcEndpointServiceConfiguration
-  CreateVpcEndpointServiceConfiguration:
-    output_wrapper_field_path: ServiceConfiguration
+  DescribeVpcEndpointServiceConfigurations:
+    custom_check_required_fields_missing_method: checkForMissingRequiredFields
   DeleteVpcEndpointServiceConfigurations:
     operation_type:
       - Delete
@@ -1068,7 +1064,10 @@ resources:
       when:
       - path: Status.ServiceState
         in:
-        - available
+        - Available
+    list_operation:
+      match_fields:
+        - ServiceId
     hooks:
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
@@ -1078,6 +1077,8 @@ resources:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_update_pre_build_request.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_read_many_post_set_output.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_read_many_post_build_request.go.tpl
   VpcPeeringConnection:
     fields:      
       VpcId:
