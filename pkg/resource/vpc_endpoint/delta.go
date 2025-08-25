@@ -102,6 +102,13 @@ func newResourceDelta(
 			delta.Add("Spec.ServiceName", a.ko.Spec.ServiceName, b.ko.Spec.ServiceName)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ServiceRegion, b.ko.Spec.ServiceRegion) {
+		delta.Add("Spec.ServiceRegion", a.ko.Spec.ServiceRegion, b.ko.Spec.ServiceRegion)
+	} else if a.ko.Spec.ServiceRegion != nil && b.ko.Spec.ServiceRegion != nil {
+		if *a.ko.Spec.ServiceRegion != *b.ko.Spec.ServiceRegion {
+			delta.Add("Spec.ServiceRegion", a.ko.Spec.ServiceRegion, b.ko.Spec.ServiceRegion)
+		}
+	}
 	if len(a.ko.Spec.SubnetIDs) != len(b.ko.Spec.SubnetIDs) {
 		delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
 	} else if len(a.ko.Spec.SubnetIDs) > 0 {

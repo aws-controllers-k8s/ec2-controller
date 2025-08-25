@@ -97,11 +97,11 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
-	tmp, ok := fields["vpcID"]
+	f4, ok := fields["vpcID"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: vpcID"))
 	}
-	r.ko.Status.VPCID = &tmp
+	r.ko.Status.VPCID = &f4
 
 	return nil
 }

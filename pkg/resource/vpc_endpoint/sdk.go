@@ -189,6 +189,11 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.ServiceName = nil
 		}
+		if elem.ServiceRegion != nil {
+			ko.Spec.ServiceRegion = elem.ServiceRegion
+		} else {
+			ko.Spec.ServiceRegion = nil
+		}
 		if elem.State != "" {
 			ko.Status.State = aws.String(string(elem.State))
 		} else {
@@ -200,18 +205,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.SubnetIDs = nil
 		}
 		if elem.Tags != nil {
-			f15 := []*svcapitypes.Tag{}
-			for _, f15iter := range elem.Tags {
-				f15elem := &svcapitypes.Tag{}
-				if f15iter.Key != nil {
-					f15elem.Key = f15iter.Key
+			f16 := []*svcapitypes.Tag{}
+			for _, f16iter := range elem.Tags {
+				f16elem := &svcapitypes.Tag{}
+				if f16iter.Key != nil {
+					f16elem.Key = f16iter.Key
 				}
-				if f15iter.Value != nil {
-					f15elem.Value = f15iter.Value
+				if f16iter.Value != nil {
+					f16elem.Value = f16iter.Value
 				}
-				f15 = append(f15, f15elem)
+				f16 = append(f16, f16elem)
 			}
-			ko.Spec.Tags = f15
+			ko.Spec.Tags = f16
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -401,6 +406,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.ServiceName = nil
 	}
+	if resp.VpcEndpoint.ServiceRegion != nil {
+		ko.Spec.ServiceRegion = resp.VpcEndpoint.ServiceRegion
+	} else {
+		ko.Spec.ServiceRegion = nil
+	}
 	if resp.VpcEndpoint.State != "" {
 		ko.Status.State = aws.String(string(resp.VpcEndpoint.State))
 	} else {
@@ -412,18 +422,18 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.SubnetIDs = nil
 	}
 	if resp.VpcEndpoint.Tags != nil {
-		f15 := []*svcapitypes.Tag{}
-		for _, f15iter := range resp.VpcEndpoint.Tags {
-			f15elem := &svcapitypes.Tag{}
-			if f15iter.Key != nil {
-				f15elem.Key = f15iter.Key
+		f16 := []*svcapitypes.Tag{}
+		for _, f16iter := range resp.VpcEndpoint.Tags {
+			f16elem := &svcapitypes.Tag{}
+			if f16iter.Key != nil {
+				f16elem.Key = f16iter.Key
 			}
-			if f15iter.Value != nil {
-				f15elem.Value = f15iter.Value
+			if f16iter.Value != nil {
+				f16elem.Value = f16iter.Value
 			}
-			f15 = append(f15, f15elem)
+			f16 = append(f16, f16elem)
 		}
-		ko.Spec.Tags = f15
+		ko.Spec.Tags = f16
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -484,6 +494,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.ServiceName != nil {
 		res.ServiceName = r.ko.Spec.ServiceName
+	}
+	if r.ko.Spec.ServiceRegion != nil {
+		res.ServiceRegion = r.ko.Spec.ServiceRegion
 	}
 	if r.ko.Spec.SubnetIDs != nil {
 		res.SubnetIds = aws.ToStringSlice(r.ko.Spec.SubnetIDs)

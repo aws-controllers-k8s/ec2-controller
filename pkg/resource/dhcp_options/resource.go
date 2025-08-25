@@ -97,11 +97,11 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
-	tmp, ok := fields["dhcpOptionsID"]
+	f0, ok := fields["dhcpOptionsID"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: dhcpOptionsID"))
 	}
-	r.ko.Status.DHCPOptionsID = &tmp
+	r.ko.Status.DHCPOptionsID = &f0
 
 	return nil
 }

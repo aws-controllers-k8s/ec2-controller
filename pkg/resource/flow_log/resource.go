@@ -105,11 +105,11 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
-	tmp, ok := fields["flowLogID"]
+	primaryKey, ok := fields["flowLogID"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: flowLogID"))
 	}
-	r.ko.Status.FlowLogID = &tmp
+	r.ko.Status.FlowLogID = &primaryKey
 
 	if resourceID, ok := fields["resourceID"]; ok {
 		r.ko.Spec.ResourceID = &resourceID
