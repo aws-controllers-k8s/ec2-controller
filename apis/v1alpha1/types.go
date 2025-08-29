@@ -6230,6 +6230,7 @@ type VPCEndpoint_SDK struct {
 	RequesterManaged    *bool      `json:"requesterManaged,omitempty"`
 	RouteTableIDs       []*string  `json:"routeTableIDs,omitempty"`
 	ServiceName         *string    `json:"serviceName,omitempty"`
+	ServiceRegion       *string    `json:"serviceRegion,omitempty"`
 	State               *string    `json:"state,omitempty"`
 	SubnetIDs           []*string  `json:"subnetIDs,omitempty"`
 	Tags                []*Tag     `json:"tags,omitempty"`

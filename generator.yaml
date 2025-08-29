@@ -62,14 +62,12 @@ ignore:
     - CreateVpcEndpointInput.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
     - CreateVpcEndpointInput.ResourceConfigurationArn
     - CreateVpcEndpointInput.ServiceNetworkArn
-    - CreateVpcEndpointInput.ServiceRegion
     - CreateVpcEndpointInput.SubnetConfigurations
     - CreateVpcEndpointOutput.VpcEndpoint.FailureReason
     - CreateVpcEndpointOutput.VpcEndpoint.Ipv4Prefixes
     - CreateVpcEndpointOutput.VpcEndpoint.Ipv6Prefixes
     - CreateVpcEndpointOutput.VpcEndpoint.ResourceConfigurationArn
     - CreateVpcEndpointOutput.VpcEndpoint.ServiceNetworkArn
-    - CreateVpcEndpointOutput.VpcEndpoint.ServiceRegion
     - CreateVpcEndpointServiceConfigurationInput.ClientToken
     - CreateVpcEndpointServiceConfigurationInput.DryRun
     - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
@@ -1022,6 +1020,9 @@ resources:
         print:
           path: Status.vpcEndpointID
           name: ID
+      ServiceRegion:
+        # ServiceRegion is not supported in ModifyVpcEndpoint's input.
+        is_immutable: true
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed

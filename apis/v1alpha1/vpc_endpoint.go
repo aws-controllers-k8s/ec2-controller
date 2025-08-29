@@ -58,6 +58,9 @@ type VPCEndpointSpec struct {
 	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
 	// The name of the endpoint service.
 	ServiceName *string `json:"serviceName,omitempty"`
+	// The Region where the service is hosted. The default is the current Region.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+	ServiceRegion *string `json:"serviceRegion,omitempty"`
 	// (Interface and Gateway Load Balancer endpoints) The IDs of the subnets in
 	// which to create endpoint network interfaces. For a Gateway Load Balancer
 	// endpoint, you can specify only one subnet.
