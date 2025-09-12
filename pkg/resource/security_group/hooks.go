@@ -515,3 +515,45 @@ func toStrPtr(str string) *string {
 func toInt64Ptr(integer int64) *int64 {
 	return &integer
 }
+
+func (rm *resourceManager) getSecurityGroupID(
+	ctx context.Context,
+	r *resource,
+) (id *string, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getSecurityGroupID")
+	defer func() {
+		exit(err)
+	}()
+
+	// Both name and VPC ID are required for safe lookup
+	if r.ko.Spec.Name == nil || r.ko.Spec.VPCID == nil {
+		return nil, nil
+	}
+
+	// Build filters for name and VPC ID
+	filters := []svcsdktypes.Filter{
+		{
+			Name:   aws.String("group-name"),
+			Values: []string{*r.ko.Spec.Name},
+		},
+		{
+			Name:   aws.String("vpc-id"),
+			Values: []string{*r.ko.Spec.VPCID},
+		},
+	}
+
+	resp, err := rm.sdkapi.DescribeSecurityGroups(ctx, &svcsdk.DescribeSecurityGroupsInput{
+		Filters: filters,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if resp == nil || len(resp.SecurityGroups) == 0 {
+		return nil, nil
+	}
+
+	// Security group names are unique within a VPC, so there should be exactly one match
+	return resp.SecurityGroups[0].GroupId, nil
+}
