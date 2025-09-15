@@ -58,6 +58,8 @@ type VPCEndpointSpec struct {
 	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
 	// The name of the endpoint service.
 	ServiceName *string `json:"serviceName,omitempty"`
+	// The ARN of the service network for ServiceNetwork endpoints.
+	ServiceNetworkARN *string `json:"serviceNetworkARN,omitempty"`
 	// The Region where the service is hosted. The default is the current Region.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ServiceRegion *string `json:"serviceRegion,omitempty"`
@@ -114,6 +116,9 @@ type VPCEndpointStatus struct {
 	// Indicates whether the endpoint is being managed by its service.
 	// +kubebuilder:validation:Optional
 	RequesterManaged *bool `json:"requesterManaged,omitempty"`
+	// The ARN of the service network for ServiceNetwork endpoints.
+	// +kubebuilder:validation:Optional
+	ServiceNetworkARN *string `json:"serviceNetworkARN,omitempty"`
 	// The state of the endpoint.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`

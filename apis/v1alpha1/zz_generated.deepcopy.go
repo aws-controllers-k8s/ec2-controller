@@ -27413,6 +27413,11 @@ func (in *VPCEndpointSpec) DeepCopyInto(out *VPCEndpointSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ServiceNetworkARN != nil {
+		in, out := &in.ServiceNetworkARN, &out.ServiceNetworkARN
+		*out = new(string)
+		**out = **in
+	}
 	if in.ServiceRegion != nil {
 		in, out := &in.ServiceRegion, &out.ServiceRegion
 		*out = new(string)
@@ -27547,6 +27552,11 @@ func (in *VPCEndpointStatus) DeepCopyInto(out *VPCEndpointStatus) {
 	if in.RequesterManaged != nil {
 		in, out := &in.RequesterManaged, &out.RequesterManaged
 		*out = new(bool)
+		**out = **in
+	}
+	if in.ServiceNetworkARN != nil {
+		in, out := &in.ServiceNetworkARN, &out.ServiceNetworkARN
+		*out = new(string)
 		**out = **in
 	}
 	if in.State != nil {
