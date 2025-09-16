@@ -116,9 +116,6 @@ type VPCEndpointStatus struct {
 	// Indicates whether the endpoint is being managed by its service.
 	// +kubebuilder:validation:Optional
 	RequesterManaged *bool `json:"requesterManaged,omitempty"`
-	// The ARN of the service network for ServiceNetwork endpoints.
-	// +kubebuilder:validation:Optional
-	ServiceNetworkARN *string `json:"serviceNetworkARN,omitempty"`
 	// The state of the endpoint.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
