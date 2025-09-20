@@ -23,25 +23,25 @@ import (
 // ElasticIPAddressSpec defines the desired state of ElasticIPAddress.
 type ElasticIPAddressSpec struct {
 
-	// The Elastic IP address to recover or an IPv4 address from an address pool.
-	Address *string `json:"address,omitempty"`
-	// The ID of a customer-owned address pool. Use this parameter to let Amazon
-	// EC2 select an address from the address pool. Alternatively, specify a specific
-	// address from the address pool.
-	CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
-	// A unique set of Availability Zones, Local Zones, or Wavelength Zones from
-	// which Amazon Web Services advertises IP addresses. Use this parameter to
-	// limit the IP address to this location. IP addresses cannot move between network
-	// border groups.
-	NetworkBorderGroup *string `json:"networkBorderGroup,omitempty"`
-	// The ID of an address pool that you own. Use this parameter to let Amazon
-	// EC2 select an address from the address pool. To specify a specific address
-	// from the address pool, use the Address parameter instead.
-	PublicIPv4Pool *string `json:"publicIPv4Pool,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
+// The Elastic IP address to recover or an IPv4 address from an address pool.
+Address *string `json:"address,omitempty"`
+// The ID of a customer-owned address pool. Use this parameter to let Amazon
+// EC2 select an address from the address pool. Alternatively, specify a specific
+// address from the address pool.
+CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
+// A unique set of Availability Zones, Local Zones, or Wavelength Zones from
+// which Amazon Web Services advertises IP addresses. Use this parameter to
+// limit the IP address to this location. IP addresses cannot move between network
+// border groups.
+NetworkBorderGroup *string `json:"networkBorderGroup,omitempty"`
+// The ID of an address pool that you own. Use this parameter to let Amazon
+// EC2 select an address from the address pool. To specify a specific address
+// from the address pool, use the Address parameter instead.
+PublicIPv4Pool *string `json:"publicIPv4Pool,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
 }
 
 // ElasticIPAddressStatus defines the observed state of ElasticIPAddress
@@ -61,7 +61,7 @@ type ElasticIPAddressStatus struct {
 	// +kubebuilder:validation:Optional
 	AllocationID *string `json:"allocationID,omitempty"`
 	// The carrier IP address. This option is only available for network interfaces
-	// that reside in a subnet in a Wavelength Zone.
+// that reside in a subnet in a Wavelength Zone.
 	// +kubebuilder:validation:Optional
 	CarrierIP *string `json:"carrierIP,omitempty"`
 	// The customer-owned IP address.
@@ -80,8 +80,8 @@ type ElasticIPAddressStatus struct {
 type ElasticIPAddress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ElasticIPAddressSpec   `json:"spec,omitempty"`
-	Status            ElasticIPAddressStatus `json:"status,omitempty"`
+	Spec   ElasticIPAddressSpec   `json:"spec,omitempty"`
+	Status ElasticIPAddressStatus `json:"status,omitempty"`
 }
 
 // ElasticIPAddressList contains a list of ElasticIPAddress
@@ -89,7 +89,7 @@ type ElasticIPAddress struct {
 type ElasticIPAddressList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ElasticIPAddress `json:"items"`
+	Items []ElasticIPAddress `json:"items"`
 }
 
 func init() {

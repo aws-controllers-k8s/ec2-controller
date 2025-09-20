@@ -37,8 +37,8 @@ func newResourceDelta(
 	b *resource,
 ) *ackcompare.Delta {
 	delta := ackcompare.NewDelta()
-	if (a == nil && b != nil) ||
-		(a != nil && b == nil) {
+	if ((a == nil && b != nil) ||
+			(a != nil && b == nil)) {
 		delta.Add("", a, b)
 		return delta
 	}
@@ -100,6 +100,13 @@ func newResourceDelta(
 	} else if a.ko.Spec.ServiceName != nil && b.ko.Spec.ServiceName != nil {
 		if *a.ko.Spec.ServiceName != *b.ko.Spec.ServiceName {
 			delta.Add("Spec.ServiceName", a.ko.Spec.ServiceName, b.ko.Spec.ServiceName)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ServiceNetworkARN, b.ko.Spec.ServiceNetworkARN) {
+		delta.Add("Spec.ServiceNetworkARN", a.ko.Spec.ServiceNetworkARN, b.ko.Spec.ServiceNetworkARN)
+	} else if a.ko.Spec.ServiceNetworkARN != nil && b.ko.Spec.ServiceNetworkARN != nil {
+		if *a.ko.Spec.ServiceNetworkARN != *b.ko.Spec.ServiceNetworkARN {
+			delta.Add("Spec.ServiceNetworkARN", a.ko.Spec.ServiceNetworkARN, b.ko.Spec.ServiceNetworkARN)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ServiceRegion, b.ko.Spec.ServiceRegion) {

@@ -24,15 +24,16 @@ import (
 //
 // Describes a network ACL.
 type NetworkACLSpec struct {
-	Associations []*NetworkACLAssociation `json:"associations,omitempty"`
-	Entries      []*NetworkACLEntry       `json:"entries,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
-	// The ID of the VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
-	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
+
+Associations []*NetworkACLAssociation `json:"associations,omitempty"`
+Entries []*NetworkACLEntry `json:"entries,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
+// The ID of the VPC.
+VPCID *string `json:"vpcID,omitempty"`
+VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // NetworkACLStatus defines the observed state of NetworkACL
@@ -66,8 +67,8 @@ type NetworkACLStatus struct {
 type NetworkACL struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              NetworkACLSpec   `json:"spec,omitempty"`
-	Status            NetworkACLStatus `json:"status,omitempty"`
+	Spec   NetworkACLSpec   `json:"spec,omitempty"`
+	Status NetworkACLStatus `json:"status,omitempty"`
 }
 
 // NetworkACLList contains a list of NetworkACL
@@ -75,7 +76,7 @@ type NetworkACL struct {
 type NetworkACLList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []NetworkACL `json:"items"`
+	Items []NetworkACL `json:"items"`
 }
 
 func init() {

@@ -19,13 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"strings"
+	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -80,7 +80,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcs", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidVpcID.NotFound" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidVpcID.NotFound"  {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -268,13 +268,12 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	updateTagSpecificationsInCreateRequest(desired, input)
+    updateTagSpecificationsInCreateRequest(desired, input)
+    
+    // The first CIDR block will be used as the primary IPv4 CIDR block for the VPC
+    applyPrimaryCIDRBlockInCreateRequest(desired, input)
 
-	// The first CIDR block will be used as the primary IPv4 CIDR block for the VPC
-	applyPrimaryCIDRBlockInCreateRequest(desired, input)
-
-	var resp *svcsdk.CreateVpcOutput
-	_ = resp
+	var resp *svcsdk.CreateVpcOutput; _ = resp;
 	resp, err = rm.sdkapi.CreateVpc(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpc", err)
 	if err != nil {
@@ -390,17 +389,17 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	if resp.Vpc.CidrBlock != nil {
-		ko.Spec.CIDRBlocks = make([]*string, 1)
-		ko.Spec.CIDRBlocks[0] = resp.Vpc.CidrBlock
-	}
-	rm.syncCIDRBlocks(ctx, desired, &resource{ko})
+    if resp.Vpc.CidrBlock != nil {
+    ko.Spec.CIDRBlocks = make([]*string, 1)
+    ko.Spec.CIDRBlocks[0] = resp.Vpc.CidrBlock
+    }
+    rm.syncCIDRBlocks(ctx, desired, &resource{ko})
 
-	rm.setSpecCIDRs(ko)
-	err = rm.createAttributes(ctx, &resource{ko})
-	if err != nil {
-		return nil, err
-	}
+    rm.setSpecCIDRs(ko)
+    err = rm.createAttributes(ctx, &resource{ko})
+    if err != nil {
+        return nil, err
+    } 
 	sgDefaultRulesExist, err := rm.hasSecurityGroupDefaultRules(ctx, &resource{ko})
 	if err != nil {
 		return nil, err
@@ -485,8 +484,7 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.DeleteVpcOutput
-	_ = resp
+	var resp *svcsdk.DeleteVpcOutput; _ = resp;
 	resp, err = rm.sdkapi.DeleteVpc(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpc", err)
 	return nil, err
@@ -507,7 +505,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults(
+func (rm *resourceManager) setStatusDefaults (
 	ko *svcapitypes.VPC,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -526,7 +524,7 @@ func (rm *resourceManager) setStatusDefaults(
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions(
+func (rm *resourceManager) updateConditions (
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -550,10 +548,10 @@ func (rm *resourceManager) updateConditions(
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type: ackv1alpha1.ConditionTypeTerminal,
+				Type:   ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -577,7 +575,7 @@ func (rm *resourceManager) updateConditions(
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type: ackv1alpha1.ConditionTypeRecoverable,
+					Type:   ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -614,15 +612,18 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch terminalErr.ErrorCode() {
-	case "InvalidParameterValue":
+	case  "InvalidParameterValue":
 		return true
 	default:
 		return false
 	}
 }
 
+
+
+
 func (rm *resourceManager) newTag(
-	c svcapitypes.Tag,
+	    c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {

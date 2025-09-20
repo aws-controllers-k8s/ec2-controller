@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -79,7 +80,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeTransitGateways", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -229,10 +230,9 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	updateTagSpecificationsInCreateRequest(desired, input)
+    updateTagSpecificationsInCreateRequest(desired, input)
 
-	var resp *svcsdk.CreateTransitGatewayOutput
-	_ = resp
+	var resp *svcsdk.CreateTransitGatewayOutput; _ = resp;
 	resp, err = rm.sdkapi.CreateTransitGateway(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateTransitGateway", err)
 	if err != nil {
@@ -393,8 +393,7 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.DeleteTransitGatewayOutput
-	_ = resp
+	var resp *svcsdk.DeleteTransitGatewayOutput; _ = resp;
 	resp, err = rm.sdkapi.DeleteTransitGateway(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteTransitGateway", err)
 	return nil, err
@@ -415,7 +414,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults(
+func (rm *resourceManager) setStatusDefaults (
 	ko *svcapitypes.TransitGateway,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -434,7 +433,7 @@ func (rm *resourceManager) setStatusDefaults(
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions(
+func (rm *resourceManager) updateConditions (
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -458,10 +457,10 @@ func (rm *resourceManager) updateConditions(
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type: ackv1alpha1.ConditionTypeTerminal,
+				Type:   ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -485,7 +484,7 @@ func (rm *resourceManager) updateConditions(
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type: ackv1alpha1.ConditionTypeRecoverable,
+					Type:   ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -517,8 +516,11 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
+
+
+
 func (rm *resourceManager) newTag(
-	c svcapitypes.Tag,
+	    c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {

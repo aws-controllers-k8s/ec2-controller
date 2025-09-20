@@ -15,28 +15,24 @@
 
 package internet_gateway
 
-import (
-	"slices"
-	"strings"
+import(
+    acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 
-	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
-
-	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+    svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
 
 var (
-	_             = svcapitypes.InternetGateway{}
-	_             = acktags.NewTags()
-	ACKSystemTags = []string{"services.k8s.aws/namespace", "services.k8s.aws/controller-version"}
+	_ = svcapitypes.InternetGateway{}
+	_ = acktags.NewTags()
+    ACKSystemTags = []string{"services.k8s.aws/namespace", "services.k8s.aws/controller-version"}
 )
-
 // convertToOrderedACKTags converts the tags parameter into 'acktags.Tags' shape.
 // This method helps in creating the hub(acktags.Tags) for merging
 // default controller tags with existing resource tags. It also returns a slice
 // of keys maintaining the original key Order when the tags are a list
 func convertToOrderedACKTags(tags []*svcapitypes.Tag) (acktags.Tags, []string) {
-	result := acktags.NewTags()
-	keyOrder := []string{}
+    result := acktags.NewTags()
+    keyOrder := []string{}
 
 	if len(tags) == 0 {
 		return result, keyOrder
@@ -52,15 +48,15 @@ func convertToOrderedACKTags(tags []*svcapitypes.Tag) (acktags.Tags, []string) {
 		}
 	}
 
-	return result, keyOrder
+    return result, keyOrder
 }
 
 // fromACKTags converts the tags parameter into []*svcapitypes.Tag shape.
 // This method helps in setting the tags back inside AWSResource after merging
-// default controller tags with existing resource tags. When a list,
-// it maintains the order from original
+// default controller tags with existing resource tags. When a list, 
+// it maintains the order from original 
 func fromACKTags(tags acktags.Tags, keyOrder []string) []*svcapitypes.Tag {
-	result := []*svcapitypes.Tag{}
+    result := []*svcapitypes.Tag{}
 
 	for _, k := range keyOrder {
 		v, ok := tags[k]
@@ -75,8 +71,9 @@ func fromACKTags(tags acktags.Tags, keyOrder []string) []*svcapitypes.Tag {
 		result = append(result, &tag)
 	}
 
-	return result
+    return result
 }
+
 
 // ignoreSystemTags ignores tags that have keys that start with "aws:"
 // and ACKSystemTags, to avoid patching them to the resourceSpec.

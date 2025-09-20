@@ -19,13 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"strings"
+	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -89,7 +89,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroups", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -144,19 +144,19 @@ func (rm *resourceManager) sdkFind(
 	rm.setStatusDefaults(ko)
 	if found {
 
-		// Needed because SecurityGroups Name are held in GroupName property of the AWS resource
-		ko.Spec.Name = resp.SecurityGroups[0].GroupName
+	// Needed because SecurityGroups Name are held in GroupName property of the AWS resource
+        ko.Spec.Name = resp.SecurityGroups[0].GroupName
 
-		rm.addRulesToSpec(ko, resp.SecurityGroups[0])
-
-		// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
-		// is made to refresh Status.Rules
-		if rules, err := rm.getRules(ctx, &resource{ko}); err != nil {
-			return nil, err
-		} else {
-			ko.Status.Rules = rules
-		}
-	}
+        rm.addRulesToSpec(ko, resp.SecurityGroups[0])
+    	
+        // A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
+	    // is made to refresh Status.Rules
+	    if rules, err := rm.getRules(ctx, &resource{ko}); err != nil {
+		    return nil, err
+	    } else {
+		    ko.Status.Rules = rules
+	    }
+    }
 
 	return &resource{ko}, nil
 }
@@ -203,10 +203,9 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	updateTagSpecificationsInCreateRequest(desired, input)
+    updateTagSpecificationsInCreateRequest(desired, input)
 
-	var resp *svcsdk.CreateSecurityGroupOutput
-	_ = resp
+	var resp *svcsdk.CreateSecurityGroupOutput; _ = resp;
 	resp, err = rm.sdkapi.CreateSecurityGroup(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateSecurityGroup", err)
 	if err != nil {
@@ -246,7 +245,7 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-
+	
 	if rm.requiredFieldsMissingForSGRule(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
@@ -258,7 +257,7 @@ func (rm *resourceManager) sdkCreate(
 
 	if !rm.referencesResolved(&resource{ko}) {
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
-		return &resource{ko}, nil
+        return &resource{ko}, nil
 	}
 
 	if err = rm.syncSGRules(ctx, &resource{ko}, nil); err != nil {
@@ -321,7 +320,7 @@ func (rm *resourceManager) sdkDelete(
 	}()
 	sgCpy := r.ko.DeepCopy()
 	sgCpy.Spec.IngressRules = nil
-	sgCpy.Spec.EgressRules = nil
+    sgCpy.Spec.EgressRules = nil
 	if err := rm.syncSGRules(ctx, &resource{ko: sgCpy}, r); err != nil {
 		return nil, err
 	}
@@ -329,8 +328,7 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.DeleteSecurityGroupOutput
-	_ = resp
+	var resp *svcsdk.DeleteSecurityGroupOutput; _ = resp;
 	resp, err = rm.sdkapi.DeleteSecurityGroup(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteSecurityGroup", err)
 	return nil, err
@@ -351,7 +349,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults(
+func (rm *resourceManager) setStatusDefaults (
 	ko *svcapitypes.SecurityGroup,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -370,7 +368,7 @@ func (rm *resourceManager) setStatusDefaults(
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions(
+func (rm *resourceManager) updateConditions (
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -394,10 +392,10 @@ func (rm *resourceManager) updateConditions(
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type: ackv1alpha1.ConditionTypeTerminal,
+				Type:   ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -421,7 +419,7 @@ func (rm *resourceManager) updateConditions(
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type: ackv1alpha1.ConditionTypeRecoverable,
+					Type:   ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -453,7 +451,11 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
-func compareIPPermission(
+
+
+
+
+func compareIPPermission (
 	a *svcapitypes.IPPermission,
 	b *svcapitypes.IPPermission,
 ) *ackcompare.Delta {
@@ -610,8 +612,10 @@ func (rm *resourceManager) newIPPermission(
 	return res, nil
 }
 
+
+
 func (rm *resourceManager) newTag(
-	c svcapitypes.Tag,
+	    c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
@@ -624,12 +628,14 @@ func (rm *resourceManager) newTag(
 	return res
 }
 
+
+
 // setSecurityGroupRule sets a resource SecurityGroupRule type
 // given the SDK type.
 func (rm *resourceManager) setResourceSecurityGroupRule(
-	resp *svcsdktypes.SecurityGroupRule,
+    resp *svcsdktypes.SecurityGroupRule,
 ) *svcapitypes.SecurityGroupRule {
-	res := &svcapitypes.SecurityGroupRule{}
+    res := &svcapitypes.SecurityGroupRule{}
 
 	if resp.CidrIpv4 != nil {
 		res.CIDRIPv4 = resp.CidrIpv4
@@ -675,15 +681,15 @@ func (rm *resourceManager) setResourceSecurityGroupRule(
 		res.ToPort = &toPortCopy
 	}
 
-	return res
+    return res
 }
 
 // setIPPermission sets a resource IPPermission type
 // given the SDK type.
 func (rm *resourceManager) setResourceIPPermission(
-	resp *svcsdktypes.IpPermission,
+    resp *svcsdktypes.IpPermission,
 ) *svcapitypes.IPPermission {
-	res := &svcapitypes.IPPermission{}
+    res := &svcapitypes.IPPermission{}
 
 	if resp.FromPort != nil {
 		fromPortCopy := int64(*resp.FromPort)
@@ -768,5 +774,5 @@ func (rm *resourceManager) setResourceIPPermission(
 		res.UserIDGroupPairs = resf6
 	}
 
-	return res
+    return res
 }

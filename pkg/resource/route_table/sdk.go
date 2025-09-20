@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -79,7 +80,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeRouteTables", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -227,10 +228,10 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-
-	if found {
-		rm.addRoutesToStatus(ko, resp.RouteTables[0])
-	}
+	
+    if found {
+        rm.addRoutesToStatus(ko, resp.RouteTables[0])
+    }
 	toAdd, toDelete := computeTagsDelta(r.ko.Spec.Tags, ko.Spec.Tags)
 	if len(toAdd) == 0 && len(toDelete) == 0 {
 		// if resource's initial tags and response tags are equal,
@@ -296,10 +297,9 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	updateTagSpecificationsInCreateRequest(desired, input)
+    updateTagSpecificationsInCreateRequest(desired, input)
 
-	var resp *svcsdk.CreateRouteTableOutput
-	_ = resp
+	var resp *svcsdk.CreateRouteTableOutput; _ = resp;
 	resp, err = rm.sdkapi.CreateRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateRouteTable", err)
 	if err != nil {
@@ -440,7 +440,7 @@ func (rm *resourceManager) sdkCreate(
 
 	rm.setStatusDefaults(ko)
 	rm.addRoutesToStatus(ko, *resp.RouteTable)
-
+	
 	if rm.requiredFieldsMissingForCreateRoute(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
@@ -504,8 +504,7 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.DeleteRouteTableOutput
-	_ = resp
+	var resp *svcsdk.DeleteRouteTableOutput; _ = resp;
 	resp, err = rm.sdkapi.DeleteRouteTable(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRouteTable", err)
 	return nil, err
@@ -526,7 +525,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults(
+func (rm *resourceManager) setStatusDefaults (
 	ko *svcapitypes.RouteTable,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -545,7 +544,7 @@ func (rm *resourceManager) setStatusDefaults(
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions(
+func (rm *resourceManager) updateConditions (
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -569,10 +568,10 @@ func (rm *resourceManager) updateConditions(
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type: ackv1alpha1.ConditionTypeTerminal,
+				Type:   ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -596,7 +595,7 @@ func (rm *resourceManager) updateConditions(
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type: ackv1alpha1.ConditionTypeRecoverable,
+					Type:   ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -628,7 +627,11 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
-func compareCreateRouteInput(
+
+
+
+
+func compareCreateRouteInput (
 	a *svcapitypes.CreateRouteInput,
 	b *svcapitypes.CreateRouteInput,
 ) *ackcompare.Delta {
@@ -783,11 +786,14 @@ func (rm *resourceManager) newCreateRouteInput(
 		res.VpcPeeringConnectionId = c.VPCPeeringConnectionID
 	}
 
+
 	return res
 }
 
+
+
 func (rm *resourceManager) newTag(
-	c svcapitypes.Tag,
+	    c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
@@ -799,6 +805,8 @@ func (rm *resourceManager) newTag(
 
 	return res
 }
+
+
 
 func (rm *resourceManager) newDeleteRouteInput(
 	c svcapitypes.CreateRouteInput,
@@ -815,15 +823,18 @@ func (rm *resourceManager) newDeleteRouteInput(
 		res.DestinationPrefixListId = c.DestinationPrefixListID
 	}
 
+
 	return res
 }
+
+
 
 // setRoute sets a resource Route type
 // given the SDK type.
 func (rm *resourceManager) setResourceRoute(
-	resp svcsdktypes.Route,
+    resp svcsdktypes.Route,
 ) *svcapitypes.Route {
-	res := &svcapitypes.Route{}
+    res := &svcapitypes.Route{}
 
 	if resp.CarrierGatewayId != nil {
 		res.CarrierGatewayID = resp.CarrierGatewayId
@@ -874,5 +885,5 @@ func (rm *resourceManager) setResourceRoute(
 		res.VPCPeeringConnectionID = resp.VpcPeeringConnectionId
 	}
 
-	return res
+    return res
 }

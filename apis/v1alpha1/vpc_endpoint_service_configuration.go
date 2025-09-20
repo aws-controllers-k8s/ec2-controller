@@ -23,26 +23,26 @@ import (
 // VpcEndpointServiceConfigurationSpec defines the desired state of VpcEndpointServiceConfiguration.
 type VPCEndpointServiceConfigurationSpec struct {
 
-	// Indicates whether requests from service consumers to create an endpoint to
-	// your service must be accepted manually.
-	AcceptanceRequired *bool `json:"acceptanceRequired,omitempty"`
-	// The Amazon Resource Names (ARN) of the principals. Permissions are granted
-	// to the principals in this list. To grant permissions to all principals, specify
-	// an asterisk (*).
-	AllowedPrincipals []*string `json:"allowedPrincipals,omitempty"`
-	// The Amazon Resource Names (ARNs) of the Gateway Load Balancers.
-	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
-	// The Amazon Resource Names (ARNs) of the Network Load Balancers.
-	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
-	// (Interface endpoint configuration) The private DNS name to assign to the
-	// VPC endpoint service.
-	PrivateDNSName *string `json:"privateDNSName,omitempty"`
-	// The supported IP address types. The possible values are ipv4 and ipv6.
-	SupportedIPAddressTypes []*string `json:"supportedIPAddressTypes,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
+// Indicates whether requests from service consumers to create an endpoint to
+// your service must be accepted manually.
+AcceptanceRequired *bool `json:"acceptanceRequired,omitempty"`
+// The Amazon Resource Names (ARN) of the principals. Permissions are granted
+// to the principals in this list. To grant permissions to all principals, specify
+// an asterisk (*).
+AllowedPrincipals []*string `json:"allowedPrincipals,omitempty"`
+// The Amazon Resource Names (ARNs) of the Gateway Load Balancers.
+GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
+// The Amazon Resource Names (ARNs) of the Network Load Balancers.
+NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
+// (Interface endpoint configuration) The private DNS name to assign to the
+// VPC endpoint service.
+PrivateDNSName *string `json:"privateDNSName,omitempty"`
+// The supported IP address types. The possible values are ipv4 and ipv6.
+SupportedIPAddressTypes []*string `json:"supportedIPAddressTypes,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
 }
 
 // VPCEndpointServiceConfigurationStatus defines the observed state of VPCEndpointServiceConfiguration
@@ -65,7 +65,7 @@ type VPCEndpointServiceConfigurationStatus struct {
 	// +kubebuilder:validation:Optional
 	BaseEndpointDNSNames []*string `json:"baseEndpointDNSNames,omitempty"`
 	// Indicates whether the service manages its VPC endpoints. Management of the
-	// service VPC endpoints using the VPC endpoint API is restricted.
+// service VPC endpoints using the VPC endpoint API is restricted.
 	// +kubebuilder:validation:Optional
 	ManagesVPCEndpoints *bool `json:"managesVPCEndpoints,omitempty"`
 	// The payer responsibility.
@@ -96,8 +96,8 @@ type VPCEndpointServiceConfigurationStatus struct {
 type VPCEndpointServiceConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              VPCEndpointServiceConfigurationSpec   `json:"spec,omitempty"`
-	Status            VPCEndpointServiceConfigurationStatus `json:"status,omitempty"`
+	Spec   VPCEndpointServiceConfigurationSpec   `json:"spec,omitempty"`
+	Status VPCEndpointServiceConfigurationStatus `json:"status,omitempty"`
 }
 
 // VPCEndpointServiceConfigurationList contains a list of VPCEndpointServiceConfiguration
@@ -105,7 +105,7 @@ type VPCEndpointServiceConfiguration struct {
 type VPCEndpointServiceConfigurationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []VPCEndpointServiceConfiguration `json:"items"`
+	Items []VPCEndpointServiceConfiguration `json:"items"`
 }
 
 func init() {

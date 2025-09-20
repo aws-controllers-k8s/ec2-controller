@@ -25,22 +25,22 @@ import (
 // Describes a NAT gateway.
 type NATGatewaySpec struct {
 
-	// [Public NAT gateways only] The allocation ID of an Elastic IP address to
-	// associate with the NAT gateway. You cannot specify an Elastic IP address
-	// with a private NAT gateway. If the Elastic IP address is associated with
-	// another resource, you must first disassociate it.
-	AllocationID  *string                                  `json:"allocationID,omitempty"`
-	AllocationRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"allocationRef,omitempty"`
-	// Indicates whether the NAT gateway supports public or private connectivity.
-	// The default is public connectivity.
-	ConnectivityType *string `json:"connectivityType,omitempty"`
-	// The ID of the subnet in which to create the NAT gateway.
-	SubnetID  *string                                  `json:"subnetID,omitempty"`
-	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
+// [Public NAT gateways only] The allocation ID of an Elastic IP address to
+// associate with the NAT gateway. You cannot specify an Elastic IP address
+// with a private NAT gateway. If the Elastic IP address is associated with
+// another resource, you must first disassociate it.
+AllocationID *string `json:"allocationID,omitempty"`
+AllocationRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"allocationRef,omitempty"`
+// Indicates whether the NAT gateway supports public or private connectivity.
+// The default is public connectivity.
+ConnectivityType *string `json:"connectivityType,omitempty"`
+// The ID of the subnet in which to create the NAT gateway.
+SubnetID *string `json:"subnetID,omitempty"`
+SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
 }
 
 // NATGatewayStatus defines the observed state of NATGateway
@@ -63,61 +63,61 @@ type NATGatewayStatus struct {
 	// +kubebuilder:validation:Optional
 	DeleteTime *metav1.Time `json:"deleteTime,omitempty"`
 	// If the NAT gateway could not be created, specifies the error code for the
-	// failure. (InsufficientFreeAddressesInSubnet | Gateway.NotAttached | InvalidAllocationID.NotFound
-	// | Resource.AlreadyAssociated | InternalError | InvalidSubnetID.NotFound)
+// failure. (InsufficientFreeAddressesInSubnet | Gateway.NotAttached | InvalidAllocationID.NotFound
+// | Resource.AlreadyAssociated | InternalError | InvalidSubnetID.NotFound)
 	// +kubebuilder:validation:Optional
 	FailureCode *string `json:"failureCode,omitempty"`
 	// If the NAT gateway could not be created, specifies the error message for
-	// the failure, that corresponds to the error code.
-	//
-	//    * For InsufficientFreeAddressesInSubnet: "Subnet has insufficient free
-	//    addresses to create this NAT gateway"
-	//
-	//    * For Gateway.NotAttached: "Network vpc-xxxxxxxx has no Internet gateway
-	//    attached"
-	//
-	//    * For InvalidAllocationID.NotFound: "Elastic IP address eipalloc-xxxxxxxx
-	//    could not be associated with this NAT gateway"
-	//
-	//    * For Resource.AlreadyAssociated: "Elastic IP address eipalloc-xxxxxxxx
-	//    is already associated"
-	//
-	//    * For InternalError: "Network interface eni-xxxxxxxx, created and used
-	//    internally by this NAT gateway is in an invalid state. Please try again."
-	//
-	//    * For InvalidSubnetID.NotFound: "The specified subnet subnet-xxxxxxxx
-	//    does not exist or could not be found."
+// the failure, that corresponds to the error code.
+// 
+//    * For InsufficientFreeAddressesInSubnet: "Subnet has insufficient free
+//    addresses to create this NAT gateway"
+// 
+//    * For Gateway.NotAttached: "Network vpc-xxxxxxxx has no Internet gateway
+//    attached"
+// 
+//    * For InvalidAllocationID.NotFound: "Elastic IP address eipalloc-xxxxxxxx
+//    could not be associated with this NAT gateway"
+// 
+//    * For Resource.AlreadyAssociated: "Elastic IP address eipalloc-xxxxxxxx
+//    is already associated"
+// 
+//    * For InternalError: "Network interface eni-xxxxxxxx, created and used
+//    internally by this NAT gateway is in an invalid state. Please try again."
+// 
+//    * For InvalidSubnetID.NotFound: "The specified subnet subnet-xxxxxxxx
+//    does not exist or could not be found."
 	// +kubebuilder:validation:Optional
 	FailureMessage *string `json:"failureMessage,omitempty"`
 	// Information about the IP addresses and network interface associated with
-	// the NAT gateway.
+// the NAT gateway.
 	// +kubebuilder:validation:Optional
 	NATGatewayAddresses []*NATGatewayAddress `json:"natGatewayAddresses,omitempty"`
 	// The ID of the NAT gateway.
 	// +kubebuilder:validation:Optional
 	NATGatewayID *string `json:"natGatewayID,omitempty"`
 	// Reserved. If you need to sustain traffic greater than the documented limits
-	// (https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html#vpc-limits-gateways),
-	// contact Amazon Web Services Support.
+// (https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html#vpc-limits-gateways),
+// contact Amazon Web Services Support.
 	// +kubebuilder:validation:Optional
 	ProvisionedBandwidth *ProvisionedBandwidth `json:"provisionedBandwidth,omitempty"`
 	// The state of the NAT gateway.
-	//
-	//    * pending: The NAT gateway is being created and is not ready to process
-	//    traffic.
-	//
-	//    * failed: The NAT gateway could not be created. Check the failureCode
-	//    and failureMessage fields for the reason.
-	//
-	//    * available: The NAT gateway is able to process traffic. This status remains
-	//    until you delete the NAT gateway, and does not indicate the health of
-	//    the NAT gateway.
-	//
-	//    * deleting: The NAT gateway is in the process of being terminated and
-	//    may still be processing traffic.
-	//
-	//    * deleted: The NAT gateway has been terminated and is no longer processing
-	//    traffic.
+// 
+//    * pending: The NAT gateway is being created and is not ready to process
+//    traffic.
+// 
+//    * failed: The NAT gateway could not be created. Check the failureCode
+//    and failureMessage fields for the reason.
+// 
+//    * available: The NAT gateway is able to process traffic. This status remains
+//    until you delete the NAT gateway, and does not indicate the health of
+//    the NAT gateway.
+// 
+//    * deleting: The NAT gateway is in the process of being terminated and
+//    may still be processing traffic.
+// 
+//    * deleted: The NAT gateway has been terminated and is no longer processing
+//    traffic.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
 	// The ID of the VPC in which the NAT gateway is located.
@@ -133,8 +133,8 @@ type NATGatewayStatus struct {
 type NATGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              NATGatewaySpec   `json:"spec,omitempty"`
-	Status            NATGatewayStatus `json:"status,omitempty"`
+	Spec   NATGatewaySpec   `json:"spec,omitempty"`
+	Status NATGatewayStatus `json:"status,omitempty"`
 }
 
 // NATGatewayList contains a list of NATGateway
@@ -142,7 +142,7 @@ type NATGateway struct {
 type NATGatewayList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []NATGateway `json:"items"`
+	Items []NATGateway `json:"items"`
 }
 
 func init() {

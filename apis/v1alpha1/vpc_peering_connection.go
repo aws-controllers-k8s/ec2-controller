@@ -24,31 +24,32 @@ import (
 //
 // Describes a VPC peering connection.
 type VPCPeeringConnectionSpec struct {
-	AcceptRequest *bool `json:"acceptRequest,omitempty"`
-	// The VPC peering connection options for the accepter VPC.
-	AccepterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"accepterPeeringConnectionOptions,omitempty"`
-	// The Amazon Web Services account ID of the owner of the accepter VPC.
-	//
-	// Default: Your Amazon Web Services account ID
-	PeerOwnerID *string `json:"peerOwnerID,omitempty"`
-	// The Region code for the accepter VPC, if the accepter VPC is located in a
-	// Region other than the Region in which you make the request.
-	//
-	// Default: The Region in which you make the request.
-	PeerRegion *string `json:"peerRegion,omitempty"`
-	// The ID of the VPC with which you are creating the VPC peering connection.
-	// You must specify this parameter in the request.
-	PeerVPCID  *string                                  `json:"peerVPCID,omitempty"`
-	PeerVPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"peerVPCRef,omitempty"`
-	// The VPC peering connection options for the requester VPC.
-	RequesterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"requesterPeeringConnectionOptions,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
-	// The ID of the requester VPC. You must specify this parameter in the request.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
-	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
+
+AcceptRequest *bool `json:"acceptRequest,omitempty"`
+// The VPC peering connection options for the accepter VPC.
+AccepterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"accepterPeeringConnectionOptions,omitempty"`
+// The Amazon Web Services account ID of the owner of the accepter VPC.
+// 
+// Default: Your Amazon Web Services account ID
+PeerOwnerID *string `json:"peerOwnerID,omitempty"`
+// The Region code for the accepter VPC, if the accepter VPC is located in a
+// Region other than the Region in which you make the request.
+// 
+// Default: The Region in which you make the request.
+PeerRegion *string `json:"peerRegion,omitempty"`
+// The ID of the VPC with which you are creating the VPC peering connection.
+// You must specify this parameter in the request.
+PeerVPCID *string `json:"peerVPCID,omitempty"`
+PeerVPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"peerVPCRef,omitempty"`
+// The VPC peering connection options for the requester VPC.
+RequesterPeeringConnectionOptions *PeeringConnectionOptionsRequest `json:"requesterPeeringConnectionOptions,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
+// The ID of the requester VPC. You must specify this parameter in the request.
+VPCID *string `json:"vpcID,omitempty"`
+VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // VPCPeeringConnectionStatus defines the observed state of VPCPeeringConnection
@@ -65,14 +66,14 @@ type VPCPeeringConnectionStatus struct {
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	// Information about the accepter VPC. CIDR block information is only returned
-	// when describing an active VPC peering connection.
+// when describing an active VPC peering connection.
 	// +kubebuilder:validation:Optional
 	AccepterVPCInfo *VPCPeeringConnectionVPCInfo `json:"accepterVPCInfo,omitempty"`
 	// The time that an unaccepted VPC peering connection will expire.
 	// +kubebuilder:validation:Optional
 	ExpirationTime *metav1.Time `json:"expirationTime,omitempty"`
 	// Information about the requester VPC. CIDR block information is only returned
-	// when describing an active VPC peering connection.
+// when describing an active VPC peering connection.
 	// +kubebuilder:validation:Optional
 	RequesterVPCInfo *VPCPeeringConnectionVPCInfo `json:"requesterVPCInfo,omitempty"`
 	// The status of the VPC peering connection.
@@ -89,8 +90,8 @@ type VPCPeeringConnectionStatus struct {
 type VPCPeeringConnection struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              VPCPeeringConnectionSpec   `json:"spec,omitempty"`
-	Status            VPCPeeringConnectionStatus `json:"status,omitempty"`
+	Spec   VPCPeeringConnectionSpec   `json:"spec,omitempty"`
+	Status VPCPeeringConnectionStatus `json:"status,omitempty"`
 }
 
 // VPCPeeringConnectionList contains a list of VPCPeeringConnection
@@ -98,7 +99,7 @@ type VPCPeeringConnection struct {
 type VPCPeeringConnectionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []VPCPeeringConnection `json:"items"`
+	Items []VPCPeeringConnection `json:"items"`
 }
 
 func init() {

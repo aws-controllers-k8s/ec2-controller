@@ -25,29 +25,29 @@ import (
 // Describes a security group.
 type SecurityGroupSpec struct {
 
-	// A description for the security group.
-	//
-	// Constraints: Up to 255 characters in length
-	//
-	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
-	// +kubebuilder:validation:Required
-	Description  *string         `json:"description"`
-	EgressRules  []*IPPermission `json:"egressRules,omitempty"`
-	IngressRules []*IPPermission `json:"ingressRules,omitempty"`
-	// The name of the security group.
-	//
-	// Constraints: Up to 255 characters in length. Cannot start with sg-.
-	//
-	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
-	// +kubebuilder:validation:Required
-	Name *string `json:"name"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
-	// The ID of the VPC. Required for a nondefault VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
-	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
+// A description for the security group.
+// 
+// Constraints: Up to 255 characters in length
+// 
+// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+// +kubebuilder:validation:Required
+Description *string `json:"description"`
+EgressRules []*IPPermission `json:"egressRules,omitempty"`
+IngressRules []*IPPermission `json:"ingressRules,omitempty"`
+// The name of the security group.
+// 
+// Constraints: Up to 255 characters in length. Cannot start with sg-.
+// 
+// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+// +kubebuilder:validation:Required
+Name *string `json:"name"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
+// The ID of the VPC. Required for a nondefault VPC.
+VPCID *string `json:"vpcID,omitempty"`
+VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // SecurityGroupStatus defines the observed state of SecurityGroup
@@ -78,8 +78,8 @@ type SecurityGroupStatus struct {
 type SecurityGroup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              SecurityGroupSpec   `json:"spec,omitempty"`
-	Status            SecurityGroupStatus `json:"status,omitempty"`
+	Spec   SecurityGroupSpec   `json:"spec,omitempty"`
+	Status SecurityGroupStatus `json:"status,omitempty"`
 }
 
 // SecurityGroupList contains a list of SecurityGroup
@@ -87,7 +87,7 @@ type SecurityGroup struct {
 type SecurityGroupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SecurityGroup `json:"items"`
+	Items []SecurityGroup `json:"items"`
 }
 
 func init() {

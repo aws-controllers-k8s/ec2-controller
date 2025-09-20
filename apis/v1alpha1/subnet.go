@@ -24,51 +24,52 @@ import (
 //
 // Describes a subnet.
 type SubnetSpec struct {
-	AssignIPv6AddressOnCreation *bool `json:"assignIPv6AddressOnCreation,omitempty"`
-	// The Availability Zone or Local Zone for the subnet.
-	//
-	// Default: Amazon Web Services selects one for you. If you create more than
-	// one subnet in your VPC, we do not necessarily select a different zone for
-	// each subnet.
-	//
-	// To create a subnet in a Local Zone, set this value to the Local Zone ID,
-	// for example us-west-2-lax-1a. For information about the Regions that support
-	// Local Zones, see Available Local Zones (https://docs.aws.amazon.com/local-zones/latest/ug/available-local-zones.html).
-	//
-	// To create a subnet in an Outpost, set this value to the Availability Zone
-	// for the Outpost and specify the Outpost ARN.
-	AvailabilityZone *string `json:"availabilityZone,omitempty"`
-	// The AZ ID or the Local Zone ID of the subnet.
-	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
-	// The IPv4 network range for the subnet, in CIDR notation. For example, 10.0.0.0/24.
-	// We modify the specified CIDR block to its canonical form; for example, if
-	// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
-	//
-	// This parameter is not supported for an IPv6 only subnet.
-	CIDRBlock                       *string `json:"cidrBlock,omitempty"`
-	CustomerOwnedIPv4Pool           *string `json:"customerOwnedIPv4Pool,omitempty"`
-	EnableDNS64                     *bool   `json:"enableDNS64,omitempty"`
-	EnableResourceNameDNSAAAARecord *bool   `json:"enableResourceNameDNSAAAARecord,omitempty"`
-	EnableResourceNameDNSARecord    *bool   `json:"enableResourceNameDNSARecord,omitempty"`
-	HostnameType                    *string `json:"hostnameType,omitempty"`
-	// The IPv6 network range for the subnet, in CIDR notation. This parameter is
-	// required for an IPv6 only subnet.
-	IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
-	// Indicates whether to create an IPv6 only subnet.
-	IPv6Native          *bool `json:"ipv6Native,omitempty"`
-	MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
-	// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
-	// ARN, you must also specify the Availability Zone of the Outpost subnet.
-	OutpostARN     *string                                    `json:"outpostARN,omitempty"`
-	RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
-	RouteTables    []*string                                  `json:"routeTables,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
-	// The ID of the VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
-	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
+
+AssignIPv6AddressOnCreation *bool `json:"assignIPv6AddressOnCreation,omitempty"`
+// The Availability Zone or Local Zone for the subnet.
+// 
+// Default: Amazon Web Services selects one for you. If you create more than
+// one subnet in your VPC, we do not necessarily select a different zone for
+// each subnet.
+// 
+// To create a subnet in a Local Zone, set this value to the Local Zone ID,
+// for example us-west-2-lax-1a. For information about the Regions that support
+// Local Zones, see Available Local Zones (https://docs.aws.amazon.com/local-zones/latest/ug/available-local-zones.html).
+// 
+// To create a subnet in an Outpost, set this value to the Availability Zone
+// for the Outpost and specify the Outpost ARN.
+AvailabilityZone *string `json:"availabilityZone,omitempty"`
+// The AZ ID or the Local Zone ID of the subnet.
+AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
+// The IPv4 network range for the subnet, in CIDR notation. For example, 10.0.0.0/24.
+// We modify the specified CIDR block to its canonical form; for example, if
+// you specify 100.68.0.18/18, we modify it to 100.68.0.0/18.
+// 
+// This parameter is not supported for an IPv6 only subnet.
+CIDRBlock *string `json:"cidrBlock,omitempty"`
+CustomerOwnedIPv4Pool *string `json:"customerOwnedIPv4Pool,omitempty"`
+EnableDNS64 *bool `json:"enableDNS64,omitempty"`
+EnableResourceNameDNSAAAARecord *bool `json:"enableResourceNameDNSAAAARecord,omitempty"`
+EnableResourceNameDNSARecord *bool `json:"enableResourceNameDNSARecord,omitempty"`
+HostnameType *string `json:"hostnameType,omitempty"`
+// The IPv6 network range for the subnet, in CIDR notation. This parameter is
+// required for an IPv6 only subnet.
+IPv6CIDRBlock *string `json:"ipv6CIDRBlock,omitempty"`
+// Indicates whether to create an IPv6 only subnet.
+IPv6Native *bool `json:"ipv6Native,omitempty"`
+MapPublicIPOnLaunch *bool `json:"mapPublicIPOnLaunch,omitempty"`
+// The Amazon Resource Name (ARN) of the Outpost. If you specify an Outpost
+// ARN, you must also specify the Availability Zone of the Outpost subnet.
+OutpostARN *string `json:"outpostARN,omitempty"`
+RouteTableRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"routeTableRefs,omitempty"`
+RouteTables []*string `json:"routeTables,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
+// The ID of the VPC.
+VPCID *string `json:"vpcID,omitempty"`
+VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // SubnetStatus defines the observed state of Subnet
@@ -85,30 +86,30 @@ type SubnetStatus struct {
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	// The number of unused private IPv4 addresses in the subnet. The IPv4 addresses
-	// for any stopped instances are considered unavailable.
+// for any stopped instances are considered unavailable.
 	// +kubebuilder:validation:Optional
 	AvailableIPAddressCount *int64 `json:"availableIPAddressCount,omitempty"`
 	// Indicates whether this is the default subnet for the Availability Zone.
 	// +kubebuilder:validation:Optional
 	DefaultForAZ *bool `json:"defaultForAZ,omitempty"`
 	// Indicates the device position for local network interfaces in this subnet.
-	// For example, 1 indicates local network interfaces in this subnet are the
-	// secondary network interface (eth1).
+// For example, 1 indicates local network interfaces in this subnet are the
+// secondary network interface (eth1).
 	// +kubebuilder:validation:Optional
 	EnableLniAtDeviceIndex *int64 `json:"enableLniAtDeviceIndex,omitempty"`
 	// Information about the IPv6 CIDR blocks associated with the subnet.
 	// +kubebuilder:validation:Optional
 	IPv6CIDRBlockAssociationSet []*SubnetIPv6CIDRBlockAssociation `json:"ipv6CIDRBlockAssociationSet,omitempty"`
 	// Indicates whether a network interface created in this subnet (including a
-	// network interface created by RunInstances) receives a customer-owned IPv4
-	// address.
+// network interface created by RunInstances) receives a customer-owned IPv4
+// address.
 	// +kubebuilder:validation:Optional
 	MapCustomerOwnedIPOnLaunch *bool `json:"mapCustomerOwnedIPOnLaunch,omitempty"`
 	// The ID of the Amazon Web Services account that owns the subnet.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// The type of hostnames to assign to instances in the subnet at launch. An
-	// instance hostname is based on the IPv4 address or ID of the instance.
+// instance hostname is based on the IPv4 address or ID of the instance.
 	// +kubebuilder:validation:Optional
 	PrivateDNSNameOptionsOnLaunch *PrivateDNSNameOptionsOnLaunch `json:"privateDNSNameOptionsOnLaunch,omitempty"`
 	// The current state of the subnet.
@@ -127,8 +128,8 @@ type SubnetStatus struct {
 type Subnet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              SubnetSpec   `json:"spec,omitempty"`
-	Status            SubnetStatus `json:"status,omitempty"`
+	Spec   SubnetSpec   `json:"spec,omitempty"`
+	Status SubnetStatus `json:"status,omitempty"`
 }
 
 // SubnetList contains a list of Subnet
@@ -136,7 +137,7 @@ type Subnet struct {
 type SubnetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Subnet `json:"items"`
+	Items []Subnet `json:"items"`
 }
 
 func init() {

@@ -24,14 +24,15 @@ import (
 //
 // Describes a route table.
 type RouteTableSpec struct {
-	Routes []*CreateRouteInput `json:"routes,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
-	// The ID of the VPC.
-	VPCID  *string                                  `json:"vpcID,omitempty"`
-	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
+
+Routes []*CreateRouteInput `json:"routes,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
+// The ID of the VPC.
+VPCID *string `json:"vpcID,omitempty"`
+VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // RouteTableStatus defines the observed state of RouteTable
@@ -71,8 +72,8 @@ type RouteTableStatus struct {
 type RouteTable struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              RouteTableSpec   `json:"spec,omitempty"`
-	Status            RouteTableStatus `json:"status,omitempty"`
+	Spec   RouteTableSpec   `json:"spec,omitempty"`
+	Status RouteTableStatus `json:"status,omitempty"`
 }
 
 // RouteTableList contains a list of RouteTable
@@ -80,7 +81,7 @@ type RouteTable struct {
 type RouteTableList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []RouteTable `json:"items"`
+	Items []RouteTable `json:"items"`
 }
 
 func init() {

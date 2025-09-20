@@ -16,13 +16,12 @@
 package route_table
 
 import (
-	"fmt"
-
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/aws/aws-sdk-go-v2/aws"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -76,7 +75,7 @@ func (r *resource) ReplaceConditions(conditions []*ackv1alpha1.Condition) {
 
 // SetObjectMeta sets the ObjectMeta field for the resource
 func (r *resource) SetObjectMeta(meta metav1.ObjectMeta) {
-	r.ko.ObjectMeta = meta
+	r.ko.ObjectMeta = meta;
 }
 
 // SetStatus will set the Status field for the resource
@@ -92,10 +91,12 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	}
 	r.ko.Status.RouteTableID = &identifier.NameOrID
 
+
 	return nil
 }
 
-// PopulateResourceFromAnnotation populates the fields passed from adoption annotation
+// PopulateResourceFromAnnotation populates the fields passed from adoption annotation 
+// 
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
 	f4, ok := fields["routeTableID"]
 	if !ok {
@@ -103,8 +104,10 @@ func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) erro
 	}
 	r.ko.Status.RouteTableID = &f4
 
+
 	return nil
 }
+
 
 // DeepCopy will return a copy of the resource
 func (r *resource) DeepCopy() acktypes.AWSResource {

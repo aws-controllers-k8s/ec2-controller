@@ -25,14 +25,14 @@ import (
 // Describes a transit gateway.
 type TransitGatewaySpec struct {
 
-	// A description of the transit gateway.
-	Description *string `json:"description,omitempty"`
-	// The transit gateway options.
-	Options *TransitGatewayRequestOptions `json:"options,omitempty"`
-	// The tags. The value parameter is required, but if you don't want the tag
-	// to have a value, specify the parameter with no value, and we set the value
-	// to an empty string.
-	Tags []*Tag `json:"tags,omitempty"`
+// A description of the transit gateway.
+Description *string `json:"description,omitempty"`
+// The transit gateway options.
+Options *TransitGatewayRequestOptions `json:"options,omitempty"`
+// The tags. The value parameter is required, but if you don't want the tag
+// to have a value, specify the parameter with no value, and we set the value
+// to an empty string.
+Tags []*Tag `json:"tags,omitempty"`
 }
 
 // TransitGatewayStatus defines the observed state of TransitGateway
@@ -70,8 +70,8 @@ type TransitGatewayStatus struct {
 type TransitGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              TransitGatewaySpec   `json:"spec,omitempty"`
-	Status            TransitGatewayStatus `json:"status,omitempty"`
+	Spec   TransitGatewaySpec   `json:"spec,omitempty"`
+	Status TransitGatewayStatus `json:"status,omitempty"`
 }
 
 // TransitGatewayList contains a list of TransitGateway
@@ -79,7 +79,7 @@ type TransitGateway struct {
 type TransitGatewayList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []TransitGateway `json:"items"`
+	Items []TransitGateway `json:"items"`
 }
 
 func init() {
