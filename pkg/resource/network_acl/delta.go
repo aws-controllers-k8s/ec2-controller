@@ -37,12 +37,12 @@ func newResourceDelta(
 	b *resource,
 ) *ackcompare.Delta {
 	delta := ackcompare.NewDelta()
-	if ((a == nil && b != nil) ||
-			(a != nil && b == nil)) {
+	if (a == nil && b != nil) ||
+		(a != nil && b == nil) {
 		delta.Add("", a, b)
 		return delta
 	}
-customPreCompare(delta, a, b)
+	customPreCompare(delta, a, b)
 
 	if len(a.ko.Spec.Associations) != len(b.ko.Spec.Associations) {
 		delta.Add("Spec.Associations", a.ko.Spec.Associations, b.ko.Spec.Associations)

@@ -37,12 +37,12 @@ func newResourceDelta(
 	b *resource,
 ) *ackcompare.Delta {
 	delta := ackcompare.NewDelta()
-	if ((a == nil && b != nil) ||
-			(a != nil && b == nil)) {
+	if (a == nil && b != nil) ||
+		(a != nil && b == nil) {
 		delta.Add("", a, b)
 		return delta
 	}
-customPreCompare(delta, a, b)
+	customPreCompare(delta, a, b)
 
 	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
 	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)

@@ -16,8 +16,8 @@
 package main
 
 import (
-	"os"
 	"context"
+	"os"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
@@ -26,8 +26,8 @@ import (
 	ackrtutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	ackrtwebhook "github.com/aws-controllers-k8s/runtime/pkg/webhook"
 	flag "github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtcache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -36,10 +36,9 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	ctrlrtwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	svcresource "github.com/aws-controllers-k8s/ec2-controller/pkg/resource"
 	svctypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	svcresource "github.com/aws-controllers-k8s/ec2-controller/pkg/resource"
 
-	
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/capacity_reservation"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/dhcp_options"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/elastic_ip_address"
@@ -58,20 +57,20 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_endpoint_service_configuration"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/vpc_peering_connection"
-	
+
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/version"
 )
 
 var (
-	awsServiceAPIGroup      = "ec2.services.k8s.aws"
-	awsServiceAlias	        = "ec2"
-	scheme			        = runtime.NewScheme()
-	setupLog		        = ctrlrt.Log.WithName("setup")
+	awsServiceAPIGroup = "ec2.services.k8s.aws"
+	awsServiceAlias    = "ec2"
+	scheme             = runtime.NewScheme()
+	setupLog           = ctrlrt.Log.WithName("setup")
 )
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
-	
+
 	_ = svctypes.AddToScheme(scheme)
 	_ = ackv1alpha1.AddToScheme(scheme)
 }
@@ -115,8 +114,7 @@ func main() {
 		)
 		os.Exit(1)
 	}
-	
-	
+
 	for _, namespace := range namespaces {
 		watchNamespaces[namespace] = ctrlrtcache.Config{}
 	}

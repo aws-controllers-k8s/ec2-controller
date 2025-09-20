@@ -17,10 +17,10 @@ package elastic_ip_address
 
 import (
 	"context"
-"sigs.k8s.io/controller-runtime/pkg/client"
 
-acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -29,10 +29,10 @@ acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 // concrete in the spec. It returns a copy of the input AWSResource which
 // contains the original *Ref values, but none of their respective concrete
 // values.
-func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource) {
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-return &resource{ko}
+	return &resource{ko}
 }
 
 // ResolveReferences finds if there are any Reference field(s) present
@@ -47,11 +47,11 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-return res, false, nil
+	return res, false, nil
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.ElasticIPAddress) error {
-return nil
+	return nil
 }

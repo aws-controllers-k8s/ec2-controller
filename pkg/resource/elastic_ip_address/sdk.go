@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -64,7 +63,7 @@ func (rm *resourceManager) sdkFind(
 	defer func() {
 		exit(err)
 	}()
-    if r.ko.Status.AllocationID == nil {
+	if r.ko.Status.AllocationID == nil {
 		return nil, ackerr.NotFound
 	}
 	// If any required fields in the input shape are missing, AWS resource is
@@ -88,7 +87,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeAddresses", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -183,7 +182,6 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeAddressesInput, error) {
 	res := &svcsdk.DescribeAddressesInput{}
 
-
 	return res, nil
 }
 
@@ -203,11 +201,12 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-    updateTagSpecificationsInCreateRequest(desired, input)
-    // EC2-VPC only supports setting Domain to "vpc"
-    input.Domain = svcsdktypes.DomainTypeVpc
+	updateTagSpecificationsInCreateRequest(desired, input)
+	// EC2-VPC only supports setting Domain to "vpc"
+	input.Domain = svcsdktypes.DomainTypeVpc
 
-	var resp *svcsdk.AllocateAddressOutput; _ = resp;
+	var resp *svcsdk.AllocateAddressOutput
+	_ = resp
 	resp, err = rm.sdkapi.AllocateAddress(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "AllocateAddress", err)
 	if err != nil {
@@ -306,14 +305,15 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-  // PublicIP and AllocationID are two ways of identifying the same resource
-  // depending on whether they are included as part of EC2-Classic or EC2-VPC,
-  // respectively. As EC2-Classic is retired, we should attempt to use the
-  // AllocationID field whenever possible.
-  if input.PublicIp != nil && input.AllocationId != nil {
+	// PublicIP and AllocationID are two ways of identifying the same resource
+	// depending on whether they are included as part of EC2-Classic or EC2-VPC,
+	// respectively. As EC2-Classic is retired, we should attempt to use the
+	// AllocationID field whenever possible.
+	if input.PublicIp != nil && input.AllocationId != nil {
 		input.PublicIp = nil
 	}
-	var resp *svcsdk.ReleaseAddressOutput; _ = resp;
+	var resp *svcsdk.ReleaseAddressOutput
+	_ = resp
 	resp, err = rm.sdkapi.ReleaseAddress(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "ReleaseAddress", err)
 	return nil, err
@@ -340,7 +340,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults (
+func (rm *resourceManager) setStatusDefaults(
 	ko *svcapitypes.ElasticIPAddress,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -359,7 +359,7 @@ func (rm *resourceManager) setStatusDefaults (
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions (
+func (rm *resourceManager) updateConditions(
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -383,10 +383,10 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type:   ackv1alpha1.ConditionTypeTerminal,
+				Type: ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -410,7 +410,7 @@ func (rm *resourceManager) updateConditions (
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type:   ackv1alpha1.ConditionTypeRecoverable,
+					Type: ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -447,19 +447,16 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 		return false
 	}
 	switch terminalErr.ErrorCode() {
-	case  "InvalidParameterCombination",
-		 "InvalidParameterValue":
+	case "InvalidParameterCombination",
+		"InvalidParameterValue":
 		return true
 	default:
 		return false
 	}
 }
 
-
-
-
 func (rm *resourceManager) newTag(
-	    c svcapitypes.Tag,
+	c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {

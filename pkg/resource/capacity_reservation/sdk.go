@@ -19,13 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
-	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -80,7 +80,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeCapacityReservations", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -271,8 +271,8 @@ func (rm *resourceManager) sdkFind(
 
 	rm.setStatusDefaults(ko)
 
-    // set the instance count in spec from the total instance count in status,
-	// without this there's no diff detected for this field in the desired object and latest state in aws 
+	// set the instance count in spec from the total instance count in status,
+	// without this there's no diff detected for this field in the desired object and latest state in aws
 	// causing update calls to have no effect at all
 	if ko.Status.TotalInstanceCount != nil {
 		ko.Spec.InstanceCount = ko.Status.TotalInstanceCount
@@ -323,10 +323,10 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-    updateTagSpecificationsInCreateRequest(desired, input)
+	updateTagSpecificationsInCreateRequest(desired, input)
 
-
-	var resp *svcsdk.CreateCapacityReservationOutput; _ = resp;
+	var resp *svcsdk.CreateCapacityReservationOutput
+	_ = resp
 	resp, err = rm.sdkapi.CreateCapacityReservation(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateCapacityReservation", err)
 	if err != nil {
@@ -609,7 +609,7 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, err
 	}
 
-    // If additionalInfo field is being updated, other fields cannot be modified simultaneously,
+	// If additionalInfo field is being updated, other fields cannot be modified simultaneously,
 	// hence we update it separately or else we run into InvalidParameterCombination error
 	if input.AdditionalInfo != nil {
 		// update call with additional info only
@@ -624,12 +624,12 @@ func (rm *resourceManager) sdkUpdate(
 			return nil, err
 		}
 	}
-	
+
 	// set additionalInfo to nil here because it has already been handled
 	input.AdditionalInfo = nil
 
-
-	var resp *svcsdk.ModifyCapacityReservationOutput; _ = resp;
+	var resp *svcsdk.ModifyCapacityReservationOutput
+	_ = resp
 	resp, err = rm.sdkapi.ModifyCapacityReservation(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyCapacityReservation", err)
 	if err != nil {
@@ -638,7 +638,6 @@ func (rm *resourceManager) sdkUpdate(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
-
 
 	rm.setStatusDefaults(ko)
 
@@ -705,7 +704,8 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.CancelCapacityReservationOutput; _ = resp;
+	var resp *svcsdk.CancelCapacityReservationOutput
+	_ = resp
 	resp, err = rm.sdkapi.CancelCapacityReservation(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "CancelCapacityReservation", err)
 	return nil, err
@@ -726,7 +726,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults (
+func (rm *resourceManager) setStatusDefaults(
 	ko *svcapitypes.CapacityReservation,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -745,7 +745,7 @@ func (rm *resourceManager) setStatusDefaults (
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions (
+func (rm *resourceManager) updateConditions(
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -769,10 +769,10 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type:   ackv1alpha1.ConditionTypeTerminal,
+				Type: ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -796,7 +796,7 @@ func (rm *resourceManager) updateConditions (
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type:   ackv1alpha1.ConditionTypeRecoverable,
+					Type: ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}

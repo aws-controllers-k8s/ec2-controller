@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -83,7 +82,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpointServiceConfigurations", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -233,7 +232,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-    return rm.checkForMissingRequiredFields(r)
+	return rm.checkForMissingRequiredFields(r)
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
@@ -242,7 +241,6 @@ func (rm *resourceManager) newListRequestPayload(
 	r *resource,
 ) (*svcsdk.DescribeVpcEndpointServiceConfigurationsInput, error) {
 	res := &svcsdk.DescribeVpcEndpointServiceConfigurationsInput{}
-
 
 	return res, nil
 }
@@ -264,7 +262,8 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 
-	var resp *svcsdk.CreateVpcEndpointServiceConfigurationOutput; _ = resp;
+	var resp *svcsdk.CreateVpcEndpointServiceConfigurationOutput
+	_ = resp
 	resp, err = rm.sdkapi.CreateVpcEndpointServiceConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpcEndpointServiceConfiguration", err)
 	if err != nil {
@@ -465,7 +464,8 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, err
 	}
 
-	var resp *svcsdk.ModifyVpcEndpointServiceConfigurationOutput; _ = resp;
+	var resp *svcsdk.ModifyVpcEndpointServiceConfigurationOutput
+	_ = resp
 	resp, err = rm.sdkapi.ModifyVpcEndpointServiceConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServiceConfiguration", err)
 	if err != nil {
@@ -474,7 +474,6 @@ func (rm *resourceManager) sdkUpdate(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
-
 
 	rm.setStatusDefaults(ko)
 	return &resource{ko}, nil
@@ -516,10 +515,11 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-    if err = addIDToDeleteRequest(r, input); err != nil {
-        return nil, ackerr.NotFound
-    }
-	var resp *svcsdk.DeleteVpcEndpointServiceConfigurationsOutput; _ = resp;
+	if err = addIDToDeleteRequest(r, input); err != nil {
+		return nil, ackerr.NotFound
+	}
+	var resp *svcsdk.DeleteVpcEndpointServiceConfigurationsOutput
+	_ = resp
 	resp, err = rm.sdkapi.DeleteVpcEndpointServiceConfigurations(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpcEndpointServiceConfigurations", err)
 	return nil, err
@@ -532,12 +532,11 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteVpcEndpointServiceConfigurationsInput, error) {
 	res := &svcsdk.DeleteVpcEndpointServiceConfigurationsInput{}
 
-
 	return res, nil
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults (
+func (rm *resourceManager) setStatusDefaults(
 	ko *svcapitypes.VPCEndpointServiceConfiguration,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -556,7 +555,7 @@ func (rm *resourceManager) setStatusDefaults (
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions (
+func (rm *resourceManager) updateConditions(
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -580,10 +579,10 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type:   ackv1alpha1.ConditionTypeTerminal,
+				Type: ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -607,7 +606,7 @@ func (rm *resourceManager) updateConditions (
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type:   ackv1alpha1.ConditionTypeRecoverable,
+					Type: ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -639,11 +638,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
-
-
-
 func (rm *resourceManager) newTag(
-	    c svcapitypes.Tag,
+	c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {

@@ -25,24 +25,24 @@ import (
 // Describes a VPC attachment.
 type TransitGatewayVPCAttachmentSpec struct {
 
-// The VPC attachment options.
-Options *CreateTransitGatewayVPCAttachmentRequestOptions `json:"options,omitempty"`
-// The IDs of one or more subnets. You can specify only one subnet per Availability
-// Zone. You must specify at least one subnet, but we recommend that you specify
-// two subnets for better availability. The transit gateway uses one IP address
-// from each specified subnet.
-SubnetIDs []*string `json:"subnetIDs,omitempty"`
-SubnetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRefs,omitempty"`
-// The tags. The value parameter is required, but if you don't want the tag
-// to have a value, specify the parameter with no value, and we set the value
-// to an empty string.
-Tags []*Tag `json:"tags,omitempty"`
-// The ID of the transit gateway.
-TransitGatewayID *string `json:"transitGatewayID,omitempty"`
-TransitGatewayRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"transitGatewayRef,omitempty"`
-// The ID of the VPC.
-VPCID *string `json:"vpcID,omitempty"`
-VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
+	// The VPC attachment options.
+	Options *CreateTransitGatewayVPCAttachmentRequestOptions `json:"options,omitempty"`
+	// The IDs of one or more subnets. You can specify only one subnet per Availability
+	// Zone. You must specify at least one subnet, but we recommend that you specify
+	// two subnets for better availability. The transit gateway uses one IP address
+	// from each specified subnet.
+	SubnetIDs  []*string                                  `json:"subnetIDs,omitempty"`
+	SubnetRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRefs,omitempty"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
+	// The ID of the transit gateway.
+	TransitGatewayID  *string                                  `json:"transitGatewayID,omitempty"`
+	TransitGatewayRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"transitGatewayRef,omitempty"`
+	// The ID of the VPC.
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // TransitGatewayVPCAttachmentStatus defines the observed state of TransitGatewayVPCAttachment
@@ -65,7 +65,7 @@ type TransitGatewayVPCAttachmentStatus struct {
 	// +kubebuilder:validation:Optional
 	ID *string `json:"id,omitempty"`
 	// The state of the VPC attachment. Note that the initiating state has been
-// deprecated.
+	// deprecated.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
 	// The ID of the Amazon Web Services account that owns the VPC.
@@ -80,8 +80,8 @@ type TransitGatewayVPCAttachmentStatus struct {
 type TransitGatewayVPCAttachment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec   TransitGatewayVPCAttachmentSpec   `json:"spec,omitempty"`
-	Status TransitGatewayVPCAttachmentStatus `json:"status,omitempty"`
+	Spec              TransitGatewayVPCAttachmentSpec   `json:"spec,omitempty"`
+	Status            TransitGatewayVPCAttachmentStatus `json:"status,omitempty"`
 }
 
 // TransitGatewayVPCAttachmentList contains a list of TransitGatewayVPCAttachment
@@ -89,7 +89,7 @@ type TransitGatewayVPCAttachment struct {
 type TransitGatewayVPCAttachmentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items []TransitGatewayVPCAttachment `json:"items"`
+	Items           []TransitGatewayVPCAttachment `json:"items"`
 }
 
 func init() {

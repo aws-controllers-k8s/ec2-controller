@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -80,7 +79,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeInternetGateways", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -204,9 +203,10 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-    updateTagSpecificationsInCreateRequest(desired, input)
+	updateTagSpecificationsInCreateRequest(desired, input)
 
-	var resp *svcsdk.CreateInternetGatewayOutput; _ = resp;
+	var resp *svcsdk.CreateInternetGatewayOutput
+	_ = resp
 	resp, err = rm.sdkapi.CreateInternetGateway(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateInternetGateway", err)
 	if err != nil {
@@ -267,8 +267,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	if err = rm.createRouteTableAssociations(ctx, &resource{ko}); err != nil {
-        return nil, err
-    }
+		return nil, err
+	}
 
 	return &resource{ko}, nil
 }
@@ -280,7 +280,6 @@ func (rm *resourceManager) newCreateRequestPayload(
 	r *resource,
 ) (*svcsdk.CreateInternetGatewayInput, error) {
 	res := &svcsdk.CreateInternetGatewayInput{}
-
 
 	return res, nil
 }
@@ -306,7 +305,7 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
-    if r.ko.Spec.VPC != nil && r.ko.Status.InternetGatewayID != nil {
+	if r.ko.Spec.VPC != nil && r.ko.Status.InternetGatewayID != nil {
 		if err = rm.detachFromVPC(ctx, *r.ko.Spec.VPC, *r.ko.Status.InternetGatewayID); err != nil {
 			return nil, err
 		}
@@ -315,7 +314,8 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.DeleteInternetGatewayOutput; _ = resp;
+	var resp *svcsdk.DeleteInternetGatewayOutput
+	_ = resp
 	resp, err = rm.sdkapi.DeleteInternetGateway(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteInternetGateway", err)
 	return nil, err
@@ -336,7 +336,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults (
+func (rm *resourceManager) setStatusDefaults(
 	ko *svcapitypes.InternetGateway,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -355,7 +355,7 @@ func (rm *resourceManager) setStatusDefaults (
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions (
+func (rm *resourceManager) updateConditions(
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -379,10 +379,10 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type:   ackv1alpha1.ConditionTypeTerminal,
+				Type: ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -406,7 +406,7 @@ func (rm *resourceManager) updateConditions (
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type:   ackv1alpha1.ConditionTypeRecoverable,
+					Type: ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -438,11 +438,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
-
-
-
 func (rm *resourceManager) newTag(
-	    c svcapitypes.Tag,
+	c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {

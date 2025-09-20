@@ -25,22 +25,22 @@ import (
 // Describes a launch template.
 type LaunchTemplateSpec struct {
 
-// The information for the launch template.
-// +kubebuilder:validation:Required
-Data *RequestLaunchTemplateData `json:"data"`
-// The version number of the default version of the launch template.
-DefaultVersion *int64 `json:"defaultVersion,omitempty"`
-// A name for the launch template.
-//
-// Regex Pattern: `^[a-zA-Z0-9\(\)\.\-/_]+$`
-// +kubebuilder:validation:Required
-Name *string `json:"name"`
-// The tags. The value parameter is required, but if you don't want the tag
-// to have a value, specify the parameter with no value, and we set the value
-// to an empty string.
-Tags []*Tag `json:"tags,omitempty"`
-// A description for the first version of the launch template.
-VersionDescription *string `json:"versionDescription,omitempty"`
+	// The information for the launch template.
+	// +kubebuilder:validation:Required
+	Data *RequestLaunchTemplateData `json:"data"`
+	// The version number of the default version of the launch template.
+	DefaultVersion *int64 `json:"defaultVersion,omitempty"`
+	// A name for the launch template.
+	//
+	// Regex Pattern: `^[a-zA-Z0-9\(\)\.\-/_]+$`
+	// +kubebuilder:validation:Required
+	Name *string `json:"name"`
+	// The tags. The value parameter is required, but if you don't want the tag
+	// to have a value, specify the parameter with no value, and we set the value
+	// to an empty string.
+	Tags []*Tag `json:"tags,omitempty"`
+	// A description for the first version of the launch template.
+	VersionDescription *string `json:"versionDescription,omitempty"`
 }
 
 // LaunchTemplateStatus defines the observed state of LaunchTemplate
@@ -80,8 +80,8 @@ type LaunchTemplateStatus struct {
 type LaunchTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec   LaunchTemplateSpec   `json:"spec,omitempty"`
-	Status LaunchTemplateStatus `json:"status,omitempty"`
+	Spec              LaunchTemplateSpec   `json:"spec,omitempty"`
+	Status            LaunchTemplateStatus `json:"status,omitempty"`
 }
 
 // LaunchTemplateList contains a list of LaunchTemplate
@@ -89,7 +89,7 @@ type LaunchTemplate struct {
 type LaunchTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items []LaunchTemplate `json:"items"`
+	Items           []LaunchTemplate `json:"items"`
 }
 
 func init() {

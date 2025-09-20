@@ -17,16 +17,15 @@ package route_table
 
 import (
 	"context"
-"fmt"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
-acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -35,7 +34,7 @@ acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 // concrete in the spec. It returns a copy of the input AWSResource which
 // contains the original *Ref values, but none of their respective concrete
 // values.
-func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource) {
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
 	for f0idx, f0iter := range ko.Spec.Routes {
@@ -72,7 +71,7 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 		ko.Spec.VPCID = nil
 	}
 
-return &resource{ko}
+	return &resource{ko}
 }
 
 // ResolveReferences finds if there are any Reference field(s) present
@@ -87,7 +86,7 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-ko := rm.concreteResource(res).ko
+	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
@@ -96,38 +95,37 @@ ko := rm.concreteResource(res).ko
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForRoutes_NATGatewayID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForRoutes_TransitGatewayID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCEndpointID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForRoutes_VPCPeeringConnectionID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
-	
+
 	return &resource{ko}, resourceHasReferences, err
 }
 
@@ -171,12 +169,13 @@ func validateReferenceFields(ko *svcapitypes.RouteTable) error {
 	if ko.Spec.VPCRef == nil && ko.Spec.VPCID == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("VPCID", "VPCRef")
 	}
-return nil
+	return nil
 }
+
 // resolveReferenceForRoutes_GatewayID reads the resource referenced
 // from Routes.GatewayRef field and sets the Routes.GatewayID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForRoutes_GatewayID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -203,6 +202,7 @@ func (rm *resourceManager) resolveReferenceForRoutes_GatewayID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_InternetGateway looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -216,7 +216,7 @@ func getReferencedResourceState_InternetGateway(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -236,7 +236,7 @@ func getReferencedResourceState_InternetGateway(
 			"InternetGateway",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -260,7 +260,7 @@ var refResourceSynced bool
 // resolveReferenceForRoutes_NATGatewayID reads the resource referenced
 // from Routes.NATGatewayRef field and sets the Routes.NATGatewayID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForRoutes_NATGatewayID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -287,6 +287,7 @@ func (rm *resourceManager) resolveReferenceForRoutes_NATGatewayID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_NATGateway looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -300,7 +301,7 @@ func getReferencedResourceState_NATGateway(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -320,7 +321,7 @@ func getReferencedResourceState_NATGateway(
 			"NATGateway",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -344,7 +345,7 @@ var refResourceSynced bool
 // resolveReferenceForRoutes_TransitGatewayID reads the resource referenced
 // from Routes.TransitGatewayRef field and sets the Routes.TransitGatewayID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForRoutes_TransitGatewayID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -371,6 +372,7 @@ func (rm *resourceManager) resolveReferenceForRoutes_TransitGatewayID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_TransitGateway looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -384,7 +386,7 @@ func getReferencedResourceState_TransitGateway(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -404,7 +406,7 @@ func getReferencedResourceState_TransitGateway(
 			"TransitGateway",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -428,7 +430,7 @@ var refResourceSynced bool
 // resolveReferenceForRoutes_VPCEndpointID reads the resource referenced
 // from Routes.VPCEndpointRef field and sets the Routes.VPCEndpointID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForRoutes_VPCEndpointID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -455,6 +457,7 @@ func (rm *resourceManager) resolveReferenceForRoutes_VPCEndpointID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_VPCEndpoint looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -468,7 +471,7 @@ func getReferencedResourceState_VPCEndpoint(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -488,7 +491,7 @@ func getReferencedResourceState_VPCEndpoint(
 			"VPCEndpoint",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -512,7 +515,7 @@ var refResourceSynced bool
 // resolveReferenceForRoutes_VPCPeeringConnectionID reads the resource referenced
 // from Routes.VPCPeeringConnectionRef field and sets the Routes.VPCPeeringConnectionID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForRoutes_VPCPeeringConnectionID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -539,6 +542,7 @@ func (rm *resourceManager) resolveReferenceForRoutes_VPCPeeringConnectionID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_VPCPeeringConnection looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -552,7 +556,7 @@ func getReferencedResourceState_VPCPeeringConnection(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -572,7 +576,7 @@ func getReferencedResourceState_VPCPeeringConnection(
 			"VPCPeeringConnection",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -596,7 +600,7 @@ var refResourceSynced bool
 // resolveReferenceForVPCID reads the resource referenced
 // from VPCRef field and sets the VPCID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -621,6 +625,7 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_VPC looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -634,7 +639,7 @@ func getReferencedResourceState_VPC(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -654,7 +659,7 @@ func getReferencedResourceState_VPC(
 			"VPC",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {

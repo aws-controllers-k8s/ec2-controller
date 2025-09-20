@@ -17,16 +17,15 @@ package vpc_endpoint
 
 import (
 	"context"
-"fmt"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
-acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -35,7 +34,7 @@ acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 // concrete in the spec. It returns a copy of the input AWSResource which
 // contains the original *Ref values, but none of their respective concrete
 // values.
-func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource) {
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
 	if len(ko.Spec.RouteTableRefs) > 0 {
@@ -54,7 +53,7 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 		ko.Spec.VPCID = nil
 	}
 
-return &resource{ko}
+	return &resource{ko}
 }
 
 // ResolveReferences finds if there are any Reference field(s) present
@@ -69,7 +68,7 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-ko := rm.concreteResource(res).ko
+	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
@@ -78,26 +77,25 @@ ko := rm.concreteResource(res).ko
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForSecurityGroupIDs(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForSubnetIDs(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
-	
+
 	return &resource{ko}, resourceHasReferences, err
 }
 
@@ -123,12 +121,13 @@ func validateReferenceFields(ko *svcapitypes.VPCEndpoint) error {
 	if ko.Spec.VPCRef == nil && ko.Spec.VPCID == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("VPCID", "VPCRef")
 	}
-return nil
+	return nil
 }
+
 // resolveReferenceForRouteTableIDs reads the resource referenced
 // from RouteTableRefs field and sets the RouteTableIDs
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForRouteTableIDs(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -158,6 +157,7 @@ func (rm *resourceManager) resolveReferenceForRouteTableIDs(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_RouteTable looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -171,7 +171,7 @@ func getReferencedResourceState_RouteTable(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -191,7 +191,7 @@ func getReferencedResourceState_RouteTable(
 			"RouteTable",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -215,7 +215,7 @@ var refResourceSynced bool
 // resolveReferenceForSecurityGroupIDs reads the resource referenced
 // from SecurityGroupRefs field and sets the SecurityGroupIDs
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForSecurityGroupIDs(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -245,6 +245,7 @@ func (rm *resourceManager) resolveReferenceForSecurityGroupIDs(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_SecurityGroup looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -258,7 +259,7 @@ func getReferencedResourceState_SecurityGroup(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -278,7 +279,7 @@ func getReferencedResourceState_SecurityGroup(
 			"SecurityGroup",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -302,7 +303,7 @@ var refResourceSynced bool
 // resolveReferenceForSubnetIDs reads the resource referenced
 // from SubnetRefs field and sets the SubnetIDs
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForSubnetIDs(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -332,6 +333,7 @@ func (rm *resourceManager) resolveReferenceForSubnetIDs(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_Subnet looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -345,7 +347,7 @@ func getReferencedResourceState_Subnet(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -365,7 +367,7 @@ func getReferencedResourceState_Subnet(
 			"Subnet",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {
@@ -389,7 +391,7 @@ var refResourceSynced bool
 // resolveReferenceForVPCID reads the resource referenced
 // from VPCRef field and sets the VPCID
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceForVPCID(
 	ctx context.Context,
 	apiReader client.Reader,
@@ -414,6 +416,7 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 
 	return hasReferences, nil
 }
+
 // getReferencedResourceState_VPC looks up whether a referenced resource
 // exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
 // in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
@@ -427,7 +430,7 @@ func getReferencedResourceState_VPC(
 ) error {
 	namespacedName := types.NamespacedName{
 		Namespace: namespace,
-		Name: name,
+		Name:      name,
 	}
 	err := apiReader.Get(ctx, namespacedName, obj)
 	if err != nil {
@@ -447,7 +450,7 @@ func getReferencedResourceState_VPC(
 			"VPC",
 			namespace, name)
 	}
-var refResourceSynced bool
+	var refResourceSynced bool
 	for _, cond := range obj.Status.Conditions {
 		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
 			cond.Status == corev1.ConditionTrue {

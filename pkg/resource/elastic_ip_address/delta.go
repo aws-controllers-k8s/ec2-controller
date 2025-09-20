@@ -37,8 +37,8 @@ func newResourceDelta(
 	b *resource,
 ) *ackcompare.Delta {
 	delta := ackcompare.NewDelta()
-	if ((a == nil && b != nil) ||
-			(a != nil && b == nil)) {
+	if (a == nil && b != nil) ||
+		(a != nil && b == nil) {
 		delta.Add("", a, b)
 		return delta
 	}

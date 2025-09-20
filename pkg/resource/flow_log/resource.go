@@ -16,12 +16,13 @@
 package flow_log
 
 import (
+	"fmt"
+
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"github.com/aws/aws-sdk-go-v2/aws"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -75,7 +76,7 @@ func (r *resource) ReplaceConditions(conditions []*ackv1alpha1.Condition) {
 
 // SetObjectMeta sets the ObjectMeta field for the resource
 func (r *resource) SetObjectMeta(meta metav1.ObjectMeta) {
-	r.ko.ObjectMeta = meta;
+	r.ko.ObjectMeta = meta
 }
 
 // SetStatus will set the Status field for the resource
@@ -91,27 +92,24 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	}
 	r.ko.Status.FlowLogID = &identifier.NameOrID
 
-
 	if resourceID, ok := identifier.AdditionalKeys["resourceID"]; ok {
-                r.ko.Spec.ResourceID = &resourceID
-        }
+		r.ko.Spec.ResourceID = &resourceID
+	}
 
-        if resourceType, ok := identifier.AdditionalKeys["resourceType"]; ok {
-                r.ko.Spec.ResourceType = &resourceType
-        }
+	if resourceType, ok := identifier.AdditionalKeys["resourceType"]; ok {
+		r.ko.Spec.ResourceType = &resourceType
+	}
 
 	return nil
 }
 
-// PopulateResourceFromAnnotation populates the fields passed from adoption annotation 
-// 
+// PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
 	primaryKey, ok := fields["flowLogID"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: flowLogID"))
 	}
 	r.ko.Status.FlowLogID = &primaryKey
-
 
 	if resourceID, ok := fields["resourceID"]; ok {
 		r.ko.Spec.ResourceID = &resourceID
@@ -120,14 +118,13 @@ func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) erro
 	}
 
 	if resourceType, ok := fields["resourceType"]; ok {
-			r.ko.Spec.ResourceType = &resourceType
+		r.ko.Spec.ResourceType = &resourceType
 	} else {
 		return ackerrors.MissingNameIdentifier
 	}
 
 	return nil
 }
-
 
 // DeepCopy will return a copy of the resource
 func (r *resource) DeepCopy() acktypes.AWSResource {

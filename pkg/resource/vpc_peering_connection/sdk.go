@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -80,7 +79,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcPeeringConnections", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN"  {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -336,9 +335,10 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-    updateTagSpecificationsInCreateRequest(desired, input)
+	updateTagSpecificationsInCreateRequest(desired, input)
 
-	var resp *svcsdk.CreateVpcPeeringConnectionOutput; _ = resp;
+	var resp *svcsdk.CreateVpcPeeringConnectionOutput
+	_ = resp
 	resp, err = rm.sdkapi.CreateVpcPeeringConnection(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreateVpcPeeringConnection", err)
 	if err != nil {
@@ -495,7 +495,7 @@ func (rm *resourceManager) sdkCreate(
 
 	rm.setStatusDefaults(ko)
 
-    // This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
+	// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
 	ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
 
 	return &resource{ko}, nil
@@ -538,8 +538,8 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
-  
-  	if isVPCPeeringConnectionCreating(latest) {
+
+	if isVPCPeeringConnectionCreating(latest) {
 		return desired, requeueWaitWhileCreating
 	}
 	if isVPCPeeringConnectionProvisioning(latest) {
@@ -580,7 +580,7 @@ func (rm *resourceManager) sdkUpdate(
 				return nil, err
 			}
 			latest = rm.concreteResource(readOneLatest.DeepCopy())
-			desired.ko.Status.Status =  latest.ko.Status.Status
+			desired.ko.Status.Status = latest.ko.Status.Status
 			// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
 			ackcondition.SetSynced(desired, corev1.ConditionFalse, nil, nil)
 			return desired, nil
@@ -592,7 +592,7 @@ func (rm *resourceManager) sdkUpdate(
 		return desired, nil
 	}
 
-  	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
+	if desired.ko.Spec.AccepterPeeringConnectionOptions != nil {
 		f0 := &svcapitypes.PeeringConnectionOptionsRequest{}
 		if desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC != nil {
 			f0.AllowDNSResolutionFromRemoteVPC = desired.ko.Spec.AccepterPeeringConnectionOptions.AllowDNSResolutionFromRemoteVPC
@@ -627,7 +627,8 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, err
 	}
 
-	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput; _ = resp;
+	var resp *svcsdk.ModifyVpcPeeringConnectionOptionsOutput
+	_ = resp
 	resp, err = rm.sdkapi.ModifyVpcPeeringConnectionOptions(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcPeeringConnectionOptions", err)
 	if err != nil {
@@ -728,7 +729,8 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	var resp *svcsdk.DeleteVpcPeeringConnectionOutput; _ = resp;
+	var resp *svcsdk.DeleteVpcPeeringConnectionOutput
+	_ = resp
 	resp, err = rm.sdkapi.DeleteVpcPeeringConnection(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteVpcPeeringConnection", err)
 	return nil, err
@@ -749,7 +751,7 @@ func (rm *resourceManager) newDeleteRequestPayload(
 }
 
 // setStatusDefaults sets default properties into supplied custom resource
-func (rm *resourceManager) setStatusDefaults (
+func (rm *resourceManager) setStatusDefaults(
 	ko *svcapitypes.VPCPeeringConnection,
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
@@ -768,7 +770,7 @@ func (rm *resourceManager) setStatusDefaults (
 
 // updateConditions returns updated resource, true; if conditions were updated
 // else it returns nil, false
-func (rm *resourceManager) updateConditions (
+func (rm *resourceManager) updateConditions(
 	r *resource,
 	onSuccess bool,
 	err error,
@@ -792,10 +794,10 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 	var termError *ackerr.TerminalError
-	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
+	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound || errors.As(err, &termError) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
-				Type:   ackv1alpha1.ConditionTypeTerminal,
+				Type: ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
@@ -819,7 +821,7 @@ func (rm *resourceManager) updateConditions (
 			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
 				recoverableCondition = &ackv1alpha1.Condition{
-					Type:   ackv1alpha1.ConditionTypeRecoverable,
+					Type: ackv1alpha1.ConditionTypeRecoverable,
 				}
 				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
@@ -851,11 +853,8 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 }
 
-
-
-
 func (rm *resourceManager) newTag(
-	    c svcapitypes.Tag,
+	c svcapitypes.Tag,
 ) *svcsdktypes.Tag {
 	res := &svcsdktypes.Tag{}
 	if c.Key != nil {
