@@ -58,8 +58,6 @@ type VPCEndpointSpec struct {
 	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
 	// The name of the endpoint service.
 	ServiceName *string `json:"serviceName,omitempty"`
-        // The ARN of the service network.
-	ServiceNetworkArn *string `json:"serviceNetworkArn,omitempty"`
 	// The Region where the service is hosted. The default is the current Region.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ServiceRegion *string `json:"serviceRegion,omitempty"`
