@@ -263,11 +263,6 @@
       },
       "type": "object"
     },
-    "enableCARM": {
-      "description": "Parameter to enable or disable cross account resource management.",
-      "type": "boolean",
-      "default": true
-   },
     "serviceAccount": {
       "description": "ServiceAccount settings",
       "properties": {
