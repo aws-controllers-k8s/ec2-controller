@@ -26945,6 +26945,11 @@ func (in *VPCEndpointAssociation) DeepCopyInto(out *VPCEndpointAssociation) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ServiceNetworkARN != nil {
+		in, out := &in.ServiceNetworkARN, &out.ServiceNetworkARN
+		*out = new(string)
+		**out = **in
+	}
 	if in.ServiceNetworkName != nil {
 		in, out := &in.ServiceNetworkName, &out.ServiceNetworkName
 		*out = new(string)
@@ -27413,6 +27418,11 @@ func (in *VPCEndpointSpec) DeepCopyInto(out *VPCEndpointSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ServiceNetworkARN != nil {
+		in, out := &in.ServiceNetworkARN, &out.ServiceNetworkARN
+		*out = new(string)
+		**out = **in
+	}
 	if in.ServiceRegion != nil {
 		in, out := &in.ServiceRegion, &out.ServiceRegion
 		*out = new(string)
@@ -27659,6 +27669,11 @@ func (in *VPCEndpoint_SDK) DeepCopyInto(out *VPCEndpoint_SDK) {
 	}
 	if in.ServiceName != nil {
 		in, out := &in.ServiceName, &out.ServiceName
+		*out = new(string)
+		**out = **in
+	}
+	if in.ServiceNetworkARN != nil {
+		in, out := &in.ServiceNetworkARN, &out.ServiceNetworkARN
 		*out = new(string)
 		**out = **in
 	}

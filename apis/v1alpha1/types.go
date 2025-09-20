@@ -6192,6 +6192,7 @@ type VPCEndpointAssociation struct {
 	// Describes a DNS entry.
 	PrivateDNSEntry               *DNSEntry `json:"privateDNSEntry,omitempty"`
 	ResourceConfigurationGroupARN *string   `json:"resourceConfigurationGroupARN,omitempty"`
+	ServiceNetworkARN             *string   `json:"serviceNetworkARN,omitempty"`
 	ServiceNetworkName            *string   `json:"serviceNetworkName,omitempty"`
 	Tags                          []*Tag    `json:"tags,omitempty"`
 	VPCEndpointID                 *string   `json:"vpcEndpointID,omitempty"`
@@ -6230,6 +6231,7 @@ type VPCEndpoint_SDK struct {
 	RequesterManaged    *bool      `json:"requesterManaged,omitempty"`
 	RouteTableIDs       []*string  `json:"routeTableIDs,omitempty"`
 	ServiceName         *string    `json:"serviceName,omitempty"`
+	ServiceNetworkARN   *string    `json:"serviceNetworkARN,omitempty"`
 	ServiceRegion       *string    `json:"serviceRegion,omitempty"`
 	State               *string    `json:"state,omitempty"`
 	SubnetIDs           []*string  `json:"subnetIDs,omitempty"`
