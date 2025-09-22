@@ -92,5 +92,3 @@ require (
 )
 
 replace github.com/aws-controllers-k8s/runtime => github.com/gustavodiaz7722/ack-runtime v0.51.0
-
-
