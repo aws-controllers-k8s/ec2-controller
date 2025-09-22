@@ -451,7 +451,7 @@ class TestVPCPeeringConnections:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for updated user tags; system tags should persist
         vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
@@ -475,7 +475,7 @@ class TestVPCPeeringConnections:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for removed user tags; system tags should persist
         vpc_peering_connection = ec2_validator.get_vpc_peering_connection(resource_id)
@@ -515,7 +515,7 @@ class TestVPCPeeringConnections:
 
         # Check resource synced successfully, after waiting for requeue after Patch Peering Options to True
         time.sleep(PATCH_WAIT_AFTER_SECONDS)
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check Peering Options in AWS
         aws_res = wait_for_vpc_peering_connection_peering_options(ec2_client, True, vpc_peering_connection_id)
@@ -539,7 +539,7 @@ class TestVPCPeeringConnections:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for updated peering options
         latest_aws_res = wait_for_vpc_peering_connection_peering_options(ec2_client, False, vpc_peering_connection_id)
