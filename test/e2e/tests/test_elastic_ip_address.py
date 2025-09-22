@@ -191,7 +191,7 @@ class TestElasticIPAddress:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for updated user tags; system tags should persist
         elastic_ip = get_address(ec2_client, resource_id)
@@ -221,7 +221,7 @@ class TestElasticIPAddress:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         elastic_ip = get_address(ec2_client, resource_id)
