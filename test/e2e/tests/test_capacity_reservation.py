@@ -97,7 +97,7 @@ class TestCapacityReservation:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         capacity_reservation = ec2_validator.get_capacity_reservation(resource_id)
         assert capacity_reservation['TotalInstanceCount'] == 2
         
@@ -161,7 +161,7 @@ class TestCapacityReservation:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for updated user tags; system tags should persist
         capacity_reservation = ec2_validator.get_capacity_reservation(resource_id)
@@ -191,7 +191,7 @@ class TestCapacityReservation:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         capacity_reservation = ec2_validator.get_capacity_reservation(resource_id)

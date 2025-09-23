@@ -107,7 +107,7 @@ class TestLaunchTemplate:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         cr = k8s.get_resource(ref)
 
@@ -140,7 +140,7 @@ class TestLaunchTemplate:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         cr = k8s.get_resource(ref)
 
@@ -196,7 +196,7 @@ class TestLaunchTemplate:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         cr = k8s.get_resource(ref)
         assert 'tags' in cr['spec']
