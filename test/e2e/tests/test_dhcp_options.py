@@ -176,7 +176,7 @@ class TestDhcpOptions:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for updated user tags; system tags should persist
         dhcp_options = ec2_validator.get_dhcp_options(resource_id)
@@ -206,7 +206,7 @@ class TestDhcpOptions:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         dhcp_options = ec2_validator.get_dhcp_options(resource_id)
