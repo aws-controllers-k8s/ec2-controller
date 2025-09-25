@@ -20,7 +20,7 @@ import logging
 
 from acktest import tags
 from acktest.resources import random_suffix_name
-from acktest.k8s import resource as k8s
+from acktest.k8s import resource as k8s, condition
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
@@ -283,11 +283,7 @@ class TestNATGateway:
         assert k8s.get_resource_exists(ref)
 
         expected_msg = "InvalidSubnet: The subnet ID 'InvalidSubnet' is malformed"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidSubnet) when calling the CreateNatGateway operation:
-        # The subnet ID 'InvalidSubnet' is malformed
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
 
     def test_terminal_condition_malformed_elastic_ip(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
@@ -318,11 +314,7 @@ class TestNATGateway:
         assert k8s.get_resource_exists(ref)
 
         expected_msg = "InvalidElasticIpID.Malformed: The elastic-ip ID 'MalformedElasticIpId' is malformed"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidElasticIpID.Malformed) when calling the CreateNatGateway operation:
-        # The elastic-ip ID 'MalformedElasticIpId' is malformed"
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
 
     def test_terminal_condition_missing_parameter(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
@@ -355,9 +347,4 @@ class TestNATGateway:
         assert k8s.get_resource_exists(ref)
 
         expected_msg = "MissingParameter: The request must include the AllocationId parameter. Add the required parameter and retry the request."
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (MissingParameter) when calling the CreateNatGateway operation:
-        # The request must include the AllocationId parameter. 
-        # Add the required parameter and retry the request.
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)

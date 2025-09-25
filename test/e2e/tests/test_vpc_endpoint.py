@@ -21,7 +21,7 @@ import logging
 
 from acktest import tags
 from acktest.resources import random_suffix_name
-from acktest.k8s import resource as k8s
+from acktest.k8s import resource as k8s, condition
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
@@ -285,13 +285,7 @@ class TestVpcEndpoint:
         assert k8s.get_resource_exists(ref)
 
         expected_msg = "InvalidVpcId.Malformed: Invalid Id: 'MalformedVpcId'"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # InvalidVpcId.Malformed: Invalid Id: 'MalformedVpcId'
-        # (expecting 'vpc-...; the Id may only contain lowercase alphanumeric characters and a single dash')
-        # status code: 400, request id: dc3595c5-4e6e-48db-abf7-9bdcc76ad2a8
-        # This check only verifies the error message; the request hash is irrelevant and therefore can be ignored.
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
 
     def test_terminal_condition_invalid_service(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
@@ -322,8 +316,7 @@ class TestVpcEndpoint:
         assert k8s.get_resource_exists(ref)
 
         expected_msg = "InvalidServiceName: The Vpc Endpoint Service 'InvalidService' does not exist"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
 
     def test_update_subnets(self, ec2_client, modify_vpc_endpoint):
         (ref, cr) = modify_vpc_endpoint
