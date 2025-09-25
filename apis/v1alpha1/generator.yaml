@@ -1023,6 +1023,9 @@ resources:
       ServiceRegion:
         # ServiceRegion is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
+      ServiceNetworkARN:
+        # ServiceNetworkARN is not supported in ModifyVpcEndpoint's input.
+        is_immutable: true
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed
