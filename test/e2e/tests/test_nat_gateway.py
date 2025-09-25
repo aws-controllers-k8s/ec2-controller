@@ -59,7 +59,7 @@ def standard_elastic_address():
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     # Check resource synced successfully
-    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+    assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=10)
 
     assert cr is not None
     assert k8s.get_resource_exists(ref)
@@ -115,7 +115,7 @@ def simple_nat_gateway(standard_elastic_address, request):
     time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     # Check resource synced successfully
-    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+    assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
     assert cr is not None
     assert k8s.get_resource_exists(ref)
@@ -227,7 +227,7 @@ class TestNATGateway:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         nat_gateway = ec2_validator.get_nat_gateway(resource_id)

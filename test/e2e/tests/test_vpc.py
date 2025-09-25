@@ -184,7 +184,7 @@ class TestVpc:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for updated user tags; system tags should persist
         vpc = ec2_validator.get_vpc(resource_id)
@@ -214,7 +214,7 @@ class TestVpc:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         vpc = ec2_validator.get_vpc(resource_id)
@@ -230,7 +230,7 @@ class TestVpc:
         resource = k8s.get_resource(ref)
         assert len(resource["spec"]["tags"]) == 0
 
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
@@ -269,7 +269,7 @@ class TestVpc:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         # Check VPC exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc(resource_id)
@@ -284,7 +284,7 @@ class TestVpc:
         }
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         # Make sure default security group rule is deleted
         assert not contains_default_sg_rule(ec2_client, resource_id)
 
@@ -482,7 +482,7 @@ class TestVpc:
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
-        k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         # Re-Validate CIDR Blocks State
         vpc = ec2_validator.get_vpc(resource_id)
         assert vpc['CidrBlockAssociationSet'][0]['CidrBlockState']['State'] == "associated"
