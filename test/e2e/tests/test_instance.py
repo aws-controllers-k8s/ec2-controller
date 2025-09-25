@@ -135,7 +135,7 @@ def instance(ec2_client):
 @service_marker
 @pytest.mark.canary
 class TestInstance:
-    def test_create_delete(self, ec2_client, instance):
+    def test_crud(self, ec2_client, instance):
         (ref, cr) = instance
         resource_id = cr["status"]["instanceID"]
 
@@ -156,6 +156,39 @@ class TestInstance:
                     t['Value'] == INSTANCE_TAG_VAL):
                 tag_present = True
         assert tag_present
+        
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Ensure instance is running
+        cr = k8s.get_resource(ref)
+        assert 'status' in cr
+        assert 'state' in cr['status']
+        assert 'name' in cr['status']['state']
+        assert cr['status']['state']['name'] == 'running'
+        
+        # Update Instance securityGroupID
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        updates = {
+            "spec": {
+                "securityGroupIDs": [test_vpc.security_group.group_id]
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check Instance updated value
+        instance = get_instance(ec2_client, resource_id)
+        assert instance is not None
+        assert 'SecurityGroups' in instance
+        foundSecurityGroup = False
+        for group in instance['SecurityGroups']:
+            if group['GroupId'] == test_vpc.security_group.group_id:
+                foundSecurityGroup = True
+        assert foundSecurityGroup
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
