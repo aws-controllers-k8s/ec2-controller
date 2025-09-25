@@ -193,6 +193,8 @@ def security_groups_cyclic_ref():
     cr_1 = k8s.wait_resource_consumed_by_controller(ref_1)
     cr_2 = k8s.wait_resource_consumed_by_controller(ref_2)
     cr_3 = k8s.wait_resource_consumed_by_controller(ref_3)
+    
+    time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
     assert cr_1 is not None
     assert cr_2 is not None
     assert cr_3 is not None
