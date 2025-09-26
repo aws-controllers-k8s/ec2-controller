@@ -135,6 +135,14 @@ spec:
               serviceName:
                 description: The name of the endpoint service.
                 type: string
+              serviceNetworkARN:
+                description: |-
+                  The Amazon Resource Name (ARN) of a service network that will be associated
+                  with the VPC endpoint of type service-network.
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               serviceRegion:
                 description: The Region where the service is hosted. The default is
                   the current Region.

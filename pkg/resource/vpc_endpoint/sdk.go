@@ -189,6 +189,11 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.ServiceName = nil
 		}
+		if elem.ServiceNetworkArn != nil {
+			ko.Spec.ServiceNetworkARN = elem.ServiceNetworkArn
+		} else {
+			ko.Spec.ServiceNetworkARN = nil
+		}
 		if elem.ServiceRegion != nil {
 			ko.Spec.ServiceRegion = elem.ServiceRegion
 		} else {
@@ -205,18 +210,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.SubnetIDs = nil
 		}
 		if elem.Tags != nil {
-			f16 := []*svcapitypes.Tag{}
-			for _, f16iter := range elem.Tags {
-				f16elem := &svcapitypes.Tag{}
-				if f16iter.Key != nil {
-					f16elem.Key = f16iter.Key
+			f17 := []*svcapitypes.Tag{}
+			for _, f17iter := range elem.Tags {
+				f17elem := &svcapitypes.Tag{}
+				if f17iter.Key != nil {
+					f17elem.Key = f17iter.Key
 				}
-				if f16iter.Value != nil {
-					f16elem.Value = f16iter.Value
+				if f17iter.Value != nil {
+					f17elem.Value = f17iter.Value
 				}
-				f16 = append(f16, f16elem)
+				f17 = append(f17, f17elem)
 			}
-			ko.Spec.Tags = f16
+			ko.Spec.Tags = f17
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -406,6 +411,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.ServiceName = nil
 	}
+	if resp.VpcEndpoint.ServiceNetworkArn != nil {
+		ko.Spec.ServiceNetworkARN = resp.VpcEndpoint.ServiceNetworkArn
+	} else {
+		ko.Spec.ServiceNetworkARN = nil
+	}
 	if resp.VpcEndpoint.ServiceRegion != nil {
 		ko.Spec.ServiceRegion = resp.VpcEndpoint.ServiceRegion
 	} else {
@@ -422,18 +432,18 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.SubnetIDs = nil
 	}
 	if resp.VpcEndpoint.Tags != nil {
-		f16 := []*svcapitypes.Tag{}
-		for _, f16iter := range resp.VpcEndpoint.Tags {
-			f16elem := &svcapitypes.Tag{}
-			if f16iter.Key != nil {
-				f16elem.Key = f16iter.Key
+		f17 := []*svcapitypes.Tag{}
+		for _, f17iter := range resp.VpcEndpoint.Tags {
+			f17elem := &svcapitypes.Tag{}
+			if f17iter.Key != nil {
+				f17elem.Key = f17iter.Key
 			}
-			if f16iter.Value != nil {
-				f16elem.Value = f16iter.Value
+			if f17iter.Value != nil {
+				f17elem.Value = f17iter.Value
 			}
-			f16 = append(f16, f16elem)
+			f17 = append(f17, f17elem)
 		}
-		ko.Spec.Tags = f16
+		ko.Spec.Tags = f17
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -494,6 +504,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.ServiceName != nil {
 		res.ServiceName = r.ko.Spec.ServiceName
+	}
+	if r.ko.Spec.ServiceNetworkARN != nil {
+		res.ServiceNetworkArn = r.ko.Spec.ServiceNetworkARN
 	}
 	if r.ko.Spec.ServiceRegion != nil {
 		res.ServiceRegion = r.ko.Spec.ServiceRegion
