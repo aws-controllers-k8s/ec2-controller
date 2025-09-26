@@ -116,14 +116,12 @@ class TestEC2References:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resources sync & resolve
-        assert k8s.wait_on_condition(vpc_ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(sg_ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(subnet_ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(vpc_endpoint_ref, "ACK.ResourceSynced", "True", wait_periods=10)
+        assert k8s.wait_on_condition(vpc_ref, "Ready", "True", wait_periods=5)
+        assert k8s.wait_on_condition(sg_ref, "Ready", "True", wait_periods=5)
+        assert k8s.wait_on_condition(subnet_ref, "Ready", "True", wait_periods=5)
+        assert k8s.wait_on_condition(vpc_endpoint_ref, "Ready", "True", wait_periods=10)
 
-        assert k8s.wait_on_condition(sg_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
-        assert k8s.wait_on_condition(subnet_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
-        assert k8s.wait_on_condition(vpc_endpoint_ref, "ACK.ReferencesResolved", "True", wait_periods=10)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Acquire resource IDs
         vpc_endpoint_cr = k8s.get_resource(vpc_endpoint_ref)
@@ -224,12 +222,11 @@ class TestEC2References:
 
         # Wait a few seconds so resources are synced
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
-        assert k8s.wait_on_condition(vpc_ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(gateway_ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(route_table_ref, "ACK.ResourceSynced", "True", wait_periods=10)
+        assert k8s.wait_on_condition(vpc_ref, "Ready", "True", wait_periods=5)
+        assert k8s.wait_on_condition(gateway_ref, "Ready", "True", wait_periods=5)
+        assert k8s.wait_on_condition(route_table_ref, "Ready", "True", wait_periods=10)
 
-        assert k8s.wait_on_condition(gateway_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
-        assert k8s.wait_on_condition(route_table_ref, "ACK.ReferencesResolved", "True", wait_periods=10)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Acquire Internet Gateway ID
         gateway_cr = k8s.get_resource(gateway_ref)
@@ -265,8 +262,8 @@ class TestEC2References:
         }
         k8s.patch_custom_resource(route_table_ref, route_table_update)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
-        assert k8s.wait_on_condition(route_table_ref, "ACK.ResourceSynced", "True", wait_periods=5)
-        assert k8s.wait_on_condition(route_table_ref, "ACK.ReferencesResolved", "True", wait_periods=5)
+        assert k8s.wait_on_condition(route_table_ref, "Ready", "True", wait_periods=5)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
         
         # Ensure that the reference has not changed
         route_table_cr = k8s.get_resource(route_table_ref)

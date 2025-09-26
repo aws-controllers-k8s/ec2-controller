@@ -20,7 +20,7 @@ import logging
 
 from acktest import tags
 from acktest.resources import random_suffix_name
-from acktest.k8s import resource as k8s
+from acktest.k8s import resource as k8s, condition
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 
@@ -125,22 +125,14 @@ class TestElasticIPAddress:
         (ref, _) = simple_elastic_ip_address
 
         expected_msg = "InvalidParameterValue: invalid value for parameter pool: InvalidIpV4Address"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidParameterValue) when calling the AllocateAddress operation:
-        # invalid value for parameter pool: InvalidIpV4Address
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
 
     @pytest.mark.resource_data({'address': '52.27.68.220', 'resource_file': 'invalid/elastic_ip_invalid_combination'})
     def test_terminal_condition_invalid_parameter_combination(self, simple_elastic_ip_address):
         (ref, _) = simple_elastic_ip_address
 
         expected_msg = "InvalidParameterCombination: The parameter PublicIpv4Pool cannot be used with the parameter Address"
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidParameterCombination) when calling the AllocateAddress operation:
-        # The parameter PublicIpv4Pool cannot be used with the parameter Address
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
     
     @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
     def test_crud_tags(self, ec2_client, simple_elastic_ip_address):
@@ -191,7 +183,7 @@ class TestElasticIPAddress:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for updated user tags; system tags should persist
         elastic_ip = get_address(ec2_client, resource_id)
@@ -221,7 +213,7 @@ class TestElasticIPAddress:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         elastic_ip = get_address(ec2_client, resource_id)
