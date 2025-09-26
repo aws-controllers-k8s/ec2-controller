@@ -238,7 +238,7 @@ class TestSecurityGroup:
         resource_id = cr["status"]["id"]
 
         # Check resource is synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check Security Group exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -260,7 +260,7 @@ class TestSecurityGroup:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resource gets into synced state
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # assert patched state
         cr = k8s.get_resource(ref)
@@ -303,7 +303,7 @@ class TestSecurityGroup:
         resource_id = cr["status"]["id"]
 
         # Check resource is synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check Security Group exists in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -345,7 +345,7 @@ class TestSecurityGroup:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check resource gets into synced state
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check ingress and egress rules exist
         sg_group = ec2_validator.get_security_group(resource_id)
@@ -450,7 +450,7 @@ class TestSecurityGroup:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for updated user tags; system tags should persist
         security_group = ec2_validator.get_security_group(resource_id)
@@ -478,7 +478,7 @@ class TestSecurityGroup:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         # Check for removed user tags; system tags should persist
         security_group = ec2_validator.get_security_group(resource_id)
@@ -521,13 +521,13 @@ class TestSecurityGroup:
 
         # Check resources are synced successfully
         assert k8s.wait_on_condition(
-            ref_1, "ACK.ResourceSynced", "True", wait_periods=5
+            ref_1, "Ready", "True", wait_periods=5
         )
         assert k8s.wait_on_condition(
-            ref_2, "ACK.ResourceSynced", "True", wait_periods=5
+            ref_2, "Ready", "True", wait_periods=5
         )
         assert k8s.wait_on_condition(
-            ref_3, "ACK.ResourceSynced", "True", wait_periods=5
+            ref_3, "Ready", "True", wait_periods=5
         )
 
         sg_group_1 = ec2_validator.get_security_group(resource_id_1)

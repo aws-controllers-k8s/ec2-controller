@@ -20,7 +20,7 @@ import logging
 
 from acktest import tags
 from acktest.resources import random_suffix_name
-from acktest.k8s import resource as k8s
+from acktest.k8s import resource as k8s, condition
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
@@ -133,18 +133,11 @@ class TestFlowLogs:
         (ref, cr) = simple_flow_log
 
         expected_msg = "InvalidParameterValue: "
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # InvalidParameterValue: 1 validation error detected: Value 'S3' at 'resourceType'
-        # has an invalid format
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)
 
     @pytest.mark.resource_data({'resource_file': 'invalid/flow_log_invalid_parameter'})
     def test_terminal_condition_invalid_parameter(self, simple_flow_log):
         (ref, cr) = simple_flow_log
 
         expected_msg = "InvalidParameter: "
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # InvalidParameter: LogDestination can't be empty if LogGroupName is not provided.
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)

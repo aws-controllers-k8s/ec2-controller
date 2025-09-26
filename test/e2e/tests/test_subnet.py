@@ -20,7 +20,7 @@ import logging
 
 from acktest import tags
 from acktest.resources import random_suffix_name
-from acktest.k8s import resource as k8s
+from acktest.k8s import resource as k8s, condition
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
@@ -130,7 +130,7 @@ class TestSubnet:
         assert k8s.get_resource_exists(ref)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         resource = k8s.get_resource(ref)
         resource_id = resource["status"]["subnetID"]
@@ -156,7 +156,7 @@ class TestSubnet:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         subnet = ec2_validator.get_subnet(resource_id)
         assert subnet['MapPublicIpOnLaunch'] == True
 
@@ -201,7 +201,7 @@ class TestSubnet:
         assert k8s.get_resource_exists(ref)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         resource = k8s.get_resource(ref)
         resource_id = resource["status"]["subnetID"]
@@ -246,7 +246,7 @@ class TestSubnet:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for updated user tags; system tags should persist
         subnet = ec2_validator.get_subnet(resource_id)
@@ -277,7 +277,7 @@ class TestSubnet:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
         subnet = ec2_validator.get_subnet(resource_id)
@@ -334,7 +334,7 @@ class TestSubnet:
         assert k8s.get_resource_exists(ref)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         resource = k8s.get_resource(ref)
         resource_id = resource["status"]["subnetID"]
@@ -357,7 +357,7 @@ class TestSubnet:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         assert ec2_validator.get_route_table_association(initial_rt_cr["status"]["routeTableID"], resource_id) is None
         assert ec2_validator.get_route_table_association(default_route_tables[1][1]["status"]["routeTableID"], resource_id) is not None
@@ -400,9 +400,4 @@ class TestSubnet:
         assert k8s.get_resource_exists(ref)
 
         expected_msg = "InvalidParameterValue: Value (InvalidCidrBlock) for parameter cidrBlock is invalid. This is not a valid CIDR block."
-        terminal_condition = k8s.get_resource_condition(ref, "ACK.Terminal")
-        # Example condition message:
-        # An error occurred (InvalidParameterValue) when calling the CreateSubnet operation:
-        # Value (InvalidCidrBlock) for parameter cidrBlock is invalid.
-        # This is not a valid CIDR block.
-        assert expected_msg in terminal_condition['message']
+        condition.assert_terminal(ref, expected_msg)

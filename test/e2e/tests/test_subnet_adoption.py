@@ -89,6 +89,6 @@ class TestSubnetAdoption:
         k8s.patch_custom_resource(ref, updates)
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
     
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
         subnet = ec2_validator.get_subnet(resource_id)
         assert subnet['MapPublicIpOnLaunch'] == mapPublicIPOnLaunch

@@ -99,7 +99,7 @@ class TestTransitGatewayVPCAttachment:
 
         assert k8s.wait_on_condition(
             ref,
-            "ACK.ResourceSynced",
+            "Ready",
             "True",
             wait_periods=WAIT_PERIOD,
         )
@@ -162,7 +162,7 @@ class TestTransitGatewayVPCAttachment:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=WAIT_PERIOD)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=WAIT_PERIOD)
 
         # Verify the update in AWS
         ec2_validator = EC2Validator(ec2_client)
@@ -182,7 +182,7 @@ class TestTransitGatewayVPCAttachment:
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
         # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=WAIT_PERIOD)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=WAIT_PERIOD)
 
         # Verify the update in AWS
         ec2_validator = EC2Validator(ec2_client)

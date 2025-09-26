@@ -111,7 +111,7 @@ class TestVpcAdoption:
         k8s.patch_custom_resource(ref, updates)
         time.sleep(MODIFY_WAIT_AFTER_SECONDS)
     
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "Ready", "True", wait_periods=5)
 
         updated_endpoint_service_config = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
         assert updated_endpoint_service_config is not None
