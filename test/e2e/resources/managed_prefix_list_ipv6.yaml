@@ -1,0 +1,18 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: ManagedPrefixList
+metadata:
+  name: $PREFIX_LIST_NAME_IPV6
+spec:
+  prefixListName: $PREFIX_LIST_NAME_IPV6
+  addressFamily: IPv6
+  maxEntries: 5
+  entries:
+    - cidr: 2001:db8:1234::/48
+      description: "IPv6 network 1"
+    - cidr: 2001:db8:5678::/48
+      description: "IPv6 network 2"
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
+
+
