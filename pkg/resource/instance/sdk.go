@@ -80,7 +80,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeInstances", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidInstanceID.NotFound" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -639,6 +639,17 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Here we want to check if the instance is terminated(deleted)
+	// returning NotFound will trigger a create
+	if needsRestart(ko) {
+		return nil, ackerr.NotFound
+	}
+
+	setAdditionalFields(resp.Reservations[0].Instances[0], ko)
+
+	if !isRunning(ko) {
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, aws.String("waiting for resource to be running"))
+	}
 
 	toAdd, toDelete := computeTagsDelta(r.ko.Spec.Tags, ko.Spec.Tags)
 	if len(toAdd) == 0 && len(toDelete) == 0 {
@@ -1251,6 +1262,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	setAdditionalFields(resp.Instances[0], ko)
+
 	toAdd, toDelete := computeTagsDelta(desired.ko.Spec.Tags, ko.Spec.Tags)
 	if len(toAdd) == 0 && len(toDelete) == 0 {
 		// if desired tags and response tags are equal,

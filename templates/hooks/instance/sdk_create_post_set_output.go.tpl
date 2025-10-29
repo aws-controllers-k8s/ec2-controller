@@ -1,3 +1,5 @@
+	setAdditionalFields(resp.Instances[0], ko)
+	
 	toAdd, toDelete := computeTagsDelta(desired.ko.Spec.Tags, ko.Spec.Tags)
 	if len(toAdd) == 0 && len(toDelete) == 0 {
 		// if desired tags and response tags are equal,

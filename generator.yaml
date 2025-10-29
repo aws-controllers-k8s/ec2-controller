@@ -362,6 +362,10 @@ resources:
     update_operation:
       custom_method_name: customUpdateDHCPOptions
   Instance:
+    exceptions:
+      errors:
+        404:
+          code: InvalidInstanceID.NotFound
     fields:
       HibernationOptions:
         late_initialize: {}
