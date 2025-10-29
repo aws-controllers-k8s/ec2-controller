@@ -1,0 +1,20 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: ManagedPrefixList
+metadata:
+  name: $PREFIX_LIST_NAME
+spec:
+  prefixListName: $PREFIX_LIST_NAME
+  addressFamily: IPv4
+  maxEntries: 10
+  entries:
+    - cidr: 10.0.0.0/24
+      description: "Internal network A"
+    - cidr: 10.0.1.0/24
+      description: "Internal network B"
+    - cidr: 192.168.1.0/24
+      description: "Office network"
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
+
+
