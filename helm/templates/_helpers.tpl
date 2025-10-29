@@ -79,6 +79,7 @@ rules:
   - instances
   - internetgateways
   - launchtemplates
+  - managedprefixlists
   - natgateways
   - networkacls
   - routetables
@@ -108,6 +109,7 @@ rules:
   - instances/status
   - internetgateways/status
   - launchtemplates/status
+  - managedprefixlists/status
   - natgateways/status
   - networkacls/status
   - routetables/status

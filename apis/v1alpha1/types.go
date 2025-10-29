@@ -218,6 +218,7 @@ type AnalysisPacketHeader struct {
 // Describes a route table route.
 type AnalysisRouteTableRoute struct {
 	CarrierGatewayID            *string `json:"carrierGatewayID,omitempty"`
+	CoreNetworkARN              *string `json:"coreNetworkARN,omitempty"`
 	DestinationCIDR             *string `json:"destinationCIDR,omitempty"`
 	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
 	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
@@ -250,6 +251,7 @@ type AssignedPrivateIPAddress struct {
 
 // Information about the associated IAM roles.
 type AssociatedRole struct {
+	AssociatedRoleARN       *string `json:"associatedRoleARN,omitempty"`
 	CertificateS3BucketName *string `json:"certificateS3BucketName,omitempty"`
 	CertificateS3ObjectKey  *string `json:"certificateS3ObjectKey,omitempty"`
 	EncryptionKMSKeyID      *string `json:"encryptionKMSKeyID,omitempty"`
@@ -840,6 +842,7 @@ type CoipCIDR struct {
 
 // Describes a customer-owned address pool.
 type CoipPool struct {
+	PoolARN   *string   `json:"poolARN,omitempty"`
 	PoolCIDRs []*string `json:"poolCIDRs,omitempty"`
 	Tags      []*Tag    `json:"tags,omitempty"`
 }
@@ -1284,16 +1287,17 @@ type EBSStatusDetails struct {
 
 // The EC2 Instance Connect Endpoint.
 type EC2InstanceConnectEndpoint struct {
-	AvailabilityZone *string      `json:"availabilityZone,omitempty"`
-	CreatedAt        *metav1.Time `json:"createdAt,omitempty"`
-	DNSName          *string      `json:"dnsName,omitempty"`
-	FipsDNSName      *string      `json:"fipsDNSName,omitempty"`
-	OwnerID          *string      `json:"ownerID,omitempty"`
-	PreserveClientIP *bool        `json:"preserveClientIP,omitempty"`
-	StateMessage     *string      `json:"stateMessage,omitempty"`
-	SubnetID         *string      `json:"subnetID,omitempty"`
-	Tags             []*Tag       `json:"tags,omitempty"`
-	VPCID            *string      `json:"vpcID,omitempty"`
+	AvailabilityZone           *string      `json:"availabilityZone,omitempty"`
+	CreatedAt                  *metav1.Time `json:"createdAt,omitempty"`
+	DNSName                    *string      `json:"dnsName,omitempty"`
+	FipsDNSName                *string      `json:"fipsDNSName,omitempty"`
+	InstanceConnectEndpointARN *string      `json:"instanceConnectEndpointARN,omitempty"`
+	OwnerID                    *string      `json:"ownerID,omitempty"`
+	PreserveClientIP           *bool        `json:"preserveClientIP,omitempty"`
+	StateMessage               *string      `json:"stateMessage,omitempty"`
+	SubnetID                   *string      `json:"subnetID,omitempty"`
+	Tags                       []*Tag       `json:"tags,omitempty"`
+	VPCID                      *string      `json:"vpcID,omitempty"`
 }
 
 // ENA Express uses Amazon Web Services Scalable Reliable Datagram (SRD) technology
@@ -1447,6 +1451,7 @@ type Explanation struct {
 	CIDRs             []*string `json:"cidrs,omitempty"`
 	Direction         *string   `json:"direction,omitempty"`
 	ExplanationCode   *string   `json:"explanationCode,omitempty"`
+	LoadBalancerARN   *string   `json:"loadBalancerARN,omitempty"`
 	MissingComponent  *string   `json:"missingComponent,omitempty"`
 	PacketField       *string   `json:"packetField,omitempty"`
 	Protocols         []*string `json:"protocols,omitempty"`
@@ -1590,6 +1595,7 @@ type FirewallStatefulRule struct {
 	Direction    *string   `json:"direction,omitempty"`
 	Protocol     *string   `json:"protocol,omitempty"`
 	RuleAction   *string   `json:"ruleAction,omitempty"`
+	RuleGroupARN *string   `json:"ruleGroupARN,omitempty"`
 	Sources      []*string `json:"sources,omitempty"`
 }
 
@@ -1597,6 +1603,7 @@ type FirewallStatefulRule struct {
 type FirewallStatelessRule struct {
 	Destinations []*string `json:"destinations,omitempty"`
 	RuleAction   *string   `json:"ruleAction,omitempty"`
+	RuleGroupARN *string   `json:"ruleGroupARN,omitempty"`
 	Sources      []*string `json:"sources,omitempty"`
 }
 
@@ -1917,6 +1924,7 @@ type IKEVersionsRequestListValue struct {
 type IPAM struct {
 	Description                       *string `json:"description,omitempty"`
 	EnablePrivateGua                  *bool   `json:"enablePrivateGua,omitempty"`
+	IPAMARN                           *string `json:"ipamARN,omitempty"`
 	IPAMRegion                        *string `json:"ipamRegion,omitempty"`
 	OwnerID                           *string `json:"ownerID,omitempty"`
 	ResourceDiscoveryAssociationCount *int64  `json:"resourceDiscoveryAssociationCount,omitempty"`
@@ -2001,11 +2009,13 @@ type IPAMDiscoveryFailureReason struct {
 // can use a verification token to validate that you control a public IP address
 // range when you bring an IP address range to Amazon Web Services (BYOIP).
 type IPAMExternalResourceVerificationToken struct {
-	IPAMRegion *string      `json:"ipamRegion,omitempty"`
-	NotAfter   *metav1.Time `json:"notAfter,omitempty"`
-	Tags       []*Tag       `json:"tags,omitempty"`
-	TokenName  *string      `json:"tokenName,omitempty"`
-	TokenValue *string      `json:"tokenValue,omitempty"`
+	IPAMARN                                  *string      `json:"ipamARN,omitempty"`
+	IPAMExternalResourceVerificationTokenARN *string      `json:"ipamExternalResourceVerificationTokenARN,omitempty"`
+	IPAMRegion                               *string      `json:"ipamRegion,omitempty"`
+	NotAfter                                 *metav1.Time `json:"notAfter,omitempty"`
+	Tags                                     []*Tag       `json:"tags,omitempty"`
+	TokenName                                *string      `json:"tokenName,omitempty"`
+	TokenValue                               *string      `json:"tokenValue,omitempty"`
 }
 
 // The operating Regions for an IPAM. Operating Regions are Amazon Web Services
@@ -2033,8 +2043,11 @@ type IPAMOrganizationalUnitExclusion struct {
 type IPAMPool struct {
 	AutoImport           *bool   `json:"autoImport,omitempty"`
 	Description          *string `json:"description,omitempty"`
+	IPAMARN              *string `json:"ipamARN,omitempty"`
+	IPAMPoolARN          *string `json:"ipamPoolARN,omitempty"`
 	IPAMPoolID           *string `json:"ipamPoolID,omitempty"`
 	IPAMRegion           *string `json:"ipamRegion,omitempty"`
+	IPAMScopeARN         *string `json:"ipamScopeARN,omitempty"`
 	Locale               *string `json:"locale,omitempty"`
 	OwnerID              *string `json:"ownerID,omitempty"`
 	PoolDepth            *int64  `json:"poolDepth,omitempty"`
@@ -2118,6 +2131,7 @@ type IPAMResourceDiscovery struct {
 // is a resource discovery that has been associated with an IPAM. IPAM aggregates
 // the resource CIDRs discovered by the associated resource discovery.
 type IPAMResourceDiscoveryAssociation struct {
+	IPAMARN                             *string `json:"ipamARN,omitempty"`
 	IPAMRegion                          *string `json:"ipamRegion,omitempty"`
 	IPAMResourceDiscoveryAssociationARN *string `json:"ipamResourceDiscoveryAssociationARN,omitempty"`
 	IsDefault                           *bool   `json:"isDefault,omitempty"`
@@ -2144,12 +2158,14 @@ type IPAMResourceTag struct {
 // For more information, see How IPAM works (https://docs.aws.amazon.com/vpc/latest/ipam/how-it-works-ipam.html)
 // in the Amazon VPC IPAM User Guide.
 type IPAMScope struct {
-	Description *string `json:"description,omitempty"`
-	IPAMRegion  *string `json:"ipamRegion,omitempty"`
-	IsDefault   *bool   `json:"isDefault,omitempty"`
-	OwnerID     *string `json:"ownerID,omitempty"`
-	PoolCount   *int64  `json:"poolCount,omitempty"`
-	Tags        []*Tag  `json:"tags,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	IPAMARN      *string `json:"ipamARN,omitempty"`
+	IPAMRegion   *string `json:"ipamRegion,omitempty"`
+	IPAMScopeARN *string `json:"ipamScopeARN,omitempty"`
+	IsDefault    *bool   `json:"isDefault,omitempty"`
+	OwnerID      *string `json:"ownerID,omitempty"`
+	PoolCount    *int64  `json:"poolCount,omitempty"`
+	Tags         []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes the permissions for a security group rule.
@@ -3571,21 +3587,23 @@ type LocalGateway struct {
 
 // Describes a route for a local gateway route table.
 type LocalGatewayRoute struct {
-	CoipPoolID              *string `json:"coipPoolID,omitempty"`
-	DestinationCIDRBlock    *string `json:"destinationCIDRBlock,omitempty"`
-	DestinationPrefixListID *string `json:"destinationPrefixListID,omitempty"`
-	NetworkInterfaceID      *string `json:"networkInterfaceID,omitempty"`
-	OwnerID                 *string `json:"ownerID,omitempty"`
-	SubnetID                *string `json:"subnetID,omitempty"`
+	CoipPoolID                *string `json:"coipPoolID,omitempty"`
+	DestinationCIDRBlock      *string `json:"destinationCIDRBlock,omitempty"`
+	DestinationPrefixListID   *string `json:"destinationPrefixListID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	NetworkInterfaceID        *string `json:"networkInterfaceID,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	SubnetID                  *string `json:"subnetID,omitempty"`
 }
 
 // Describes a local gateway route table.
 type LocalGatewayRouteTable struct {
-	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
-	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
-	OutpostARN               *string `json:"outpostARN,omitempty"`
-	OwnerID                  *string `json:"ownerID,omitempty"`
-	State                    *string `json:"state,omitempty"`
+	LocalGatewayID            *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	OutpostARN                *string `json:"outpostARN,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	State                     *string `json:"state,omitempty"`
 	// Describes a state change.
 	StateReason *StateReason `json:"stateReason,omitempty"`
 	Tags        []*Tag       `json:"tags,omitempty"`
@@ -3593,22 +3611,24 @@ type LocalGatewayRouteTable struct {
 
 // Describes an association between a local gateway route table and a VPC.
 type LocalGatewayRouteTableVPCAssociation struct {
-	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
-	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
-	OwnerID                  *string `json:"ownerID,omitempty"`
-	State                    *string `json:"state,omitempty"`
-	Tags                     []*Tag  `json:"tags,omitempty"`
-	VPCID                    *string `json:"vpcID,omitempty"`
+	LocalGatewayID            *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	State                     *string `json:"state,omitempty"`
+	Tags                      []*Tag  `json:"tags,omitempty"`
+	VPCID                     *string `json:"vpcID,omitempty"`
 }
 
 // Describes an association between a local gateway route table and a virtual
 // interface group.
 type LocalGatewayRouteTableVirtualInterfaceGroupAssociation struct {
-	LocalGatewayID           *string `json:"localGatewayID,omitempty"`
-	LocalGatewayRouteTableID *string `json:"localGatewayRouteTableID,omitempty"`
-	OwnerID                  *string `json:"ownerID,omitempty"`
-	State                    *string `json:"state,omitempty"`
-	Tags                     []*Tag  `json:"tags,omitempty"`
+	LocalGatewayID            *string `json:"localGatewayID,omitempty"`
+	LocalGatewayRouteTableARN *string `json:"localGatewayRouteTableARN,omitempty"`
+	LocalGatewayRouteTableID  *string `json:"localGatewayRouteTableID,omitempty"`
+	OwnerID                   *string `json:"ownerID,omitempty"`
+	State                     *string `json:"state,omitempty"`
+	Tags                      []*Tag  `json:"tags,omitempty"`
 }
 
 // Describes a local gateway virtual interface.
@@ -3653,12 +3673,14 @@ type MaintenanceDetails struct {
 }
 
 // Describes a managed prefix list.
-type ManagedPrefixList struct {
+type ManagedPrefixList_SDK struct {
 	AddressFamily  *string `json:"addressFamily,omitempty"`
 	MaxEntries     *int64  `json:"maxEntries,omitempty"`
 	OwnerID        *string `json:"ownerID,omitempty"`
+	PrefixListARN  *string `json:"prefixListARN,omitempty"`
 	PrefixListID   *string `json:"prefixListID,omitempty"`
 	PrefixListName *string `json:"prefixListName,omitempty"`
+	State          *string `json:"state,omitempty"`
 	StateMessage   *string `json:"stateMessage,omitempty"`
 	Tags           []*Tag  `json:"tags,omitempty"`
 	Version        *int64  `json:"version,omitempty"`
@@ -3879,39 +3901,45 @@ type NetworkBandwidthGbpsRequest struct {
 
 // Describes a Network Access Scope.
 type NetworkInsightsAccessScope struct {
-	CreatedDate *metav1.Time `json:"createdDate,omitempty"`
-	Tags        []*Tag       `json:"tags,omitempty"`
-	UpdatedDate *metav1.Time `json:"updatedDate,omitempty"`
+	CreatedDate                   *metav1.Time `json:"createdDate,omitempty"`
+	NetworkInsightsAccessScopeARN *string      `json:"networkInsightsAccessScopeARN,omitempty"`
+	Tags                          []*Tag       `json:"tags,omitempty"`
+	UpdatedDate                   *metav1.Time `json:"updatedDate,omitempty"`
 }
 
 // Describes a Network Access Scope analysis.
 type NetworkInsightsAccessScopeAnalysis struct {
-	AnalyzedEniCount *int64       `json:"analyzedEniCount,omitempty"`
-	EndDate          *metav1.Time `json:"endDate,omitempty"`
-	StartDate        *metav1.Time `json:"startDate,omitempty"`
-	StatusMessage    *string      `json:"statusMessage,omitempty"`
-	Tags             []*Tag       `json:"tags,omitempty"`
-	WarningMessage   *string      `json:"warningMessage,omitempty"`
+	AnalyzedEniCount                      *int64       `json:"analyzedEniCount,omitempty"`
+	EndDate                               *metav1.Time `json:"endDate,omitempty"`
+	NetworkInsightsAccessScopeAnalysisARN *string      `json:"networkInsightsAccessScopeAnalysisARN,omitempty"`
+	StartDate                             *metav1.Time `json:"startDate,omitempty"`
+	StatusMessage                         *string      `json:"statusMessage,omitempty"`
+	Tags                                  []*Tag       `json:"tags,omitempty"`
+	WarningMessage                        *string      `json:"warningMessage,omitempty"`
 }
 
 // Describes a network insights analysis.
 type NetworkInsightsAnalysis struct {
-	AdditionalAccounts []*string    `json:"additionalAccounts,omitempty"`
-	NetworkPathFound   *bool        `json:"networkPathFound,omitempty"`
-	StartDate          *metav1.Time `json:"startDate,omitempty"`
-	StatusMessage      *string      `json:"statusMessage,omitempty"`
-	SuggestedAccounts  []*string    `json:"suggestedAccounts,omitempty"`
-	Tags               []*Tag       `json:"tags,omitempty"`
-	WarningMessage     *string      `json:"warningMessage,omitempty"`
+	AdditionalAccounts         []*string    `json:"additionalAccounts,omitempty"`
+	NetworkInsightsAnalysisARN *string      `json:"networkInsightsAnalysisARN,omitempty"`
+	NetworkPathFound           *bool        `json:"networkPathFound,omitempty"`
+	StartDate                  *metav1.Time `json:"startDate,omitempty"`
+	StatusMessage              *string      `json:"statusMessage,omitempty"`
+	SuggestedAccounts          []*string    `json:"suggestedAccounts,omitempty"`
+	Tags                       []*Tag       `json:"tags,omitempty"`
+	WarningMessage             *string      `json:"warningMessage,omitempty"`
 }
 
 // Describes a path.
 type NetworkInsightsPath struct {
-	CreatedDate     *metav1.Time `json:"createdDate,omitempty"`
-	Destination     *string      `json:"destination,omitempty"`
-	DestinationPort *int64       `json:"destinationPort,omitempty"`
-	Source          *string      `json:"source,omitempty"`
-	Tags            []*Tag       `json:"tags,omitempty"`
+	CreatedDate            *metav1.Time `json:"createdDate,omitempty"`
+	Destination            *string      `json:"destination,omitempty"`
+	DestinationARN         *string      `json:"destinationARN,omitempty"`
+	DestinationPort        *int64       `json:"destinationPort,omitempty"`
+	NetworkInsightsPathARN *string      `json:"networkInsightsPathARN,omitempty"`
+	Source                 *string      `json:"source,omitempty"`
+	SourceARN              *string      `json:"sourceARN,omitempty"`
+	Tags                   []*Tag       `json:"tags,omitempty"`
 }
 
 // Describes a network interface.
@@ -4838,8 +4866,14 @@ type RouteTable_SDK struct {
 	VPCID           *string                  `json:"vpcID,omitempty"`
 }
 
+// Describes the rule options for a stateful rule group.
+type RuleGroupRuleOptionsPair struct {
+	RuleGroupARN *string `json:"ruleGroupARN,omitempty"`
+}
+
 // Describes the type of a stateful rule group.
 type RuleGroupTypePair struct {
+	RuleGroupARN  *string `json:"ruleGroupARN,omitempty"`
 	RuleGroupType *string `json:"ruleGroupType,omitempty"`
 }
 
@@ -6141,6 +6175,7 @@ type VPCBlockPublicAccessExclusion struct {
 	DeletionTimestamp   *metav1.Time `json:"deletionTimestamp,omitempty"`
 	LastUpdateTimestamp *metav1.Time `json:"lastUpdateTimestamp,omitempty"`
 	Reason              *string      `json:"reason,omitempty"`
+	ResourceARN         *string      `json:"resourceARN,omitempty"`
 	Tags                []*Tag       `json:"tags,omitempty"`
 }
 
