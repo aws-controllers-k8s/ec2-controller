@@ -4,8 +4,8 @@
 		} else {
 			ko.Status.PrefixListID = nil
 		}
-		if resp.PrefixList.State != nil {
-			ko.Status.State = resp.PrefixList.State
+		if resp.PrefixList.State != "" {
+			ko.Status.State = aws.String(string(resp.PrefixList.State))
 		} else {
 			ko.Status.State = nil
 		}
