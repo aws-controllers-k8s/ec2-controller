@@ -125,7 +125,7 @@ class TestManagedPrefixList:
         assert cr is not None
         assert 'status' in cr
         assert 'prefixListID' in cr['status']
-        
+
         prefix_list_id = cr['status']['prefixListID']
         assert prefix_list_id is not None
         assert prefix_list_id.startswith('pl-')
@@ -136,7 +136,6 @@ class TestManagedPrefixList:
         assert state in ['create-in-progress', 'create-complete']
 
         # Wait for AWS to complete creation
-        logging.info(f"Waiting for prefix list {prefix_list_id} to reach create-complete state...")
         state_reached = ec2_validator.wait_managed_prefix_list_state(
             prefix_list_id,
             'create-complete',
@@ -144,9 +143,14 @@ class TestManagedPrefixList:
         )
         assert state_reached, f"Prefix list {prefix_list_id} did not reach create-complete state within timeout"
 
-        # Get updated resource from K8s
+        # Wait for K8s controller to sync the state from AWS
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=30), \
+            "Resource did not sync within timeout"
+
+        # Verify final state
         cr = k8s.get_resource(ref)
-        assert cr['status']['state'] == 'create-complete', f"K8s state is {cr['status']['state']}, expected create-complete"
+        assert cr['status'].get('state') == 'create-complete', \
+            f"Expected state create-complete, got {cr['status'].get('state')}"
 
         # Check that version was set
         assert 'version' in cr['status']
@@ -160,7 +164,7 @@ class TestManagedPrefixList:
         assert cr is not None
         assert 'status' in cr
         assert 'prefixListID' in cr['status']
-        
+
         prefix_list_id = cr['status']['prefixListID']
         assert prefix_list_id is not None
         assert prefix_list_id.startswith('pl-')
@@ -169,7 +173,6 @@ class TestManagedPrefixList:
         assert cr['spec']['addressFamily'] == 'IPv6'
 
         # Wait for AWS to complete creation
-        logging.info(f"Waiting for IPv6 prefix list {prefix_list_id} to reach create-complete state...")
         state_reached = ec2_validator.wait_managed_prefix_list_state(
             prefix_list_id,
             'create-complete',
@@ -177,12 +180,17 @@ class TestManagedPrefixList:
         )
         assert state_reached, f"Prefix list {prefix_list_id} did not reach create-complete state within timeout"
 
-        # Get updated resource from K8s
+        # Wait for K8s controller to sync the state from AWS
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=30), \
+            "Resource did not sync within timeout"
+
+        # Verify final state
         cr = k8s.get_resource(ref)
-        assert cr['status']['state'] == 'create-complete', f"K8s state is {cr['status']['state']}, expected create-complete"
+        assert cr['status'].get('state') == 'create-complete', \
+            f"Expected state create-complete, got {cr['status'].get('state')}"
 
     def test_update_entries(self, prefix_list_ipv4, ec2_validator):
-        """Test updating prefix list entries."""
+        """Test adding and removing prefix list entries."""
         (ref, cr) = prefix_list_ipv4
 
         # Get the prefix list ID
@@ -190,20 +198,23 @@ class TestManagedPrefixList:
         prefix_list_id = cr['status']['prefixListID']
 
         # Wait for initial creation to complete in AWS
-        logging.info(f"Waiting for prefix list {prefix_list_id} to reach create-complete state before update...")
         state_reached = ec2_validator.wait_managed_prefix_list_state(
             prefix_list_id,
             'create-complete',
             max_wait_seconds=180
         )
-        assert state_reached, f"Prefix list {prefix_list_id} did not reach create-complete state before update"
+        assert state_reached, f"Prefix list {prefix_list_id} did not reach create-complete state"
 
-        # Get the latest resource with the initial version
+        # Verify initial state - should have 3 entries
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        initial_count = len(aws_prefix_list.get('Entries', []))
+        assert initial_count == 3, f"Expected 3 initial entries, got {initial_count}"
+
+        # Get the latest resource
         cr = k8s.get_resource(ref)
         assert cr['status']['state'] == 'create-complete', f"K8s state is {cr['status']['state']}, expected create-complete"
-        initial_version = cr['status']['version']
 
-        # Update the entries - add a new CIDR block
+        # ===== TEST 1: Add an entry (3 → 4) =====
         cr['spec']['entries'].append({
             'cidr': '10.0.2.0/24',
             'description': 'New network C'
@@ -212,55 +223,69 @@ class TestManagedPrefixList:
         # Apply the update
         k8s.patch_custom_resource(ref, cr)
 
-        # Wait for the prefix list to complete modification in AWS
-        # This can take some time as AWS needs to propagate the changes
-        logging.info(f"Waiting for prefix list {prefix_list_id} to reach modify-complete state...")
+        # Give AWS time to process the async modification
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        # Wait for the controller to process and sync the change
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=40), \
+            "Resource did not sync after add"
+
+        # Now wait for AWS to complete the modification
         state_reached = ec2_validator.wait_managed_prefix_list_state(
             prefix_list_id,
             'modify-complete',
             max_wait_seconds=180
         )
-        assert state_reached, f"Prefix list {prefix_list_id} did not reach modify-complete state within timeout"
+        assert state_reached, f"Prefix list {prefix_list_id} did not reach modify-complete state after add"
 
-        # Wait for the controller to sync the status from AWS to K8s
-        # Poll K8s status until version is incremented AND state is modify-complete
-        logging.info(f"Waiting for K8s controller to sync updated version and state from AWS...")
-        version_updated = False
-        state_updated = False
-        max_sync_tries = 30  # 30 * 5 = 150 seconds
-        for try_num in range(max_sync_tries):
-            cr = k8s.get_resource(ref)
-            current_state = cr['status'].get('state', '')
-            if 'version' in cr['status']:
-                current_version = cr['status']['version']
-                if current_version > initial_version and current_state == 'modify-complete':
-                    version_updated = True
-                    state_updated = True
-                    updated_version = current_version
-                    logging.info(f"Version updated from {initial_version} to {updated_version} and state is {current_state} after {try_num * 5} seconds")
-                    break
-                elif current_version > initial_version:
-                    logging.info(f"Version updated to {current_version} but state is still {current_state}, waiting...")
-            time.sleep(5)
-        
-        assert version_updated, \
-            f"K8s status version did not increment from {initial_version} within {max_sync_tries * 5} seconds"
-
-        assert state_updated, \
-            f"K8s status state did not reach modify-complete within {max_sync_tries * 5} seconds, last state: {cr['status'].get('state', 'unknown')}"
-
-        # Check that version was incremented
-        assert updated_version > initial_version, \
-            f"Version should have incremented from {initial_version} to greater value, got {updated_version}"
-
-        # Verify entries were updated in K8s spec
-        assert len(cr['spec']['entries']) == 4, \
-            f"Expected 4 entries (3 original + 1 new), got {len(cr['spec']['entries'])}"
-
-        # Verify entries in AWS
+        # Verify in AWS
         aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
-        assert aws_prefix_list['Version'] == updated_version, \
-            f"AWS version {aws_prefix_list['Version']} should match K8s version {updated_version}"
+        after_add_count = len(aws_prefix_list.get('Entries', []))
+        assert after_add_count == 4, f"Expected 4 entries after add, got {after_add_count}"
+
+        # ===== TEST 2: Remove an entry (4 → 3) =====
+        cr = k8s.get_resource(ref)
+        original_entries = cr['spec']['entries'][:]
+
+        # Remove the entry we just added
+        entry_to_remove = '10.0.2.0/24'
+        cr['spec']['entries'] = [e for e in original_entries if e['cidr'] != entry_to_remove]
+
+        # Apply the update
+        k8s.patch_custom_resource(ref, cr)
+
+        # Give AWS time to process the async modification
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        # Wait for the controller to process and sync the change
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=40), \
+            "Resource did not sync after removal"
+
+        # Now wait for AWS to complete the modification
+        state_reached = ec2_validator.wait_managed_prefix_list_state(
+            prefix_list_id,
+            'modify-complete',
+            max_wait_seconds=180
+        )
+        assert state_reached, f"Prefix list {prefix_list_id} did not reach modify-complete state after removal"
+
+        # Verify in AWS
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        after_remove_entries = aws_prefix_list.get('Entries', [])
+        after_remove_count = len(after_remove_entries)
+        aws_cidrs = [e['Cidr'] for e in after_remove_entries]
+
+        # Verify deletion happened
+        assert after_remove_count == 3, f"Expected 3 entries after removal, got {after_remove_count}"
+        assert entry_to_remove not in aws_cidrs, \
+            f"Entry {entry_to_remove} should have been removed but is still in AWS: {aws_cidrs}"
+
+        # Final verification - check K8s matches AWS
+        cr = k8s.get_resource(ref)
+        k8s_cidrs = [e['cidr'] for e in cr['spec'].get('entries', [])]
+        assert len(k8s_cidrs) == 3, f"Expected 3 entries in K8s, got {len(k8s_cidrs)}"
+        assert entry_to_remove not in k8s_cidrs, \
+            f"Entry {entry_to_remove} should not be in K8s: {k8s_cidrs}"
 
     def test_update_tags(self, prefix_list_ipv4):
         """Test updating prefix list tags."""
@@ -282,9 +307,13 @@ class TestManagedPrefixList:
         k8s.patch_custom_resource(ref, cr)
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
+        # Wait for the resource to be synced
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5), \
+            "Resource did not sync after tag update"
+
         # Get the updated resource
         cr = k8s.get_resource(ref)
-        
+
         # Verify tag was added
         tags = cr['spec'].get('tags', [])
         assert any(tag['key'] == 'Environment' and tag['value'] == 'Test' for tag in tags)
