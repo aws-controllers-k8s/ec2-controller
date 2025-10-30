@@ -79,7 +79,7 @@ def prefix_list_ipv4():
 @pytest.fixture(scope="module")
 def prefix_list_ipv6():
     resource_name = random_suffix_name("managed-prefix-list-ipv6", 32)
-    
+
     replacements = REPLACEMENT_VALUES.copy()
     replacements["PREFIX_LIST_NAME_IPV6"] = resource_name
     replacements["TAG_KEY"] = "test-key"
@@ -196,6 +196,10 @@ class TestManagedPrefixList:
         # Get the prefix list ID
         assert 'prefixListID' in cr['status'], "PrefixListID should be present in status"
         prefix_list_id = cr['status']['prefixListID']
+
+        # Wait for the controller to process and sync the change
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=40), \
+            "Resource did not sync after creation"
 
         # Wait for initial creation to complete in AWS
         state_reached = ec2_validator.wait_managed_prefix_list_state(
