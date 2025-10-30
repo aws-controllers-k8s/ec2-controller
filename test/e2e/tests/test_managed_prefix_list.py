@@ -17,12 +17,14 @@
 import pytest
 import time
 import logging
+import boto3
 
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
+from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "managedprefixlists"
 
@@ -31,9 +33,15 @@ UPDATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 
 @pytest.fixture(scope="module")
+def ec2_validator():
+    """Fixture to provide EC2 validator for AWS API calls."""
+    ec2_client = boto3.client("ec2")
+    return EC2Validator(ec2_client)
+
+@pytest.fixture(scope="module")
 def prefix_list_ipv4():
     resource_name = random_suffix_name("managed-prefix-list-ipv4", 32)
-    
+
     replacements = REPLACEMENT_VALUES.copy()
     replacements["PREFIX_LIST_NAME"] = resource_name
     replacements["TAG_KEY"] = "test-key"
@@ -129,7 +137,7 @@ class TestManagedPrefixList:
 
         # Wait for the prefix list to be in a synced state
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
-        
+
         # Get updated resource
         cr = k8s.get_resource(ref)
         assert cr['status']['state'] == 'create-complete'
@@ -159,7 +167,7 @@ class TestManagedPrefixList:
         cr = k8s.get_resource(ref)
         assert cr['status']['state'] == 'create-complete'
 
-    def test_update_entries(self, prefix_list_ipv4):
+    def test_update_entries(self, prefix_list_ipv4, ec2_validator):
         """Test updating prefix list entries."""
         (ref, cr) = prefix_list_ipv4
 
@@ -167,8 +175,15 @@ class TestManagedPrefixList:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
         cr = k8s.get_resource(ref)
         assert cr['status']['state'] == 'create-complete'
+        assert 'prefixListID' in cr['status'], "PrefixListID should be present in status"
         
+        prefix_list_id = cr['status']['prefixListID']
         initial_version = cr['status']['version']
+
+        # Verify initial state in AWS
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        assert aws_prefix_list is not None, f"Prefix list {prefix_list_id} not found in AWS"
+        assert aws_prefix_list['State'] == 'create-complete', f"Expected create-complete, got {aws_prefix_list['State']}"
 
         # Update the entries - add a new CIDR block
         cr['spec']['entries'].append({
@@ -178,22 +193,59 @@ class TestManagedPrefixList:
 
         # Apply the update
         k8s.patch_custom_resource(ref, cr)
-        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
-        # Get the updated resource
-        cr = k8s.get_resource(ref)
+        # Wait for the prefix list to complete modification in AWS
+        # This can take some time as AWS needs to propagate the changes
+        logging.info(f"Waiting for prefix list {prefix_list_id} to reach modify-complete state...")
+        state_reached = ec2_validator.wait_managed_prefix_list_state(
+            prefix_list_id,
+            'modify-complete',
+            max_wait_seconds=180
+        )
+        assert state_reached, f"Prefix list {prefix_list_id} did not reach modify-complete state within timeout"
+
+        # Wait for the controller to sync the status from AWS to K8s
+        # Poll K8s status until version is incremented or timeout
+        logging.info(f"Waiting for K8s controller to sync updated version from AWS...")
+        version_updated = False
+        max_sync_tries = 30  # 30 * 5 = 150 seconds
+        for try_num in range(max_sync_tries):
+            cr = k8s.get_resource(ref)
+            if 'version' in cr['status']:
+                current_version = cr['status']['version']
+                if current_version > initial_version:
+                    version_updated = True
+                    updated_version = current_version
+                    logging.info(f"Version updated from {initial_version} to {updated_version} after {try_num * 5} seconds")
+                    break
+            time.sleep(5)
         
-        # Check that version was incremented
-        assert 'version' in cr['status']
-        updated_version = cr['status']['version']
-        assert updated_version > initial_version
+        assert version_updated, \
+            f"K8s status version did not increment from {initial_version} within {max_sync_tries * 5} seconds"
 
-        # Verify entries were updated
-        assert len(cr['spec']['entries']) == 4  # Original 3 + 1 new
+        # Check that version was incremented
+        assert updated_version > initial_version, \
+            f"Version should have incremented from {initial_version} to greater value, got {updated_version}"
+
+        # Verify state is modify-complete
+        assert cr['status']['state'] == 'modify-complete', \
+            f"Expected state modify-complete, got {cr['status']['state']}"
+
+        # Verify entries were updated in K8s spec
+        assert len(cr['spec']['entries']) == 4, \
+            f"Expected 4 entries (3 original + 1 new), got {len(cr['spec']['entries'])}"
+
+        # Verify entries in AWS
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        assert aws_prefix_list['Version'] == updated_version, \
+            f"AWS version {aws_prefix_list['Version']} should match K8s version {updated_version}"
 
     def test_update_tags(self, prefix_list_ipv4):
         """Test updating prefix list tags."""
-        (ref, cr) = prefix_list_ipv4
+        (ref, _) = prefix_list_ipv4
+
+        # Get the latest version of the resource to avoid conflicts
+        cr = k8s.get_resource(ref)
 
         # Add a new tag
         new_tag = {
