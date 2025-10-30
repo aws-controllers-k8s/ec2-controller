@@ -138,14 +138,13 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 			input.RemoveEntries = removeEntries
 		}
 
-		// Set current version for optimistic locking
+		// Set current version for optimistic locking (required by AWS)
 		if latest.ko.Status.Version != nil {
 			input.CurrentVersion = latest.ko.Status.Version
 		}
 	}
 
 	// Only call ModifyManagedPrefixList if there are actual changes
-	needsRead := false
 	if input.PrefixListName != nil || input.MaxEntries != nil ||
 		len(input.AddEntries) > 0 || len(input.RemoveEntries) > 0 {
 		resp, err := rm.sdkapi.ModifyManagedPrefixList(ctx, input)
@@ -163,9 +162,6 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 				desired.ko.Status.Version = resp.PrefixList.Version
 			}
 		}
-
-		// Mark that we need to read the resource again to get the latest state
-		needsRead = true
 	}
 
 	// Handle tag updates separately
@@ -175,18 +171,6 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 		); err != nil {
 			return nil, err
-		}
-	}
-
-	// After modifying the prefix list, read it again to get the current state
-	// This ensures we have the latest version and state information
-	if needsRead {
-		updated, err := rm.sdkFind(ctx, desired)
-		if err != nil {
-			return nil, err
-		}
-		if updated != nil {
-			return updated, nil
 		}
 	}
 

@@ -386,11 +386,17 @@ class EC2Validator:
             return None
 
     def get_managed_prefix_list(self, prefix_list_id: str) -> Union[None, Dict]:
-        """Get a managed prefix list by ID."""
+        """Get a managed prefix list by ID, including its entries."""
         try:
             aws_res = self.ec2_client.describe_managed_prefix_lists(PrefixListIds=[prefix_list_id])
             if len(aws_res["PrefixLists"]) > 0:
-                return aws_res["PrefixLists"][0]
+                prefix_list = aws_res["PrefixLists"][0]
+
+                # Also fetch the entries
+                entries_res = self.ec2_client.get_managed_prefix_list_entries(PrefixListId=prefix_list_id)
+                prefix_list["Entries"] = entries_res.get("Entries", [])
+
+                return prefix_list
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
