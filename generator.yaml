@@ -628,7 +628,6 @@ resources:
           path: Status.prefixListID
           name: ID
       PrefixListName:
-        is_required: true
         print:
           path: Spec.prefixListName
           name: NAME
@@ -642,10 +641,6 @@ resources:
         print:
           path: Status.version
           name: VERSION
-      MaxEntries:
-        is_required: true
-      AddressFamily:
-        is_required: true
       Entries:
         custom_field:
           list_of: AddPrefixListEntry
@@ -664,16 +659,10 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/managed_prefix_list/sdk_create_post_build_request.go.tpl
-      sdk_create_post_set_output:
-        template_path: hooks/managed_prefix_list/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/managed_prefix_list/sdk_read_many_post_build_request.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/managed_prefix_list/sdk_read_many_post_set_output.go.tpl
-      sdk_update_pre_build_request:
-        template_path: hooks/managed_prefix_list/sdk_update_pre_build_request.go.tpl
-      sdk_file_end:
-        template_path: hooks/managed_prefix_list/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateManagedPrefixList
   RouteTable:

@@ -327,28 +327,6 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	if resp.PrefixList != nil {
-		if resp.PrefixList.PrefixListId != nil {
-			ko.Status.PrefixListID = resp.PrefixList.PrefixListId
-		} else {
-			ko.Status.PrefixListID = nil
-		}
-		if resp.PrefixList.State != "" {
-			ko.Status.State = aws.String(string(resp.PrefixList.State))
-		} else {
-			ko.Status.State = nil
-		}
-		if resp.PrefixList.Version != nil {
-			ko.Status.Version = resp.PrefixList.Version
-		} else {
-			ko.Status.Version = nil
-		}
-	} else {
-		ko.Status.PrefixListID = nil
-		ko.Status.State = nil
-		ko.Status.Version = nil
-	}
-
 	return &resource{ko}, nil
 }
 
@@ -552,45 +530,4 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	default:
 		return false
 	}
-}
-
-func (rm *resourceManager) newTag(
-	c svcapitypes.Tag,
-) *svcsdktypes.Tag {
-	res := &svcsdktypes.Tag{}
-	if c.Key != nil {
-		res.Key = c.Key
-	}
-	if c.Value != nil {
-		res.Value = c.Value
-	}
-
-	return res
-}
-
-func (rm *resourceManager) newAddPrefixListEntry(
-	c svcapitypes.AddPrefixListEntry,
-) (*svcsdktypes.AddPrefixListEntry, error) {
-	res := &svcsdktypes.AddPrefixListEntry{}
-	if c.CIDR != nil {
-		res.Cidr = c.CIDR
-	}
-	if c.Description != nil {
-		res.Description = c.Description
-	}
-
-	return res, nil
-}
-
-func (rm *resourceManager) setResourceAddPrefixListEntry(
-	resp *svcsdktypes.PrefixListEntry,
-) *svcapitypes.AddPrefixListEntry {
-	res := &svcapitypes.AddPrefixListEntry{}
-	if resp.Cidr != nil {
-		res.CIDR = resp.Cidr
-	}
-	if resp.Description != nil {
-		res.Description = resp.Description
-	}
-	return res
 }
