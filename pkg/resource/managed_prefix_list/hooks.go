@@ -60,6 +60,21 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 		return desired, nil
 	}
 
+	// Handle tag updates first
+	if delta.DifferentAt("Spec.Tags") {
+		if err := tags.Sync(
+			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.PrefixListID,
+			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
+		); err != nil {
+			return nil, err
+		}
+	}
+
+	// Only continue if something other than Tags has changed in the Spec
+	if !delta.DifferentExcept("Spec.Tags") {
+		return desired, nil
+	}
+
 	// Build the modify input
 	input := &svcsdk.ModifyManagedPrefixListInput{}
 	input.PrefixListId = latest.ko.Status.PrefixListID
@@ -161,16 +176,6 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 			if resp.PrefixList.Version != nil {
 				desired.ko.Status.Version = resp.PrefixList.Version
 			}
-		}
-	}
-
-	// Handle tag updates separately
-	if delta.DifferentAt("Spec.Tags") {
-		if err := tags.Sync(
-			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.PrefixListID,
-			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
-		); err != nil {
-			return nil, err
 		}
 	}
 

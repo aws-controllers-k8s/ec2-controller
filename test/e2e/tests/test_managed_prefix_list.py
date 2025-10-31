@@ -291,14 +291,17 @@ class TestManagedPrefixList:
         assert entry_to_remove not in k8s_cidrs, \
             f"Entry {entry_to_remove} should not be in K8s: {k8s_cidrs}"
 
-    def test_update_tags(self, prefix_list_ipv4):
-        """Test updating prefix list tags."""
-        (ref, _) = prefix_list_ipv4
+    def test_update_tags(self, prefix_list_ipv4, ec2_validator):
+        """Test adding, updating, and removing prefix list tags."""
+        (ref, cr) = prefix_list_ipv4
+
+        # Get the prefix list ID
+        prefix_list_id = cr['status']['prefixListID']
 
         # Get the latest version of the resource to avoid conflicts
         cr = k8s.get_resource(ref)
 
-        # Add a new tag
+        # ===== TEST 1: Add a new tag =====
         new_tag = {
             'key': 'Environment',
             'value': 'Test'
@@ -313,14 +316,73 @@ class TestManagedPrefixList:
 
         # Wait for the resource to be synced
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5), \
-            "Resource did not sync after tag update"
+            "Resource did not sync after adding tag"
 
         # Get the updated resource
         cr = k8s.get_resource(ref)
 
-        # Verify tag was added
+        # Verify tag was added in K8s
         tags = cr['spec'].get('tags', [])
-        assert any(tag['key'] == 'Environment' and tag['value'] == 'Test' for tag in tags)
+        assert any(tag['key'] == 'Environment' and tag['value'] == 'Test' for tag in tags), \
+            "Environment tag should be added in K8s"
+
+        # Verify tag was added in AWS
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        aws_tags = aws_prefix_list.get('Tags', [])
+        assert any(tag['Key'] == 'Environment' and tag['Value'] == 'Test' for tag in aws_tags), \
+            "Environment tag should be added in AWS"
+
+        # ===== TEST 2: Update an existing tag =====
+        for tag in cr['spec']['tags']:
+            if tag['key'] == 'Environment':
+                tag['value'] = 'Development'
+
+        # Apply the update
+        k8s.patch_custom_resource(ref, cr)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        # Wait for the resource to be synced
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5), \
+            "Resource did not sync after updating tag"
+
+        # Get the updated resource
+        cr = k8s.get_resource(ref)
+
+        # Verify tag was updated in K8s
+        tags = cr['spec'].get('tags', [])
+        assert any(tag['key'] == 'Environment' and tag['value'] == 'Development' for tag in tags), \
+            "Environment tag should be updated to Development in K8s"
+
+        # Verify tag was updated in AWS
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        aws_tags = aws_prefix_list.get('Tags', [])
+        assert any(tag['Key'] == 'Environment' and tag['Value'] == 'Development' for tag in aws_tags), \
+            "Environment tag should be updated to Development in AWS"
+
+        # ===== TEST 3: Remove a tag =====
+        cr['spec']['tags'] = [tag for tag in cr['spec']['tags'] if tag['key'] != 'Environment']
+
+        # Apply the update
+        k8s.patch_custom_resource(ref, cr)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        # Wait for the resource to be synced
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5), \
+            "Resource did not sync after removing tag"
+
+        # Get the updated resource
+        cr = k8s.get_resource(ref)
+
+        # Verify tag was removed in K8s
+        tags = cr['spec'].get('tags', [])
+        assert not any(tag['key'] == 'Environment' for tag in tags), \
+            "Environment tag should be removed from K8s"
+
+        # Verify tag was removed in AWS
+        aws_prefix_list = ec2_validator.get_managed_prefix_list(prefix_list_id)
+        aws_tags = aws_prefix_list.get('Tags', [])
+        assert not any(tag['Key'] == 'Environment' for tag in aws_tags), \
+            "Environment tag should be removed from AWS"
 
     def test_prefix_list_fields(self, prefix_list_ipv4):
         """Test that all expected fields are present."""
