@@ -233,6 +233,8 @@ operations:
     resource_name: LaunchTemplate
   DescribeLaunchTemplates:
     custom_check_required_fields_missing_method: checkForMissingRequiredFields
+  DescribeManagedPrefixLists:
+    custom_check_required_fields_missing_method: checkForMissingRequiredFields
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
   CreateNetworkAcl:
