@@ -181,3 +181,10 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 
 	return desired, nil
 }
+
+// checkForMissingRequiredFields validates that PrefixListID is present in Status
+// before attempting a read. Prefix list names are not unique in AWS, so we require
+// the ID for safe lookups.
+func (rm *resourceManager) checkForMissingRequiredFields(r *resource) bool {
+	return r.ko.Status.PrefixListID == nil
+}

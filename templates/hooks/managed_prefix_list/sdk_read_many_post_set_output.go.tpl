@@ -1,4 +1,7 @@
-	// Get the entries separately
+{{ $CRD := .CRD }}
+{{ $SDKAPI := .SDKAPI }}
+
+	// Get the entries separately - DON'T overwrite Spec.Entries
 	if ko.Status.PrefixListID != nil {
 		entriesResp, err := rm.sdkapi.GetManagedPrefixListEntries(
 			ctx,
@@ -27,5 +30,3 @@
 			ko.Spec.Entries = nil
 		}
 	}
-
-
