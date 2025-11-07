@@ -23,6 +23,7 @@ rules:
   - instances
   - internetgateways
   - launchtemplates
+  - managedprefixlists
   - natgateways
   - networkacls
   - routetables
@@ -52,6 +53,7 @@ rules:
   - instances
   - internetgateways
   - launchtemplates
+  - managedprefixlists
   - natgateways
   - networkacls
   - routetables
