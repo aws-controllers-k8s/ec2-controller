@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.2
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: managedprefixlists.ec2.services.k8s.aws
 spec:
   group: ec2.services.k8s.aws
@@ -26,7 +26,7 @@ spec:
       type: string
     - jsonPath: .status.version
       name: VERSION
-      type: string
+      type: integer
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -57,12 +57,11 @@ spec:
             properties:
               addressFamily:
                 description: |-
-                  The IP address version.
+                  The IP address type.
 
                   Valid Values: IPv4 | IPv6
                 type: string
               entries:
-                description: One or more entries for the prefix list.
                 items:
                   description: An entry for a prefix list.
                   properties:
@@ -80,8 +79,7 @@ spec:
                 description: |-
                   A name for the prefix list.
 
-                  Constraints: Up to 255 characters in length. The name cannot start with
-                  com.amazonaws.
+                  Constraints: Up to 255 characters in length. The name cannot start with com.amazonaws.
                 type: string
               tags:
                 description: |-
@@ -173,13 +171,13 @@ spec:
                 description: The ID of the owner of the prefix list.
                 type: string
               prefixListARN:
-                description: The Amazon Resource Name (ARN) of the prefix list.
+                description: The Amazon Resource Name (ARN) for the prefix list.
                 type: string
               prefixListID:
                 description: The ID of the prefix list.
                 type: string
               state:
-                description: The state of the prefix list.
+                description: The current state of the prefix list.
                 type: string
               stateMessage:
                 description: The state message.
