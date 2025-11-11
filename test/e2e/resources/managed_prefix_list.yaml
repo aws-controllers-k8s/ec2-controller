@@ -3,7 +3,7 @@ kind: ManagedPrefixList
 metadata:
   name: $PREFIX_LIST_NAME
 spec:
-  prefixListName: $PREFIX_LIST_NAME
+  name: $PREFIX_LIST_NAME
   addressFamily: IPv4
   maxEntries: 10
   entries:

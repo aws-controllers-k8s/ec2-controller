@@ -124,9 +124,9 @@ class TestManagedPrefixList:
         # Check that the resource was created
         assert cr is not None
         assert 'status' in cr
-        assert 'prefixListID' in cr['status']
+        assert 'id' in cr['status']
 
-        prefix_list_id = cr['status']['prefixListID']
+        prefix_list_id = cr['status']['id']
         assert prefix_list_id is not None
         assert prefix_list_id.startswith('pl-')
 
@@ -163,9 +163,9 @@ class TestManagedPrefixList:
         # Check that the resource was created
         assert cr is not None
         assert 'status' in cr
-        assert 'prefixListID' in cr['status']
+        assert 'id' in cr['status']
 
-        prefix_list_id = cr['status']['prefixListID']
+        prefix_list_id = cr['status']['id']
         assert prefix_list_id is not None
         assert prefix_list_id.startswith('pl-')
 
@@ -194,8 +194,8 @@ class TestManagedPrefixList:
         (ref, cr) = prefix_list_ipv4
 
         # Get the prefix list ID
-        assert 'prefixListID' in cr['status'], "PrefixListID should be present in status"
-        prefix_list_id = cr['status']['prefixListID']
+        assert 'id' in cr['status'], "ID should be present in status"
+        prefix_list_id = cr['status']['id']
 
         # Wait for the controller to process and sync the change
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=40), \
@@ -296,7 +296,7 @@ class TestManagedPrefixList:
         (ref, cr) = prefix_list_ipv4
 
         # Get the prefix list ID
-        prefix_list_id = cr['status']['prefixListID']
+        prefix_list_id = cr['status']['id']
 
         # Get the latest version of the resource to avoid conflicts
         cr = k8s.get_resource(ref)
@@ -389,13 +389,13 @@ class TestManagedPrefixList:
         (ref, cr) = prefix_list_ipv4
 
         # Check spec fields
-        assert 'prefixListName' in cr['spec']
+        assert 'name' in cr['spec']
         assert 'addressFamily' in cr['spec']
         assert 'maxEntries' in cr['spec']
         assert 'entries' in cr['spec']
 
         # Check status fields
-        assert 'prefixListID' in cr['status']
+        assert 'id' in cr['status']
         assert 'state' in cr['status']
         assert 'version' in cr['status']
         assert 'ownerID' in cr['status']
