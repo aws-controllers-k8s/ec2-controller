@@ -3,7 +3,7 @@ kind: ManagedPrefixList
 metadata:
   name: $PREFIX_LIST_NAME_IPV6
 spec:
-  prefixListName: $PREFIX_LIST_NAME_IPV6
+  name: $PREFIX_LIST_NAME_IPV6
   addressFamily: IPv6
   maxEntries: 5
   entries:
