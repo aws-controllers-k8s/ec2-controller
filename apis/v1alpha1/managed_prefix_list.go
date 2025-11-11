@@ -38,7 +38,7 @@ type ManagedPrefixListSpec struct {
 	//
 	// Constraints: Up to 255 characters in length. The name cannot start with com.amazonaws.
 	// +kubebuilder:validation:Required
-	PrefixListName *string `json:"prefixListName"`
+	Name *string `json:"name"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
@@ -58,15 +58,15 @@ type ManagedPrefixListStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
+	// The ID of the prefix list.
+	// +kubebuilder:validation:Optional
+	ID *string `json:"id,omitempty"`
 	// The ID of the owner of the prefix list.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
 	// The Amazon Resource Name (ARN) for the prefix list.
 	// +kubebuilder:validation:Optional
 	PrefixListARN *string `json:"prefixListARN,omitempty"`
-	// The ID of the prefix list.
-	// +kubebuilder:validation:Optional
-	PrefixListID *string `json:"prefixListID,omitempty"`
 	// The current state of the prefix list.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
@@ -81,8 +81,7 @@ type ManagedPrefixListStatus struct {
 // ManagedPrefixList is the Schema for the ManagedPrefixLists API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.prefixListID`
-// +kubebuilder:printcolumn:name="NAME",type=string,priority=0,JSONPath=`.spec.prefixListName`
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.id`
 // +kubebuilder:printcolumn:name="STATE",type=string,priority=0,JSONPath=`.status.state`
 // +kubebuilder:printcolumn:name="VERSION",type=integer,priority=0,JSONPath=`.status.version`
 type ManagedPrefixList struct {

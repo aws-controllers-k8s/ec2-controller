@@ -271,7 +271,7 @@ func (rm *resourceManager) IsSynced(ctx context.Context, res acktypes.AWSResourc
 	if r.ko.Status.State == nil {
 		return false, nil
 	}
-	stateCandidates := []string{"create-complete", "modify-complete"}
+	stateCandidates := []string{"create-complete", "create-failed", "modify-complete", "modify-failed", "restore-complete", "restore-failed", "delete-complete", "delete-failed"}
 	if !ackutil.InStrings(*r.ko.Status.State, stateCandidates) {
 		return false, nil
 	}

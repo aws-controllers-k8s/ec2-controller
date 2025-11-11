@@ -15,11 +15,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.prefixListID
+    - jsonPath: .status.id
       name: ID
-      type: string
-    - jsonPath: .spec.prefixListName
-      name: NAME
       type: string
     - jsonPath: .status.state
       name: STATE
@@ -75,7 +72,7 @@ spec:
                 description: The maximum number of entries for the prefix list.
                 format: int64
                 type: integer
-              prefixListName:
+              name:
                 description: |-
                   A name for the prefix list.
 
@@ -98,7 +95,7 @@ spec:
             required:
             - addressFamily
             - maxEntries
-            - prefixListName
+            - name
             type: object
           status:
             description: ManagedPrefixListStatus defines the observed state of ManagedPrefixList
@@ -167,14 +164,14 @@ spec:
                   - type
                   type: object
                 type: array
+              id:
+                description: The ID of the prefix list.
+                type: string
               ownerID:
                 description: The ID of the owner of the prefix list.
                 type: string
               prefixListARN:
                 description: The Amazon Resource Name (ARN) for the prefix list.
-                type: string
-              prefixListID:
-                description: The ID of the prefix list.
                 type: string
               state:
                 description: The current state of the prefix list.

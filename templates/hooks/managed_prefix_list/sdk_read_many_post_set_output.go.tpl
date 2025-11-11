@@ -1,12 +1,9 @@
-{{ $CRD := .CRD }}
-{{ $SDKAPI := .SDKAPI }}
-
 	// Get the entries separately - DON'T overwrite Spec.Entries
-	if ko.Status.PrefixListID != nil {
+	if ko.Status.ID != nil {
 		entriesResp, err := rm.sdkapi.GetManagedPrefixListEntries(
 			ctx,
 			&svcsdk.GetManagedPrefixListEntriesInput{
-				PrefixListId: ko.Status.PrefixListID,
+				PrefixListId: ko.Status.ID,
 			},
 		)
 		rm.metrics.RecordAPICall("GET", "GetManagedPrefixListEntries", err)

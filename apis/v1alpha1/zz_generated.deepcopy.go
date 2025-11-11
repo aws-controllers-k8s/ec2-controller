@@ -15398,8 +15398,8 @@ func (in *ManagedPrefixListSpec) DeepCopyInto(out *ManagedPrefixListSpec) {
 		*out = new(int64)
 		**out = **in
 	}
-	if in.PrefixListName != nil {
-		in, out := &in.PrefixListName, &out.PrefixListName
+	if in.Name != nil {
+		in, out := &in.Name, &out.Name
 		*out = new(string)
 		**out = **in
 	}
@@ -15445,6 +15445,11 @@ func (in *ManagedPrefixListStatus) DeepCopyInto(out *ManagedPrefixListStatus) {
 			}
 		}
 	}
+	if in.ID != nil {
+		in, out := &in.ID, &out.ID
+		*out = new(string)
+		**out = **in
+	}
 	if in.OwnerID != nil {
 		in, out := &in.OwnerID, &out.OwnerID
 		*out = new(string)
@@ -15452,11 +15457,6 @@ func (in *ManagedPrefixListStatus) DeepCopyInto(out *ManagedPrefixListStatus) {
 	}
 	if in.PrefixListARN != nil {
 		in, out := &in.PrefixListARN, &out.PrefixListARN
-		*out = new(string)
-		**out = **in
-	}
-	if in.PrefixListID != nil {
-		in, out := &in.PrefixListID, &out.PrefixListID
 		*out = new(string)
 		**out = **in
 	}

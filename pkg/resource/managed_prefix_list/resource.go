@@ -90,18 +90,18 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.PrefixListID = &identifier.NameOrID
+	r.ko.Status.ID = &identifier.NameOrID
 
 	return nil
 }
 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
-	primaryKey, ok := fields["prefixListID"]
+	primaryKey, ok := fields["id"]
 	if !ok {
-		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: prefixListID"))
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: id"))
 	}
-	r.ko.Status.PrefixListID = &primaryKey
+	r.ko.Status.ID = &primaryKey
 
 	return nil
 }

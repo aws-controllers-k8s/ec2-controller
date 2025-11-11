@@ -64,11 +64,11 @@ func newResourceDelta(
 			delta.Add("Spec.MaxEntries", a.ko.Spec.MaxEntries, b.ko.Spec.MaxEntries)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.PrefixListName, b.ko.Spec.PrefixListName) {
-		delta.Add("Spec.PrefixListName", a.ko.Spec.PrefixListName, b.ko.Spec.PrefixListName)
-	} else if a.ko.Spec.PrefixListName != nil && b.ko.Spec.PrefixListName != nil {
-		if *a.ko.Spec.PrefixListName != *b.ko.Spec.PrefixListName {
-			delta.Add("Spec.PrefixListName", a.ko.Spec.PrefixListName, b.ko.Spec.PrefixListName)
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
 	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
