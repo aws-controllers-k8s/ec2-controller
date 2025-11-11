@@ -622,26 +622,44 @@ resources:
       terminal_codes:
       - InvalidParameterValue
       - PrefixListMaxEntriesExceeded
+    renames:
+      operations:
+        CreateManagedPrefixList:
+          input_fields:
+            PrefixListName: Name
+          output_fields:
+            PrefixListId: ID
+        DescribeManagedPrefixLists:
+          input_fields:
+            PrefixListIds: ID
+          output_fields:
+            PrefixListId: ID
+        ModifyManagedPrefixList:
+          input_fields:
+            PrefixListId: ID
+            PrefixListName: Name
+          output_fields:
+            PrefixListId: ID
+        DeleteManagedPrefixList:
+          input_fields:
+            PrefixListId: ID
     fields:
-      PrefixListId:
+      ID:
         is_primary_key: true
         is_read_only: true
         print:
-          path: Status.prefixListID
+          path: Status.ID
           name: ID
-      PrefixListName:
-        print:
-          path: Spec.prefixListName
-          name: NAME
+      Name: {}
       State:
         is_read_only: true
         print:
-          path: Status.state
+          path: Status.State
           name: STATE
       Version:
         is_read_only: true
         print:
-          path: Status.version
+          path: Status.Version
           name: VERSION
       Entries:
         custom_field:
@@ -657,7 +675,13 @@ resources:
       - path: Status.State
         in:
         - create-complete
+        - create-failed
         - modify-complete
+        - modify-failed
+        - restore-complete
+        - restore-failed
+        - delete-complete
+        - delete-failed
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/managed_prefix_list/sdk_create_post_build_request.go.tpl

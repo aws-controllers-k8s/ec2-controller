@@ -76,9 +76,8 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	// Prefix list names are not unique in AWS, so we must filter by ID
-	// If we don't have a PrefixListID yet, the resource hasn't been created
-	if r.ko.Status.PrefixListID != nil {
-		input.PrefixListIds = []string{*r.ko.Status.PrefixListID}
+	if r.ko.Status.ID != nil {
+		input.PrefixListIds = []string{*r.ko.Status.ID}
 	}
 
 	var resp *svcsdk.DescribeManagedPrefixListsOutput
@@ -120,14 +119,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.PrefixListARN = nil
 		}
 		if elem.PrefixListId != nil {
-			ko.Status.PrefixListID = elem.PrefixListId
+			ko.Status.ID = elem.PrefixListId
 		} else {
-			ko.Status.PrefixListID = nil
-		}
-		if elem.PrefixListName != nil {
-			ko.Spec.PrefixListName = elem.PrefixListName
-		} else {
-			ko.Spec.PrefixListName = nil
+			ko.Status.ID = nil
 		}
 		if elem.State != "" {
 			ko.Status.State = aws.String(string(elem.State))
@@ -168,13 +162,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-
 	// Get the entries separately - DON'T overwrite Spec.Entries
-	if ko.Status.PrefixListID != nil {
+	if ko.Status.ID != nil {
 		entriesResp, err := rm.sdkapi.GetManagedPrefixListEntries(
 			ctx,
 			&svcsdk.GetManagedPrefixListEntriesInput{
-				PrefixListId: ko.Status.PrefixListID,
+				PrefixListId: ko.Status.ID,
 			},
 		)
 		rm.metrics.RecordAPICall("GET", "GetManagedPrefixListEntries", err)
@@ -217,6 +210,12 @@ func (rm *resourceManager) newListRequestPayload(
 	r *resource,
 ) (*svcsdk.DescribeManagedPrefixListsInput, error) {
 	res := &svcsdk.DescribeManagedPrefixListsInput{}
+
+	if r.ko.Status.ID != nil {
+		f4 := []string{}
+		f4 = append(f4, *r.ko.Status.ID)
+		res.PrefixListIds = f4
+	}
 
 	return res, nil
 }
@@ -272,14 +271,14 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.PrefixListARN = nil
 	}
 	if resp.PrefixList.PrefixListId != nil {
-		ko.Status.PrefixListID = resp.PrefixList.PrefixListId
+		ko.Status.ID = resp.PrefixList.PrefixListId
 	} else {
-		ko.Status.PrefixListID = nil
+		ko.Status.ID = nil
 	}
 	if resp.PrefixList.PrefixListName != nil {
-		ko.Spec.PrefixListName = resp.PrefixList.PrefixListName
+		ko.Spec.Name = resp.PrefixList.PrefixListName
 	} else {
-		ko.Spec.PrefixListName = nil
+		ko.Spec.Name = nil
 	}
 	if resp.PrefixList.State != "" {
 		ko.Status.State = aws.String(string(resp.PrefixList.State))
@@ -350,8 +349,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 		maxEntriesCopy := int32(maxEntriesCopy0)
 		res.MaxEntries = &maxEntriesCopy
 	}
-	if r.ko.Spec.PrefixListName != nil {
-		res.PrefixListName = r.ko.Spec.PrefixListName
+	if r.ko.Spec.Name != nil {
+		res.PrefixListName = r.ko.Spec.Name
 	}
 
 	return res, nil
@@ -396,8 +395,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteManagedPrefixListInput, error) {
 	res := &svcsdk.DeleteManagedPrefixListInput{}
 
-	if r.ko.Status.PrefixListID != nil {
-		res.PrefixListId = r.ko.Status.PrefixListID
+	if r.ko.Status.ID != nil {
+		res.PrefixListId = r.ko.Status.ID
 	}
 
 	return res, nil

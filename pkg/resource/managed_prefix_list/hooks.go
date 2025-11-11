@@ -55,15 +55,10 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
-	// If there are no changes, return the latest
-	if delta == nil || len(delta.Differences) == 0 {
-		return desired, nil
-	}
-
 	// Handle tag updates first
 	if delta.DifferentAt("Spec.Tags") {
 		if err := tags.Sync(
-			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.PrefixListID,
+			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.ID,
 			desired.ko.Spec.Tags, latest.ko.Spec.Tags,
 		); err != nil {
 			return nil, err
@@ -77,19 +72,13 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 
 	// Build the modify input
 	input := &svcsdk.ModifyManagedPrefixListInput{}
-	input.PrefixListId = latest.ko.Status.PrefixListID
+	input.PrefixListId = latest.ko.Status.ID
+	input.PrefixListName = desired.ko.Spec.Name
 
-	// Check if we need to update the prefix list name
-	if delta.DifferentAt("Spec.PrefixListName") {
-		input.PrefixListName = desired.ko.Spec.PrefixListName
-	}
-
-	// Check if we need to update max entries
-	if delta.DifferentAt("Spec.MaxEntries") {
-		if desired.ko.Spec.MaxEntries != nil {
-			maxEntriesCopy := int32(*desired.ko.Spec.MaxEntries)
-			input.MaxEntries = &maxEntriesCopy
-		}
+	// Convert MaxEntries from int64 to int32 if present
+	if desired.ko.Spec.MaxEntries != nil {
+		maxEntriesCopy := int32(*desired.ko.Spec.MaxEntries)
+		input.MaxEntries = &maxEntriesCopy
 	}
 
 	// Handle entries changes
@@ -182,9 +171,9 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 	return desired, nil
 }
 
-// checkForMissingRequiredFields validates that PrefixListID is present in Status
+// checkForMissingRequiredFields validates that ID is present in Status
 // before attempting a read. Prefix list names are not unique in AWS, so we require
 // the ID for safe lookups.
 func (rm *resourceManager) checkForMissingRequiredFields(r *resource) bool {
-	return r.ko.Status.PrefixListID == nil
+	return r.ko.Status.ID == nil
 }
