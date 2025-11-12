@@ -153,7 +153,6 @@ func needsRestart(ko *v1alpha1.Instance) bool {
 	return *ko.Status.State.Name == string(svcsdktypes.InstanceStateNameTerminated)
 }
 
-
 func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 	ko.Spec.SecurityGroupIDs = []*string{}
 	for _, group := range instance.SecurityGroups {
