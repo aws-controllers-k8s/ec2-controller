@@ -74,12 +74,17 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 	// Build the modify input
 	input := &svcsdk.ModifyManagedPrefixListInput{}
 	input.PrefixListId = latest.ko.Status.ID
-	input.PrefixListName = desired.ko.Spec.Name
 
-	// Convert MaxEntries from int64 to int32 if present
-	if desired.ko.Spec.MaxEntries != nil {
-		maxEntriesCopy := int32(*desired.ko.Spec.MaxEntries)
-		input.MaxEntries = &maxEntriesCopy
+	// Only set fields that actually changed
+	if delta.DifferentAt("Spec.Name") {
+		input.PrefixListName = desired.ko.Spec.Name
+	}
+
+	if delta.DifferentAt("Spec.MaxEntries") {
+		if desired.ko.Spec.MaxEntries != nil {
+			maxEntriesCopy := int32(*desired.ko.Spec.MaxEntries)
+			input.MaxEntries = &maxEntriesCopy
+		}
 	}
 
 	// Handle entries changes
@@ -98,11 +103,11 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 		if len(removeEntries) > 0 {
 			input.RemoveEntries = removeEntries
 		}
+	}
 
-		// Set current version for optimistic locking (required by AWS)
-		if latest.ko.Status.Version != nil {
-			input.CurrentVersion = latest.ko.Status.Version
-		}
+	// Set current version for optimistic locking (required by AWS for any modification)
+	if latest.ko.Status.Version != nil {
+		input.CurrentVersion = latest.ko.Status.Version
 	}
 
 	// Only call ModifyManagedPrefixList if there are actual changes
