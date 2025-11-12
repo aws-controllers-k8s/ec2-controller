@@ -15455,11 +15455,6 @@ func (in *ManagedPrefixListStatus) DeepCopyInto(out *ManagedPrefixListStatus) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.PrefixListARN != nil {
-		in, out := &in.PrefixListARN, &out.PrefixListARN
-		*out = new(string)
-		**out = **in
-	}
 	if in.State != nil {
 		in, out := &in.State, &out.State
 		*out = new(string)

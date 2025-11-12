@@ -64,9 +64,6 @@ type ManagedPrefixListStatus struct {
 	// The ID of the owner of the prefix list.
 	// +kubebuilder:validation:Optional
 	OwnerID *string `json:"ownerID,omitempty"`
-	// The Amazon Resource Name (ARN) for the prefix list.
-	// +kubebuilder:validation:Optional
-	PrefixListARN *string `json:"prefixListARN,omitempty"`
 	// The current state of the prefix list.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`

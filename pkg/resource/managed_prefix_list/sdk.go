@@ -114,9 +114,11 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.OwnerID = nil
 		}
 		if elem.PrefixListArn != nil {
-			ko.Status.PrefixListARN = elem.PrefixListArn
-		} else {
-			ko.Status.PrefixListARN = nil
+			if ko.Status.ACKResourceMetadata == nil {
+				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+			}
+			tmpARN := ackv1alpha1.AWSResourceName(*elem.PrefixListArn)
+			ko.Status.ACKResourceMetadata.ARN = &tmpARN
 		}
 		if elem.PrefixListId != nil {
 			ko.Status.ID = elem.PrefixListId
@@ -265,10 +267,12 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.OwnerID = nil
 	}
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
 	if resp.PrefixList.PrefixListArn != nil {
-		ko.Status.PrefixListARN = resp.PrefixList.PrefixListArn
-	} else {
-		ko.Status.PrefixListARN = nil
+		arn := ackv1alpha1.AWSResourceName(*resp.PrefixList.PrefixListArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
 	}
 	if resp.PrefixList.PrefixListId != nil {
 		ko.Status.ID = resp.PrefixList.PrefixListId
