@@ -661,6 +661,8 @@ resources:
         print:
           path: Status.Version
           name: VERSION
+      PrefixListARN:
+        is_arn: true
       Entries:
         custom_field:
           list_of: AddPrefixListEntry

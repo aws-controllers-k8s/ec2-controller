@@ -170,9 +170,6 @@ spec:
               ownerID:
                 description: The ID of the owner of the prefix list.
                 type: string
-              prefixListARN:
-                description: The Amazon Resource Name (ARN) for the prefix list.
-                type: string
               state:
                 description: The current state of the prefix list.
                 type: string
