@@ -21,6 +21,7 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
+	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
 )
 
@@ -83,57 +84,13 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 
 	// Handle entries changes
 	if delta.DifferentAt("Spec.Entries") {
+		// Build maps of current and desired entries
+		currentEntries := buildEntriesMap(latest.ko.Spec.Entries)
+		desiredEntries := buildEntriesMap(desired.ko.Spec.Entries)
+
 		// Calculate entries to add and remove
-		currentEntries := make(map[string]string)
-		if latest.ko.Spec.Entries != nil {
-			for _, entry := range latest.ko.Spec.Entries {
-				if entry.CIDR != nil {
-					desc := ""
-					if entry.Description != nil {
-						desc = *entry.Description
-					}
-					currentEntries[*entry.CIDR] = desc
-				}
-			}
-		}
-
-		desiredEntries := make(map[string]string)
-		if desired.ko.Spec.Entries != nil {
-			for _, entry := range desired.ko.Spec.Entries {
-				if entry.CIDR != nil {
-					desc := ""
-					if entry.Description != nil {
-						desc = *entry.Description
-					}
-					desiredEntries[*entry.CIDR] = desc
-				}
-			}
-		}
-
-		// Entries to add (in desired but not in current, or descriptions changed)
-		var addEntries []svcsdktypes.AddPrefixListEntry
-		for cidr, desc := range desiredEntries {
-			currentDesc, exists := currentEntries[cidr]
-			if !exists || currentDesc != desc {
-				entry := svcsdktypes.AddPrefixListEntry{
-					Cidr: aws.String(cidr),
-				}
-				if desc != "" {
-					entry.Description = aws.String(desc)
-				}
-				addEntries = append(addEntries, entry)
-			}
-		}
-
-		// Entries to remove (in current but not in desired)
-		var removeEntries []svcsdktypes.RemovePrefixListEntry
-		for cidr := range currentEntries {
-			if _, exists := desiredEntries[cidr]; !exists {
-				removeEntries = append(removeEntries, svcsdktypes.RemovePrefixListEntry{
-					Cidr: aws.String(cidr),
-				})
-			}
-		}
+		addEntries := computeEntriesToAdd(desiredEntries, currentEntries)
+		removeEntries := computeEntriesToRemove(desiredEntries, currentEntries)
 
 		if len(addEntries) > 0 {
 			input.AddEntries = addEntries
@@ -169,6 +126,65 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 	}
 
 	return desired, nil
+}
+
+// buildEntriesMap converts a list of prefix list entries into a map
+// where the key is the CIDR and the value is the description.
+// Returns an empty map if the input is nil.
+func buildEntriesMap(entries []*svcapitypes.AddPrefixListEntry) map[string]string {
+	entriesMap := make(map[string]string)
+	if entries == nil {
+		return entriesMap
+	}
+
+	for _, entry := range entries {
+		if entry.CIDR != nil {
+			desc := ""
+			if entry.Description != nil {
+				desc = *entry.Description
+			}
+			entriesMap[*entry.CIDR] = desc
+		}
+	}
+	return entriesMap
+}
+
+// computeEntriesToAdd returns a list of entries that need to be added.
+// An entry needs to be added if it exists in desired but not in current,
+// or if it exists in both but the description has changed.
+func computeEntriesToAdd(desired, current map[string]string) []svcsdktypes.AddPrefixListEntry {
+	var addEntries []svcsdktypes.AddPrefixListEntry
+
+	for cidr, desc := range desired {
+		currentDesc, exists := current[cidr]
+		if !exists || currentDesc != desc {
+			entry := svcsdktypes.AddPrefixListEntry{
+				Cidr: aws.String(cidr),
+			}
+			if desc != "" {
+				entry.Description = aws.String(desc)
+			}
+			addEntries = append(addEntries, entry)
+		}
+	}
+
+	return addEntries
+}
+
+// computeEntriesToRemove returns a list of entries that need to be removed.
+// An entry needs to be removed if it exists in current but not in desired.
+func computeEntriesToRemove(desired, current map[string]string) []svcsdktypes.RemovePrefixListEntry {
+	var removeEntries []svcsdktypes.RemovePrefixListEntry
+
+	for cidr := range current {
+		if _, exists := desired[cidr]; !exists {
+			removeEntries = append(removeEntries, svcsdktypes.RemovePrefixListEntry{
+				Cidr: aws.String(cidr),
+			})
+		}
+	}
+
+	return removeEntries
 }
 
 // checkForMissingRequiredFields validates that ID is present in Status
