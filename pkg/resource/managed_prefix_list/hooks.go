@@ -75,10 +75,8 @@ func (rm *resourceManager) customUpdateManagedPrefixList(
 	input := &svcsdk.ModifyManagedPrefixListInput{}
 	input.PrefixListId = latest.ko.Status.ID
 
-	// Only set fields that actually changed
-	if delta.DifferentAt("Spec.Name") {
-		input.PrefixListName = desired.ko.Spec.Name
-	}
+	// Always set the Name field from desired state
+	input.PrefixListName = desired.ko.Spec.Name
 
 	if delta.DifferentAt("Spec.MaxEntries") {
 		if desired.ko.Spec.MaxEntries != nil {

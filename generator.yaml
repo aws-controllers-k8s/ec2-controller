@@ -634,6 +634,7 @@ resources:
             PrefixListIds: ID
           output_fields:
             PrefixListId: ID
+            PrefixListName: Name
         ModifyManagedPrefixList:
           input_fields:
             PrefixListId: ID

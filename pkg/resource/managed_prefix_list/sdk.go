@@ -125,6 +125,11 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.ID = nil
 		}
+		if elem.PrefixListName != nil {
+			ko.Spec.Name = elem.PrefixListName
+		} else {
+			ko.Spec.Name = nil
+		}
 		if elem.State != "" {
 			ko.Status.State = aws.String(string(elem.State))
 		} else {
