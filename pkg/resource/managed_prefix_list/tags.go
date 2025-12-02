@@ -82,10 +82,10 @@ func fromACKTags(tags acktags.Tags, keyOrder []string) []*svcapitypes.Tag {
 // and ACKSystemTags, to avoid patching them to the resourceSpec.
 // Eg. resources created with cloudformation have tags that cannot be
 // removed by an ACK controller
-func ignoreSystemTags(tags acktags.Tags) {
+func ignoreSystemTags(tags acktags.Tags, systemTags []string) {
 	for k := range tags {
 		if strings.HasPrefix(k, "aws:") ||
-			slices.Contains(ACKSystemTags, k) {
+			slices.Contains(systemTags, k) {
 			delete(tags, k)
 		}
 	}

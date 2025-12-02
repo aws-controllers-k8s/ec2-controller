@@ -311,7 +311,7 @@ func (rm *resourceManager) EnsureTags(
 // operation.
 // Eg. resources created with cloudformation have tags that cannot be
 // removed by an ACK controller
-func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
+func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource, systemTags []string) {
 	r := rm.concreteResource(res)
 	if r == nil || r.ko == nil {
 		return
@@ -319,7 +319,7 @@ func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
 	var existingTags []*svcapitypes.Tag
 	existingTags = r.ko.Spec.Tags
 	resourceTags, tagKeyOrder := convertToOrderedACKTags(existingTags)
-	ignoreSystemTags(resourceTags)
+	ignoreSystemTags(resourceTags, systemTags)
 	r.ko.Spec.Tags = fromACKTags(resourceTags, tagKeyOrder)
 }
 
