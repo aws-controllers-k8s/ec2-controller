@@ -155,6 +155,7 @@ reconcile:
     - Instance
     - InternetGateway
     - LaunchTemplate
+    - ManagedPrefixList
     - NATGateway
     - NetworkACL
     - RouteTable

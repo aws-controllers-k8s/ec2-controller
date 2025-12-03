@@ -384,3 +384,60 @@ class EC2Validator:
             return None
         except self.ec2_client.exceptions.ClientError:
             return None
+
+    def get_managed_prefix_list(self, prefix_list_id: str) -> Union[None, Dict]:
+        """Get a managed prefix list by ID, including its entries."""
+        try:
+            aws_res = self.ec2_client.describe_managed_prefix_lists(PrefixListIds=[prefix_list_id])
+            if len(aws_res["PrefixLists"]) > 0:
+                prefix_list = aws_res["PrefixLists"][0]
+
+                # Also fetch the entries
+                entries_res = self.ec2_client.get_managed_prefix_list_entries(PrefixListId=prefix_list_id)
+                prefix_list["Entries"] = entries_res.get("Entries", [])
+
+                return prefix_list
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def wait_managed_prefix_list_state(self, prefix_list_id: str, expected_state: str, max_wait_seconds: int = 120) -> bool:
+        """Wait for a managed prefix list to reach the expected state.
+
+        Args:
+            prefix_list_id: The ID of the prefix list to wait for
+            expected_state: The expected state (e.g., 'create-complete', 'modify-complete')
+            max_wait_seconds: Maximum time to wait in seconds
+
+        Returns:
+            True if the expected state was reached, False otherwise
+        """
+        interval = 5
+        max_tries = max_wait_seconds // interval
+
+        for tries in range(max_tries):
+            prefix_list = self.get_managed_prefix_list(prefix_list_id)
+            if prefix_list is None:
+                return False
+
+            current_state = prefix_list.get('State', '')
+            if current_state == expected_state:
+                return True
+
+            # Check if we're in an error state
+            if 'failed' in current_state.lower():
+                return False
+
+            time.sleep(interval)
+
+        return False
+
+    def assert_managed_prefix_list(self, prefix_list_id: str, exists=True):
+        """Assert that a managed prefix list exists or doesn't exist."""
+        res_found = False
+        try:
+            aws_res = self.ec2_client.describe_managed_prefix_lists(PrefixListIds=[prefix_list_id])
+            res_found = len(aws_res["PrefixLists"]) > 0
+        except self.ec2_client.exceptions.ClientError:
+            pass
+        assert res_found is exists

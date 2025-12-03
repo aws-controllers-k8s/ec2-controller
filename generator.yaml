@@ -113,6 +113,9 @@ ignore:
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
     - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
+    - CreateManagedPrefixListInput.ClientToken
+    - CreateManagedPrefixListInput.TagSpecifications
+    - CreateManagedPrefixListInput.DryRun
     - CreateLaunchTemplateVersionOutput.LaunchTemplateVersion.DefaultVersion
   resource_names:
     - CapacityReservationBySplitting
@@ -150,7 +153,7 @@ ignore:
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
-    - ManagedPrefixList
+    #- ManagedPrefixList
     #- NatGateway
     - NetworkAclEntry
     #- NetworkAcl
@@ -229,6 +232,8 @@ operations:
     output_wrapper_field_path: LaunchTemplateVersion
     resource_name: LaunchTemplate
   DescribeLaunchTemplates:
+    custom_check_required_fields_missing_method: checkForMissingRequiredFields
+  DescribeManagedPrefixLists:
     custom_check_required_fields_missing_method: checkForMissingRequiredFields
   CreateNatGateway:
     output_wrapper_field_path: NatGateway
@@ -612,6 +617,83 @@ resources:
         template_path: hooks/nat_gateway/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateNATGateway
+  ManagedPrefixList:
+    exceptions:
+      terminal_codes:
+      - InvalidParameterValue
+      - PrefixListMaxEntriesExceeded
+    renames:
+      operations:
+        CreateManagedPrefixList:
+          input_fields:
+            PrefixListName: Name
+          output_fields:
+            PrefixListId: ID
+        DescribeManagedPrefixLists:
+          input_fields:
+            PrefixListIds: ID
+          output_fields:
+            PrefixListId: ID
+            PrefixListName: Name
+        ModifyManagedPrefixList:
+          input_fields:
+            PrefixListId: ID
+            PrefixListName: Name
+          output_fields:
+            PrefixListId: ID
+        DeleteManagedPrefixList:
+          input_fields:
+            PrefixListId: ID
+    fields:
+      ID:
+        is_primary_key: true
+        is_read_only: true
+        print:
+          path: Status.ID
+          name: ID
+      Name: {}
+      State:
+        is_read_only: true
+        print:
+          path: Status.State
+          name: STATE
+      Version:
+        is_read_only: true
+        print:
+          path: Status.Version
+          name: VERSION
+      PrefixListARN:
+        is_arn: true
+      Entries:
+        custom_field:
+          list_of: AddPrefixListEntry
+        compare:
+          is_ignored: false
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    synced:
+      when:
+      - path: Status.State
+        in:
+        - create-complete
+        - create-failed
+        - modify-complete
+        - modify-failed
+        - restore-complete
+        - restore-failed
+        - delete-complete
+        - delete-failed
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/managed_prefix_list/sdk_create_post_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/managed_prefix_list/sdk_read_many_post_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/managed_prefix_list/sdk_read_many_post_set_output.go.tpl
+    update_operation:
+      custom_method_name: customUpdateManagedPrefixList
   RouteTable:
     fields:
       # RouteStatuses as Route to ensure
