@@ -17,16 +17,15 @@ package transit_gateway_vpc_attachment
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -82,7 +81,7 @@ func newResourceDelta(
 			delta.Add("Spec.SubnetIDs", a.ko.Spec.SubnetIDs, b.ko.Spec.SubnetIDs)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs) {
 		delta.Add("Spec.SubnetRefs", a.ko.Spec.SubnetRefs, b.ko.Spec.SubnetRefs)
 	}
 	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
@@ -97,7 +96,7 @@ func newResourceDelta(
 			delta.Add("Spec.TransitGatewayID", a.ko.Spec.TransitGatewayID, b.ko.Spec.TransitGatewayID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.TransitGatewayRef, b.ko.Spec.TransitGatewayRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.TransitGatewayRef, b.ko.Spec.TransitGatewayRef) {
 		delta.Add("Spec.TransitGatewayRef", a.ko.Spec.TransitGatewayRef, b.ko.Spec.TransitGatewayRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
@@ -107,7 +106,7 @@ func newResourceDelta(
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
 		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 

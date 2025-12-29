@@ -17,16 +17,15 @@ package security_group
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -53,14 +52,14 @@ func newResourceDelta(
 	if len(a.ko.Spec.EgressRules) != len(b.ko.Spec.EgressRules) {
 		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
 	} else if len(a.ko.Spec.EgressRules) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
 			delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
 		}
 	}
 	if len(a.ko.Spec.IngressRules) != len(b.ko.Spec.IngressRules) {
 		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
 	} else if len(a.ko.Spec.IngressRules) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
 			delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
 		}
 	}
@@ -83,7 +82,7 @@ func newResourceDelta(
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
 		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 

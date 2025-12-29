@@ -24,6 +24,7 @@ import (
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -35,6 +36,30 @@ var (
 		5*time.Second,
 	)
 )
+
+// updateTagSpecificationsInCreateRequest adds
+// Tags defined in the Spec to CreateVpcEndpointServiceConfigurationInput.TagSpecification
+// and ensures the ResourceType is always set to 'vpc-endpoint-service'
+func updateTagSpecificationsInCreateRequest(r *resource,
+	input *svcsdk.CreateVpcEndpointServiceConfigurationInput) {
+	input.TagSpecifications = nil
+	desiredTagSpecs := svcsdktypes.TagSpecification{}
+	if r.ko.Spec.Tags != nil {
+		requestedTags := []svcsdktypes.Tag{}
+		for _, desiredTag := range r.ko.Spec.Tags {
+			// Add in tags defined in the Spec
+			tag := svcsdktypes.Tag{}
+			if desiredTag.Key != nil && desiredTag.Value != nil {
+				tag.Key = desiredTag.Key
+				tag.Value = desiredTag.Value
+			}
+			requestedTags = append(requestedTags, tag)
+		}
+		desiredTagSpecs.ResourceType = "vpc-endpoint-service"
+		desiredTagSpecs.Tags = requestedTags
+		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
+	}
+}
 
 // addIDToDeleteRequest adds resource's Vpc Endpoint Service Configuration ID to DeleteRequest.
 // Return error to indicate to callers that the resource is not yet created.

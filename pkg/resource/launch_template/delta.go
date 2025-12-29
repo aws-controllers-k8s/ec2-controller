@@ -17,16 +17,15 @@ package launch_template
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -49,7 +48,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Data.BlockDeviceMappings) != len(b.ko.Spec.Data.BlockDeviceMappings) {
 			delta.Add("Spec.Data.BlockDeviceMappings", a.ko.Spec.Data.BlockDeviceMappings, b.ko.Spec.Data.BlockDeviceMappings)
 		} else if len(a.ko.Spec.Data.BlockDeviceMappings) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Data.BlockDeviceMappings, b.ko.Spec.Data.BlockDeviceMappings) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.BlockDeviceMappings, b.ko.Spec.Data.BlockDeviceMappings) {
 				delta.Add("Spec.Data.BlockDeviceMappings", a.ko.Spec.Data.BlockDeviceMappings, b.ko.Spec.Data.BlockDeviceMappings)
 			}
 		}
@@ -142,14 +141,14 @@ func newResourceDelta(
 		if len(a.ko.Spec.Data.ElasticGPUSpecifications) != len(b.ko.Spec.Data.ElasticGPUSpecifications) {
 			delta.Add("Spec.Data.ElasticGPUSpecifications", a.ko.Spec.Data.ElasticGPUSpecifications, b.ko.Spec.Data.ElasticGPUSpecifications)
 		} else if len(a.ko.Spec.Data.ElasticGPUSpecifications) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Data.ElasticGPUSpecifications, b.ko.Spec.Data.ElasticGPUSpecifications) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.ElasticGPUSpecifications, b.ko.Spec.Data.ElasticGPUSpecifications) {
 				delta.Add("Spec.Data.ElasticGPUSpecifications", a.ko.Spec.Data.ElasticGPUSpecifications, b.ko.Spec.Data.ElasticGPUSpecifications)
 			}
 		}
 		if len(a.ko.Spec.Data.ElasticInferenceAccelerators) != len(b.ko.Spec.Data.ElasticInferenceAccelerators) {
 			delta.Add("Spec.Data.ElasticInferenceAccelerators", a.ko.Spec.Data.ElasticInferenceAccelerators, b.ko.Spec.Data.ElasticInferenceAccelerators)
 		} else if len(a.ko.Spec.Data.ElasticInferenceAccelerators) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Data.ElasticInferenceAccelerators, b.ko.Spec.Data.ElasticInferenceAccelerators) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.ElasticInferenceAccelerators, b.ko.Spec.Data.ElasticInferenceAccelerators) {
 				delta.Add("Spec.Data.ElasticInferenceAccelerators", a.ko.Spec.Data.ElasticInferenceAccelerators, b.ko.Spec.Data.ElasticInferenceAccelerators)
 			}
 		}
@@ -358,7 +357,7 @@ func newResourceDelta(
 					if len(a.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References) != len(b.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References) {
 						delta.Add("Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References", a.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References)
 					} else if len(a.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References) > 0 {
-						if !reflect.DeepEqual(a.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References) {
+						if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References) {
 							delta.Add("Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References", a.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References, b.ko.Spec.Data.InstanceRequirements.BaselinePerformanceFactors.CPU.References)
 						}
 					}
@@ -567,7 +566,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Data.LicenseSpecifications) != len(b.ko.Spec.Data.LicenseSpecifications) {
 			delta.Add("Spec.Data.LicenseSpecifications", a.ko.Spec.Data.LicenseSpecifications, b.ko.Spec.Data.LicenseSpecifications)
 		} else if len(a.ko.Spec.Data.LicenseSpecifications) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Data.LicenseSpecifications, b.ko.Spec.Data.LicenseSpecifications) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.LicenseSpecifications, b.ko.Spec.Data.LicenseSpecifications) {
 				delta.Add("Spec.Data.LicenseSpecifications", a.ko.Spec.Data.LicenseSpecifications, b.ko.Spec.Data.LicenseSpecifications)
 			}
 		}
@@ -635,7 +634,7 @@ func newResourceDelta(
 		if len(a.ko.Spec.Data.NetworkInterfaces) != len(b.ko.Spec.Data.NetworkInterfaces) {
 			delta.Add("Spec.Data.NetworkInterfaces", a.ko.Spec.Data.NetworkInterfaces, b.ko.Spec.Data.NetworkInterfaces)
 		} else if len(a.ko.Spec.Data.NetworkInterfaces) > 0 {
-			if !reflect.DeepEqual(a.ko.Spec.Data.NetworkInterfaces, b.ko.Spec.Data.NetworkInterfaces) {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.NetworkInterfaces, b.ko.Spec.Data.NetworkInterfaces) {
 				delta.Add("Spec.Data.NetworkInterfaces", a.ko.Spec.Data.NetworkInterfaces, b.ko.Spec.Data.NetworkInterfaces)
 			}
 		}
