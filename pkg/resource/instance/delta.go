@@ -17,16 +17,15 @@ package instance
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -46,7 +45,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.BlockDeviceMappings) != len(b.ko.Spec.BlockDeviceMappings) {
 		delta.Add("Spec.BlockDeviceMappings", a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings)
 	} else if len(a.ko.Spec.BlockDeviceMappings) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings) {
 			delta.Add("Spec.BlockDeviceMappings", a.ko.Spec.BlockDeviceMappings, b.ko.Spec.BlockDeviceMappings)
 		}
 	}
@@ -132,14 +131,14 @@ func newResourceDelta(
 	if len(a.ko.Spec.ElasticGPUSpecification) != len(b.ko.Spec.ElasticGPUSpecification) {
 		delta.Add("Spec.ElasticGPUSpecification", a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification)
 	} else if len(a.ko.Spec.ElasticGPUSpecification) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification) {
 			delta.Add("Spec.ElasticGPUSpecification", a.ko.Spec.ElasticGPUSpecification, b.ko.Spec.ElasticGPUSpecification)
 		}
 	}
 	if len(a.ko.Spec.ElasticInferenceAccelerators) != len(b.ko.Spec.ElasticInferenceAccelerators) {
 		delta.Add("Spec.ElasticInferenceAccelerators", a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators)
 	} else if len(a.ko.Spec.ElasticInferenceAccelerators) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators) {
 			delta.Add("Spec.ElasticInferenceAccelerators", a.ko.Spec.ElasticInferenceAccelerators, b.ko.Spec.ElasticInferenceAccelerators)
 		}
 	}
@@ -264,7 +263,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.IPv6Addresses) != len(b.ko.Spec.IPv6Addresses) {
 		delta.Add("Spec.IPv6Addresses", a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses)
 	} else if len(a.ko.Spec.IPv6Addresses) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses) {
 			delta.Add("Spec.IPv6Addresses", a.ko.Spec.IPv6Addresses, b.ko.Spec.IPv6Addresses)
 		}
 	}
@@ -310,7 +309,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.LicenseSpecifications) != len(b.ko.Spec.LicenseSpecifications) {
 		delta.Add("Spec.LicenseSpecifications", a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications)
 	} else if len(a.ko.Spec.LicenseSpecifications) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications) {
 			delta.Add("Spec.LicenseSpecifications", a.ko.Spec.LicenseSpecifications, b.ko.Spec.LicenseSpecifications)
 		}
 	}
@@ -392,7 +391,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.NetworkInterfaces) != len(b.ko.Spec.NetworkInterfaces) {
 		delta.Add("Spec.NetworkInterfaces", a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces)
 	} else if len(a.ko.Spec.NetworkInterfaces) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces) {
 			delta.Add("Spec.NetworkInterfaces", a.ko.Spec.NetworkInterfaces, b.ko.Spec.NetworkInterfaces)
 		}
 	}
@@ -516,7 +515,7 @@ func newResourceDelta(
 			delta.Add("Spec.SubnetID", a.ko.Spec.SubnetID, b.ko.Spec.SubnetID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef) {
 		delta.Add("Spec.SubnetRef", a.ko.Spec.SubnetRef, b.ko.Spec.SubnetRef)
 	}
 	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)

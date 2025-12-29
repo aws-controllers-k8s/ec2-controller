@@ -17,16 +17,15 @@ package vpc_peering_connection
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -96,7 +95,7 @@ func newResourceDelta(
 			delta.Add("Spec.PeerVPCID", a.ko.Spec.PeerVPCID, b.ko.Spec.PeerVPCID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef) {
 		delta.Add("Spec.PeerVPCRef", a.ko.Spec.PeerVPCRef, b.ko.Spec.PeerVPCRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.RequesterPeeringConnectionOptions, b.ko.Spec.RequesterPeeringConnectionOptions) {
@@ -136,7 +135,7 @@ func newResourceDelta(
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
 		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 
