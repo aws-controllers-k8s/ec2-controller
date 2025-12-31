@@ -391,7 +391,7 @@ func (rm *resourceManager) sdkCreate(
 	rm.setStatusDefaults(ko)
 
 	// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
-	ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, nil)
+	return &resource{ko}, ackrequeue.Needed(errors.New("reconcile update only fields."))
 	return &resource{ko}, nil
 }
 
