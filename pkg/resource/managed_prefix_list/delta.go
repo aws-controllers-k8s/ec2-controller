@@ -17,16 +17,15 @@ package managed_prefix_list
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -53,7 +52,7 @@ func newResourceDelta(
 	if len(a.ko.Spec.Entries) != len(b.ko.Spec.Entries) {
 		delta.Add("Spec.Entries", a.ko.Spec.Entries, b.ko.Spec.Entries)
 	} else if len(a.ko.Spec.Entries) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Entries, b.ko.Spec.Entries) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Entries, b.ko.Spec.Entries) {
 			delta.Add("Spec.Entries", a.ko.Spec.Entries, b.ko.Spec.Entries)
 		}
 	}

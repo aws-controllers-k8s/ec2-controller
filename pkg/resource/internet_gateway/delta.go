@@ -17,16 +17,15 @@ package internet_gateway
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -43,7 +42,7 @@ func newResourceDelta(
 		return delta
 	}
 
-	if !reflect.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs) {
 		delta.Add("Spec.RouteTableRefs", a.ko.Spec.RouteTableRefs, b.ko.Spec.RouteTableRefs)
 	}
 	if len(a.ko.Spec.RouteTables) != len(b.ko.Spec.RouteTables) {
@@ -65,7 +64,7 @@ func newResourceDelta(
 			delta.Add("Spec.VPC", a.ko.Spec.VPC, b.ko.Spec.VPC)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
 		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 

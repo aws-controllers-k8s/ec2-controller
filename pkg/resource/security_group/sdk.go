@@ -34,6 +34,7 @@ import (
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -475,21 +476,21 @@ func compareIPPermission(
 	if len(a.IPRanges) != len(b.IPRanges) {
 		delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
 	} else if len(a.IPRanges) > 0 {
-		if !reflect.DeepEqual(a.IPRanges, b.IPRanges) {
+		if !equality.Semantic.Equalities.DeepEqual(a.IPRanges, b.IPRanges) {
 			delta.Add("IPPermission.IPRanges", a.IPRanges, b.IPRanges)
 		}
 	}
 	if len(a.IPv6Ranges) != len(b.IPv6Ranges) {
 		delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
 	} else if len(a.IPv6Ranges) > 0 {
-		if !reflect.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
+		if !equality.Semantic.Equalities.DeepEqual(a.IPv6Ranges, b.IPv6Ranges) {
 			delta.Add("IPPermission.IPv6Ranges", a.IPv6Ranges, b.IPv6Ranges)
 		}
 	}
 	if len(a.PrefixListIDs) != len(b.PrefixListIDs) {
 		delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
 	} else if len(a.PrefixListIDs) > 0 {
-		if !reflect.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
+		if !equality.Semantic.Equalities.DeepEqual(a.PrefixListIDs, b.PrefixListIDs) {
 			delta.Add("IPPermission.PrefixListIDs", a.PrefixListIDs, b.PrefixListIDs)
 		}
 	}
@@ -503,7 +504,7 @@ func compareIPPermission(
 	if len(a.UserIDGroupPairs) != len(b.UserIDGroupPairs) {
 		delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
 	} else if len(a.UserIDGroupPairs) > 0 {
-		if !reflect.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
+		if !equality.Semantic.Equalities.DeepEqual(a.UserIDGroupPairs, b.UserIDGroupPairs) {
 			delta.Add("IPPermission.UserIDGroupPairs", a.UserIDGroupPairs, b.UserIDGroupPairs)
 		}
 	}

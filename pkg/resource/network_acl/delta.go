@@ -17,16 +17,15 @@ package network_acl
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -47,14 +46,14 @@ func newResourceDelta(
 	if len(a.ko.Spec.Associations) != len(b.ko.Spec.Associations) {
 		delta.Add("Spec.Associations", a.ko.Spec.Associations, b.ko.Spec.Associations)
 	} else if len(a.ko.Spec.Associations) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Associations, b.ko.Spec.Associations) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Associations, b.ko.Spec.Associations) {
 			delta.Add("Spec.Associations", a.ko.Spec.Associations, b.ko.Spec.Associations)
 		}
 	}
 	if len(a.ko.Spec.Entries) != len(b.ko.Spec.Entries) {
 		delta.Add("Spec.Entries", a.ko.Spec.Entries, b.ko.Spec.Entries)
 	} else if len(a.ko.Spec.Entries) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.Entries, b.ko.Spec.Entries) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Entries, b.ko.Spec.Entries) {
 			delta.Add("Spec.Entries", a.ko.Spec.Entries, b.ko.Spec.Entries)
 		}
 	}
@@ -70,7 +69,7 @@ func newResourceDelta(
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
 		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
 	}
 
