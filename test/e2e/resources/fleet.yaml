@@ -1,0 +1,15 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: Fleet
+metadata:
+  name: $FLEET_NAME
+spec:
+  targetCapacitySpecification:
+    totalTargetCapacity: $TOTAL_TARGET_CAPACITY
+    defaultTargetCapacityType: $DEFAULT_TARGET_CAPACITY_TYPE
+  launchTemplateConfigs:
+    - launchTemplateSpecification:
+        launchTemplateID: $LAUNCH_TEMPLATE_ID
+        version: $LAUNCH_TEMPLATE_VERSION
+  tags:
+    - key: $FLEET_TAG_KEY
+      value: $FLEET_TAG_VAL

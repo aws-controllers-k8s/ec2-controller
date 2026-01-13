@@ -1,0 +1,1159 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: fleets.ec2.services.k8s.aws
+spec:
+  group: ec2.services.k8s.aws
+  names:
+    kind: Fleet
+    listKind: FleetList
+    plural: fleets
+    singular: fleet
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.fleetID
+      name: ID
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Fleet is the Schema for the Fleets API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FleetSpec defines the desired state of Fleet.
+            properties:
+              context:
+                description: Reserved.
+                type: string
+              excessCapacityTerminationPolicy:
+                description: |-
+                  Indicates whether running instances should be terminated if the total target
+                  capacity of the EC2 Fleet is decreased below the current size of the EC2
+                  Fleet.
+
+                  Supported only for fleets of type maintain.
+                type: string
+              launchTemplateConfigs:
+                description: The configuration for the EC2 Fleet.
+                items:
+                  description: Describes a launch template and overrides.
+                  properties:
+                    launchTemplateSpecification:
+                      description: |-
+                        The Amazon EC2 launch template that can be used by an EC2 Fleet to configure
+                        Amazon EC2 instances. You must specify either the ID or name of the launch
+                        template in the request, but not both.
+
+                        For information about launch templates, see Launch an instance from a launch
+                        template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+                        in the Amazon EC2 User Guide.
+                      properties:
+                        launchTemplateID:
+                          type: string
+                        launchTemplateName:
+                          type: string
+                        version:
+                          type: string
+                      type: object
+                    overrides:
+                      items:
+                        description: Describes overrides for a launch template.
+                        properties:
+                          availabilityZone:
+                            type: string
+                          imageID:
+                            type: string
+                          instanceRequirements:
+                            description: |-
+                              The attributes for the instance types. When you specify instance attributes,
+                              Amazon EC2 will identify instance types with these attributes.
+
+                              You must specify VCpuCount and MemoryMiB. All other attributes are optional.
+                              Any unspecified optional attribute is set to its default.
+
+                              When you specify multiple attributes, you get instance types that satisfy
+                              all of the specified attributes. If you specify multiple values for an attribute,
+                              you get instance types that satisfy any of the specified values.
+
+                              To limit the list of instance types from which Amazon EC2 can identify matching
+                              instance types, you can use one of the following parameters, but not both
+                              in the same request:
+
+                                 * AllowedInstanceTypes - The instance types to include in the list. All
+                                 other instance types are ignored, even if they match your specified attributes.
+
+                                 * ExcludedInstanceTypes - The instance types to exclude from the list,
+                                 even if they match your specified attributes.
+
+                              If you specify InstanceRequirements, you can't specify InstanceType.
+
+                              Attribute-based instance type selection is only supported when using Auto
+                              Scaling groups, EC2 Fleet, and Spot Fleet to launch instances. If you plan
+                              to use the launch template in the launch instance wizard (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-instance-wizard.html),
+                              or with the RunInstances (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html)
+                              API or AWS::EC2::Instance (https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-instance.html)
+                              Amazon Web Services CloudFormation resource, you can't specify InstanceRequirements.
+
+                              For more information, see Specify attributes for instance type selection
+                              for EC2 Fleet or Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html)
+                              and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
+                              in the Amazon EC2 User Guide.
+                            properties:
+                              acceleratorCount:
+                                description: |-
+                                  The minimum and maximum number of accelerators (GPUs, FPGAs, or Amazon Web
+                                  Services Inferentia chips) on an instance. To exclude accelerator-enabled
+                                  instance types, set Max to 0.
+                                properties:
+                                  max:
+                                    format: int64
+                                    type: integer
+                                  min:
+                                    format: int64
+                                    type: integer
+                                type: object
+                              acceleratorManufacturers:
+                                items:
+                                  type: string
+                                type: array
+                              acceleratorNames:
+                                items:
+                                  type: string
+                                type: array
+                              acceleratorTotalMemoryMiB:
+                                description: The minimum and maximum amount of total
+                                  accelerator memory, in MiB.
+                                properties:
+                                  max:
+                                    format: int64
+                                    type: integer
+                                  min:
+                                    format: int64
+                                    type: integer
+                                type: object
+                              acceleratorTypes:
+                                items:
+                                  type: string
+                                type: array
+                              allowedInstanceTypes:
+                                items:
+                                  type: string
+                                type: array
+                              bareMetal:
+                                type: string
+                              baselineEBSBandwidthMbps:
+                                description: |-
+                                  The minimum and maximum baseline bandwidth to Amazon EBS, in Mbps. For more
+                                  information, see Amazon EBS–optimized instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html)
+                                  in the Amazon EC2 User Guide.
+                                properties:
+                                  max:
+                                    format: int64
+                                    type: integer
+                                  min:
+                                    format: int64
+                                    type: integer
+                                type: object
+                              baselinePerformanceFactors:
+                                description: |-
+                                  The baseline performance to consider, using an instance family as a baseline
+                                  reference. The instance family establishes the lowest acceptable level of
+                                  performance. Amazon EC2 uses this baseline to guide instance type selection,
+                                  but there is no guarantee that the selected instance types will always exceed
+                                  the baseline for every application.
+
+                                  Currently, this parameter only supports CPU performance as a baseline performance
+                                  factor. For example, specifying c6i would use the CPU performance of the
+                                  c6i family as the baseline reference.
+                                properties:
+                                  cpu:
+                                    description: |-
+                                      The CPU performance to consider, using an instance family as the baseline
+                                      reference.
+                                    properties:
+                                      references:
+                                        items:
+                                          description: |-
+                                            Specify an instance family to use as the baseline reference for CPU performance.
+                                            All instance types that match your specified attributes will be compared
+                                            against the CPU performance of the referenced instance family, regardless
+                                            of CPU manufacturer or architecture.
+
+                                            Currently, only one instance family can be specified in the list.
+                                          properties:
+                                            instanceFamily:
+                                              type: string
+                                          type: object
+                                        type: array
+                                    type: object
+                                type: object
+                              burstablePerformance:
+                                type: string
+                              cpuManufacturers:
+                                items:
+                                  type: string
+                                type: array
+                              excludedInstanceTypes:
+                                items:
+                                  type: string
+                                type: array
+                              instanceGenerations:
+                                items:
+                                  type: string
+                                type: array
+                              localStorage:
+                                type: string
+                              localStorageTypes:
+                                items:
+                                  type: string
+                                type: array
+                              maxSpotPriceAsPercentageOfOptimalOnDemandPrice:
+                                format: int64
+                                type: integer
+                              memoryGiBPerVCPU:
+                                description: The minimum and maximum amount of memory
+                                  per vCPU, in GiB.
+                                properties:
+                                  max:
+                                    type: number
+                                  min:
+                                    type: number
+                                type: object
+                              memoryMiB:
+                                description: The minimum and maximum amount of memory,
+                                  in MiB.
+                                properties:
+                                  max:
+                                    format: int64
+                                    type: integer
+                                  min:
+                                    format: int64
+                                    type: integer
+                                type: object
+                              networkBandwidthGbps:
+                                description: |-
+                                  The minimum and maximum amount of network bandwidth, in gigabits per second
+                                  (Gbps).
+
+                                  Setting the minimum bandwidth does not guarantee that your instance will
+                                  achieve the minimum bandwidth. Amazon EC2 will identify instance types that
+                                  support the specified minimum bandwidth, but the actual bandwidth of your
+                                  instance might go below the specified minimum at times. For more information,
+                                  see Available instance bandwidth (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html#available-instance-bandwidth)
+                                  in the Amazon EC2 User Guide.
+                                properties:
+                                  max:
+                                    type: number
+                                  min:
+                                    type: number
+                                type: object
+                              networkInterfaceCount:
+                                description: The minimum and maximum number of network
+                                  interfaces.
+                                properties:
+                                  max:
+                                    format: int64
+                                    type: integer
+                                  min:
+                                    format: int64
+                                    type: integer
+                                type: object
+                              onDemandMaxPricePercentageOverLowestPrice:
+                                format: int64
+                                type: integer
+                              requireHibernateSupport:
+                                type: boolean
+                              spotMaxPricePercentageOverLowestPrice:
+                                format: int64
+                                type: integer
+                              totalLocalStorageGB:
+                                description: The minimum and maximum amount of total
+                                  local storage, in GB.
+                                properties:
+                                  max:
+                                    type: number
+                                  min:
+                                    type: number
+                                type: object
+                              vCPUCount:
+                                description: The minimum and maximum number of vCPUs.
+                                properties:
+                                  max:
+                                    format: int64
+                                    type: integer
+                                  min:
+                                    format: int64
+                                    type: integer
+                                type: object
+                            type: object
+                          instanceType:
+                            type: string
+                          maxPrice:
+                            type: string
+                          placement:
+                            description: Describes the placement of an instance.
+                            properties:
+                              affinity:
+                                type: string
+                              availabilityZone:
+                                type: string
+                              groupName:
+                                type: string
+                              hostID:
+                                type: string
+                              hostResourceGroupARN:
+                                type: string
+                              partitionNumber:
+                                format: int64
+                                type: integer
+                              spreadDomain:
+                                type: string
+                              tenancy:
+                                type: string
+                            type: object
+                          priority:
+                            type: number
+                          subnetID:
+                            type: string
+                          weightedCapacity:
+                            type: number
+                        type: object
+                      type: array
+                  type: object
+                type: array
+              onDemandOptions:
+                description: Describes the configuration of On-Demand Instances in
+                  an EC2 Fleet.
+                properties:
+                  allocationStrategy:
+                    type: string
+                  capacityReservationOptions:
+                    description: |-
+                      Describes the strategy for using unused Capacity Reservations for fulfilling
+                      On-Demand capacity.
+
+                      This strategy can only be used if the EC2 Fleet is of type instant.
+
+                      For more information about Capacity Reservations, see On-Demand Capacity
+                      Reservations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html)
+                      in the Amazon EC2 User Guide. For examples of using Capacity Reservations
+                      in an EC2 Fleet, see EC2 Fleet example configurations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-examples.html)
+                      in the Amazon EC2 User Guide.
+                    properties:
+                      usageStrategy:
+                        type: string
+                    type: object
+                  maxTotalPrice:
+                    type: string
+                  minTargetCapacity:
+                    format: int64
+                    type: integer
+                  singleAvailabilityZone:
+                    type: boolean
+                  singleInstanceType:
+                    type: boolean
+                type: object
+              replaceUnhealthyInstances:
+                description: |-
+                  Indicates whether EC2 Fleet should replace unhealthy Spot Instances. Supported
+                  only for fleets of type maintain. For more information, see EC2 Fleet health
+                  checks (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-ec2-fleet.html#ec2-fleet-health-checks)
+                  in the Amazon EC2 User Guide.
+                type: boolean
+              spotOptions:
+                description: Describes the configuration of Spot Instances in an EC2
+                  Fleet.
+                properties:
+                  allocationStrategy:
+                    type: string
+                  instanceInterruptionBehavior:
+                    type: string
+                  instancePoolsToUseCount:
+                    format: int64
+                    type: integer
+                  maintenanceStrategies:
+                    description: |-
+                      The strategies for managing your Spot Instances that are at an elevated risk
+                      of being interrupted.
+                    properties:
+                      capacityRebalance:
+                        description: |-
+                          The Spot Instance replacement strategy to use when Amazon EC2 emits a rebalance
+                          notification signal that your Spot Instance is at an elevated risk of being
+                          interrupted. For more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-capacity-rebalance.html)
+                          in the Amazon EC2 User Guide.
+                        properties:
+                          replacementStrategy:
+                            type: string
+                          terminationDelay:
+                            format: int64
+                            type: integer
+                        type: object
+                    type: object
+                  maxTotalPrice:
+                    type: string
+                  minTargetCapacity:
+                    format: int64
+                    type: integer
+                  singleAvailabilityZone:
+                    type: boolean
+                  singleInstanceType:
+                    type: boolean
+                type: object
+              tags:
+                description: |-
+                  The tags. The value parameter is required, but if you don't want the tag
+                  to have a value, specify the parameter with no value, and we set the value
+                  to an empty string.
+                items:
+                  description: Describes a tag.
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
+              targetCapacitySpecification:
+                description: The number of units to request.
+                properties:
+                  defaultTargetCapacityType:
+                    type: string
+                  onDemandTargetCapacity:
+                    format: int64
+                    type: integer
+                  spotTargetCapacity:
+                    format: int64
+                    type: integer
+                  targetCapacityUnitType:
+                    type: string
+                  totalTargetCapacity:
+                    format: int64
+                    type: integer
+                type: object
+              terminateInstancesWithExpiration:
+                description: |-
+                  Indicates whether running instances should be terminated when the EC2 Fleet
+                  expires.
+                type: boolean
+              type_:
+                description: |-
+                  The fleet type. The default value is maintain.
+
+                     * maintain - The EC2 Fleet places an asynchronous request for your desired
+                     capacity, and continues to maintain your desired Spot capacity by replenishing
+                     interrupted Spot Instances.
+
+                     * request - The EC2 Fleet places an asynchronous one-time request for
+                     your desired capacity, but does submit Spot requests in alternative capacity
+                     pools if Spot capacity is unavailable, and does not maintain Spot capacity
+                     if Spot Instances are interrupted.
+
+                     * instant - The EC2 Fleet places a synchronous one-time request for your
+                     desired capacity, and returns errors for any instances that could not
+                     be launched.
+
+                  For more information, see EC2 Fleet request types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-request-type.html)
+                  in the Amazon EC2 User Guide.
+                type: string
+              validFrom:
+                description: |-
+                  The start date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
+                  The default is to start fulfilling the request immediately.
+                format: date-time
+                type: string
+              validUntil:
+                description: |-
+                  The end date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
+                  At this point, no new EC2 Fleet requests are placed or able to fulfill the
+                  request. If no value is specified, the request remains until you cancel it.
+                format: date-time
+                type: string
+            required:
+            - launchTemplateConfigs
+            - targetCapacitySpecification
+            type: object
+          status:
+            description: FleetStatus defines the observed state of Fleet
+            properties:
+              ackResourceMetadata:
+                description: |-
+                  All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
+                  that is used to contain resource sync state, account ownership,
+                  constructed ARN for the resource
+                properties:
+                  arn:
+                    description: |-
+                      ARN is the Amazon Resource Name for the resource. This is a
+                      globally-unique identifier and is set only by the ACK service controller
+                      once the controller has orchestrated the creation of the resource OR
+                      when it has verified that an "adopted" resource (a resource where the
+                      ARN annotation was set by the Kubernetes user on the CR) exists and
+                      matches the supplied CR's Spec field values.
+                      https://github.com/aws/aws-controllers-k8s/issues/270
+                    type: string
+                  ownerAccountID:
+                    description: |-
+                      OwnerAccountID is the AWS Account ID of the account that owns the
+                      backend AWS service API resource.
+                    type: string
+                  region:
+                    description: Region is the AWS region in which the resource exists
+                      or will exist.
+                    type: string
+                required:
+                - ownerAccountID
+                - region
+                type: object
+              activityStatus:
+                description: |-
+                  The progress of the EC2 Fleet. If there is an error, the status is error.
+                  After all requests are placed, the status is pending_fulfillment. If the
+                  size of the EC2 Fleet is equal to or greater than its target capacity, the
+                  status is fulfilled. If the size of the EC2 Fleet is decreased, the status
+                  is pending_termination while instances are terminating.
+                type: string
+              conditions:
+                description: |-
+                  All CRs managed by ACK have a common `Status.Conditions` member that
+                  contains a collection of `ackv1alpha1.Condition` objects that describe
+                  the various terminal states of the CR and its backend AWS service API
+                  resource
+                items:
+                  description: |-
+                    Condition is the common struct used by all CRDs managed by ACK service
+                    controllers to indicate terminal states  of the CR and its backend AWS
+                    service API resource
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type is the type of the Condition
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              errors:
+                description: |-
+                  Information about the instances that could not be launched by the fleet.
+                  Supported only for fleets of type instant.
+                items:
+                  description: Describes the instances that could not be launched
+                    by the fleet.
+                  properties:
+                    errorCode:
+                      type: string
+                    errorMessage:
+                      type: string
+                    launchTemplateAndOverrides:
+                      description: Describes a launch template and overrides.
+                      properties:
+                        launchTemplateSpecification:
+                          description: |-
+                            The Amazon EC2 launch template that can be used by a Spot Fleet to configure
+                            Amazon EC2 instances. You must specify either the ID or name of the launch
+                            template in the request, but not both.
+
+                            For information about launch templates, see Launch an instance from a launch
+                            template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+                            in the Amazon EC2 User Guide.
+                          properties:
+                            launchTemplateID:
+                              type: string
+                            launchTemplateName:
+                              type: string
+                            version:
+                              type: string
+                          type: object
+                        overrides:
+                          description: Describes overrides for a launch template.
+                          properties:
+                            availabilityZone:
+                              type: string
+                            imageID:
+                              type: string
+                            instanceRequirements:
+                              description: |-
+                                The attributes for the instance types. When you specify instance attributes,
+                                Amazon EC2 will identify instance types with these attributes.
+
+                                You must specify VCpuCount and MemoryMiB. All other attributes are optional.
+                                Any unspecified optional attribute is set to its default.
+
+                                When you specify multiple attributes, you get instance types that satisfy
+                                all of the specified attributes. If you specify multiple values for an attribute,
+                                you get instance types that satisfy any of the specified values.
+
+                                To limit the list of instance types from which Amazon EC2 can identify matching
+                                instance types, you can use one of the following parameters, but not both
+                                in the same request:
+
+                                   * AllowedInstanceTypes - The instance types to include in the list. All
+                                   other instance types are ignored, even if they match your specified attributes.
+
+                                   * ExcludedInstanceTypes - The instance types to exclude from the list,
+                                   even if they match your specified attributes.
+
+                                If you specify InstanceRequirements, you can't specify InstanceType.
+
+                                Attribute-based instance type selection is only supported when using Auto
+                                Scaling groups, EC2 Fleet, and Spot Fleet to launch instances. If you plan
+                                to use the launch template in the launch instance wizard (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-instance-wizard.html)
+                                or with the RunInstances API (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html),
+                                you can't specify InstanceRequirements.
+
+                                For more information, see Create mixed instances group using attribute-based
+                                instance type selection (https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-mixed-instances-group-attribute-based-instance-type-selection.html)
+                                in the Amazon EC2 Auto Scaling User Guide, and also Specify attributes for
+                                instance type selection for EC2 Fleet or Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html)
+                                and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
+                                in the Amazon EC2 User Guide.
+                              properties:
+                                acceleratorCount:
+                                  description: |-
+                                    The minimum and maximum number of accelerators (GPUs, FPGAs, or Amazon Web
+                                    Services Inferentia chips) on an instance.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                acceleratorManufacturers:
+                                  items:
+                                    type: string
+                                  type: array
+                                acceleratorNames:
+                                  items:
+                                    type: string
+                                  type: array
+                                acceleratorTotalMemoryMiB:
+                                  description: The minimum and maximum amount of total
+                                    accelerator memory, in MiB.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                acceleratorTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                allowedInstanceTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                bareMetal:
+                                  type: string
+                                baselineEBSBandwidthMbps:
+                                  description: |-
+                                    The minimum and maximum baseline bandwidth to Amazon EBS, in Mbps. For more
+                                    information, see Amazon EBS–optimized instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html)
+                                    in the Amazon EC2 User Guide.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                baselinePerformanceFactors:
+                                  description: |-
+                                    The baseline performance to consider, using an instance family as a baseline
+                                    reference. The instance family establishes the lowest acceptable level of
+                                    performance. Amazon EC2 uses this baseline to guide instance type selection,
+                                    but there is no guarantee that the selected instance types will always exceed
+                                    the baseline for every application.
+
+                                    Currently, this parameter only supports CPU performance as a baseline performance
+                                    factor. For example, specifying c6i would use the CPU performance of the
+                                    c6i family as the baseline reference.
+                                  properties:
+                                    cpu:
+                                      description: |-
+                                        The CPU performance to consider, using an instance family as the baseline
+                                        reference.
+                                      properties:
+                                        references:
+                                          items:
+                                            description: |-
+                                              Specify an instance family to use as the baseline reference for CPU performance.
+                                              All instance types that match your specified attributes will be compared
+                                              against the CPU performance of the referenced instance family, regardless
+                                              of CPU manufacturer or architecture.
+
+                                              Currently, only one instance family can be specified in the list.
+                                            properties:
+                                              instanceFamily:
+                                                type: string
+                                            type: object
+                                          type: array
+                                      type: object
+                                  type: object
+                                burstablePerformance:
+                                  type: string
+                                cpuManufacturers:
+                                  items:
+                                    type: string
+                                  type: array
+                                excludedInstanceTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                instanceGenerations:
+                                  items:
+                                    type: string
+                                  type: array
+                                localStorage:
+                                  type: string
+                                localStorageTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                maxSpotPriceAsPercentageOfOptimalOnDemandPrice:
+                                  format: int64
+                                  type: integer
+                                memoryGiBPerVCPU:
+                                  description: The minimum and maximum amount of memory
+                                    per vCPU, in GiB.
+                                  properties:
+                                    max:
+                                      type: number
+                                    min:
+                                      type: number
+                                  type: object
+                                memoryMiB:
+                                  description: The minimum and maximum amount of memory,
+                                    in MiB.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                networkBandwidthGbps:
+                                  description: |-
+                                    The minimum and maximum amount of network bandwidth, in gigabits per second
+                                    (Gbps).
+
+                                    Setting the minimum bandwidth does not guarantee that your instance will
+                                    achieve the minimum bandwidth. Amazon EC2 will identify instance types that
+                                    support the specified minimum bandwidth, but the actual bandwidth of your
+                                    instance might go below the specified minimum at times. For more information,
+                                    see Available instance bandwidth (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html#available-instance-bandwidth)
+                                    in the Amazon EC2 User Guide.
+                                  properties:
+                                    max:
+                                      type: number
+                                    min:
+                                      type: number
+                                  type: object
+                                networkInterfaceCount:
+                                  description: The minimum and maximum number of network
+                                    interfaces.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                onDemandMaxPricePercentageOverLowestPrice:
+                                  format: int64
+                                  type: integer
+                                requireHibernateSupport:
+                                  type: boolean
+                                spotMaxPricePercentageOverLowestPrice:
+                                  format: int64
+                                  type: integer
+                                totalLocalStorageGB:
+                                  description: The minimum and maximum amount of total
+                                    local storage, in GB.
+                                  properties:
+                                    max:
+                                      type: number
+                                    min:
+                                      type: number
+                                  type: object
+                                vCPUCount:
+                                  description: The minimum and maximum number of vCPUs.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                              type: object
+                            instanceType:
+                              type: string
+                            maxPrice:
+                              type: string
+                            placement:
+                              description: Describes the placement of an instance.
+                              properties:
+                                groupName:
+                                  type: string
+                              type: object
+                            priority:
+                              type: number
+                            subnetID:
+                              type: string
+                            weightedCapacity:
+                              type: number
+                          type: object
+                      type: object
+                    lifecycle:
+                      type: string
+                  type: object
+                type: array
+              fleetID:
+                description: The ID of the EC2 Fleet.
+                type: string
+              fleetState:
+                description: The state of the EC2 Fleet.
+                type: string
+              fulfilledCapacity:
+                description: |-
+                  The number of units fulfilled by this request compared to the set target
+                  capacity.
+                type: number
+              instances:
+                description: |-
+                  Information about the instances that were launched by the fleet. Supported
+                  only for fleets of type instant.
+                items:
+                  description: Describes the instances that were launched by the fleet.
+                  properties:
+                    instanceIDs:
+                      items:
+                        type: string
+                      type: array
+                    instanceType:
+                      type: string
+                    launchTemplateAndOverrides:
+                      description: Describes a launch template and overrides.
+                      properties:
+                        launchTemplateSpecification:
+                          description: |-
+                            The Amazon EC2 launch template that can be used by a Spot Fleet to configure
+                            Amazon EC2 instances. You must specify either the ID or name of the launch
+                            template in the request, but not both.
+
+                            For information about launch templates, see Launch an instance from a launch
+                            template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+                            in the Amazon EC2 User Guide.
+                          properties:
+                            launchTemplateID:
+                              type: string
+                            launchTemplateName:
+                              type: string
+                            version:
+                              type: string
+                          type: object
+                        overrides:
+                          description: Describes overrides for a launch template.
+                          properties:
+                            availabilityZone:
+                              type: string
+                            imageID:
+                              type: string
+                            instanceRequirements:
+                              description: |-
+                                The attributes for the instance types. When you specify instance attributes,
+                                Amazon EC2 will identify instance types with these attributes.
+
+                                You must specify VCpuCount and MemoryMiB. All other attributes are optional.
+                                Any unspecified optional attribute is set to its default.
+
+                                When you specify multiple attributes, you get instance types that satisfy
+                                all of the specified attributes. If you specify multiple values for an attribute,
+                                you get instance types that satisfy any of the specified values.
+
+                                To limit the list of instance types from which Amazon EC2 can identify matching
+                                instance types, you can use one of the following parameters, but not both
+                                in the same request:
+
+                                   * AllowedInstanceTypes - The instance types to include in the list. All
+                                   other instance types are ignored, even if they match your specified attributes.
+
+                                   * ExcludedInstanceTypes - The instance types to exclude from the list,
+                                   even if they match your specified attributes.
+
+                                If you specify InstanceRequirements, you can't specify InstanceType.
+
+                                Attribute-based instance type selection is only supported when using Auto
+                                Scaling groups, EC2 Fleet, and Spot Fleet to launch instances. If you plan
+                                to use the launch template in the launch instance wizard (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-instance-wizard.html)
+                                or with the RunInstances API (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html),
+                                you can't specify InstanceRequirements.
+
+                                For more information, see Create mixed instances group using attribute-based
+                                instance type selection (https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-mixed-instances-group-attribute-based-instance-type-selection.html)
+                                in the Amazon EC2 Auto Scaling User Guide, and also Specify attributes for
+                                instance type selection for EC2 Fleet or Spot Fleet (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html)
+                                and Spot placement score (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html)
+                                in the Amazon EC2 User Guide.
+                              properties:
+                                acceleratorCount:
+                                  description: |-
+                                    The minimum and maximum number of accelerators (GPUs, FPGAs, or Amazon Web
+                                    Services Inferentia chips) on an instance.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                acceleratorManufacturers:
+                                  items:
+                                    type: string
+                                  type: array
+                                acceleratorNames:
+                                  items:
+                                    type: string
+                                  type: array
+                                acceleratorTotalMemoryMiB:
+                                  description: The minimum and maximum amount of total
+                                    accelerator memory, in MiB.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                acceleratorTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                allowedInstanceTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                bareMetal:
+                                  type: string
+                                baselineEBSBandwidthMbps:
+                                  description: |-
+                                    The minimum and maximum baseline bandwidth to Amazon EBS, in Mbps. For more
+                                    information, see Amazon EBS–optimized instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html)
+                                    in the Amazon EC2 User Guide.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                baselinePerformanceFactors:
+                                  description: |-
+                                    The baseline performance to consider, using an instance family as a baseline
+                                    reference. The instance family establishes the lowest acceptable level of
+                                    performance. Amazon EC2 uses this baseline to guide instance type selection,
+                                    but there is no guarantee that the selected instance types will always exceed
+                                    the baseline for every application.
+
+                                    Currently, this parameter only supports CPU performance as a baseline performance
+                                    factor. For example, specifying c6i would use the CPU performance of the
+                                    c6i family as the baseline reference.
+                                  properties:
+                                    cpu:
+                                      description: |-
+                                        The CPU performance to consider, using an instance family as the baseline
+                                        reference.
+                                      properties:
+                                        references:
+                                          items:
+                                            description: |-
+                                              Specify an instance family to use as the baseline reference for CPU performance.
+                                              All instance types that match your specified attributes will be compared
+                                              against the CPU performance of the referenced instance family, regardless
+                                              of CPU manufacturer or architecture.
+
+                                              Currently, only one instance family can be specified in the list.
+                                            properties:
+                                              instanceFamily:
+                                                type: string
+                                            type: object
+                                          type: array
+                                      type: object
+                                  type: object
+                                burstablePerformance:
+                                  type: string
+                                cpuManufacturers:
+                                  items:
+                                    type: string
+                                  type: array
+                                excludedInstanceTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                instanceGenerations:
+                                  items:
+                                    type: string
+                                  type: array
+                                localStorage:
+                                  type: string
+                                localStorageTypes:
+                                  items:
+                                    type: string
+                                  type: array
+                                maxSpotPriceAsPercentageOfOptimalOnDemandPrice:
+                                  format: int64
+                                  type: integer
+                                memoryGiBPerVCPU:
+                                  description: The minimum and maximum amount of memory
+                                    per vCPU, in GiB.
+                                  properties:
+                                    max:
+                                      type: number
+                                    min:
+                                      type: number
+                                  type: object
+                                memoryMiB:
+                                  description: The minimum and maximum amount of memory,
+                                    in MiB.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                networkBandwidthGbps:
+                                  description: |-
+                                    The minimum and maximum amount of network bandwidth, in gigabits per second
+                                    (Gbps).
+
+                                    Setting the minimum bandwidth does not guarantee that your instance will
+                                    achieve the minimum bandwidth. Amazon EC2 will identify instance types that
+                                    support the specified minimum bandwidth, but the actual bandwidth of your
+                                    instance might go below the specified minimum at times. For more information,
+                                    see Available instance bandwidth (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-network-bandwidth.html#available-instance-bandwidth)
+                                    in the Amazon EC2 User Guide.
+                                  properties:
+                                    max:
+                                      type: number
+                                    min:
+                                      type: number
+                                  type: object
+                                networkInterfaceCount:
+                                  description: The minimum and maximum number of network
+                                    interfaces.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                                onDemandMaxPricePercentageOverLowestPrice:
+                                  format: int64
+                                  type: integer
+                                requireHibernateSupport:
+                                  type: boolean
+                                spotMaxPricePercentageOverLowestPrice:
+                                  format: int64
+                                  type: integer
+                                totalLocalStorageGB:
+                                  description: The minimum and maximum amount of total
+                                    local storage, in GB.
+                                  properties:
+                                    max:
+                                      type: number
+                                    min:
+                                      type: number
+                                  type: object
+                                vCPUCount:
+                                  description: The minimum and maximum number of vCPUs.
+                                  properties:
+                                    max:
+                                      format: int64
+                                      type: integer
+                                    min:
+                                      format: int64
+                                      type: integer
+                                  type: object
+                              type: object
+                            instanceType:
+                              type: string
+                            maxPrice:
+                              type: string
+                            placement:
+                              description: Describes the placement of an instance.
+                              properties:
+                                groupName:
+                                  type: string
+                              type: object
+                            priority:
+                              type: number
+                            subnetID:
+                              type: string
+                            weightedCapacity:
+                              type: number
+                          type: object
+                      type: object
+                    lifecycle:
+                      type: string
+                    platform:
+                      type: string
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

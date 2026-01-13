@@ -117,6 +117,9 @@ ignore:
     - CreateManagedPrefixListInput.TagSpecifications
     - CreateManagedPrefixListInput.DryRun
     - CreateLaunchTemplateVersionOutput.LaunchTemplateVersion.DefaultVersion
+    - CreateFleetInput.ClientToken
+    - CreateFleetInput.TagSpecifications
+    - CreateFleetInput.DryRun
   resource_names:
     - CapacityReservationBySplitting
     - IpamExternalResourceVerificationToken
@@ -134,7 +137,7 @@ ignore:
     - DefaultVpc
     #- DhcpOptions
     - EgressOnlyInternetGateway
-    - Fleet
+    # - Fleet
     - FpgaImage
     - Image
     #- Instance
@@ -265,6 +268,10 @@ operations:
     operation_type:
     - Delete 
     resource_name: FlowLog
+  DeleteFleets:
+    operation_type:
+    - Delete 
+    resource_name: Fleet
   RunInstances:
     #ouput shape: Reservation
     output_wrapper_field_path: Instances
@@ -1208,3 +1215,78 @@ resources:
         template_path: hooks/vpc_peering_connection/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/vpc_peering_connection/sdk_file_end.go.tpl
+  Fleet:
+    fields:    
+      FleetID:
+        is_primary_key: true
+        is_read_only: true
+        is_required: true
+        print:
+          path: Status.fleetID
+          name: ID
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+      FleetState:
+        is_read_only: true
+        from:
+          operation: DescribeFleets
+          path: Fleets.FleetState
+      ActivityStatus:
+        is_read_only: true
+        from:
+          operation: DescribeFleets
+          path: Fleets.ActivityStatus
+      FulfilledCapacity:
+        is_read_only: true
+        from:
+          operation: DescribeFleets
+          path: Fleets.FulfilledCapacity
+      LaunchTemplateConfigs.LaunchTemplateSpecification.Version:
+        type: string
+        compare:
+          is_ignored: true
+      Type:
+        late_initialize:
+          skip_incomplete_check: {}
+      ReplaceUnhealthyInstances:
+        late_initialize:
+          skip_incomplete_check: {}
+      TerminateInstancesWithExpiration:
+        late_initialize:
+          skip_incomplete_check: {}
+      ExcessCapacityTerminationPolicy:
+        late_initialize:
+          skip_incomplete_check: {}
+      SpotOptions:
+        late_initialize:
+          skip_incomplete_check: {}
+      OnDemandOptions:
+        late_initialize:
+          skip_incomplete_check: {}
+      TargetCapacitySpecification.OnDemandTargetCapacity:
+        late_initialize:
+          skip_incomplete_check: {}
+      TargetCapacitySpecification.SpotTargetCapacity:
+        late_initialize:
+          skip_incomplete_check: {}
+    synced:
+      when:
+      - path: Status.ActivityStatus
+        in:
+        - fulfilled
+      - path: Status.FleetState
+        in:
+        - active
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/fleet/sdk_create_post_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/fleet/sdk_read_many_post_set_output.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/fleet/sdk_delete_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/fleet/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateFleet
