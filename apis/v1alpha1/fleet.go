@@ -35,13 +35,16 @@ type FleetSpec struct {
 	// +kubebuilder:validation:Required
 	LaunchTemplateConfigs []*FleetLaunchTemplateConfigRequest `json:"launchTemplateConfigs"`
 	// Describes the configuration of On-Demand Instances in an EC2 Fleet.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	OnDemandOptions *OnDemandOptionsRequest `json:"onDemandOptions,omitempty"`
 	// Indicates whether EC2 Fleet should replace unhealthy Spot Instances. Supported
 	// only for fleets of type maintain. For more information, see EC2 Fleet health
 	// checks (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-ec2-fleet.html#ec2-fleet-health-checks)
 	// in the Amazon EC2 User Guide.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ReplaceUnhealthyInstances *bool `json:"replaceUnhealthyInstances,omitempty"`
 	// Describes the configuration of Spot Instances in an EC2 Fleet.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	SpotOptions *SpotOptionsRequest `json:"spotOptions,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
@@ -52,6 +55,7 @@ type FleetSpec struct {
 	TargetCapacitySpecification *TargetCapacitySpecificationRequest `json:"targetCapacitySpecification"`
 	// Indicates whether running instances should be terminated when the EC2 Fleet
 	// expires.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	TerminateInstancesWithExpiration *bool `json:"terminateInstancesWithExpiration,omitempty"`
 	// The fleet type. The default value is maintain.
 	//
@@ -70,6 +74,7 @@ type FleetSpec struct {
 	//
 	// For more information, see EC2 Fleet request types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-request-type.html)
 	// in the Amazon EC2 User Guide.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	Type *string `json:"type_,omitempty"`
 	// The start date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
 	// The default is to start fulfilling the request immediately.

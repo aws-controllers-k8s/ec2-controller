@@ -1250,21 +1250,26 @@ resources:
       Type:
         late_initialize:
           skip_incomplete_check: {}
+        is_immutable: true
       ReplaceUnhealthyInstances:
         late_initialize:
           skip_incomplete_check: {}
+        is_immutable: true
       TerminateInstancesWithExpiration:
         late_initialize:
           skip_incomplete_check: {}
+        is_immutable: true
       ExcessCapacityTerminationPolicy:
         late_initialize:
           skip_incomplete_check: {}
       SpotOptions:
         late_initialize:
           skip_incomplete_check: {}
+        is_immutable: true
       OnDemandOptions:
         late_initialize:
           skip_incomplete_check: {}
+        is_immutable: true
       TargetCapacitySpecification.OnDemandTargetCapacity:
         late_initialize:
           skip_incomplete_check: {}
@@ -1286,7 +1291,11 @@ resources:
         template_path: hooks/fleet/sdk_read_many_post_set_output.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/fleet/sdk_delete_post_build_request.go.tpl
+      sdk_update_pre_build_request:
+        template_path: hooks/fleet/sdk_update_pre_build_request.go.tpl
+      sdk_update_post_build_request:
+        template_path: hooks/fleet/sdk_update_post_build_request.go.tpl
+      sdk_update_pre_set_output:
+        template_path: hooks/fleet/sdk_update_pre_set_output.go.tpl
       sdk_file_end:
         template_path: hooks/fleet/sdk_file_end.go.tpl
-    update_operation:
-      custom_method_name: customUpdateFleet

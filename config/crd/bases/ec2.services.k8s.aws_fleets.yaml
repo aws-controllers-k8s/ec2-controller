@@ -374,6 +374,9 @@ spec:
                   singleInstanceType:
                     type: boolean
                 type: object
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               replaceUnhealthyInstances:
                 description: |-
                   Indicates whether EC2 Fleet should replace unhealthy Spot Instances. Supported
@@ -381,6 +384,9 @@ spec:
                   checks (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-ec2-fleet.html#ec2-fleet-health-checks)
                   in the Amazon EC2 User Guide.
                 type: boolean
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               spotOptions:
                 description: Describes the configuration of Spot Instances in an EC2
                   Fleet.
@@ -421,6 +427,9 @@ spec:
                   singleInstanceType:
                     type: boolean
                 type: object
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               tags:
                 description: |-
                   The tags. The value parameter is required, but if you don't want the tag
@@ -457,6 +466,9 @@ spec:
                   Indicates whether running instances should be terminated when the EC2 Fleet
                   expires.
                 type: boolean
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               type_:
                 description: |-
                   The fleet type. The default value is maintain.
@@ -477,6 +489,9 @@ spec:
                   For more information, see EC2 Fleet request types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-request-type.html)
                   in the Amazon EC2 User Guide.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               validFrom:
                 description: |-
                   The start date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
