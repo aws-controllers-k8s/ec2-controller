@@ -151,132 +151,6 @@ def simple_fleet(standard_launch_template, request):
 @service_marker
 @pytest.mark.canary
 class TestFleets:
-    @pytest.mark.resource_data({'fleet_type': 'maintain'})
-    def test_crud_maintain(self, simple_fleet, ec2_validator):
-        """
-        Test creation, update and deletion of an Fleet of type maintain.
-        Validate that updates to supported fields are successful, and that updates to unsupported fields are blocked and result in terminal conditions.
-        """
-        (ref, cr) = simple_fleet
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-        # Check that the resource was created
-        assert cr is not None
-        assert 'status' in cr
-        assert 'fleetID' in cr['status']
-
-        fleet_id = cr['status']['fleetID']
-        assert fleet_id is not None
-        assert fleet_id.startswith('fleet-')
-
-        # Check Fleet exists
-        fleet = ec2_validator.get_fleet(fleet_id)
-        assert fleet is not None
-
-        # Wait for AWS to complete creation
-        state_reached = ec2_validator.wait_fleet_state(
-            fleet_id,
-            'active',
-            max_wait_seconds=180
-        )
-        assert state_reached, f"Fleet {fleet_id} did not reach active state within timeout"
-
-        # Wait for K8s controller to sync the state from AWS
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=30), \
-            "Resource did not sync within timeout"
-
-        # Verify state
-        cr = k8s.get_resource(ref)
-        assert cr['status'].get('fleetState') == 'active', \
-            f"Expected fleetState active, got {cr['status'].get('fleetState')}"
-        
-
-        # Update Fleet Target Capacity
-        updatedFleetTargetCapacity = 2
-        updates = {
-            "spec": {
-                "targetCapacitySpecification": {
-                    "totalTargetCapacity": updatedFleetTargetCapacity,
-                    "spotTargetCapacity": updatedFleetTargetCapacity
-                }
-            }
-        }
-        k8s.patch_custom_resource(ref, updates)
-        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
-
-        # Check resource synced successfully
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
-
-        # Check Fleet updated value
-        fleet = ec2_validator.get_fleet(fleet_id)
-        assert fleet is not None
-        assert fleet['TargetCapacitySpecification']['TotalTargetCapacity'] == updatedFleetTargetCapacity
-        
-
-        # Update Fleet Default Capacity Specification
-        # updates on this field are not supported, so this should not result in any updates on AWS resource
-        initialDefaultTargetCapacityType = fleet['TargetCapacitySpecification']['DefaultTargetCapacityType']
-        updatedDefaultTargetCapacityType = "on-demand"
-        updates = {
-            "spec": {
-                "targetCapacitySpecification": {
-                    "defaultTargetCapacityType": updatedDefaultTargetCapacityType,
-                }
-            }
-        }
-        k8s.patch_custom_resource(ref, updates)
-
-        # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
-
-        # Check fleet value has not been updated on AWS
-        fleet = ec2_validator.get_fleet(fleet_id)
-        assert fleet is not None
-        assert fleet['TargetCapacitySpecification']['DefaultTargetCapacityType'] == initialDefaultTargetCapacityType
-
-        # Update Fleet Default Capacity Specification back to original value
-        updates = {
-            "spec": {
-                "targetCapacitySpecification": {
-                    "defaultTargetCapacityType": initialDefaultTargetCapacityType,
-                }
-            }
-        }
-        k8s.patch_custom_resource(ref, updates)
-        # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
-
-        # Update Fleet ReplaceUnhealthyInstances
-        # updates on this field are not supported, so this should not result in any updates on AWS resource
-        initialReplaceUnhealthyInstances = fleet['ReplaceUnhealthyInstances']
-        updatedReplaceUnhealthyInstances = not fleet['ReplaceUnhealthyInstances']
-        updates = {
-            "spec": {
-                "replaceUnhealthyInstances": updatedReplaceUnhealthyInstances,
-            }
-        }
-        k8s.patch_custom_resource(ref, updates)
-
-        # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
-
-        # Check fleet value has not been updated on AWS
-        fleet = ec2_validator.get_fleet(fleet_id)
-        assert fleet is not None
-        assert fleet['ReplaceUnhealthyInstances'] == initialReplaceUnhealthyInstances
-
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
-        assert deleted is True
-
-        # Wait for AWS to start deleting resource, which can take a few minutes so no need to wait for deletion to complete
-        ec2_validator.wait_fleet_state(
-            fleet_id,
-            'deleted_terminating',
-            max_wait_seconds=180
-        )
-        
 
     @pytest.mark.resource_data({'fleet_type': 'instant'})
     def test_crud_instant(self, simple_fleet, ec2_validator):
@@ -403,6 +277,177 @@ class TestFleets:
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Wait for AWS to start deleting resource, which can take a few minutes so no need to wait for deletion to complete
+        ec2_validator.wait_fleet_state(
+            fleet_id,
+            'deleted_terminating',
+            max_wait_seconds=180
+        )
+
+    @pytest.mark.resource_data({'fleet_type': 'maintain'})
+    def test_crud_maintain(self, simple_fleet, ec2_validator):
+        """
+        Test creation, update and deletion of an Fleet of type maintain.
+        """
+        (ref, cr) = simple_fleet
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check that the resource was created
+        assert cr is not None
+        assert 'status' in cr
+        assert 'fleetID' in cr['status']
+
+        fleet_id = cr['status']['fleetID']
+        assert fleet_id is not None
+        assert fleet_id.startswith('fleet-')
+
+        # Check Fleet exists
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+
+        # Wait for AWS to complete creation
+        state_reached = ec2_validator.wait_fleet_state(
+            fleet_id,
+            'active',
+            max_wait_seconds=180
+        )
+        assert state_reached, f"Fleet {fleet_id} did not reach active state within timeout"
+
+        # Wait for K8s controller to sync the state from AWS
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=30), \
+            "Resource did not sync within timeout"
+
+        # Verify state
+        cr = k8s.get_resource(ref)
+        assert cr['status'].get('fleetState') == 'active', \
+            f"Expected fleetState active, got {cr['status'].get('fleetState')}"
+        
+
+        # Update Fleet Target Capacity
+        updatedFleetTargetCapacity = 2
+        updates = {
+            "spec": {
+                "targetCapacitySpecification": {
+                    "totalTargetCapacity": updatedFleetTargetCapacity,
+                    "spotTargetCapacity": updatedFleetTargetCapacity
+                }
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        # Check Fleet updated value
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+        assert fleet['TargetCapacitySpecification']['TotalTargetCapacity'] == updatedFleetTargetCapacity
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
+
+        # Wait for AWS to start deleting resource, which can take a few minutes so no need to wait for deletion to complete
+        ec2_validator.wait_fleet_state(
+            fleet_id,
+            'deleted_terminating',
+            max_wait_seconds=180
+        )
+
+
+    @pytest.mark.resource_data({'fleet_type': 'maintain'})
+    def test_crud_immutable_fields(self, simple_fleet, ec2_validator):
+        """
+        Spin up a maintain Fleet and attempt to update immutable fields on the Fleet, 
+        Validate that these updates are blocked and result in terminal conditions, and that the AWS resource is not updated with the invalid values.
+        """
+        (ref, cr) = simple_fleet
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check that the resource was created
+        assert cr is not None
+        assert 'status' in cr
+        assert 'fleetID' in cr['status']
+
+        fleet_id = cr['status']['fleetID']
+        assert fleet_id is not None
+        assert fleet_id.startswith('fleet-')
+
+        # Check Fleet exists
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+
+        # Wait for AWS to complete creation
+        state_reached = ec2_validator.wait_fleet_state(
+            fleet_id,
+            'active',
+            max_wait_seconds=180
+        )
+        assert state_reached, f"Fleet {fleet_id} did not reach active state within timeout"
+
+        # Wait for K8s controller to sync the state from AWS
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=30), \
+            "Resource did not sync within timeout"
+
+        # Update Fleet Default Capacity Specification
+        # updates on this field are not supported, so this should not result in any updates on AWS resource
+        initialDefaultTargetCapacityType = fleet['TargetCapacitySpecification']['DefaultTargetCapacityType']
+        updatedDefaultTargetCapacityType = "on-demand"
+        updates = {
+            "spec": {
+                "targetCapacitySpecification": {
+                    "defaultTargetCapacityType": updatedDefaultTargetCapacityType,
+                }
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+
+        # Check resource prevents this invalid update and enters terminal state
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+
+        # Check fleet value has not been updated on AWS
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+        assert fleet['TargetCapacitySpecification']['DefaultTargetCapacityType'] == initialDefaultTargetCapacityType
+
+        # Update Fleet Default Capacity Specification back to original value
+        updates = {
+            "spec": {
+                "targetCapacitySpecification": {
+                    "defaultTargetCapacityType": initialDefaultTargetCapacityType,
+                }
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        # Check resource prevents this invalid update and enters terminal state
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Update Fleet ReplaceUnhealthyInstances
+        # updates on this field are not supported, so this should not result in any updates on AWS resource
+        initialReplaceUnhealthyInstances = fleet['ReplaceUnhealthyInstances']
+        updatedReplaceUnhealthyInstances = not fleet['ReplaceUnhealthyInstances']
+        updates = {
+            "spec": {
+                "replaceUnhealthyInstances": updatedReplaceUnhealthyInstances,
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+
+        # Check resource prevents this invalid update and enters terminal state
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+
+        # Check fleet value has not been updated on AWS
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+        assert fleet['ReplaceUnhealthyInstances'] == initialReplaceUnhealthyInstances
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
 
         # Wait for AWS to start deleting resource, which can take a few minutes so no need to wait for deletion to complete
         ec2_validator.wait_fleet_state(
