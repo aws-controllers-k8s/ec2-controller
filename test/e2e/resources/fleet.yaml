@@ -10,6 +10,7 @@ spec:
     - launchTemplateSpecification:
         launchTemplateID: $LAUNCH_TEMPLATE_ID
         version: $LAUNCH_TEMPLATE_VERSION
+  type_: $FLEET_TYPE
   tags:
     - key: $FLEET_TAG_KEY
       value: $FLEET_TAG_VAL

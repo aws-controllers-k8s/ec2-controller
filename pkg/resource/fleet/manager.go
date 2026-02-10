@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=fleets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=fleets/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"ExcessCapacityTerminationPolicy", "OnDemandOptions", "ReplaceUnhealthyInstances", "SpotOptions", "TargetCapacitySpecification.OnDemandTargetCapacity", "TargetCapacitySpecification.SpotTargetCapacity", "TerminateInstancesWithExpiration", "Type"}
+var lateInitializeFieldNames = []string{"ExcessCapacityTerminationPolicy", "OnDemandOptions", "ReplaceUnhealthyInstances", "SpotOptions", "TargetCapacitySpecification.OnDemandTargetCapacity", "TargetCapacitySpecification.SpotTargetCapacity", "TerminateInstancesWithExpiration", "Type", "ValidFrom", "ValidUntil"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -286,6 +286,12 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	}
 	if observedKo.Spec.Type != nil && latestKo.Spec.Type == nil {
 		latestKo.Spec.Type = observedKo.Spec.Type
+	}
+	if observedKo.Spec.ValidFrom != nil && latestKo.Spec.ValidFrom == nil {
+		latestKo.Spec.ValidFrom = observedKo.Spec.ValidFrom
+	}
+	if observedKo.Spec.ValidUntil != nil && latestKo.Spec.ValidUntil == nil {
+		latestKo.Spec.ValidUntil = observedKo.Spec.ValidUntil
 	}
 	return &resource{latestKo}
 }

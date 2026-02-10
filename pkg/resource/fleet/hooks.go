@@ -14,23 +14,16 @@
 package fleet
 
 import (
-	"context"
 	"fmt"
-	"math"
-	"strconv"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
-	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 
-	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
 // updateTagSpecificationsInCreateRequest adds
-// Tags defined in the Spec to CreateVpcPeeringConnectionInput.TagSpecification
+// Tags defined in the Spec to CreateFleetInput.TagSpecification
 // and ensures the ResourceType is always set to 'fleet'
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateFleetInput) {

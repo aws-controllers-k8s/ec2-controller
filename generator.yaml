@@ -1243,10 +1243,6 @@ resources:
         from:
           operation: DescribeFleets
           path: Fleets.FulfilledCapacity
-      LaunchTemplateConfigs.LaunchTemplateSpecification.Version:
-        type: string
-        compare:
-          is_ignored: true
       Type:
         late_initialize:
           skip_incomplete_check: {}
@@ -1270,6 +1266,14 @@ resources:
         late_initialize:
           skip_incomplete_check: {}
         is_immutable: true
+      ValidFrom:
+        late_initialize:
+          skip_incomplete_check: {}
+        is_immutable: true
+      ValidUntil:
+        late_initialize:
+          skip_incomplete_check: {}
+        is_immutable: true
       TargetCapacitySpecification.OnDemandTargetCapacity:
         late_initialize:
           skip_incomplete_check: {}
@@ -1284,6 +1288,21 @@ resources:
       - path: Status.FleetState
         in:
         - active
+    exceptions:
+      terminal_codes:
+      - InvalidParameterValue 
+    terminal:
+      when:
+      - path: Status.FleetState
+        in:
+        - failed
+        - deleted
+        - deleted_running
+        - deleted_terminating
+      when:
+      - path: Status.ActivityStatus
+        in:
+        - error
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/fleet/sdk_create_post_build_request.go.tpl
@@ -1293,8 +1312,6 @@ resources:
         template_path: hooks/fleet/sdk_delete_post_build_request.go.tpl
       sdk_update_pre_build_request:
         template_path: hooks/fleet/sdk_update_pre_build_request.go.tpl
-      sdk_update_post_build_request:
-        template_path: hooks/fleet/sdk_update_post_build_request.go.tpl
       sdk_update_pre_set_output:
         template_path: hooks/fleet/sdk_update_pre_set_output.go.tpl
       sdk_file_end:

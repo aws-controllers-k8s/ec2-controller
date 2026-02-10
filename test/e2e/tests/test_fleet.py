@@ -91,6 +91,13 @@ def standard_launch_template(ec2_client):
 
     yield (ref, cr)
 
+    # Teardown
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
 @pytest.fixture
 def simple_fleet(standard_launch_template, request):
     resource_name = random_suffix_name("fleet", 32)     
@@ -107,6 +114,12 @@ def simple_fleet(standard_launch_template, request):
     test_resource_values["LAUNCH_TEMPLATE_VERSION"] = "'1'"
     test_resource_values["FLEET_TAG_KEY"] = FLEET_TAG_KEY
     test_resource_values["FLEET_TAG_VAL"] = FLEET_TAG_VAL
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'fleet_type' in data:
+            test_resource_values["FLEET_TYPE"] = data['fleet_type']
 
     # Load the resource
     resource_data = load_ec2_resource(
@@ -135,13 +148,15 @@ def simple_fleet(standard_launch_template, request):
     except:
         pass
 
-
 @service_marker
 @pytest.mark.canary
 class TestFleets:
-    def test_crud(self, simple_fleet, ec2_validator):
-        """Test creation and deletion of an Fleet."""
-  
+    @pytest.mark.resource_data({'fleet_type': 'maintain'})
+    def test_crud_maintain(self, simple_fleet, ec2_validator):
+        """
+        Test creation, update and deletion of an Fleet of type maintain.
+        Validate that updates to supported fields are successful, and that updates to unsupported fields are blocked and result in terminal conditions.
+        """
         (ref, cr) = simple_fleet
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
@@ -178,12 +193,12 @@ class TestFleets:
         
 
         # Update Fleet Target Capacity
-        updatedFleetTargetCapcity = 2
+        updatedFleetTargetCapacity = 2
         updates = {
             "spec": {
                 "targetCapacitySpecification": {
-                    "totalTargetCapacity": updatedFleetTargetCapcity,
-                    "spotTargetCapacity": updatedFleetTargetCapcity
+                    "totalTargetCapacity": updatedFleetTargetCapacity,
+                    "spotTargetCapacity": updatedFleetTargetCapacity
                 }
             }
         }
@@ -196,29 +211,60 @@ class TestFleets:
         # Check Fleet updated value
         fleet = ec2_validator.get_fleet(fleet_id)
         assert fleet is not None
-        assert fleet['TargetCapacitySpecification']['TotalTargetCapacity'] == updatedFleetTargetCapcity
+        assert fleet['TargetCapacitySpecification']['TotalTargetCapacity'] == updatedFleetTargetCapacity
         
 
         # Update Fleet Default Capacity Specification
         # updates on this field are not supported, so this should not result in any updates on AWS resource
+        initialDefaultTargetCapacityType = fleet['TargetCapacitySpecification']['DefaultTargetCapacityType']
+        updatedDefaultTargetCapacityType = "on-demand"
         updates = {
             "spec": {
                 "targetCapacitySpecification": {
-                    "defaultTargetCapacityType": "on-demand",
+                    "defaultTargetCapacityType": updatedDefaultTargetCapacityType,
                 }
             }
         }
         k8s.patch_custom_resource(ref, updates)
-        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
         # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=10)
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
 
-        # Check Instance value has not been updated on AWS
+        # Check fleet value has not been updated on AWS
         fleet = ec2_validator.get_fleet(fleet_id)
         assert fleet is not None
-        assert fleet['TargetCapacitySpecification']['DefaultTargetCapacityType'] == "spot"
-        
+        assert fleet['TargetCapacitySpecification']['DefaultTargetCapacityType'] == initialDefaultTargetCapacityType
+
+        # Update Fleet Default Capacity Specification back to original value
+        updates = {
+            "spec": {
+                "targetCapacitySpecification": {
+                    "defaultTargetCapacityType": initialDefaultTargetCapacityType,
+                }
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        # Check resource prevents this invalid update and enters terminal state
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Update Fleet ReplaceUnhealthyInstances
+        # updates on this field are not supported, so this should not result in any updates on AWS resource
+        initialReplaceUnhealthyInstances = fleet['ReplaceUnhealthyInstances']
+        updatedReplaceUnhealthyInstances = not fleet['ReplaceUnhealthyInstances']
+        updates = {
+            "spec": {
+                "replaceUnhealthyInstances": updatedReplaceUnhealthyInstances,
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+
+        # Check resource prevents this invalid update and enters terminal state
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+
+        # Check fleet value has not been updated on AWS
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+        assert fleet['ReplaceUnhealthyInstances'] == initialReplaceUnhealthyInstances
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
@@ -232,9 +278,12 @@ class TestFleets:
         )
         
 
-    def test_crud_tags(self, simple_fleet, ec2_validator):
-        """Test creation and deletion of an Fleet."""
-  
+    @pytest.mark.resource_data({'fleet_type': 'instant'})
+    def test_crud_instant(self, simple_fleet, ec2_validator):
+        """
+        Test creation, update and deletion of an Fleet of type instant.
+        Fleets of type instant do not support fleet updates, so this test verifies tag updates, and verifies that other update types are blocked and result in terminal conditions.
+        """
         (ref, cr) = simple_fleet
 
         resource = k8s.get_resource(ref)
@@ -271,7 +320,7 @@ class TestFleets:
                 }
             ]
 
-        # Patch the Instance, updating the tags with new pair
+        # Patch the Fleet, updating the tags with new pair
         updates = {
             "spec": {"tags": update_tags},
         }
@@ -283,16 +332,16 @@ class TestFleets:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
         # Check for updated user tags; system tags should persist
-        instance = ec2_validator.get_fleet(fleet_id)
+        fleet = ec2_validator.get_fleet(fleet_id)
         updated_tags = {
             "updatedtagkey": "updatedtagvalue"
         }
         tags.assert_ack_system_tags(
-            tags=instance["Tags"],
+            tags=fleet["Tags"],
         )
         tags.assert_equal_without_ack_tags(
             expected=updated_tags,
-            actual=instance["Tags"],
+            actual=fleet["Tags"],
         )
                
         # Only user tags should be present in Spec
@@ -301,7 +350,7 @@ class TestFleets:
         assert resource["spec"]["tags"][0]["key"] == "updatedtagkey"
         assert resource["spec"]["tags"][0]["value"] == "updatedtagvalue"
 
-        # Patch the Instance resource, deleting the tags
+        # Patch the fleet resource, deleting the tags
         updates = {
                 "spec": {"tags": []},
         }
@@ -313,18 +362,41 @@ class TestFleets:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         
         # Check for removed user tags; system tags should persist
-        instance = ec2_validator.get_fleet(fleet_id)
+        fleet = ec2_validator.get_fleet(fleet_id)
         tags.assert_ack_system_tags(
-            tags=instance["Tags"],
+            tags=fleet["Tags"],
         )
         tags.assert_equal_without_ack_tags(
             expected=[],
-            actual=instance["Tags"],
+            actual=fleet["Tags"],
         )
         
         # Check user tags are removed from Spec
         resource = k8s.get_resource(ref)
         assert len(resource["spec"]["tags"]) == 0
+
+        # Attempt to Update Fleet Target Capacity
+        # This will fail as fleets of type instant cannot be modified after creation
+        initialFleetTargetCapacity = fleet['TargetCapacitySpecification']['TotalTargetCapacity']
+        updatedFleetTargetCapacity = 2
+        updates = {
+            "spec": {
+                "targetCapacitySpecification": {
+                    "totalTargetCapacity": updatedFleetTargetCapacity,
+                    "spotTargetCapacity": updatedFleetTargetCapacity
+                }
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+
+        # Check Fleet updated value
+        fleet = ec2_validator.get_fleet(fleet_id)
+        assert fleet is not None
+        assert fleet['TargetCapacitySpecification']['TotalTargetCapacity'] == initialFleetTargetCapacity
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)

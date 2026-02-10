@@ -498,6 +498,9 @@ spec:
                   The default is to start fulfilling the request immediately.
                 format: date-time
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               validUntil:
                 description: |-
                   The end date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
@@ -505,6 +508,9 @@ spec:
                   request. If no value is specified, the request remains until you cancel it.
                 format: date-time
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
             required:
             - launchTemplateConfigs
             - targetCapacitySpecification

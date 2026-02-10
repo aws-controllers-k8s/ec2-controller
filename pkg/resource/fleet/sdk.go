@@ -2272,6 +2272,12 @@ func (rm *resourceManager) sdkUpdate(
 		return desired, nil
 	}
 
+	// Only tag updates are supported in Fleets of type instant
+	if *latest.ko.Spec.Type == "instant" {
+		msg := "api error Unsupported: Fleets of type 'instant' cannot be modified."
+		return nil, ackerr.NewTerminalError(fmt.Errorf("%s", msg))
+	}
+
 	immutable_fields := []string{"Spec.Type", "Spec.ReplaceUnhealthyInstances", "Spec.TerminateInstancesWithExpiration", "Spec.TargetCapacitySpecification.DefaultTargetCapacityType", "Spec.SpotOptions", "Spec.OnDemandOptions"}
 	for _, field := range immutable_fields {
 		if delta.DifferentAt(field) {
@@ -2286,13 +2292,8 @@ func (rm *resourceManager) sdkUpdate(
 	// This value is automatically populated in TargetCapacitySpecification, but is not supported in ModifyFleetRequest
 	desired.ko.Spec.TargetCapacitySpecification.DefaultTargetCapacityType = nil
 
-	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
-	if err != nil {
-		return nil, err
-	}
-	for _, config := range input.LaunchTemplateConfigs {
+	for _, config := range desired.ko.Spec.LaunchTemplateConfigs {
 		if config.LaunchTemplateSpecification != nil {
-
 			// Ensure Launch Template Version is int and not $Latest/$Default
 			// Preventing those values as as those strings are updated in the backend with the ints they represent
 			// This confuses the reconciliation as the aws state falls out of sync with the CRD
@@ -2306,6 +2307,11 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
+	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
+	if err != nil {
+		return nil, err
+	}
+
 	var resp *svcsdk.ModifyFleetOutput
 	_ = resp
 	resp, err = rm.sdkapi.ModifyFleet(ctx, input)
@@ -2316,6 +2322,7 @@ func (rm *resourceManager) sdkUpdate(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
+
 	// Modify Fleet doesn't return an updated Fleet object, so we need to set the state to "modifying" to reflect that the update is in progress
 	ko.Status.FleetState = aws.String("modifying")
 
@@ -2867,8 +2874,20 @@ func (rm *resourceManager) updateConditions(
 // and if the exception indicates that it is a Terminal exception
 // 'Terminal' exception are specified in generator configuration
 func (rm *resourceManager) terminalAWSError(err error) bool {
-	// No terminal_errors specified for this resource in generator config
-	return false
+	if err == nil {
+		return false
+	}
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
+		return false
+	}
+	switch terminalErr.ErrorCode() {
+	case "InvalidParameterValue":
+		return true
+	default:
+		return false
+	}
 }
 
 func (rm *resourceManager) newTag(

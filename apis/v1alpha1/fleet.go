@@ -78,10 +78,12 @@ type FleetSpec struct {
 	Type *string `json:"type_,omitempty"`
 	// The start date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
 	// The default is to start fulfilling the request immediately.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ValidFrom *metav1.Time `json:"validFrom,omitempty"`
 	// The end date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
 	// At this point, no new EC2 Fleet requests are placed or able to fulfill the
 	// request. If no value is specified, the request remains until you cancel it.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ValidUntil *metav1.Time `json:"validUntil,omitempty"`
 }
 
