@@ -338,7 +338,6 @@ resources:
           - from: AttributeValue.Value
       DhcpOptionsID:
         print:
-          path: Status.dhcpOptionsID
           name: ID
       VPC:
         # from:
@@ -376,7 +375,6 @@ resources:
         late_initialize: {}
       InstanceID:
         print:
-          path: Status.instanceID
           name: ID
       MaxCount:
         is_required: false
@@ -500,7 +498,6 @@ resources:
           path: Status.RouteTableID
       InternetGatewayID:
         print:
-          path: Status.internetGatewayID
           name: ID
     hooks:
       sdk_create_post_build_request:
@@ -562,7 +559,6 @@ resources:
       ID:
         is_primary_key: true
         print:
-          path: Status.ID
           name: ID
       Tags:
         from:
@@ -593,11 +589,9 @@ resources:
           path: Status.SubnetID
       NatGatewayID:
         print:
-          path: Status.natGatewayID
           name: ID
       State:
         print:
-          path: Status.state
           name: state
       Tags:
         from:
@@ -649,18 +643,15 @@ resources:
         is_primary_key: true
         is_read_only: true
         print:
-          path: Status.ID
           name: ID
       Name: {}
       State:
         is_read_only: true
         print:
-          path: Status.State
           name: STATE
       Version:
         is_read_only: true
         print:
-          path: Status.Version
           name: VERSION
       PrefixListARN:
         is_arn: true
@@ -713,11 +704,9 @@ resources:
           is_ignored: true
       RouteTableID:
         print:
-          path: Status.RouteTableID
           name: ID
       State:
         print:
-          path: Status.state
           name: state
       Tags:
         from:
@@ -766,7 +755,6 @@ resources:
       Id:
         is_primary_key: true
         print:
-          path: Status.id
           name: ID
       IngressRules:
         custom_field:
@@ -844,7 +832,6 @@ resources:
       Id:
         is_primary_key: true
         print:
-          path: Status.Id
           name: ID
       Associations:
         custom_field:
@@ -925,11 +912,9 @@ resources:
           path: Status.RouteTableID
       State:
         print:
-          path: Status.state
           name: state
       SubnetId:
         print:
-          path: Status.subnetID
           name: ID
       Tags:
         from:
@@ -962,11 +947,9 @@ resources:
           path: Tags
       State:
         print:
-          path: Status.state
           name: state
       TransitGatewayID:
         print:
-          path: Status.transitGatewayID
           name: ID
     hooks:
       sdk_create_post_build_request:
@@ -1014,7 +997,6 @@ resources:
       ID:
         is_primary_key: true
         print:
-          path: Status.ID
           name: ID
     hooks:
       sdk_create_post_build_request:
@@ -1047,7 +1029,6 @@ resources:
           path: EnableDnsHostnames.Value
       State:
         print:
-          path: Status.state
           name: state
       Tags:
         from:
@@ -1055,7 +1036,6 @@ resources:
           path: Tags
       VpcID:
         print:
-          path: Status.vpcID
           name: ID
       DisallowSecurityGroupDefaultRules:
         type: bool
@@ -1096,7 +1076,6 @@ resources:
           path: Status.ID
       State:
         print:
-          path: Status.state
           name: state
       SubnetIds:
         references:
@@ -1104,7 +1083,6 @@ resources:
           path: Status.SubnetID
       VpcEndpointID:
         print:
-          path: Status.vpcEndpointID
           name: ID
       ServiceRegion:
         # ServiceRegion is not supported in ModifyVpcEndpoint's input.
@@ -1139,12 +1117,10 @@ resources:
         is_primary_key: true
         is_read_only: true
         print:
-          path: Status.serviceID
           name: ServiceID
       ServiceState:
         is_read_only: true
         print:
-          path: Status.serviceState
           name: ServiceState
       Tags:
         from:
