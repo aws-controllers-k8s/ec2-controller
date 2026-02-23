@@ -705,9 +705,6 @@ resources:
       RouteTableID:
         print:
           name: ID
-      State:
-        print:
-          name: state
       Tags:
         from:
           operation: CreateTags
