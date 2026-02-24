@@ -34,9 +34,10 @@ type SecurityGroupSpec struct {
 	Description  *string         `json:"description"`
 	EgressRules  []*IPPermission `json:"egressRules,omitempty"`
 	IngressRules []*IPPermission `json:"ingressRules,omitempty"`
-	// The name of the security group.
+	// The name of the security group. Names are case-insensitive and must be unique
+	// within the VPC.
 	//
-	// Constraints: Up to 255 characters in length. Cannot start with sg-.
+	// Constraints: Up to 255 characters in length. Can't start with sg-.
 	//
 	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
 	// +kubebuilder:validation:Required

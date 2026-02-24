@@ -52,6 +52,20 @@ func newResourceDelta(
 	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.AllocationRef, b.ko.Spec.AllocationRef) {
 		delta.Add("Spec.AllocationRef", a.ko.Spec.AllocationRef, b.ko.Spec.AllocationRef)
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.AvailabilityMode, b.ko.Spec.AvailabilityMode) {
+		delta.Add("Spec.AvailabilityMode", a.ko.Spec.AvailabilityMode, b.ko.Spec.AvailabilityMode)
+	} else if a.ko.Spec.AvailabilityMode != nil && b.ko.Spec.AvailabilityMode != nil {
+		if *a.ko.Spec.AvailabilityMode != *b.ko.Spec.AvailabilityMode {
+			delta.Add("Spec.AvailabilityMode", a.ko.Spec.AvailabilityMode, b.ko.Spec.AvailabilityMode)
+		}
+	}
+	if len(a.ko.Spec.AvailabilityZoneAddresses) != len(b.ko.Spec.AvailabilityZoneAddresses) {
+		delta.Add("Spec.AvailabilityZoneAddresses", a.ko.Spec.AvailabilityZoneAddresses, b.ko.Spec.AvailabilityZoneAddresses)
+	} else if len(a.ko.Spec.AvailabilityZoneAddresses) > 0 {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.AvailabilityZoneAddresses, b.ko.Spec.AvailabilityZoneAddresses) {
+			delta.Add("Spec.AvailabilityZoneAddresses", a.ko.Spec.AvailabilityZoneAddresses, b.ko.Spec.AvailabilityZoneAddresses)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ConnectivityType, b.ko.Spec.ConnectivityType) {
 		delta.Add("Spec.ConnectivityType", a.ko.Spec.ConnectivityType, b.ko.Spec.ConnectivityType)
 	} else if a.ko.Spec.ConnectivityType != nil && b.ko.Spec.ConnectivityType != nil {
@@ -73,6 +87,13 @@ func newResourceDelta(
 	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
 	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.VPCID, b.ko.Spec.VPCID) {
+		delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
+	} else if a.ko.Spec.VPCID != nil && b.ko.Spec.VPCID != nil {
+		if *a.ko.Spec.VPCID != *b.ko.Spec.VPCID {
+			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
+		}
 	}
 
 	return delta

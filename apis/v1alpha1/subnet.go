@@ -112,6 +112,12 @@ type SubnetStatus struct {
 	// +kubebuilder:validation:Optional
 	PrivateDNSNameOptionsOnLaunch *PrivateDNSNameOptionsOnLaunch `json:"privateDNSNameOptionsOnLaunch,omitempty"`
 	// The current state of the subnet.
+	//
+	//    * failed: The underlying infrastructure to support the subnet failed to
+	//    provision as expected.
+	//
+	//    * failed-insufficient-capacity: The underlying infrastructure to support
+	//    the subnet failed to provision due to a shortage of EC2 instance capacity.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
 	// The ID of the subnet.

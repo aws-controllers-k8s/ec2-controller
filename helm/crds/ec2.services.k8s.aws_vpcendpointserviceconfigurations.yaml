@@ -133,7 +133,10 @@ spec:
                 - region
                 type: object
               availabilityZones:
-                description: The Availability Zones in which the service is available.
+                description: |-
+                  The Availability Zones in which the service is available.
+
+                  Either AvailabilityZone or AvailabilityZoneId can be specified, but not both
                 items:
                   type: string
                 type: array

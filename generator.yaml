@@ -12,6 +12,10 @@ ignore:
     - CreateCapacityReservationInput.TagSpecifications
     - CreateCapacityReservationInput.DryRun
     - CreateCapacityReservationInput.ClientToken
+    - CapacityReservation.CapacityBlockId
+    - CapacityReservation.Interruptible
+    - CapacityReservation.InterruptibleCapacityAllocation
+    - CapacityReservation.InterruptionInfo
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.DryRun
@@ -34,6 +38,10 @@ ignore:
     - CreateNetworkAclInput.TagSpecifications
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
+    - CreateRouteInput.OdbNetworkArn
+    - Route.IpAddress
+    - Route.OdbNetworkArn
+    - RouteTableAssociation.PublicIpv4Pool
     - CreateRouteTableInput.DryRun
     - CreateRouteTableInput.ClientToken
     - CreateRouteTableInput.TagSpecifications
@@ -54,12 +62,16 @@ ignore:
     - CreateVpcInput.CidrBlock
     - CreateVpcOutput.Vpc.CidrBlock
     - CreateVpcOutput.Vpc.BlockPublicAccessStates
+    - CreateVpcInput.VpcEncryptionControl
+    - CreateVpcOutput.Vpc.EncryptionControl
     - CreateVpcInput.DryRun
     - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
     - CreateVpcEndpointInput.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
+    - CreateVpcEndpointInput.DnsOptions.PrivateDnsPreference
+    - CreateVpcEndpointInput.DnsOptions.PrivateDnsSpecifiedDomains
     - CreateVpcEndpointInput.ResourceConfigurationArn
     - CreateVpcEndpointInput.SubnetConfigurations
     - CreateVpcEndpointOutput.VpcEndpoint.FailureReason
@@ -73,6 +85,7 @@ ignore:
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.SupportedRegions
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
+    - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.AvailabilityZoneIds
     - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
@@ -89,11 +102,15 @@ ignore:
     - RunInstancesInput.Placement.GroupId
     - Instance.CurrentInstanceBootMode
     - Instance.Operator
+    - Instance.CapacityBlockId
+    - Instance.NetworkPerformanceOptions
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
     - RunInstancesInput.TagSpecifications
     - RunInstancesInput.EnablePrimaryIpv6
     - RunInstancesInput.CpuOptions.AmdSevSnp
+    - RunInstancesInput.NetworkPerformanceOptions
+    - Placement.AvailabilityZoneId
     - SecurityGroupRule.GroupId
     - SecurityGroupRule.SecurityGroupRuleArn
     - SecurityGroupRule.GroupOwnerId
@@ -101,21 +118,42 @@ ignore:
     - TerminateInstancesInput.DryRun
     - InstanceIpv6Address.IsPrimaryIpv6
     - InstanceNetworkInterfaceSpecification.PrimaryIpv6
+    - InstanceNetworkInterfaceSpecification.EnaQueueCount
+    - EbsBlockDevice.AvailabilityZone
+    - EbsBlockDevice.AvailabilityZoneId
+    - EbsBlockDevice.VolumeInitializationRate
+    - NatGateway.AttachedAppliances
+    - NatGateway.AutoProvisionZones
+    - NatGateway.AutoScalingIps
+    - NatGateway.RouteTableId
     - NatGatewayAddress.AssociationId
     - NatGatewayAddress.FailureMessage
     - NatGatewayAddress.IsPrimary
     - NatGatewayAddress.Status
     - SubnetIpv6CidrBlockAssociation.IpSource
     - SubnetIpv6CidrBlockAssociation.Ipv6AddressAttribute
+    - Subnet.Type
     - VpcIpv6CidrBlockAssociation.IpSource
     - VpcIpv6CidrBlockAssociation.Ipv6AddressAttribute
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
     - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
+    - LaunchTemplateEbsBlockDeviceRequest.VolumeInitializationRate
+    - LaunchTemplateEbsBlockDevice.VolumeInitializationRate
+    - InstanceRequirementsRequest.RequireEncryptionInTransit
+    - InstanceRequirements.RequireEncryptionInTransit
+    - LaunchTemplateInstanceNetworkInterfaceSpecificationRequest.EnaQueueCount
+    - LaunchTemplateInstanceNetworkInterfaceSpecification.EnaQueueCount
+    - RequestLaunchTemplateData.NetworkPerformanceOptions
+    - ResponseLaunchTemplateData.NetworkPerformanceOptions
+    - LaunchTemplatePlacementRequest.AvailabilityZoneId
+    - LaunchTemplatePlacement.AvailabilityZoneId
     - CreateManagedPrefixListInput.ClientToken
     - CreateManagedPrefixListInput.TagSpecifications
     - CreateManagedPrefixListInput.DryRun
+    - ManagedPrefixList.IpamPrefixListResolverSyncEnabled
+    - ManagedPrefixList.IpamPrefixListResolverTargetId
     - CreateLaunchTemplateVersionOutput.LaunchTemplateVersion.DefaultVersion
   resource_names:
     - CapacityReservationBySplitting

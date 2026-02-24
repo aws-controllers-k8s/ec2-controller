@@ -50,15 +50,13 @@ type InstanceSpec struct {
 	// For T3 instances with host tenancy, only standard is supported.
 	CreditSpecification *CreditSpecificationRequest `json:"creditSpecification,omitempty"`
 	// Indicates whether an instance is enabled for stop protection. For more information,
-	// see Stop protection (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html#Using_StopProtection).
+	// see Enable stop protection for your EC2 instances (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-stop-protection.html).
 	DisableAPIStop *bool `json:"disableAPIStop,omitempty"`
-	// If you set this parameter to true, you can't terminate the instance using
-	// the Amazon EC2 console, CLI, or API; otherwise, you can. To change this attribute
-	// after launch, use ModifyInstanceAttribute (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifyInstanceAttribute.html).
-	// Alternatively, if you set InstanceInitiatedShutdownBehavior to terminate,
-	// you can terminate the instance by running the shutdown command from the instance.
-	//
-	// Default: false
+	// Indicates whether termination protection is enabled for the instance. The
+	// default is false, which means that you can terminate the instance using the
+	// Amazon EC2 console, command line tools, or API. You can enable termination
+	// protection when you launch an instance, while the instance is running, or
+	// while the instance is stopped.
 	DisableAPITermination *bool `json:"disableAPITermination,omitempty"`
 	// Indicates whether the instance is optimized for Amazon EBS I/O. This optimization
 	// provides dedicated throughput to Amazon EBS and an optimized configuration
@@ -77,8 +75,7 @@ type InstanceSpec struct {
 	// Amazon Elastic Inference is no longer available.
 	ElasticInferenceAccelerators []*ElasticInferenceAccelerator `json:"elasticInferenceAccelerators,omitempty"`
 	// Indicates whether the instance is enabled for Amazon Web Services Nitro Enclaves.
-	// For more information, see What is Amazon Web Services Nitro Enclaves? (https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html)
-	// in the Amazon Web Services Nitro Enclaves User Guide.
+	// For more information, see Amazon Web Services Nitro Enclaves User Guide (https://docs.aws.amazon.com/enclaves/latest/user/).
 	//
 	// You can't enable Amazon Web Services Nitro Enclaves and hibernation on the
 	// same instance.
@@ -106,8 +103,8 @@ type InstanceSpec struct {
 	// For RunInstances, persistent Spot Instance requests are only supported when
 	// InstanceInterruptionBehavior is set to either hibernate or stop.
 	InstanceMarketOptions *InstanceMarketOptionsRequest `json:"instanceMarketOptions,omitempty"`
-	// The instance type. For more information, see Amazon EC2 instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
-	// in the Amazon EC2 User Guide.
+	// The instance type. For more information, see Amazon EC2 Instance Types Guide
+	// (https://docs.aws.amazon.com/ec2/latest/instancetypes/instance-types.html).
 	InstanceType *string `json:"instanceType,omitempty"`
 	// The number of IPv6 addresses to associate with the primary network interface.
 	// Amazon EC2 chooses the IPv6 addresses from the range of your subnet. You
@@ -132,8 +129,8 @@ type InstanceSpec struct {
 	// information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
 	// in the Amazon EC2 User Guide.
 	KernelID *string `json:"kernelID,omitempty"`
-	// The name of the key pair. You can create a key pair using CreateKeyPair (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html)
-	// or ImportKeyPair (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ImportKeyPair.html).
+	// The name of the key pair. For more information, see Create a key pair for
+	// your EC2 instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html).
 	//
 	// If you do not specify a key pair, you can't connect to the instance unless
 	// you choose an AMI that is configured to allow users another way to log in.
@@ -154,8 +151,8 @@ type InstanceSpec struct {
 	// your account for this Region. For more information, see Amazon EC2 instance
 	// type quotas (https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html).
 	MaxCount *int64 `json:"maxCount,omitempty"`
-	// The metadata options for the instance. For more information, see Instance
-	// metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
+	// The metadata options for the instance. For more information, see Configure
+	// the Instance Metadata Service options (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-options.html).
 	MetadataOptions *InstanceMetadataOptionsRequest `json:"metadataOptions,omitempty"`
 	// The minimum number of instances to launch. If you specify a value that is
 	// more capacity than Amazon EC2 can provide in the target Availability Zone,
@@ -195,8 +192,7 @@ type InstanceSpec struct {
 	// information, see PV-GRUB (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html)
 	// in the Amazon EC2 User Guide.
 	RAMDiskID *string `json:"ramDiskID,omitempty"`
-	// The IDs of the security groups. You can create a security group using CreateSecurityGroup
-	// (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html).
+	// The IDs of the security groups.
 	//
 	// If you specify a network interface, you must specify any security groups
 	// as part of the network interface instead of using this parameter.
@@ -220,8 +216,8 @@ type InstanceSpec struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// The user data to make available to the instance. User data must be base64-encoded.
 	// Depending on the tool or SDK that you're using, the base64-encoding might
-	// be performed for you. For more information, see Work with instance user data
-	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html).
+	// be performed for you. For more information, see Run commands at launch using
+	// instance user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html).
 	UserData *string `json:"userData,omitempty"`
 }
 
@@ -318,9 +314,10 @@ type InstanceStatus struct {
 	// The product codes attached to this instance, if applicable.
 	// +kubebuilder:validation:Optional
 	ProductCodes []*ProductCode `json:"productCodes,omitempty"`
-	// [IPv4 only] The public DNS name assigned to the instance. This name is not
-	// available until the instance enters the running state. This name is only
-	// available if you've enabled DNS hostnames for your VPC.
+	// The public DNS name assigned to the instance. This name is not available
+	// until the instance enters the running state. This name is only available
+	// if you've enabled DNS hostnames for your VPC. The format of this name depends
+	// on the public hostname type (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hostname-types.html#public-hostnames).
 	// +kubebuilder:validation:Optional
 	PublicDNSName *string `json:"publicDNSName,omitempty"`
 	// The public IPv4 address, or the Carrier IP address assigned to the instance,

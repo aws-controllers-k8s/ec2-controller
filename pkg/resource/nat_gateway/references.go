@@ -90,9 +90,6 @@ func validateReferenceFields(ko *svcapitypes.NATGateway) error {
 	if ko.Spec.SubnetRef != nil && ko.Spec.SubnetID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SubnetID", "SubnetRef")
 	}
-	if ko.Spec.SubnetRef == nil && ko.Spec.SubnetID == nil {
-		return ackerr.ResourceReferenceOrIDRequiredFor("SubnetID", "SubnetRef")
-	}
 	return nil
 }
 
