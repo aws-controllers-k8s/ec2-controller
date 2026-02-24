@@ -124,6 +124,7 @@ ignore:
     - AccountAttribute
     # - CapacityReservation
     - CapacityReservationFleet
+    - CapacityManagerDataExport
     - CarrierGateway
     - ClientVpnEndpoint
     - ClientVpnRoute
@@ -132,20 +133,26 @@ ignore:
     - CustomerGateway
     - DefaultSubnet
     - DefaultVpc
+    - DelegateMacVolumeOwnershipTask
     #- DhcpOptions
     - EgressOnlyInternetGateway
     - Fleet
     - FpgaImage
     - Image
+    - ImageUsageReport
     #- Instance
     - InstanceConnectEndpoint
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
+    - InterruptibleCapacityReservationAllocation
     - Ipam
     - IpamPool
     - IpamResourceDiscovery
     - IpamScope
+    - IpamPrefixListResolverTarget
+    - IpamPrefixListResolver
+    - IpamPolicy
     - KeyPair
     - LaunchTemplateVersion
     # - LaunchTemplate
@@ -153,6 +160,9 @@ ignore:
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
+    - LocalGatewayVirtualInterface
+    - LocalGatewayVirtualInterfaceGroup
+    - MacSystemIntegrityProtectionModificationTask
     #- ManagedPrefixList
     #- NatGateway
     - NetworkAclEntry
@@ -168,6 +178,9 @@ ignore:
     - RestoreImageTask
     #- RouteTable
     - Route
+    - RouteServer
+    - RouteServerEndpoint
+    - RouteServerPeer
     #- SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
@@ -187,6 +200,8 @@ ignore:
     - TransitGatewayRouteTable
     - TransitGatewayRoute
     - TransitGatewayRouteTableAnnouncement
+    - TransitGatewayMeteringPolicy
+    - TransitGatewayMeteringPolicyEntry
     # - TransitGatewayVpcAttachment
     #- TransitGateway
     - VerifiedAccessEndpoint
@@ -195,12 +210,14 @@ ignore:
     - VerifiedAccessTrustProvider
     - Volume
     - VpcEndpointConnectionNotification
+    - VpcEncryptionControl
     #- VpcEndpointServiceConfiguration
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
     #- VpcPeeringConnection
     - VpnConnectionRoute
+    - VpnConcentrator
     - VpnConnection
     - VpnGateway    
 
