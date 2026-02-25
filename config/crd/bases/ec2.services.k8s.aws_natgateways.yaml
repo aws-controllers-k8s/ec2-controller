@@ -172,6 +172,23 @@ spec:
                 description: The ID of the VPC where you want to create a regional
                   NAT gateway.
                 type: string
+              vpcRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                  \ name: my-api"
+                properties:
+                  from:
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                type: object
             type: object
           status:
             description: NATGatewayStatus defines the observed state of NATGateway
@@ -340,6 +357,8 @@ spec:
 
                      * deleted: The NAT gateway has been terminated and is no longer processing
                      traffic.
+                type: string
+              vpcID:
                 type: string
             type: object
         type: object

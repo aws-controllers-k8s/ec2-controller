@@ -214,6 +214,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Populate Status.StatusVPCID from Spec.VPCID for backward compatibility.
+	// VpcId moved from Status to Spec after the SDK bump added it to
+	// CreateNatGatewayInput, but existing users may read it from Status.
+	if ko.Spec.VPCID != nil {
+		ko.Status.StatusVPCID = ko.Spec.VPCID
+	}
 	if isResourceDeleted(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
@@ -262,6 +268,20 @@ func (rm *resourceManager) sdkCreate(
 	defer func() {
 		exit(err)
 	}()
+	// Regional NAT Gateways do not currently support private connectivity type.
+	// The EC2 API silently overrides ConnectivityType to "public" instead of
+	// returning an error, which would cause the CR spec to drift from the
+	// actual resource state. Reject this combination upfront.
+	// See: https://aws.amazon.com/blogs/networking-and-content-delivery/introducing-amazon-vpc-regional-nat-gateway/
+	if desired.ko.Spec.AvailabilityMode != nil &&
+		*desired.ko.Spec.AvailabilityMode == string(svcsdktypes.AvailabilityModeRegional) &&
+		desired.ko.Spec.ConnectivityType != nil &&
+		*desired.ko.Spec.ConnectivityType == string(svcsdktypes.ConnectivityTypePrivate) {
+		return nil, ackerr.NewTerminalError(
+			fmt.Errorf("regional NAT gateways do not currently support private connectivity type; use connectivityType \"public\" or use availabilityMode \"zonal\" for private connectivity"),
+		)
+	}
+
 	input, err := rm.newCreateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
@@ -396,6 +416,13 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Populate Status.StatusVPCID from Spec.VPCID for backward compatibility.
+	// VpcId moved from Status to Spec after the SDK bump added it to
+	// CreateNatGatewayInput, but existing users may read it from Status.
+	if ko.Spec.VPCID != nil {
+		ko.Status.StatusVPCID = ko.Spec.VPCID
+	}
+
 	return &resource{ko}, nil
 }
 

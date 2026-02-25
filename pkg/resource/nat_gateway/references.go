@@ -45,6 +45,10 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 		ko.Spec.SubnetID = nil
 	}
 
+	if ko.Spec.VPCRef != nil {
+		ko.Spec.VPCID = nil
+	}
+
 	return &resource{ko}
 }
 
@@ -76,6 +80,12 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForVPCID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	return &resource{ko}, resourceHasReferences, err
 }
 
@@ -89,6 +99,10 @@ func validateReferenceFields(ko *svcapitypes.NATGateway) error {
 
 	if ko.Spec.SubnetRef != nil && ko.Spec.SubnetID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SubnetID", "SubnetRef")
+	}
+
+	if ko.Spec.VPCRef != nil && ko.Spec.VPCID != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPCID", "VPCRef")
 	}
 	return nil
 }
@@ -255,6 +269,89 @@ func getReferencedResourceState_Subnet(
 			"Subnet",
 			namespace, name,
 			"Status.SubnetID")
+	}
+	return nil
+}
+
+// resolveReferenceForVPCID reads the resource referenced
+// from VPCRef field and sets the VPCID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForVPCID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.NATGateway,
+) (hasReferences bool, err error) {
+	if ko.Spec.VPCRef != nil && ko.Spec.VPCRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.VPCRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
+		}
+		obj := &svcapitypes.VPC{}
+		if err := getReferencedResourceState_VPC(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.VPCID = (*string)(obj.Status.VPCID)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_VPC looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_VPC(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.VPC,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"VPC",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"VPC",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"VPC",
+			namespace, name)
+	}
+	if obj.Status.VPCID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"VPC",
+			namespace, name,
+			"Status.VPCID")
 	}
 	return nil
 }

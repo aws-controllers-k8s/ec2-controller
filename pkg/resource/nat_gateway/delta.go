@@ -95,6 +95,9 @@ func newResourceDelta(
 			delta.Add("Spec.VPCID", a.ko.Spec.VPCID, b.ko.Spec.VPCID)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.VPCRef, b.ko.Spec.VPCRef) {
+		delta.Add("Spec.VPCRef", a.ko.Spec.VPCRef, b.ko.Spec.VPCRef)
+	}
 
 	return delta
 }

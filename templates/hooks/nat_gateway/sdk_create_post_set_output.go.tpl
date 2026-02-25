@@ -4,9 +4,3 @@
 	if ko.Spec.VPCID != nil {
 		ko.Status.StatusVPCID = ko.Spec.VPCID
 	}
-	if isResourceDeleted(&resource{ko}) {
-		return nil, ackerr.NotFound
-	}
-	if isResourcePending(&resource{ko}) {
-		return nil, ackrequeue.Needed(fmt.Errorf("resource is pending"))
-	}

@@ -71,7 +71,8 @@ type NATGatewaySpec struct {
 	// to an empty string.
 	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC where you want to create a regional NAT gateway.
-	VPCID *string `json:"vpcID,omitempty"`
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // NATGatewayStatus defines the observed state of NATGateway
@@ -151,6 +152,8 @@ type NATGatewayStatus struct {
 	//    traffic.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
+	// +kubebuilder:validation:Optional
+	StatusVPCID *string `json:"vpcID,omitempty"`
 }
 
 // NATGateway is the Schema for the NATGateways API

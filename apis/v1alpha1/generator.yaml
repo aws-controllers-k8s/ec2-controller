@@ -642,6 +642,14 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      StatusVPCID:
+        is_read_only: true
+        type: string
+        go_tag: json:"vpcID,omitempty"
       NatGatewayID:
         print:
           name: ID
@@ -658,8 +666,12 @@ resources:
         in:
         - available
     hooks:
+      sdk_create_pre_build_request:
+        template_path: hooks/nat_gateway/sdk_create_pre_build_request.go.tpl
       sdk_create_post_build_request:
         template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/nat_gateway/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/nat_gateway/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
