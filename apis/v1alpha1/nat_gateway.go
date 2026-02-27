@@ -152,6 +152,7 @@ type NATGatewayStatus struct {
 	//    traffic.
 	// +kubebuilder:validation:Optional
 	State *string `json:"state,omitempty"`
+	// The ID of the VPC in which the NAT gateway is located.
 	// +kubebuilder:validation:Optional
 	StatusVPCID *string `json:"vpcID,omitempty"`
 }

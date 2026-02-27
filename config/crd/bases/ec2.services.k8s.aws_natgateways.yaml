@@ -359,6 +359,7 @@ spec:
                      traffic.
                 type: string
               vpcID:
+                description: The ID of the VPC in which the NAT gateway is located.
                 type: string
             type: object
         type: object

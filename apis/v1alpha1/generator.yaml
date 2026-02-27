@@ -647,8 +647,10 @@ resources:
           resource: VPC
           path: Status.VPCID
       StatusVPCID:
+        from:
+          operation: DescribeNatGateways
+          path: NatGateways.VpcId
         is_read_only: true
-        type: string
         go_tag: json:"vpcID,omitempty"
       NatGatewayID:
         print:
