@@ -31,6 +31,35 @@ type NATGatewaySpec struct {
 	// another resource, you must first disassociate it.
 	AllocationID  *string                                  `json:"allocationID,omitempty"`
 	AllocationRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"allocationRef,omitempty"`
+	// Specifies whether to create a zonal (single-AZ) or regional (multi-AZ) NAT
+	// gateway. Defaults to zonal.
+	//
+	// A zonal NAT gateway is a NAT Gateway that provides redundancy and scalability
+	// within a single availability zone. A regional NAT gateway is a single NAT
+	// Gateway that works across multiple availability zones (AZs) in your VPC,
+	// providing redundancy, scalability and availability across all the AZs in
+	// a Region.
+	//
+	// For more information, see Regional NAT gateways for automatic multi-AZ expansion
+	// (https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateways-regional.html)
+	// in the Amazon VPC User Guide.
+	AvailabilityMode *string `json:"availabilityMode,omitempty"`
+	// For regional NAT gateways only: Specifies which Availability Zones you want
+	// the NAT gateway to support and the Elastic IP addresses (EIPs) to use in
+	// each AZ. The regional NAT gateway uses these EIPs to handle outbound NAT
+	// traffic from their respective AZs. If not specified, the NAT gateway will
+	// automatically expand to new AZs and associate EIPs upon detection of an elastic
+	// network interface. If you specify this parameter, auto-expansion is disabled
+	// and you must manually manage AZ coverage.
+	//
+	// A regional NAT gateway is a single NAT Gateway that works across multiple
+	// availability zones (AZs) in your VPC, providing redundancy, scalability and
+	// availability across all the AZs in a Region.
+	//
+	// For more information, see Regional NAT gateways for automatic multi-AZ expansion
+	// (https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateways-regional.html)
+	// in the Amazon VPC User Guide.
+	AvailabilityZoneAddresses []*AvailabilityZoneAddress `json:"availabilityZoneAddresses,omitempty"`
 	// Indicates whether the NAT gateway supports public or private connectivity.
 	// The default is public connectivity.
 	ConnectivityType *string `json:"connectivityType,omitempty"`
@@ -41,6 +70,9 @@ type NATGatewaySpec struct {
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
 	Tags []*Tag `json:"tags,omitempty"`
+	// The ID of the VPC where you want to create a regional NAT gateway.
+	VPCID  *string                                  `json:"vpcID,omitempty"`
+	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
 
 // NATGatewayStatus defines the observed state of NATGateway
@@ -122,7 +154,7 @@ type NATGatewayStatus struct {
 	State *string `json:"state,omitempty"`
 	// The ID of the VPC in which the NAT gateway is located.
 	// +kubebuilder:validation:Optional
-	VPCID *string `json:"vpcID,omitempty"`
+	StatusVPCID *string `json:"vpcID,omitempty"`
 }
 
 // NATGateway is the Schema for the NATGateways API

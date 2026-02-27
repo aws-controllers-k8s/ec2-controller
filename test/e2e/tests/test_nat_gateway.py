@@ -130,6 +130,57 @@ def simple_nat_gateway(standard_elastic_address, request):
     except:
         pass
 
+@pytest.fixture
+def regional_nat_gateway(request):
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name("nat-gw-regional", 24)
+    test_vpc = get_bootstrap_resources().SharedTestVPC
+    vpc_id = test_vpc.vpc_id
+
+    test_resource_values["NAT_GATEWAY_NAME"] = resource_name
+    test_resource_values["VPC_ID"] = vpc_id
+
+    marker = request.node.get_closest_marker("resource_data")
+    if marker is not None:
+        data = marker.args[0]
+        if 'tag_key' in data:
+            test_resource_values["TAG_KEY"] = data["tag_key"]
+        if 'tag_value' in data:
+            test_resource_values["TAG_VALUE"] = data["tag_value"]
+
+    # Load Regional NAT Gateway CR
+    resource_data = load_ec2_resource(
+        "nat_gateway_regional",
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    # Check resource synced successfully
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        assert deleted
+    except:
+        pass
+
 @service_marker
 @pytest.mark.canary
 class TestNATGateway:
@@ -250,6 +301,69 @@ class TestNATGateway:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Check natGateway no longer exists in AWS
+        ec2_validator.assert_nat_gateway(resource_id, exists=False)
+
+    @pytest.mark.resource_data({'tag_key': 'regionaltag', 'tag_value': 'regionalvalue'})
+    def test_regional_create_update_delete(self, ec2_client, regional_nat_gateway):
+        (ref, cr) = regional_nat_gateway
+
+        resource = k8s.get_resource(ref)
+        resource_id = cr["status"]["natGatewayID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check NAT Gateway exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_nat_gateway(resource_id)
+
+        # Verify regional-specific fields
+        nat_gateway = ec2_validator.get_nat_gateway(resource_id)
+        assert nat_gateway["AvailabilityMode"] == "regional"
+
+        # Verify spec fields on the CR
+        assert resource["spec"].get("availabilityMode") == "regional"
+        assert resource["spec"].get("vpcID") is not None
+
+        # Verify status.vpcID is populated (backward compatibility)
+        resource = k8s.get_resource(ref)
+        assert resource["status"].get("vpcID") is not None
+
+        # Update tags
+        update_tags = [
+            {
+                "key": "updatedregionaltag",
+                "value": "updatedregionalvalue",
+            }
+        ]
+        updates = {
+            "spec": {"tags": update_tags},
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully after update
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Verify tags updated in AWS
+        nat_gateway = ec2_validator.get_nat_gateway(resource_id)
+        updated_tags = {
+            "updatedregionaltag": "updatedregionalvalue"
+        }
+        tags.assert_ack_system_tags(
+            tags=nat_gateway["Tags"],
+        )
+        tags.assert_equal_without_ack_tags(
+            expected=updated_tags,
+            actual=nat_gateway["Tags"],
+        )
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check NAT Gateway no longer exists in AWS
         ec2_validator.assert_nat_gateway(resource_id, exists=False)
 
 

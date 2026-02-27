@@ -1,0 +1,10 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: NATGateway
+metadata:
+  name: $NAT_GATEWAY_NAME
+spec:
+  vpcID: $VPC_ID
+  availabilityMode: regional
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
