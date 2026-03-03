@@ -89,9 +89,9 @@ type CapacityReservationSpec struct {
 	// The number of instances for which to reserve capacity.
 	//
 	// You can request future-dated Capacity Reservations for an instance count
-	// with a minimum of 100 VPUs. For example, if you request a future-dated Capacity
-	// Reservation for m5.xlarge instances, you must request at least 25 instances
-	// (25 * m5.xlarge = 100 vCPUs).
+	// with a minimum of 32 vCPUs. For example, if you request a future-dated Capacity
+	// Reservation for m5.xlarge instances, you must request at least 8 instances
+	// (8 * m5.xlarge = 32 vCPUs).
 	//
 	// Valid range: 1 - 1000
 	// +kubebuilder:validation:Required
@@ -120,7 +120,7 @@ type CapacityReservationSpec struct {
 	// The instance type for which to reserve capacity.
 	//
 	// You can request future-dated Capacity Reservations for instance types in
-	// the C, M, R, I, and T instance families only.
+	// the C, M, R, I, T, and G instance families only.
 	//
 	// For more information, see Instance types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
 	// in the Amazon EC2 User Guide.
@@ -197,7 +197,7 @@ type CapacityReservationStatus struct {
 	// Information about your commitment for a future-dated Capacity Reservation.
 	// +kubebuilder:validation:Optional
 	CommitmentInfo *CapacityReservationCommitmentInfo `json:"commitmentInfo,omitempty"`
-	// The date and time at which the Capacity Reservation was created.
+	// The date and time the Capacity Reservation was created.
 	// +kubebuilder:validation:Optional
 	CreateDate *metav1.Time `json:"createDate,omitempty"`
 	// The ID of the Amazon Web Services account that owns the Capacity Reservation.
@@ -225,19 +225,25 @@ type CapacityReservationStatus struct {
 	//    fail due to request parameters that are not valid, capacity constraints,
 	//    or instance limit constraints. You can view a failed request for 60 minutes.
 	//
-	//    * scheduled - (Future-dated Capacity Reservations only) The future-dated
-	//    Capacity Reservation request was approved and the Capacity Reservation
-	//    is scheduled for delivery on the requested start date.
+	//    * scheduled - (Future-dated Capacity Reservations) The future-dated Capacity
+	//    Reservation request was approved and the Capacity Reservation is scheduled
+	//    for delivery on the requested start date.
 	//
-	//    * assessing - (Future-dated Capacity Reservations only) Amazon EC2 is
-	//    assessing your request for a future-dated Capacity Reservation.
+	//    * payment-pending - (Capacity Blocks) The upfront payment has not been
+	//    processed yet.
 	//
-	//    * delayed - (Future-dated Capacity Reservations only) Amazon EC2 encountered
+	//    * payment-failed - (Capacity Blocks) The upfront payment was not processed
+	//    in the 12-hour time frame. Your Capacity Block was released.
+	//
+	//    * assessing - (Future-dated Capacity Reservations) Amazon EC2 is assessing
+	//    your request for a future-dated Capacity Reservation.
+	//
+	//    * delayed - (Future-dated Capacity Reservations) Amazon EC2 encountered
 	//    a delay in provisioning the requested future-dated Capacity Reservation.
 	//    Amazon EC2 is unable to deliver the requested capacity by the requested
 	//    start date and time.
 	//
-	//    * unsupported - (Future-dated Capacity Reservations only) Amazon EC2 can't
+	//    * unsupported - (Future-dated Capacity Reservations) Amazon EC2 can't
 	//    support the future-dated Capacity Reservation request due to capacity
 	//    constraints. You can view unsupported requests for 30 days. The Capacity
 	//    Reservation will not be delivered.
