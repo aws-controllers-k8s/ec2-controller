@@ -16,3 +16,10 @@
 	// DisallowSecurityGroupDefaultRules field in spec set to true.
 	disallowSGDefaultRules := !sgDefaultRulesExist
 	ko.Spec.DisallowSecurityGroupDefaultRules = &disallowSGDefaultRules
+
+	// Check if any CIDR blocks are in transitional states (associating, disassociating).
+	// If so, return the resource with a requeue error to wait for terminal state.
+	// This ensures ACK.ResourceSynced stays False until CIDR blocks are fully synced.
+	if areCIDRBlocksSyncing(&resource{ko}) {
+		return &resource{ko}, requeueWaitWhileCIDRBlocksSyncing
+	}
