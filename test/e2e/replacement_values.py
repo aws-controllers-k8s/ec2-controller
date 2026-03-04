@@ -17,5 +17,6 @@ ec2-specific test variables.
 REPLACEMENT_VALUES = {
     "ENABLE_DNS_SUPPORT": "False",
     "ENABLE_DNS_HOSTNAMES": "False",
+    "ENABLE_NETWORK_ADDRESS_USAGE_METRICS": "False",
     "DISALLOW_DEFAULT_SECURITY_GROUP_RULE": "False"
 }

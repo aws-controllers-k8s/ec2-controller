@@ -44,6 +44,10 @@ def get_dns_hostnames(ec2_client, vpc_id: str) -> bool:
     attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableDnsHostnames')
     return attribute['EnableDnsHostnames']['Value']
 
+def get_network_address_usage_metrics(ec2_client, vpc_id: str) -> bool:
+    attribute = get_vpc_attribute(ec2_client, vpc_id, 'enableNetworkAddressUsageMetrics')
+    return attribute['EnableNetworkAddressUsageMetrics']['Value']
+
 def contains_default_sg_rule(ec2_client, vpc_id: str) -> bool:
     response = ec2_client.describe_security_groups(
             Filters=[
@@ -309,7 +313,7 @@ class TestVpc:
         # Check VPC no longer exists in AWS
         ec2_validator.assert_vpc(resource_id, exists=False)
 
-    @pytest.mark.resource_data({'enable_dns_support': 'true', 'enable_dns_hostnames': 'true'})
+    @pytest.mark.resource_data({'enable_dns_support': 'true', 'enable_dns_hostnames': 'true', 'enable_network_address_usage_metrics': 'true'})
     def test_enable_attributes(self, ec2_client, simple_vpc):
         (ref, cr) = simple_vpc
         resource_id = cr["status"]["vpcID"]
@@ -323,6 +327,7 @@ class TestVpc:
         # Assert the attributes are set correctly
         assert get_dns_support(ec2_client, resource_id)
         assert get_dns_hostnames(ec2_client, resource_id)
+        assert get_network_address_usage_metrics(ec2_client, resource_id)
 
         # Disable the DNS support
         updates = {
@@ -334,6 +339,7 @@ class TestVpc:
         # Assert DNS support has been updated
         assert not get_dns_support(ec2_client, resource_id)
         assert get_dns_hostnames(ec2_client, resource_id)
+        assert get_network_address_usage_metrics(ec2_client, resource_id)
 
         # Disable the DNS hostname
         updates = {
@@ -345,6 +351,19 @@ class TestVpc:
         # Assert DNS hostname has been updated
         assert not get_dns_support(ec2_client, resource_id)
         assert not get_dns_hostnames(ec2_client, resource_id)
+        assert get_network_address_usage_metrics(ec2_client, resource_id)
+
+        # Disable the network address usage metrics
+        updates = {
+            "spec": {"enableNetworkAddressUsageMetrics": False}
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Assert network address usage metrics has been updated
+        assert not get_dns_support(ec2_client, resource_id)
+        assert not get_dns_hostnames(ec2_client, resource_id)
+        assert not get_network_address_usage_metrics(ec2_client, resource_id)
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref, 2, 5)
