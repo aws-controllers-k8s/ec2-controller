@@ -210,6 +210,7 @@ func (rm *resourceManager) sdkFind(
 	} else {
 		ko.Spec.EnableDNSSupport = dnsAttrs.EnableSupport
 		ko.Spec.EnableDNSHostnames = dnsAttrs.EnableHostnames
+		ko.Spec.EnableNetworkAddressUsageMetrics = dnsAttrs.EnableNetworkAddressUsageMetrics
 	}
 	sgDefaultRulesExist, err := rm.hasSecurityGroupDefaultRules(ctx, &resource{ko})
 	if err != nil {
