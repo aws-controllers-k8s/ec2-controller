@@ -67,6 +67,9 @@ spec:
               enableDNSSupport:
                 description: The attribute value. The valid values are true or false.
                 type: boolean
+              enableNetworkAddressUsageMetrics:
+                description: The attribute value. The valid values are true or false.
+                type: boolean
               instanceTenancy:
                 description: |-
                   The tenancy options for instances launched into the VPC. For default, instances
