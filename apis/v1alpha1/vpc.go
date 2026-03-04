@@ -36,6 +36,8 @@ type VPCSpec struct {
 	EnableDNSHostnames *bool `json:"enableDNSHostnames,omitempty"`
 	// The attribute value. The valid values are true or false.
 	EnableDNSSupport *bool `json:"enableDNSSupport,omitempty"`
+	// The attribute value. The valid values are true or false.
+	EnableNetworkAddressUsageMetrics *bool `json:"enableNetworkAddressUsageMetrics,omitempty"`
 	// The tenancy options for instances launched into the VPC. For default, instances
 	// are launched with shared tenancy by default. You can launch instances with
 	// any tenancy into a shared tenancy VPC. For dedicated, instances are launched

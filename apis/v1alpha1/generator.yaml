@@ -1093,6 +1093,10 @@ resources:
         from:
           operation: ModifyVpcAttribute
           path: EnableDnsHostnames.Value
+      EnableNetworkAddressUsageMetrics:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableNetworkAddressUsageMetrics.Value
       State:
         print:
           name: state
