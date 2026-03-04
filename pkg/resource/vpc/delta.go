@@ -77,6 +77,13 @@ func newResourceDelta(
 			delta.Add("Spec.EnableDNSSupport", a.ko.Spec.EnableDNSSupport, b.ko.Spec.EnableDNSSupport)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.EnableNetworkAddressUsageMetrics, b.ko.Spec.EnableNetworkAddressUsageMetrics) {
+		delta.Add("Spec.EnableNetworkAddressUsageMetrics", a.ko.Spec.EnableNetworkAddressUsageMetrics, b.ko.Spec.EnableNetworkAddressUsageMetrics)
+	} else if a.ko.Spec.EnableNetworkAddressUsageMetrics != nil && b.ko.Spec.EnableNetworkAddressUsageMetrics != nil {
+		if *a.ko.Spec.EnableNetworkAddressUsageMetrics != *b.ko.Spec.EnableNetworkAddressUsageMetrics {
+			delta.Add("Spec.EnableNetworkAddressUsageMetrics", a.ko.Spec.EnableNetworkAddressUsageMetrics, b.ko.Spec.EnableNetworkAddressUsageMetrics)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy) {
 		delta.Add("Spec.InstanceTenancy", a.ko.Spec.InstanceTenancy, b.ko.Spec.InstanceTenancy)
 	} else if a.ko.Spec.InstanceTenancy != nil && b.ko.Spec.InstanceTenancy != nil {
