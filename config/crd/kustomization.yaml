@@ -5,6 +5,7 @@ resources:
   - bases/ec2.services.k8s.aws_capacityreservations.yaml
   - bases/ec2.services.k8s.aws_dhcpoptions.yaml
   - bases/ec2.services.k8s.aws_elasticipaddresses.yaml
+  - bases/ec2.services.k8s.aws_fleets.yaml
   - bases/ec2.services.k8s.aws_flowlogs.yaml
   - bases/ec2.services.k8s.aws_instances.yaml
   - bases/ec2.services.k8s.aws_internetgateways.yaml
