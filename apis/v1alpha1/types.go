@@ -445,9 +445,11 @@ type BlockDeviceMapping struct {
 // Describes a block device mapping, which defines the EBS volumes and instance
 // store volumes to attach to an instance at launch.
 type BlockDeviceMappingResponse struct {
-	DeviceName  *string `json:"deviceName,omitempty"`
-	NoDevice    *string `json:"noDevice,omitempty"`
-	VirtualName *string `json:"virtualName,omitempty"`
+	DeviceName *string `json:"deviceName,omitempty"`
+	// Describes a block device for an EBS volume.
+	EBS         *EBSBlockDeviceResponse `json:"ebs,omitempty"`
+	NoDevice    *string                 `json:"noDevice,omitempty"`
+	VirtualName *string                 `json:"virtualName,omitempty"`
 }
 
 // Describes a bundle task.
@@ -1875,9 +1877,11 @@ type FirewallStatelessRule struct {
 //
 //   - Specify all desired parameters here.
 type FleetBlockDeviceMappingRequest struct {
-	DeviceName  *string `json:"deviceName,omitempty"`
-	NoDevice    *string `json:"noDevice,omitempty"`
-	VirtualName *string `json:"virtualName,omitempty"`
+	DeviceName *string `json:"deviceName,omitempty"`
+	// Describes a block device for an EBS volume.
+	EBS         *FleetEBSBlockDeviceRequest `json:"ebs,omitempty"`
+	NoDevice    *string                     `json:"noDevice,omitempty"`
+	VirtualName *string                     `json:"virtualName,omitempty"`
 }
 
 // Information about a Capacity Reservation in a Capacity Reservation Fleet.
@@ -1935,6 +1939,18 @@ type FleetData struct {
 	ValidUntil                       *metav1.Time                 `json:"validUntil,omitempty"`
 }
 
+// Describes a block device for an EBS volume.
+type FleetEBSBlockDeviceRequest struct {
+	DeleteOnTermination *bool   `json:"deleteOnTermination,omitempty"`
+	Encrypted           *bool   `json:"encrypted,omitempty"`
+	IOPS                *int64  `json:"iops,omitempty"`
+	KMSKeyID            *string `json:"kmsKeyID,omitempty"`
+	SnapshotID          *string `json:"snapshotID,omitempty"`
+	Throughput          *int64  `json:"throughput,omitempty"`
+	VolumeSize          *int64  `json:"volumeSize,omitempty"`
+	VolumeType          *string `json:"volumeType,omitempty"`
+}
+
 // Describes a launch template and overrides.
 type FleetLaunchTemplateConfig struct {
 	// The Amazon EC2 launch template that can be used by a Spot Fleet to configure
@@ -1961,23 +1977,12 @@ type FleetLaunchTemplateConfigRequest struct {
 	Overrides                   []*FleetLaunchTemplateOverridesRequest   `json:"overrides,omitempty"`
 }
 
-// Describes a block device for an EBS volume.
-type FleetEBSBlockDeviceRequest struct {
-	DeleteOnTermination *bool   `json:"deleteOnTermination,omitempty"`
-	Encrypted           *bool   `json:"encrypted,omitempty"`
-	IOPS                *int64  `json:"iops,omitempty"`
-	KMSKeyID            *string `json:"kmsKeyID,omitempty"`
-	SnapshotID          *string `json:"snapshotID,omitempty"`
-	Throughput          *int64  `json:"throughput,omitempty"`
-	VolumeSize          *int64  `json:"volumeSize,omitempty"`
-	VolumeType          *string `json:"volumeType,omitempty"`
-}
-
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverrides struct {
-	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
-	ImageID            *string `json:"imageID,omitempty"`
+	AvailabilityZone    *string                       `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID  *string                       `json:"availabilityZoneID,omitempty"`
+	BlockDeviceMappings []*BlockDeviceMappingResponse `json:"blockDeviceMappings,omitempty"`
+	ImageID             *string                       `json:"imageID,omitempty"`
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//
@@ -2024,9 +2029,10 @@ type FleetLaunchTemplateOverrides struct {
 
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverridesRequest struct {
-	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
-	ImageID            *string `json:"imageID,omitempty"`
+	AvailabilityZone    *string                           `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID  *string                           `json:"availabilityZoneID,omitempty"`
+	BlockDeviceMappings []*FleetBlockDeviceMappingRequest `json:"blockDeviceMappings,omitempty"`
+	ImageID             *string                           `json:"imageID,omitempty"`
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//

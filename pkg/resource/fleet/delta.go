@@ -239,6 +239,13 @@ func newResourceDelta(
 			}
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.TerminateInstancesOnDeletion, b.ko.Spec.TerminateInstancesOnDeletion) {
+		delta.Add("Spec.TerminateInstancesOnDeletion", a.ko.Spec.TerminateInstancesOnDeletion, b.ko.Spec.TerminateInstancesOnDeletion)
+	} else if a.ko.Spec.TerminateInstancesOnDeletion != nil && b.ko.Spec.TerminateInstancesOnDeletion != nil {
+		if *a.ko.Spec.TerminateInstancesOnDeletion != *b.ko.Spec.TerminateInstancesOnDeletion {
+			delta.Add("Spec.TerminateInstancesOnDeletion", a.ko.Spec.TerminateInstancesOnDeletion, b.ko.Spec.TerminateInstancesOnDeletion)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.TerminateInstancesWithExpiration, b.ko.Spec.TerminateInstancesWithExpiration) {
 		delta.Add("Spec.TerminateInstancesWithExpiration", a.ko.Spec.TerminateInstancesWithExpiration, b.ko.Spec.TerminateInstancesWithExpiration)
 	} else if a.ko.Spec.TerminateInstancesWithExpiration != nil && b.ko.Spec.TerminateInstancesWithExpiration != nil {

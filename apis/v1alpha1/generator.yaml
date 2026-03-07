@@ -1264,7 +1264,6 @@ resources:
       FleetID:
         is_primary_key: true
         is_read_only: true
-        is_required: true
         print:
           path: Status.fleetID
           name: ID
@@ -1291,6 +1290,9 @@ resources:
         late_initialize:
           skip_incomplete_check: {}
         is_immutable: true
+        go_tag: json:"type,omitempty"
+      TerminateInstancesOnDeletion:
+        type: bool
       ReplaceUnhealthyInstances:
         late_initialize:
           skip_incomplete_check: {}

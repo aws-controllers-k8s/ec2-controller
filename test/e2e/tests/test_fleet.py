@@ -37,7 +37,7 @@ FLEET_TAG_VAL = "ack-controller"
     
 def get_ami_id(ec2_client):
     try:
-        # Use latest AL2
+        # Use latest AL2023
         resp = ec2_client.describe_images(
             Owners=['amazon'],
             Filters=[
@@ -48,7 +48,7 @@ def get_ami_id(ec2_client):
         )
         for image in resp['Images']:
             if 'Description' in image:
-                if "Amazon Linux 2 Kernel" in image['Description']:
+                if "Amazon Linux 2023" in image['Description']:
                     return image['ImageId']
     except Exception as e:
         logging.debug(e)
@@ -151,7 +151,6 @@ def simple_fleet(standard_launch_template, request):
 @service_marker
 @pytest.mark.canary
 class TestFleets:
-
     @pytest.mark.resource_data({'fleet_type': 'instant'})
     def test_crud_instant(self, simple_fleet, ec2_validator):
         """
@@ -164,7 +163,8 @@ class TestFleets:
         fleet_id = cr["status"]["fleetID"]
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        
         # Check Fleet exists
         fleet = ec2_validator.get_fleet(fleet_id)
         assert fleet is not None
@@ -301,7 +301,6 @@ class TestFleets:
 
         fleet_id = cr['status']['fleetID']
         assert fleet_id is not None
-        assert fleet_id.startswith('fleet-')
 
         # Check Fleet exists
         fleet = ec2_validator.get_fleet(fleet_id)

@@ -52,7 +52,8 @@ type FleetSpec struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// The number of units to request.
 	// +kubebuilder:validation:Required
-	TargetCapacitySpecification *TargetCapacitySpecificationRequest `json:"targetCapacitySpecification"`
+	TargetCapacitySpecification  *TargetCapacitySpecificationRequest `json:"targetCapacitySpecification"`
+	TerminateInstancesOnDeletion *bool                               `json:"terminateInstancesOnDeletion,omitempty"`
 	// Indicates whether running instances should be terminated when the EC2 Fleet
 	// expires.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
@@ -75,7 +76,7 @@ type FleetSpec struct {
 	// For more information, see EC2 Fleet request types (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-request-type.html)
 	// in the Amazon EC2 User Guide.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
-	Type *string `json:"type_,omitempty"`
+	Type *string `json:"type,omitempty"`
 	// The start date and time of the request, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
 	// The default is to start fulfilling the request immediately.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
@@ -100,11 +101,16 @@ type FleetStatus struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	// The progress of the EC2 Fleet. If there is an error, the status is error.
-	// After all requests are placed, the status is pending_fulfillment. If the
-	// size of the EC2 Fleet is equal to or greater than its target capacity, the
-	// status is fulfilled. If the size of the EC2 Fleet is decreased, the status
-	// is pending_termination while instances are terminating.
+	// The progress of the EC2 Fleet.
+	//
+	// For fleets of type instant, the status is fulfilled after all requests are
+	// placed, regardless of whether target capacity is met (this is the only possible
+	// status for instant fleets).
+	//
+	// For fleets of type request or maintain, the status is pending_fulfillment
+	// after all requests are placed, fulfilled when the fleet size meets or exceeds
+	// target capacity, pending_termination while instances are terminating when
+	// fleet size is decreased, and error if there's an error.
 	// +kubebuilder:validation:Optional
 	ActivityStatus *string `json:"activityStatus,omitempty"`
 	// Information about the instances that could not be launched by the fleet.
@@ -113,7 +119,7 @@ type FleetStatus struct {
 	Errors []*CreateFleetError `json:"errors,omitempty"`
 	// The ID of the EC2 Fleet.
 	// +kubebuilder:validation:Optional
-	FleetID *string `json:"fleetID"`
+	FleetID *string `json:"fleetID,omitempty"`
 	// The state of the EC2 Fleet.
 	// +kubebuilder:validation:Optional
 	FleetState *string `json:"fleetState,omitempty"`
