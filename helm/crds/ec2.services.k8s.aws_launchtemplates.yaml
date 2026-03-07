@@ -160,7 +160,7 @@ spec:
                   enclaveOptions:
                     description: |-
                       Indicates whether the instance is enabled for Amazon Web Services Nitro Enclaves.
-                      For more information, see What is Amazon Web Services Nitro Enclaves? (https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html)
+                      For more information, see What is Nitro Enclaves? (https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html)
                       in the Amazon Web Services Nitro Enclaves User Guide.
                     properties:
                       enabled:
@@ -452,8 +452,8 @@ spec:
                     type: object
                   metadataOptions:
                     description: |-
-                      The metadata options for the instance. For more information, see Instance
-                      metadata and user data (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+                      The metadata options for the instance. For more information, see Use instance
+                      metadata to manage your EC2 instance (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
                       in the Amazon EC2 User Guide.
                     properties:
                       httpEndpoint:
@@ -523,7 +523,7 @@ spec:
                           type: integer
                         ipv6Prefixes:
                           items:
-                            description: Describes the IPv4 prefix option for a network
+                            description: Describes the IPv6 prefix option for a network
                               interface.
                             properties:
                               ipv6Prefix:

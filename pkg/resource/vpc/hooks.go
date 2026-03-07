@@ -16,8 +16,10 @@ package vpc
 import (
 	"context"
 	"fmt"
+	"time"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -593,4 +595,32 @@ func customPreCompare(
 	if a.ko.Spec.DisallowSecurityGroupDefaultRules == nil {
 		a.ko.Spec.DisallowSecurityGroupDefaultRules = ptr(false)
 	}
+}
+
+var (
+	ErrCIDRBlocksSyncing = fmt.Errorf(
+		"VPC has CIDR blocks in transitional state, cannot be modified",
+	)
+	requeueWaitWhileCIDRBlocksSyncing = ackrequeue.NeededAfter(
+		ErrCIDRBlocksSyncing,
+		5*time.Second,
+	)
+)
+
+// areCIDRBlocksSyncing returns true if any CIDR blocks are in transitional
+// states (associating, disassociating).
+func areCIDRBlocksSyncing(r *resource) bool {
+	if r.ko.Status.CIDRBlockAssociationSet == nil {
+		return false
+	}
+	for _, cidrAssoc := range r.ko.Status.CIDRBlockAssociationSet {
+		if cidrAssoc.CIDRBlockState == nil || cidrAssoc.CIDRBlockState.State == nil {
+			continue
+		}
+		state := *cidrAssoc.CIDRBlockState.State
+		if state == "associating" || state == "disassociating" {
+			return true
+		}
+	}
+	return false
 }

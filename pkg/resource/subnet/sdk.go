@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -498,9 +499,10 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.MapPublicIPOnLaunch = desired.ko.Spec.MapPublicIPOnLaunch
 	}
 
-	if err = rm.createRouteTableAssociations(ctx, &resource{ko}); err != nil {
-		return nil, err
-	}
+	ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, aws.String("subnet created, requeue for updates"), nil)
+	err = ackrequeue.NeededAfter(fmt.Errorf("Reconciling to sync additional fields"), time.Second)
+	return &resource{ko}, err
+
 	return &resource{ko}, nil
 }
 

@@ -140,18 +140,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.PublicIPv4Pool = nil
 		}
 		if elem.Tags != nil {
-			f13 := []*svcapitypes.Tag{}
-			for _, f13iter := range elem.Tags {
-				f13elem := &svcapitypes.Tag{}
-				if f13iter.Key != nil {
-					f13elem.Key = f13iter.Key
+			f15 := []*svcapitypes.Tag{}
+			for _, f15iter := range elem.Tags {
+				f15elem := &svcapitypes.Tag{}
+				if f15iter.Key != nil {
+					f15elem.Key = f15iter.Key
 				}
-				if f13iter.Value != nil {
-					f13elem.Value = f13iter.Value
+				if f15iter.Value != nil {
+					f15elem.Value = f15iter.Value
 				}
-				f13 = append(f13, f13elem)
+				f15 = append(f15, f15elem)
 			}
-			ko.Spec.Tags = f13
+			ko.Spec.Tags = f15
 		} else {
 			ko.Spec.Tags = nil
 		}

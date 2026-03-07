@@ -91,6 +91,11 @@ func (rm *resourceManager) sdkFind(
 
 	found := false
 	for _, elem := range resp.NatGateways {
+		if elem.AvailabilityMode != "" {
+			ko.Spec.AvailabilityMode = aws.String(string(elem.AvailabilityMode))
+		} else {
+			ko.Spec.AvailabilityMode = nil
+		}
 		if elem.ConnectivityType != "" {
 			ko.Spec.ConnectivityType = aws.String(string(elem.ConnectivityType))
 		} else {
@@ -117,24 +122,30 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.FailureMessage = nil
 		}
 		if elem.NatGatewayAddresses != nil {
-			f5 := []*svcapitypes.NATGatewayAddress{}
-			for _, f5iter := range elem.NatGatewayAddresses {
-				f5elem := &svcapitypes.NATGatewayAddress{}
-				if f5iter.AllocationId != nil {
-					f5elem.AllocationID = f5iter.AllocationId
+			f6 := []*svcapitypes.NATGatewayAddress{}
+			for _, f6iter := range elem.NatGatewayAddresses {
+				f6elem := &svcapitypes.NATGatewayAddress{}
+				if f6iter.AllocationId != nil {
+					f6elem.AllocationID = f6iter.AllocationId
 				}
-				if f5iter.NetworkInterfaceId != nil {
-					f5elem.NetworkInterfaceID = f5iter.NetworkInterfaceId
+				if f6iter.AvailabilityZone != nil {
+					f6elem.AvailabilityZone = f6iter.AvailabilityZone
 				}
-				if f5iter.PrivateIp != nil {
-					f5elem.PrivateIP = f5iter.PrivateIp
+				if f6iter.AvailabilityZoneId != nil {
+					f6elem.AvailabilityZoneID = f6iter.AvailabilityZoneId
 				}
-				if f5iter.PublicIp != nil {
-					f5elem.PublicIP = f5iter.PublicIp
+				if f6iter.NetworkInterfaceId != nil {
+					f6elem.NetworkInterfaceID = f6iter.NetworkInterfaceId
 				}
-				f5 = append(f5, f5elem)
+				if f6iter.PrivateIp != nil {
+					f6elem.PrivateIP = f6iter.PrivateIp
+				}
+				if f6iter.PublicIp != nil {
+					f6elem.PublicIP = f6iter.PublicIp
+				}
+				f6 = append(f6, f6elem)
 			}
-			ko.Status.NATGatewayAddresses = f5
+			ko.Status.NATGatewayAddresses = f6
 		} else {
 			ko.Status.NATGatewayAddresses = nil
 		}
@@ -144,23 +155,23 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.NATGatewayID = nil
 		}
 		if elem.ProvisionedBandwidth != nil {
-			f7 := &svcapitypes.ProvisionedBandwidth{}
+			f8 := &svcapitypes.ProvisionedBandwidth{}
 			if elem.ProvisionedBandwidth.ProvisionTime != nil {
-				f7.ProvisionTime = &metav1.Time{*elem.ProvisionedBandwidth.ProvisionTime}
+				f8.ProvisionTime = &metav1.Time{*elem.ProvisionedBandwidth.ProvisionTime}
 			}
 			if elem.ProvisionedBandwidth.Provisioned != nil {
-				f7.Provisioned = elem.ProvisionedBandwidth.Provisioned
+				f8.Provisioned = elem.ProvisionedBandwidth.Provisioned
 			}
 			if elem.ProvisionedBandwidth.RequestTime != nil {
-				f7.RequestTime = &metav1.Time{*elem.ProvisionedBandwidth.RequestTime}
+				f8.RequestTime = &metav1.Time{*elem.ProvisionedBandwidth.RequestTime}
 			}
 			if elem.ProvisionedBandwidth.Requested != nil {
-				f7.Requested = elem.ProvisionedBandwidth.Requested
+				f8.Requested = elem.ProvisionedBandwidth.Requested
 			}
 			if elem.ProvisionedBandwidth.Status != nil {
-				f7.Status = elem.ProvisionedBandwidth.Status
+				f8.Status = elem.ProvisionedBandwidth.Status
 			}
-			ko.Status.ProvisionedBandwidth = f7
+			ko.Status.ProvisionedBandwidth = f8
 		} else {
 			ko.Status.ProvisionedBandwidth = nil
 		}
@@ -175,25 +186,25 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.SubnetID = nil
 		}
 		if elem.Tags != nil {
-			f10 := []*svcapitypes.Tag{}
-			for _, f10iter := range elem.Tags {
-				f10elem := &svcapitypes.Tag{}
-				if f10iter.Key != nil {
-					f10elem.Key = f10iter.Key
+			f11 := []*svcapitypes.Tag{}
+			for _, f11iter := range elem.Tags {
+				f11elem := &svcapitypes.Tag{}
+				if f11iter.Key != nil {
+					f11elem.Key = f11iter.Key
 				}
-				if f10iter.Value != nil {
-					f10elem.Value = f10iter.Value
+				if f11iter.Value != nil {
+					f11elem.Value = f11iter.Value
 				}
-				f10 = append(f10, f10elem)
+				f11 = append(f11, f11elem)
 			}
-			ko.Spec.Tags = f10
+			ko.Spec.Tags = f11
 		} else {
 			ko.Spec.Tags = nil
 		}
 		if elem.VpcId != nil {
-			ko.Status.VPCID = elem.VpcId
+			ko.Spec.VPCID = elem.VpcId
 		} else {
-			ko.Status.VPCID = nil
+			ko.Spec.VPCID = nil
 		}
 		found = true
 		break
@@ -203,6 +214,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Populate Status.StatusVPCID from Spec.VPCID for backward compatibility.
+	// VpcId moved from Status to Spec after the SDK bump added it to
+	// CreateNatGatewayInput, but existing users may read it from Status.
+	if ko.Spec.VPCID != nil {
+		ko.Status.StatusVPCID = ko.Spec.VPCID
+	}
 	if isResourceDeleted(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
@@ -251,6 +268,20 @@ func (rm *resourceManager) sdkCreate(
 	defer func() {
 		exit(err)
 	}()
+	// Regional NAT Gateways do not currently support private connectivity type.
+	// The EC2 API silently overrides ConnectivityType to "public" instead of
+	// returning an error, which would cause the CR spec to drift from the
+	// actual resource state. Reject this combination upfront.
+	// See: https://aws.amazon.com/blogs/networking-and-content-delivery/introducing-amazon-vpc-regional-nat-gateway/
+	if desired.ko.Spec.AvailabilityMode != nil &&
+		*desired.ko.Spec.AvailabilityMode == string(svcsdktypes.AvailabilityModeRegional) &&
+		desired.ko.Spec.ConnectivityType != nil &&
+		*desired.ko.Spec.ConnectivityType == string(svcsdktypes.ConnectivityTypePrivate) {
+		return nil, ackerr.NewTerminalError(
+			fmt.Errorf("regional NAT gateways do not currently support private connectivity type; use connectivityType \"public\" or use availabilityMode \"zonal\" for private connectivity"),
+		)
+	}
+
 	input, err := rm.newCreateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
@@ -268,6 +299,11 @@ func (rm *resourceManager) sdkCreate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if resp.NatGateway.AvailabilityMode != "" {
+		ko.Spec.AvailabilityMode = aws.String(string(resp.NatGateway.AvailabilityMode))
+	} else {
+		ko.Spec.AvailabilityMode = nil
+	}
 	if resp.NatGateway.ConnectivityType != "" {
 		ko.Spec.ConnectivityType = aws.String(string(resp.NatGateway.ConnectivityType))
 	} else {
@@ -294,24 +330,30 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.FailureMessage = nil
 	}
 	if resp.NatGateway.NatGatewayAddresses != nil {
-		f5 := []*svcapitypes.NATGatewayAddress{}
-		for _, f5iter := range resp.NatGateway.NatGatewayAddresses {
-			f5elem := &svcapitypes.NATGatewayAddress{}
-			if f5iter.AllocationId != nil {
-				f5elem.AllocationID = f5iter.AllocationId
+		f6 := []*svcapitypes.NATGatewayAddress{}
+		for _, f6iter := range resp.NatGateway.NatGatewayAddresses {
+			f6elem := &svcapitypes.NATGatewayAddress{}
+			if f6iter.AllocationId != nil {
+				f6elem.AllocationID = f6iter.AllocationId
 			}
-			if f5iter.NetworkInterfaceId != nil {
-				f5elem.NetworkInterfaceID = f5iter.NetworkInterfaceId
+			if f6iter.AvailabilityZone != nil {
+				f6elem.AvailabilityZone = f6iter.AvailabilityZone
 			}
-			if f5iter.PrivateIp != nil {
-				f5elem.PrivateIP = f5iter.PrivateIp
+			if f6iter.AvailabilityZoneId != nil {
+				f6elem.AvailabilityZoneID = f6iter.AvailabilityZoneId
 			}
-			if f5iter.PublicIp != nil {
-				f5elem.PublicIP = f5iter.PublicIp
+			if f6iter.NetworkInterfaceId != nil {
+				f6elem.NetworkInterfaceID = f6iter.NetworkInterfaceId
 			}
-			f5 = append(f5, f5elem)
+			if f6iter.PrivateIp != nil {
+				f6elem.PrivateIP = f6iter.PrivateIp
+			}
+			if f6iter.PublicIp != nil {
+				f6elem.PublicIP = f6iter.PublicIp
+			}
+			f6 = append(f6, f6elem)
 		}
-		ko.Status.NATGatewayAddresses = f5
+		ko.Status.NATGatewayAddresses = f6
 	} else {
 		ko.Status.NATGatewayAddresses = nil
 	}
@@ -321,23 +363,23 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.NATGatewayID = nil
 	}
 	if resp.NatGateway.ProvisionedBandwidth != nil {
-		f7 := &svcapitypes.ProvisionedBandwidth{}
+		f8 := &svcapitypes.ProvisionedBandwidth{}
 		if resp.NatGateway.ProvisionedBandwidth.ProvisionTime != nil {
-			f7.ProvisionTime = &metav1.Time{*resp.NatGateway.ProvisionedBandwidth.ProvisionTime}
+			f8.ProvisionTime = &metav1.Time{*resp.NatGateway.ProvisionedBandwidth.ProvisionTime}
 		}
 		if resp.NatGateway.ProvisionedBandwidth.Provisioned != nil {
-			f7.Provisioned = resp.NatGateway.ProvisionedBandwidth.Provisioned
+			f8.Provisioned = resp.NatGateway.ProvisionedBandwidth.Provisioned
 		}
 		if resp.NatGateway.ProvisionedBandwidth.RequestTime != nil {
-			f7.RequestTime = &metav1.Time{*resp.NatGateway.ProvisionedBandwidth.RequestTime}
+			f8.RequestTime = &metav1.Time{*resp.NatGateway.ProvisionedBandwidth.RequestTime}
 		}
 		if resp.NatGateway.ProvisionedBandwidth.Requested != nil {
-			f7.Requested = resp.NatGateway.ProvisionedBandwidth.Requested
+			f8.Requested = resp.NatGateway.ProvisionedBandwidth.Requested
 		}
 		if resp.NatGateway.ProvisionedBandwidth.Status != nil {
-			f7.Status = resp.NatGateway.ProvisionedBandwidth.Status
+			f8.Status = resp.NatGateway.ProvisionedBandwidth.Status
 		}
-		ko.Status.ProvisionedBandwidth = f7
+		ko.Status.ProvisionedBandwidth = f8
 	} else {
 		ko.Status.ProvisionedBandwidth = nil
 	}
@@ -352,28 +394,35 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.SubnetID = nil
 	}
 	if resp.NatGateway.Tags != nil {
-		f10 := []*svcapitypes.Tag{}
-		for _, f10iter := range resp.NatGateway.Tags {
-			f10elem := &svcapitypes.Tag{}
-			if f10iter.Key != nil {
-				f10elem.Key = f10iter.Key
+		f11 := []*svcapitypes.Tag{}
+		for _, f11iter := range resp.NatGateway.Tags {
+			f11elem := &svcapitypes.Tag{}
+			if f11iter.Key != nil {
+				f11elem.Key = f11iter.Key
 			}
-			if f10iter.Value != nil {
-				f10elem.Value = f10iter.Value
+			if f11iter.Value != nil {
+				f11elem.Value = f11iter.Value
 			}
-			f10 = append(f10, f10elem)
+			f11 = append(f11, f11elem)
 		}
-		ko.Spec.Tags = f10
+		ko.Spec.Tags = f11
 	} else {
 		ko.Spec.Tags = nil
 	}
 	if resp.NatGateway.VpcId != nil {
-		ko.Status.VPCID = resp.NatGateway.VpcId
+		ko.Spec.VPCID = resp.NatGateway.VpcId
 	} else {
-		ko.Status.VPCID = nil
+		ko.Spec.VPCID = nil
 	}
 
 	rm.setStatusDefaults(ko)
+	// Populate Status.StatusVPCID from Spec.VPCID for backward compatibility.
+	// VpcId moved from Status to Spec after the SDK bump added it to
+	// CreateNatGatewayInput, but existing users may read it from Status.
+	if ko.Spec.VPCID != nil {
+		ko.Status.StatusVPCID = ko.Spec.VPCID
+	}
+
 	return &resource{ko}, nil
 }
 
@@ -388,11 +437,34 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.AllocationID != nil {
 		res.AllocationId = r.ko.Spec.AllocationID
 	}
+	if r.ko.Spec.AvailabilityMode != nil {
+		res.AvailabilityMode = svcsdktypes.AvailabilityMode(*r.ko.Spec.AvailabilityMode)
+	}
+	if r.ko.Spec.AvailabilityZoneAddresses != nil {
+		f2 := []svcsdktypes.AvailabilityZoneAddress{}
+		for _, f2iter := range r.ko.Spec.AvailabilityZoneAddresses {
+			f2elem := &svcsdktypes.AvailabilityZoneAddress{}
+			if f2iter.AllocationIDs != nil {
+				f2elem.AllocationIds = aws.ToStringSlice(f2iter.AllocationIDs)
+			}
+			if f2iter.AvailabilityZone != nil {
+				f2elem.AvailabilityZone = f2iter.AvailabilityZone
+			}
+			if f2iter.AvailabilityZoneID != nil {
+				f2elem.AvailabilityZoneId = f2iter.AvailabilityZoneID
+			}
+			f2 = append(f2, *f2elem)
+		}
+		res.AvailabilityZoneAddresses = f2
+	}
 	if r.ko.Spec.ConnectivityType != nil {
 		res.ConnectivityType = svcsdktypes.ConnectivityType(*r.ko.Spec.ConnectivityType)
 	}
 	if r.ko.Spec.SubnetID != nil {
 		res.SubnetId = r.ko.Spec.SubnetID
+	}
+	if r.ko.Spec.VPCID != nil {
+		res.VpcId = r.ko.Spec.VPCID
 	}
 
 	return res, nil

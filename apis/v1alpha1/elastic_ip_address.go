@@ -60,14 +60,15 @@ type ElasticIPAddressStatus struct {
 	// The ID that represents the allocation of the Elastic IP address.
 	// +kubebuilder:validation:Optional
 	AllocationID *string `json:"allocationID,omitempty"`
-	// The carrier IP address. This option is only available for network interfaces
-	// that reside in a subnet in a Wavelength Zone.
+	// The carrier IP address. Available only for network interfaces that reside
+	// in a subnet in a Wavelength Zone.
 	// +kubebuilder:validation:Optional
 	CarrierIP *string `json:"carrierIP,omitempty"`
 	// The customer-owned IP address.
 	// +kubebuilder:validation:Optional
 	CustomerOwnedIP *string `json:"customerOwnedIP,omitempty"`
-	// The Elastic IP address.
+	// The Amazon-owned IP address. Not available when using an address pool that
+	// you own.
 	// +kubebuilder:validation:Optional
 	PublicIP *string `json:"publicIP,omitempty"`
 }

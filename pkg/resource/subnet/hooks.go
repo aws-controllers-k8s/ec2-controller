@@ -181,29 +181,6 @@ func (rm *resourceManager) updateSubnetAttribute(
 	return nil
 }
 
-func (rm *resourceManager) createRouteTableAssociations(
-	ctx context.Context,
-	desired *resource,
-) (err error) {
-	rlog := ackrtlog.FromContext(ctx)
-	exit := rlog.Trace("rm.createRouteTableAssociations")
-	defer func(err error) {
-		exit(err)
-	}(err)
-
-	if len(desired.ko.Spec.RouteTables) == 0 {
-		return nil
-	}
-
-	for _, rt := range desired.ko.Spec.RouteTables {
-		if err = rm.associateRouteTable(ctx, *rt, *desired.ko.Status.SubnetID); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (rm *resourceManager) updateRouteTableAssociations(
 	ctx context.Context,
 	desired *resource,

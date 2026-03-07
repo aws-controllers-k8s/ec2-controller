@@ -12,6 +12,10 @@ ignore:
     - CreateCapacityReservationInput.TagSpecifications
     - CreateCapacityReservationInput.DryRun
     - CreateCapacityReservationInput.ClientToken
+    - CapacityReservation.CapacityBlockId
+    - CapacityReservation.Interruptible
+    - CapacityReservation.InterruptibleCapacityAllocation
+    - CapacityReservation.InterruptionInfo
     - CreateDhcpOptionsInput.DryRun
     - CreateDhcpOptionsInput.TagSpecifications
     - CreateFlowLogsInput.DryRun
@@ -34,6 +38,10 @@ ignore:
     - CreateNetworkAclInput.TagSpecifications
     - CreateRouteInput.DryRun
     - CreateRouteInput.RouteTableId
+    - CreateRouteInput.OdbNetworkArn
+    - Route.IpAddress
+    - Route.OdbNetworkArn
+    - RouteTableAssociation.PublicIpv4Pool
     - CreateRouteTableInput.DryRun
     - CreateRouteTableInput.ClientToken
     - CreateRouteTableInput.TagSpecifications
@@ -54,12 +62,16 @@ ignore:
     - CreateVpcInput.CidrBlock
     - CreateVpcOutput.Vpc.CidrBlock
     - CreateVpcOutput.Vpc.BlockPublicAccessStates
+    - CreateVpcInput.VpcEncryptionControl
+    - CreateVpcOutput.Vpc.EncryptionControl
     - CreateVpcInput.DryRun
     - CreateVpcInput.TagSpecifications
     - CreateVpcEndpointInput.DryRun
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
     - CreateVpcEndpointInput.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
+    - CreateVpcEndpointInput.DnsOptions.PrivateDnsPreference
+    - CreateVpcEndpointInput.DnsOptions.PrivateDnsSpecifiedDomains
     - CreateVpcEndpointInput.ResourceConfigurationArn
     - CreateVpcEndpointInput.SubnetConfigurations
     - CreateVpcEndpointOutput.VpcEndpoint.FailureReason
@@ -73,6 +85,7 @@ ignore:
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.SupportedRegions
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
+    - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.AvailabilityZoneIds
     - CreateVpcPeeringConnectionInput.DryRun
     - CreateVpcPeeringConnectionInput.TagSpecifications
     - DeleteRouteInput.DryRun
@@ -89,11 +102,15 @@ ignore:
     - RunInstancesInput.Placement.GroupId
     - Instance.CurrentInstanceBootMode
     - Instance.Operator
+    - Instance.CapacityBlockId
+    - Instance.NetworkPerformanceOptions
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
     - RunInstancesInput.TagSpecifications
     - RunInstancesInput.EnablePrimaryIpv6
     - RunInstancesInput.CpuOptions.AmdSevSnp
+    - RunInstancesInput.NetworkPerformanceOptions
+    - Placement.AvailabilityZoneId
     - SecurityGroupRule.GroupId
     - SecurityGroupRule.SecurityGroupRuleArn
     - SecurityGroupRule.GroupOwnerId
@@ -101,21 +118,42 @@ ignore:
     - TerminateInstancesInput.DryRun
     - InstanceIpv6Address.IsPrimaryIpv6
     - InstanceNetworkInterfaceSpecification.PrimaryIpv6
+    - InstanceNetworkInterfaceSpecification.EnaQueueCount
+    - EbsBlockDevice.AvailabilityZone
+    - EbsBlockDevice.AvailabilityZoneId
+    - EbsBlockDevice.VolumeInitializationRate
+    - NatGateway.AttachedAppliances
+    - NatGateway.AutoProvisionZones
+    - NatGateway.AutoScalingIps
+    - NatGateway.RouteTableId
     - NatGatewayAddress.AssociationId
     - NatGatewayAddress.FailureMessage
     - NatGatewayAddress.IsPrimary
     - NatGatewayAddress.Status
     - SubnetIpv6CidrBlockAssociation.IpSource
     - SubnetIpv6CidrBlockAssociation.Ipv6AddressAttribute
+    - Subnet.Type
     - VpcIpv6CidrBlockAssociation.IpSource
     - VpcIpv6CidrBlockAssociation.Ipv6AddressAttribute
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
     - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
+    - LaunchTemplateEbsBlockDeviceRequest.VolumeInitializationRate
+    - LaunchTemplateEbsBlockDevice.VolumeInitializationRate
+    - InstanceRequirementsRequest.RequireEncryptionInTransit
+    - InstanceRequirements.RequireEncryptionInTransit
+    - LaunchTemplateInstanceNetworkInterfaceSpecificationRequest.EnaQueueCount
+    - LaunchTemplateInstanceNetworkInterfaceSpecification.EnaQueueCount
+    - RequestLaunchTemplateData.NetworkPerformanceOptions
+    - ResponseLaunchTemplateData.NetworkPerformanceOptions
+    - LaunchTemplatePlacementRequest.AvailabilityZoneId
+    - LaunchTemplatePlacement.AvailabilityZoneId
     - CreateManagedPrefixListInput.ClientToken
     - CreateManagedPrefixListInput.TagSpecifications
     - CreateManagedPrefixListInput.DryRun
+    - ManagedPrefixList.IpamPrefixListResolverSyncEnabled
+    - ManagedPrefixList.IpamPrefixListResolverTargetId
     - CreateLaunchTemplateVersionOutput.LaunchTemplateVersion.DefaultVersion
     - CreateFleetInput.ClientToken
     - CreateFleetInput.TagSpecifications
@@ -127,6 +165,7 @@ ignore:
     - AccountAttribute
     # - CapacityReservation
     - CapacityReservationFleet
+    - CapacityManagerDataExport
     - CarrierGateway
     - ClientVpnEndpoint
     - ClientVpnRoute
@@ -135,20 +174,26 @@ ignore:
     - CustomerGateway
     - DefaultSubnet
     - DefaultVpc
+    - DelegateMacVolumeOwnershipTask
     #- DhcpOptions
     - EgressOnlyInternetGateway
     # - Fleet
     - FpgaImage
     - Image
+    - ImageUsageReport
     #- Instance
     - InstanceConnectEndpoint
     - InstanceEventWindow
     - InstanceExportTask
     #- InternetGateway
+    - InterruptibleCapacityReservationAllocation
     - Ipam
     - IpamPool
     - IpamResourceDiscovery
     - IpamScope
+    - IpamPrefixListResolverTarget
+    - IpamPrefixListResolver
+    - IpamPolicy
     - KeyPair
     - LaunchTemplateVersion
     # - LaunchTemplate
@@ -156,6 +201,9 @@ ignore:
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRouteTableVirtualInterfaceGroupAssociation
     - LocalGatewayRoute
+    - LocalGatewayVirtualInterface
+    - LocalGatewayVirtualInterfaceGroup
+    - MacSystemIntegrityProtectionModificationTask
     #- ManagedPrefixList
     #- NatGateway
     - NetworkAclEntry
@@ -171,6 +219,9 @@ ignore:
     - RestoreImageTask
     #- RouteTable
     - Route
+    - RouteServer
+    - RouteServerEndpoint
+    - RouteServerPeer
     #- SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
@@ -190,6 +241,8 @@ ignore:
     - TransitGatewayRouteTable
     - TransitGatewayRoute
     - TransitGatewayRouteTableAnnouncement
+    - TransitGatewayMeteringPolicy
+    - TransitGatewayMeteringPolicyEntry
     # - TransitGatewayVpcAttachment
     #- TransitGateway
     - VerifiedAccessEndpoint
@@ -198,12 +251,14 @@ ignore:
     - VerifiedAccessTrustProvider
     - Volume
     - VpcEndpointConnectionNotification
+    - VpcEncryptionControl
     #- VpcEndpointServiceConfiguration
     #- VpcEndpoint
     #- Vpc
     - VpcCidrBlock
     #- VpcPeeringConnection
     - VpnConnectionRoute
+    - VpnConcentrator
     - VpnConnection
     - VpnGateway    
 
@@ -345,7 +400,6 @@ resources:
           - from: AttributeValue.Value
       DhcpOptionsID:
         print:
-          path: Status.dhcpOptionsID
           name: ID
       VPC:
         # from:
@@ -383,7 +437,6 @@ resources:
         late_initialize: {}
       InstanceID:
         print:
-          path: Status.instanceID
           name: ID
       MaxCount:
         is_required: false
@@ -507,7 +560,6 @@ resources:
           path: Status.RouteTableID
       InternetGatewayID:
         print:
-          path: Status.internetGatewayID
           name: ID
     hooks:
       sdk_create_post_build_request:
@@ -569,7 +621,6 @@ resources:
       ID:
         is_primary_key: true
         print:
-          path: Status.ID
           name: ID
       Tags:
         from:
@@ -598,13 +649,21 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      StatusVPCID:
+        from:
+          operation: DescribeNatGateways
+          path: NatGateways.VpcId
+        is_read_only: true
+        go_tag: json:"vpcID,omitempty"
       NatGatewayID:
         print:
-          path: Status.natGatewayID
           name: ID
       State:
         print:
-          path: Status.state
           name: state
       Tags:
         from:
@@ -616,8 +675,12 @@ resources:
         in:
         - available
     hooks:
+      sdk_create_pre_build_request:
+        template_path: hooks/nat_gateway/sdk_create_pre_build_request.go.tpl
       sdk_create_post_build_request:
         template_path: hooks/nat_gateway/sdk_create_post_build_request.go.tpl
+      sdk_create_post_set_output:
+        template_path: hooks/nat_gateway/sdk_create_post_set_output.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/nat_gateway/sdk_read_many_post_set_output.go.tpl
       sdk_file_end:
@@ -656,18 +719,15 @@ resources:
         is_primary_key: true
         is_read_only: true
         print:
-          path: Status.ID
           name: ID
       Name: {}
       State:
         is_read_only: true
         print:
-          path: Status.State
           name: STATE
       Version:
         is_read_only: true
         print:
-          path: Status.Version
           name: VERSION
       PrefixListARN:
         is_arn: true
@@ -720,12 +780,7 @@ resources:
           is_ignored: true
       RouteTableID:
         print:
-          path: Status.RouteTableID
           name: ID
-      State:
-        print:
-          path: Status.state
-          name: state
       Tags:
         from:
           operation: CreateTags
@@ -773,7 +828,6 @@ resources:
       Id:
         is_primary_key: true
         print:
-          path: Status.id
           name: ID
       IngressRules:
         custom_field:
@@ -851,7 +905,6 @@ resources:
       Id:
         is_primary_key: true
         print:
-          path: Status.Id
           name: ID
       Associations:
         custom_field:
@@ -932,11 +985,9 @@ resources:
           path: Status.RouteTableID
       State:
         print:
-          path: Status.state
           name: state
       SubnetId:
         print:
-          path: Status.subnetID
           name: ID
       Tags:
         from:
@@ -969,11 +1020,9 @@ resources:
           path: Tags
       State:
         print:
-          path: Status.state
           name: state
       TransitGatewayID:
         print:
-          path: Status.transitGatewayID
           name: ID
     hooks:
       sdk_create_post_build_request:
@@ -1021,7 +1070,6 @@ resources:
       ID:
         is_primary_key: true
         print:
-          path: Status.ID
           name: ID
     hooks:
       sdk_create_post_build_request:
@@ -1054,7 +1102,6 @@ resources:
           path: EnableDnsHostnames.Value
       State:
         print:
-          path: Status.state
           name: state
       Tags:
         from:
@@ -1062,7 +1109,6 @@ resources:
           path: Tags
       VpcID:
         print:
-          path: Status.vpcID
           name: ID
       DisallowSecurityGroupDefaultRules:
         type: bool
@@ -1103,7 +1149,6 @@ resources:
           path: Status.ID
       State:
         print:
-          path: Status.state
           name: state
       SubnetIds:
         references:
@@ -1111,7 +1156,6 @@ resources:
           path: Status.SubnetID
       VpcEndpointID:
         print:
-          path: Status.vpcEndpointID
           name: ID
       ServiceRegion:
         # ServiceRegion is not supported in ModifyVpcEndpoint's input.
@@ -1146,12 +1190,10 @@ resources:
         is_primary_key: true
         is_read_only: true
         print:
-          path: Status.serviceID
           name: ServiceID
       ServiceState:
         is_read_only: true
         print:
-          path: Status.serviceState
           name: ServiceState
       Tags:
         from:
@@ -1172,6 +1214,8 @@ resources:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_create_post_set_output.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_build_request.go.tpl
+      sdk_delete_post_request:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_delete_post_request.go.tpl
       sdk_file_end:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
       sdk_update_pre_build_request:

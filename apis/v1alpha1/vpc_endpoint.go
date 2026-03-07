@@ -45,8 +45,6 @@ type VPCEndpointSpec struct {
 	// To use a private hosted zone, you must set the following VPC attributes to
 	// true: enableDnsHostnames and enableDnsSupport. Use ModifyVpcAttribute to
 	// set the VPC attributes.
-	//
-	// Default: true
 	PrivateDNSEnabled *bool `json:"privateDNSEnabled,omitempty"`
 	// (Gateway endpoint) The route table IDs.
 	RouteTableIDs  []*string                                  `json:"routeTableIDs,omitempty"`
