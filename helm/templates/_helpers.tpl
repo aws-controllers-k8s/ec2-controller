@@ -75,6 +75,7 @@ rules:
   - capacityreservations
   - dhcpoptions
   - elasticipaddresses
+  - fleets
   - flowlogs
   - instances
   - internetgateways
@@ -105,6 +106,7 @@ rules:
   - capacityreservations/status
   - dhcpoptions/status
   - elasticipaddresses/status
+  - fleets/status
   - flowlogs/status
   - instances/status
   - internetgateways/status
