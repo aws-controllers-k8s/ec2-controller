@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/ec2-controller
-  tag: 1.11.0
+  tag: 1.10.1
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -153,6 +153,7 @@ reconcile:
     - CapacityReservation
     - DHCPOptions
     - ElasticIPAddress
+    - Fleet
     - FlowLog
     - Instance
     - InternetGateway
