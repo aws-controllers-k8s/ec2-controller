@@ -12,6 +12,7 @@ rules:
   - capacityreservations
   - dhcpoptions
   - elasticipaddresses
+  - fleets
   - flowlogs
   - instances
   - internetgateways

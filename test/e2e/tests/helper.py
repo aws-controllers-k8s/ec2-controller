@@ -441,3 +441,45 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
+
+    def get_fleet(self, fleet_id: str) -> Union[None, Dict]:
+        """Get a fleet by ID."""
+        try:
+            aws_res = self.ec2_client.describe_fleets(FleetIds=[fleet_id])
+            if len(aws_res["Fleets"]) > 0:
+                fleet_list = aws_res["Fleets"][0]
+                return fleet_list
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+        
+    def wait_fleet_state(self, fleet_id: str, expected_state: str, max_wait_seconds: int = 120) -> bool:
+        """Wait for a fleet to reach the expected state.
+
+        Args:
+            fleet_id: The ID of the fleet to wait for
+            expected_state: The expected state (e.g., 'submitted', 'active')
+            max_wait_seconds: Maximum time to wait in seconds
+
+        Returns:
+            True if the expected state was reached, False otherwise
+        """
+        interval = 5
+        max_tries = max_wait_seconds // interval
+
+        for tries in range(max_tries):
+            fleet = self.get_fleet(fleet_id)
+            if fleet is None:
+                return False
+
+            current_state = fleet.get('FleetState', '')
+            if current_state == expected_state:
+                return True
+
+            # Check if we're in an error state
+            if 'failed' in current_state.lower():
+                return False
+
+            time.sleep(interval)
+
+        return False

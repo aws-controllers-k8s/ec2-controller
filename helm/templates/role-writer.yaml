@@ -19,6 +19,7 @@ rules:
   - capacityreservations
   - dhcpoptions
   - elasticipaddresses
+  - fleets
   - flowlogs
   - instances
   - internetgateways
@@ -49,6 +50,7 @@ rules:
   - capacityreservations
   - dhcpoptions
   - elasticipaddresses
+  - fleets
   - flowlogs
   - instances
   - internetgateways
