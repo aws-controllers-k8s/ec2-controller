@@ -15,8 +15,10 @@ package fleet
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -50,6 +52,17 @@ var syncTags = tags.Sync
 
 var computeTagsDelta = tags.ComputeTagsDelta
 
+var (
+	ErrFleetDeleting = fmt.Errorf(
+		"Fleet in '%v/%v' state, cannot be modified or deleted",
+		svcsdktypes.FleetStateCodeDeletedTerminatingInstances, svcsdktypes.FleetStateCodeDeletedRunning,
+	)
+	requeueWaitWhileDeleting = ackrequeue.NeededAfter(
+		ErrFleetDeleting,
+		5*time.Second,
+	)
+)
+
 // addIDToDeleteRequest adds resource's Fleet ID to DeleteRequest.
 // Return error to indicate to callers that the resource is not yet created.
 func addIDToDeleteRequest(r *resource,
@@ -59,4 +72,27 @@ func addIDToDeleteRequest(r *resource,
 	}
 	input.FleetIds = []string{*r.ko.Status.FleetID}
 	return nil
+}
+
+// fleetDeleting returns true if the supplied Fleet is in the process
+// of being deleted
+func fleetDeleting(r *resource) bool {
+	if r.ko.Status.FleetState == nil {
+		return false
+	}
+	fleetState := *r.ko.Status.FleetState
+	if fleetState == string(svcsdktypes.FleetStateCodeDeletedTerminatingInstances) || fleetState == string(svcsdktypes.FleetStateCodeDeletedRunning) {
+		return true
+	}
+	return false
+}
+
+// fleetDeleted checks if the Fleet is fully deleted
+func fleetDeleted(r *resource) bool {
+	if r.ko.Status.FleetState == nil {
+		return false
+	}
+
+	fleetState := *r.ko.Status.FleetState
+	return fleetState == string(svcsdktypes.FleetStateCodeDeleted)
 }
