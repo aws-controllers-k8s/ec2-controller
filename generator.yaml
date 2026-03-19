@@ -1265,10 +1265,6 @@ resources:
         is_primary_key: true
         is_read_only: true
         print:
-<<<<<<< HEAD
-=======
-          path: Status.fleetID
->>>>>>> origin/ec2-fleet
           name: ID
       Tags:
         from:
@@ -1340,26 +1336,13 @@ resources:
     exceptions:
       terminal_codes:
       - InvalidParameterValue 
-<<<<<<< HEAD
-=======
-    terminal:
-      when:
-      - path: Status.FleetState
-        in:
-        - failed
-        - deleted
-        - deleted_running
-        - deleted_terminating
-      when:
-      - path: Status.ActivityStatus
-        in:
-        - error
->>>>>>> origin/ec2-fleet
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/fleet/sdk_create_post_build_request.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/fleet/sdk_read_many_post_set_output.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/fleet/sdk_delete_pre_build_request.go.tpl
       sdk_delete_post_build_request:
         template_path: hooks/fleet/sdk_delete_post_build_request.go.tpl
       sdk_update_pre_build_request:

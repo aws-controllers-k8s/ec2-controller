@@ -1247,6 +1247,12 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	// Here we want to check if the fleet is deleted
+	// returning NotFound will trigger a create
+	if fleetDeleted(r) {
+		return nil, ackerr.NotFound
+	}
+
 	toAdd, toDelete := computeTagsDelta(r.ko.Spec.Tags, ko.Spec.Tags)
 	if len(toAdd) == 0 && len(toDelete) == 0 {
 		// if resource's initial tags and response tags are equal,
@@ -3130,6 +3136,9 @@ func (rm *resourceManager) sdkDelete(
 	defer func() {
 		exit(err)
 	}()
+	if fleetDeleting(r) {
+		return r, requeueWaitWhileDeleting
+	}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return nil, err
