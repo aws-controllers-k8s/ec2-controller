@@ -31040,6 +31040,11 @@ func (in *VPCSpec) DeepCopyInto(out *VPCSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableNetworkAddressUsageMetrics != nil {
+		in, out := &in.EnableNetworkAddressUsageMetrics, &out.EnableNetworkAddressUsageMetrics
+		*out = new(bool)
+		**out = **in
+	}
 	if in.InstanceTenancy != nil {
 		in, out := &in.InstanceTenancy, &out.InstanceTenancy
 		*out = new(string)
