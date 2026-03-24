@@ -31,7 +31,8 @@ type FlowLogSpec struct {
 	// This parameter is required if the destination type is cloud-watch-logs, or
 	// if the destination type is kinesis-data-firehose and the delivery stream
 	// and the resources to monitor are in different accounts.
-	DeliverLogsPermissionARN *string `json:"deliverLogsPermissionARN,omitempty"`
+	DeliverLogsPermissionARN *string                                  `json:"deliverLogsPermissionARN,omitempty"`
+	DeliverLogsPermissionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"deliverLogsPermissionRef,omitempty"`
 	// The destination options.
 	DestinationOptions *DestinationOptionsRequest `json:"destinationOptions,omitempty"`
 	// The destination for the flow log data. The meaning of this parameter depends
