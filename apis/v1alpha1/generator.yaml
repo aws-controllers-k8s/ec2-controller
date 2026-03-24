@@ -509,6 +509,11 @@ resources:
         type: string
         is_read_only: true
         is_primary_key: true
+      DeliverLogsPermissionARN:
+        references:
+          resource: Role
+          path: Status.ACKResourceMetadata.ARN
+          service_name: iam
       Tags:
         from:
           operation: CreateTags
