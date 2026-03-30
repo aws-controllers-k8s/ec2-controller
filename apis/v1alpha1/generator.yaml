@@ -1099,9 +1099,9 @@ resources:
           operation: ModifyVpcAttribute
           path: EnableDnsHostnames.Value
       EnableNetworkAddressUsageMetrics:
-        late_initialize: {
+        late_initialize:
           skip_incomplete_check: {}
-        }
+        
         from:
           operation: ModifyVpcAttribute
           path: EnableNetworkAddressUsageMetrics.Value
