@@ -8053,6 +8053,11 @@ func (in *FlowLogSpec) DeepCopyInto(out *FlowLogSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.DeliverLogsPermissionRef != nil {
+		in, out := &in.DeliverLogsPermissionRef, &out.DeliverLogsPermissionRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.DestinationOptions != nil {
 		in, out := &in.DestinationOptions, &out.DestinationOptions
 		*out = new(DestinationOptionsRequest)
