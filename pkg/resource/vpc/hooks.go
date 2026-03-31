@@ -31,8 +31,9 @@ import (
 )
 
 type DNSAttrs struct {
-	EnableSupport   *bool
-	EnableHostnames *bool
+	EnableSupport                    *bool
+	EnableHostnames                  *bool
+	EnableNetworkAddressUsageMetrics *bool
 }
 
 func newDescribeVpcAttributePayload(
@@ -68,6 +69,15 @@ func (rm *resourceManager) getDNSAttributes(
 	}
 	res.EnableHostnames = dnsHostnames.EnableDnsHostnames.Value
 
+	networkAddressUsageMetrics, err := rm.sdkapi.DescribeVpcAttribute(
+		ctx,
+		newDescribeVpcAttributePayload(vpcID, string(svcsdktypes.VpcAttributeNameEnableNetworkAddressUsageMetrics)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	res.EnableNetworkAddressUsageMetrics = networkAddressUsageMetrics.EnableNetworkAddressUsageMetrics.Value
+
 	return res, nil
 }
 
@@ -101,6 +111,21 @@ func newModifyDNSHostnamesAttributeInputPayload(
 	return res
 }
 
+func newModifyNetworkAddressUsageMetricsAttributeInputPayload(
+	r *resource,
+) *svcsdk.ModifyVpcAttributeInput {
+	res := &svcsdk.ModifyVpcAttributeInput{}
+	res.VpcId = r.ko.Status.VPCID
+
+	if r.ko.Spec.EnableNetworkAddressUsageMetrics != nil {
+		res.EnableNetworkAddressUsageMetrics = &svcsdktypes.AttributeBooleanValue{
+			Value: r.ko.Spec.EnableNetworkAddressUsageMetrics,
+		}
+	}
+
+	return res
+}
+
 func (rm *resourceManager) syncDNSSupportAttribute(
 	ctx context.Context,
 	r *resource,
@@ -127,6 +152,24 @@ func (rm *resourceManager) syncDNSHostnamesAttribute(
 	exit := rlog.Trace("rm.syncDNSHostnamesAttribute")
 	defer exit(err)
 	input := newModifyDNSHostnamesAttributeInputPayload(r)
+
+	_, err = rm.sdkapi.ModifyVpcAttribute(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcAttribute", err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm *resourceManager) syncNetworkAddressUsageMetricsAttribute(
+	ctx context.Context,
+	r *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncNetworkAddressUsageMetricsAttribute")
+	defer exit(err)
+	input := newModifyNetworkAddressUsageMetricsAttributeInputPayload(r)
 
 	_, err = rm.sdkapi.ModifyVpcAttribute(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcAttribute", err)
@@ -272,6 +315,12 @@ func (rm *resourceManager) createAttributes(
 		}
 	}
 
+	if r.ko.Spec.EnableNetworkAddressUsageMetrics != nil {
+		if err = rm.syncNetworkAddressUsageMetricsAttribute(ctx, r); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -321,6 +370,12 @@ func (rm *resourceManager) customUpdateVPC(
 
 	if delta.DifferentAt("Spec.EnableDNSHostnames") {
 		if err := rm.syncDNSHostnamesAttribute(ctx, desired); err != nil {
+			return nil, err
+		}
+	}
+
+	if delta.DifferentAt("Spec.EnableNetworkAddressUsageMetrics") {
+		if err := rm.syncNetworkAddressUsageMetricsAttribute(ctx, desired); err != nil {
 			return nil, err
 		}
 	}
