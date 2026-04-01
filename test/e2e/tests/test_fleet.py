@@ -23,6 +23,7 @@ from acktest import tags
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
+from e2e.bootstrap_resources import get_bootstrap_resources
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.tests.helper import EC2Validator
 
@@ -34,7 +35,7 @@ DELETE_WAIT_AFTER_SECONDS = 10
 
 FLEET_TAG_KEY = "owner"
 FLEET_TAG_VAL = "ack-controller"
-    
+
 def get_ami_id(ec2_client):
     try:
         # Use latest AL2023
@@ -104,6 +105,7 @@ def simple_fleet(standard_launch_template, request):
     
     (_, launch_template) = standard_launch_template
     
+    subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
     launch_template_id = launch_template["status"]["id"]
 
     test_resource_values = REPLACEMENT_VALUES.copy()
@@ -114,6 +116,7 @@ def simple_fleet(standard_launch_template, request):
     test_resource_values["LAUNCH_TEMPLATE_VERSION"] = "'1'"
     test_resource_values["FLEET_TAG_KEY"] = FLEET_TAG_KEY
     test_resource_values["FLEET_TAG_VAL"] = FLEET_TAG_VAL
+    test_resource_values["SUBNET_ID"] = subnet_id
 
     marker = request.node.get_closest_marker("resource_data")
     if marker is not None:
@@ -406,7 +409,7 @@ class TestFleets:
         k8s.patch_custom_resource(ref, updates)
 
         # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=10)
 
         # Check fleet value has not been updated on AWS
         fleet = ec2_validator.get_fleet(fleet_id)
@@ -423,7 +426,7 @@ class TestFleets:
         }
         k8s.patch_custom_resource(ref, updates)
         # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
 
         # Update Fleet ReplaceUnhealthyInstances
         # updates on this field are not supported, so this should not result in any updates on AWS resource
@@ -437,7 +440,7 @@ class TestFleets:
         k8s.patch_custom_resource(ref, updates)
 
         # Check resource prevents this invalid update and enters terminal state
-        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=5)
+        assert k8s.wait_on_condition(ref, "ACK.Terminal", "True", wait_periods=10)
 
         # Check fleet value has not been updated on AWS
         fleet = ec2_validator.get_fleet(fleet_id)

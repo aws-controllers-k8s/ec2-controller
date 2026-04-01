@@ -158,6 +158,9 @@ ignore:
     - CreateFleetInput.ClientToken
     - CreateFleetInput.TagSpecifications
     - CreateFleetInput.DryRun
+    - CreateFleetOutput.Instances
+    - FleetLaunchTemplateOverrides.AvailabilityZoneId
+    - FleetLaunchTemplateOverridesRequest.AvailabilityZoneId
   resource_names:
     - CapacityReservationBySplitting
     - IpamExternalResourceVerificationToken
@@ -1337,6 +1340,8 @@ resources:
       TargetCapacitySpecification.SpotTargetCapacity:
         late_initialize:
           skip_incomplete_check: {}
+      TargetCapacitySpecification.DefaultTargetCapacityType:
+        is_immutable: true
     synced:
       when:
       - path: Status.ActivityStatus
@@ -1349,6 +1354,8 @@ resources:
       terminal_codes:
       - InvalidParameterValue 
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/fleet/sdk_create_post_build_request.go.tpl
       sdk_read_many_post_set_output:

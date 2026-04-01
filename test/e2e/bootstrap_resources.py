@@ -20,6 +20,7 @@ from acktest.bootstrapping.s3 import Bucket
 from acktest.bootstrapping.vpc import VPC
 from acktest.bootstrapping.vpc import TransitGateway
 from acktest.bootstrapping.vpc_endpoint_service import VpcEndpointServiceConfiguration
+from acktest.bootstrapping.iam import ServiceLinkedRole
 from e2e import bootstrap_directory
 
 @dataclass
@@ -30,6 +31,7 @@ class BootstrapResources(Resources):
     NetworkLoadBalancer: NetworkLoadBalancer
     TestTransitGateway: TransitGateway
     AdoptedVpcEndpointService: VpcEndpointServiceConfiguration
+    EC2FleetServiceLinkedRole: ServiceLinkedRole
 
 _bootstrap_resources = None
 

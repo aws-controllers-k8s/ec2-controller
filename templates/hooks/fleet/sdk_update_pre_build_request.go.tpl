@@ -23,10 +23,8 @@
 	for _, field := range immutable_fields {
 		if delta.DifferentAt(field) {
 			// Throw a Terminal Error if immutable fields are modified
-			if latest.ko.Spec.TargetCapacitySpecification.DefaultTargetCapacityType != desired.ko.Spec.TargetCapacitySpecification.DefaultTargetCapacityType {
-				msg := "field " + field + " is not updatable after fleet creation"
-				return nil, ackerr.NewTerminalError(fmt.Errorf("%s", msg))
-			}
+			msg := "field " + field + " is not updatable after fleet creation"
+			return nil, ackerr.NewTerminalError(fmt.Errorf("%s", msg))
 		}
 	}
 

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -95,4 +96,20 @@ func fleetDeleted(r *resource) bool {
 
 	fleetState := *r.ko.Status.FleetState
 	return fleetState == string(svcsdktypes.FleetStateCodeDeleted)
+}
+
+// If immutable fields are defined in AWS but not in spec, use AWS values
+// This applies when adopting existing fleets
+func customPreCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	if a.ko.Spec.SpotOptions == nil {
+		a.ko.Spec.SpotOptions = b.ko.Spec.SpotOptions
+	}
+	if a.ko.Spec.OnDemandOptions == nil {
+		a.ko.Spec.OnDemandOptions = b.ko.Spec.OnDemandOptions
+	}
+
 }

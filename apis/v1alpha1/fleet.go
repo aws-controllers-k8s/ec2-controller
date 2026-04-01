@@ -127,10 +127,6 @@ type FleetStatus struct {
 	// capacity.
 	// +kubebuilder:validation:Optional
 	FulfilledCapacity *float64 `json:"fulfilledCapacity,omitempty"`
-	// Information about the instances that were launched by the fleet. Supported
-	// only for fleets of type instant.
-	// +kubebuilder:validation:Optional
-	Instances []*CreateFleetInstance `json:"instances,omitempty"`
 }
 
 // Fleet is the Schema for the Fleets API

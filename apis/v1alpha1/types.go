@@ -1980,7 +1980,6 @@ type FleetLaunchTemplateConfigRequest struct {
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverrides struct {
 	AvailabilityZone    *string                       `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID  *string                       `json:"availabilityZoneID,omitempty"`
 	BlockDeviceMappings []*BlockDeviceMappingResponse `json:"blockDeviceMappings,omitempty"`
 	ImageID             *string                       `json:"imageID,omitempty"`
 	// The attributes for the instance types. When you specify instance attributes,
@@ -2030,7 +2029,6 @@ type FleetLaunchTemplateOverrides struct {
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverridesRequest struct {
 	AvailabilityZone    *string                           `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID  *string                           `json:"availabilityZoneID,omitempty"`
 	BlockDeviceMappings []*FleetBlockDeviceMappingRequest `json:"blockDeviceMappings,omitempty"`
 	ImageID             *string                           `json:"imageID,omitempty"`
 	// The attributes for the instance types. When you specify instance attributes,
@@ -6613,6 +6611,7 @@ type TargetCapacitySpecification struct {
 // parameters are located in OnDemandOptionsRequest (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_OnDemandOptionsRequest)
 // and SpotOptionsRequest (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_SpotOptionsRequest).
 type TargetCapacitySpecificationRequest struct {
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	DefaultTargetCapacityType *string `json:"defaultTargetCapacityType,omitempty"`
 	OnDemandTargetCapacity    *int64  `json:"onDemandTargetCapacity,omitempty"`
 	SpotTargetCapacity        *int64  `json:"spotTargetCapacity,omitempty"`

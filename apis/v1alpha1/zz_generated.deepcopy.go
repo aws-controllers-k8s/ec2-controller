@@ -8103,11 +8103,6 @@ func (in *FleetLaunchTemplateOverrides) DeepCopyInto(out *FleetLaunchTemplateOve
 		*out = new(string)
 		**out = **in
 	}
-	if in.AvailabilityZoneID != nil {
-		in, out := &in.AvailabilityZoneID, &out.AvailabilityZoneID
-		*out = new(string)
-		**out = **in
-	}
 	if in.BlockDeviceMappings != nil {
 		in, out := &in.BlockDeviceMappings, &out.BlockDeviceMappings
 		*out = make([]*BlockDeviceMappingResponse, len(*in))
@@ -8176,11 +8171,6 @@ func (in *FleetLaunchTemplateOverridesRequest) DeepCopyInto(out *FleetLaunchTemp
 	*out = *in
 	if in.AvailabilityZone != nil {
 		in, out := &in.AvailabilityZone, &out.AvailabilityZone
-		*out = new(string)
-		**out = **in
-	}
-	if in.AvailabilityZoneID != nil {
-		in, out := &in.AvailabilityZoneID, &out.AvailabilityZoneID
 		*out = new(string)
 		**out = **in
 	}
@@ -8568,17 +8558,6 @@ func (in *FleetStatus) DeepCopyInto(out *FleetStatus) {
 		in, out := &in.FulfilledCapacity, &out.FulfilledCapacity
 		*out = new(float64)
 		**out = **in
-	}
-	if in.Instances != nil {
-		in, out := &in.Instances, &out.Instances
-		*out = make([]*CreateFleetInstance, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(CreateFleetInstance)
-				(*in).DeepCopyInto(*out)
-			}
-		}
 	}
 }
 
