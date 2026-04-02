@@ -445,9 +445,11 @@ type BlockDeviceMapping struct {
 // Describes a block device mapping, which defines the EBS volumes and instance
 // store volumes to attach to an instance at launch.
 type BlockDeviceMappingResponse struct {
-	DeviceName  *string `json:"deviceName,omitempty"`
-	NoDevice    *string `json:"noDevice,omitempty"`
-	VirtualName *string `json:"virtualName,omitempty"`
+	DeviceName *string `json:"deviceName,omitempty"`
+	// Describes a block device for an EBS volume.
+	EBS         *EBSBlockDeviceResponse `json:"ebs,omitempty"`
+	NoDevice    *string                 `json:"noDevice,omitempty"`
+	VirtualName *string                 `json:"virtualName,omitempty"`
 }
 
 // Describes a bundle task.
@@ -691,6 +693,34 @@ type CapacityReservationInfo struct {
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
 	InstanceType       *string `json:"instanceType,omitempty"`
 	Tenancy            *string `json:"tenancy,omitempty"`
+}
+
+// Describes the strategy for using unused Capacity Reservations for fulfilling
+// On-Demand capacity.
+//
+// This strategy can only be used if the EC2 Fleet is of type instant.
+//
+// For more information about Capacity Reservations, see On-Demand Capacity
+// Reservations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html)
+// in the Amazon EC2 User Guide. For examples of using Capacity Reservations
+// in an EC2 Fleet, see EC2 Fleet example configurations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-examples.html)
+// in the Amazon EC2 User Guide.
+type CapacityReservationOptions struct {
+	UsageStrategy *string `json:"usageStrategy,omitempty"`
+}
+
+// Describes the strategy for using unused Capacity Reservations for fulfilling
+// On-Demand capacity.
+//
+// This strategy can only be used if the EC2 Fleet is of type instant.
+//
+// For more information about Capacity Reservations, see On-Demand Capacity
+// Reservations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html)
+// in the Amazon EC2 User Guide. For examples of using Capacity Reservations
+// in an EC2 Fleet, see EC2 Fleet example configurations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-examples.html)
+// in the Amazon EC2 User Guide.
+type CapacityReservationOptionsRequest struct {
+	UsageStrategy *string `json:"usageStrategy,omitempty"`
 }
 
 // Describes an instance's Capacity Reservation targeting option.
@@ -1062,12 +1092,19 @@ type ConversionTask struct {
 type CreateFleetError struct {
 	ErrorCode    *string `json:"errorCode,omitempty"`
 	ErrorMessage *string `json:"errorMessage,omitempty"`
+	// Describes a launch template and overrides.
+	LaunchTemplateAndOverrides *LaunchTemplateAndOverridesResponse `json:"launchTemplateAndOverrides,omitempty"`
+	Lifecycle                  *string                             `json:"lifecycle,omitempty"`
 }
 
 // Describes the instances that were launched by the fleet.
 type CreateFleetInstance struct {
-	InstanceType *string `json:"instanceType,omitempty"`
-	Platform     *string `json:"platform,omitempty"`
+	InstanceIDs  []*string `json:"instanceIDs,omitempty"`
+	InstanceType *string   `json:"instanceType,omitempty"`
+	// Describes a launch template and overrides.
+	LaunchTemplateAndOverrides *LaunchTemplateAndOverridesResponse `json:"launchTemplateAndOverrides,omitempty"`
+	Lifecycle                  *string                             `json:"lifecycle,omitempty"`
+	Platform                   *string                             `json:"platform,omitempty"`
 }
 
 type CreateRouteInput struct {
@@ -1245,7 +1282,22 @@ type DeclarativePoliciesReport struct {
 
 // Describes an EC2 Fleet error.
 type DeleteFleetError struct {
+	Code    *string `json:"code,omitempty"`
 	Message *string `json:"message,omitempty"`
+}
+
+// Describes an EC2 Fleet that was not successfully deleted.
+type DeleteFleetErrorItem struct {
+	// Describes an EC2 Fleet error.
+	Error   *DeleteFleetError `json:"error,omitempty"`
+	FleetID *string           `json:"fleetID,omitempty"`
+}
+
+// Describes an EC2 Fleet that was successfully deleted.
+type DeleteFleetSuccessItem struct {
+	CurrentFleetState  *string `json:"currentFleetState,omitempty"`
+	FleetID            *string `json:"fleetID,omitempty"`
+	PreviousFleetState *string `json:"previousFleetState,omitempty"`
 }
 
 // Describes a launch template version that could not be deleted.
@@ -1311,12 +1363,19 @@ type DescribeFastSnapshotRestoreSuccessItem struct {
 type DescribeFleetError struct {
 	ErrorCode    *string `json:"errorCode,omitempty"`
 	ErrorMessage *string `json:"errorMessage,omitempty"`
+	// Describes a launch template and overrides.
+	LaunchTemplateAndOverrides *LaunchTemplateAndOverridesResponse `json:"launchTemplateAndOverrides,omitempty"`
+	Lifecycle                  *string                             `json:"lifecycle,omitempty"`
 }
 
 // Describes the instances that were launched by the fleet.
 type DescribeFleetsInstances struct {
-	InstanceType *string `json:"instanceType,omitempty"`
-	Platform     *string `json:"platform,omitempty"`
+	InstanceIDs  []*string `json:"instanceIDs,omitempty"`
+	InstanceType *string   `json:"instanceType,omitempty"`
+	// Describes a launch template and overrides.
+	LaunchTemplateAndOverrides *LaunchTemplateAndOverridesResponse `json:"launchTemplateAndOverrides,omitempty"`
+	Lifecycle                  *string                             `json:"lifecycle,omitempty"`
+	Platform                   *string                             `json:"platform,omitempty"`
 }
 
 // Describes the destination options for a flow log.
@@ -1818,9 +1877,11 @@ type FirewallStatelessRule struct {
 //
 //   - Specify all desired parameters here.
 type FleetBlockDeviceMappingRequest struct {
-	DeviceName  *string `json:"deviceName,omitempty"`
-	NoDevice    *string `json:"noDevice,omitempty"`
-	VirtualName *string `json:"virtualName,omitempty"`
+	DeviceName *string `json:"deviceName,omitempty"`
+	// Describes a block device for an EBS volume.
+	EBS         *FleetEBSBlockDeviceRequest `json:"ebs,omitempty"`
+	NoDevice    *string                     `json:"noDevice,omitempty"`
+	VirtualName *string                     `json:"virtualName,omitempty"`
 }
 
 // Information about a Capacity Reservation in a Capacity Reservation Fleet.
@@ -1838,16 +1899,44 @@ type FleetCapacityReservation struct {
 
 // Describes an EC2 Fleet.
 type FleetData struct {
-	ClientToken                      *string      `json:"clientToken,omitempty"`
-	Context                          *string      `json:"context,omitempty"`
-	CreateTime                       *metav1.Time `json:"createTime,omitempty"`
-	FulfilledCapacity                *float64     `json:"fulfilledCapacity,omitempty"`
-	FulfilledOnDemandCapacity        *float64     `json:"fulfilledOnDemandCapacity,omitempty"`
-	ReplaceUnhealthyInstances        *bool        `json:"replaceUnhealthyInstances,omitempty"`
-	Tags                             []*Tag       `json:"tags,omitempty"`
-	TerminateInstancesWithExpiration *bool        `json:"terminateInstancesWithExpiration,omitempty"`
-	ValidFrom                        *metav1.Time `json:"validFrom,omitempty"`
-	ValidUntil                       *metav1.Time `json:"validUntil,omitempty"`
+	ActivityStatus                  *string                      `json:"activityStatus,omitempty"`
+	ClientToken                     *string                      `json:"clientToken,omitempty"`
+	Context                         *string                      `json:"context,omitempty"`
+	CreateTime                      *metav1.Time                 `json:"createTime,omitempty"`
+	Errors                          []*DescribeFleetError        `json:"errors,omitempty"`
+	ExcessCapacityTerminationPolicy *string                      `json:"excessCapacityTerminationPolicy,omitempty"`
+	FleetID                         *string                      `json:"fleetID,omitempty"`
+	FleetState                      *string                      `json:"fleetState,omitempty"`
+	FulfilledCapacity               *float64                     `json:"fulfilledCapacity,omitempty"`
+	FulfilledOnDemandCapacity       *float64                     `json:"fulfilledOnDemandCapacity,omitempty"`
+	Instances                       []*DescribeFleetsInstances   `json:"instances,omitempty"`
+	LaunchTemplateConfigs           []*FleetLaunchTemplateConfig `json:"launchTemplateConfigs,omitempty"`
+	// Describes the configuration of On-Demand Instances in an EC2 Fleet.
+	OnDemandOptions           *OnDemandOptions `json:"onDemandOptions,omitempty"`
+	ReplaceUnhealthyInstances *bool            `json:"replaceUnhealthyInstances,omitempty"`
+	// Describes the configuration of Spot Instances in an EC2 Fleet.
+	SpotOptions *SpotOptions `json:"spotOptions,omitempty"`
+	Tags        []*Tag       `json:"tags,omitempty"`
+	// The number of units to request. You can choose to set the target capacity
+	// in terms of instances or a performance characteristic that is important to
+	// your application workload, such as vCPUs, memory, or I/O. If the request
+	// type is maintain, you can specify a target capacity of 0 and add capacity
+	// later.
+	//
+	// You can use the On-Demand Instance MaxTotalPrice parameter, the Spot Instance
+	// MaxTotalPrice, or both to ensure that your fleet cost does not exceed your
+	// budget. If you set a maximum price per hour for the On-Demand Instances and
+	// Spot Instances in your request, EC2 Fleet will launch instances until it
+	// reaches the maximum amount that you're willing to pay. When the maximum amount
+	// you're willing to pay is reached, the fleet stops launching instances even
+	// if it hasn’t met the target capacity. The MaxTotalPrice parameters are
+	// located in OnDemandOptions (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_OnDemandOptions.html)
+	// and SpotOptions (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_SpotOptions).
+	TargetCapacitySpecification      *TargetCapacitySpecification `json:"targetCapacitySpecification,omitempty"`
+	TerminateInstancesWithExpiration *bool                        `json:"terminateInstancesWithExpiration,omitempty"`
+	Type                             *string                      `json:"type_,omitempty"`
+	ValidFrom                        *metav1.Time                 `json:"validFrom,omitempty"`
+	ValidUntil                       *metav1.Time                 `json:"validUntil,omitempty"`
 }
 
 // Describes a block device for an EBS volume.
@@ -1862,11 +1951,37 @@ type FleetEBSBlockDeviceRequest struct {
 	VolumeType          *string `json:"volumeType,omitempty"`
 }
 
+// Describes a launch template and overrides.
+type FleetLaunchTemplateConfig struct {
+	// The Amazon EC2 launch template that can be used by a Spot Fleet to configure
+	// Amazon EC2 instances. You must specify either the ID or name of the launch
+	// template in the request, but not both.
+	//
+	// For information about launch templates, see Launch an instance from a launch
+	// template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+	// in the Amazon EC2 User Guide.
+	LaunchTemplateSpecification *FleetLaunchTemplateSpecification `json:"launchTemplateSpecification,omitempty"`
+	Overrides                   []*FleetLaunchTemplateOverrides   `json:"overrides,omitempty"`
+}
+
+// Describes a launch template and overrides.
+type FleetLaunchTemplateConfigRequest struct {
+	// The Amazon EC2 launch template that can be used by an EC2 Fleet to configure
+	// Amazon EC2 instances. You must specify either the ID or name of the launch
+	// template in the request, but not both.
+	//
+	// For information about launch templates, see Launch an instance from a launch
+	// template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+	// in the Amazon EC2 User Guide.
+	LaunchTemplateSpecification *FleetLaunchTemplateSpecificationRequest `json:"launchTemplateSpecification,omitempty"`
+	Overrides                   []*FleetLaunchTemplateOverridesRequest   `json:"overrides,omitempty"`
+}
+
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverrides struct {
-	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
-	ImageID            *string `json:"imageID,omitempty"`
+	AvailabilityZone    *string                       `json:"availabilityZone,omitempty"`
+	BlockDeviceMappings []*BlockDeviceMappingResponse `json:"blockDeviceMappings,omitempty"`
+	ImageID             *string                       `json:"imageID,omitempty"`
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//
@@ -1904,16 +2019,18 @@ type FleetLaunchTemplateOverrides struct {
 	InstanceRequirements *InstanceRequirements `json:"instanceRequirements,omitempty"`
 	InstanceType         *string               `json:"instanceType,omitempty"`
 	MaxPrice             *string               `json:"maxPrice,omitempty"`
-	Priority             *float64              `json:"priority,omitempty"`
-	SubnetID             *string               `json:"subnetID,omitempty"`
-	WeightedCapacity     *float64              `json:"weightedCapacity,omitempty"`
+	// Describes the placement of an instance.
+	Placement        *PlacementResponse `json:"placement,omitempty"`
+	Priority         *float64           `json:"priority,omitempty"`
+	SubnetID         *string            `json:"subnetID,omitempty"`
+	WeightedCapacity *float64           `json:"weightedCapacity,omitempty"`
 }
 
 // Describes overrides for a launch template.
 type FleetLaunchTemplateOverridesRequest struct {
-	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
-	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
-	ImageID            *string `json:"imageID,omitempty"`
+	AvailabilityZone    *string                           `json:"availabilityZone,omitempty"`
+	BlockDeviceMappings []*FleetBlockDeviceMappingRequest `json:"blockDeviceMappings,omitempty"`
+	ImageID             *string                           `json:"imageID,omitempty"`
 	// The attributes for the instance types. When you specify instance attributes,
 	// Amazon EC2 will identify instance types with these attributes.
 	//
@@ -1986,7 +2103,8 @@ type FleetLaunchTemplateSpecificationRequest struct {
 // The strategy to use when Amazon EC2 emits a signal that your Spot Instance
 // is at an elevated risk of being interrupted.
 type FleetSpotCapacityRebalance struct {
-	TerminationDelay *int64 `json:"terminationDelay,omitempty"`
+	ReplacementStrategy *string `json:"replacementStrategy,omitempty"`
+	TerminationDelay    *int64  `json:"terminationDelay,omitempty"`
 }
 
 // The Spot Instance replacement strategy to use when Amazon EC2 emits a rebalance
@@ -1994,7 +2112,26 @@ type FleetSpotCapacityRebalance struct {
 // interrupted. For more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-capacity-rebalance.html)
 // in the Amazon EC2 User Guide.
 type FleetSpotCapacityRebalanceRequest struct {
-	TerminationDelay *int64 `json:"terminationDelay,omitempty"`
+	ReplacementStrategy *string `json:"replacementStrategy,omitempty"`
+	TerminationDelay    *int64  `json:"terminationDelay,omitempty"`
+}
+
+// The strategies for managing your Spot Instances that are at an elevated risk
+// of being interrupted.
+type FleetSpotMaintenanceStrategies struct {
+	// The strategy to use when Amazon EC2 emits a signal that your Spot Instance
+	// is at an elevated risk of being interrupted.
+	CapacityRebalance *FleetSpotCapacityRebalance `json:"capacityRebalance,omitempty"`
+}
+
+// The strategies for managing your Spot Instances that are at an elevated risk
+// of being interrupted.
+type FleetSpotMaintenanceStrategiesRequest struct {
+	// The Spot Instance replacement strategy to use when Amazon EC2 emits a rebalance
+	// notification signal that your Spot Instance is at an elevated risk of being
+	// interrupted. For more information, see Capacity rebalancing (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-capacity-rebalance.html)
+	// in the Amazon EC2 User Guide.
+	CapacityRebalance *FleetSpotCapacityRebalanceRequest `json:"capacityRebalance,omitempty"`
 }
 
 // Describes a flow log.
@@ -3669,6 +3806,20 @@ type LaunchSpecification struct {
 	UserData          *string                                  `json:"userData,omitempty"`
 }
 
+// Describes a launch template and overrides.
+type LaunchTemplateAndOverridesResponse struct {
+	// The Amazon EC2 launch template that can be used by a Spot Fleet to configure
+	// Amazon EC2 instances. You must specify either the ID or name of the launch
+	// template in the request, but not both.
+	//
+	// For information about launch templates, see Launch an instance from a launch
+	// template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+	// in the Amazon EC2 User Guide.
+	LaunchTemplateSpecification *FleetLaunchTemplateSpecification `json:"launchTemplateSpecification,omitempty"`
+	// Describes overrides for a launch template.
+	Overrides *FleetLaunchTemplateOverrides `json:"overrides,omitempty"`
+}
+
 // Describes a block device mapping.
 type LaunchTemplateBlockDeviceMapping struct {
 	DeviceName *string `json:"deviceName,omitempty"`
@@ -3719,6 +3870,18 @@ type LaunchTemplateCapacityReservationSpecificationResponse struct {
 	CapacityReservationPreference *string `json:"capacityReservationPreference,omitempty"`
 	// Describes a target Capacity Reservation or Capacity Reservation group.
 	CapacityReservationTarget *CapacityReservationTargetResponse `json:"capacityReservationTarget,omitempty"`
+}
+
+// Describes a launch template and overrides.
+type LaunchTemplateConfig struct {
+	// The Amazon EC2 launch template that can be used by a Spot Fleet to configure
+	// Amazon EC2 instances. You must specify either the ID or name of the launch
+	// template in the request, but not both.
+	//
+	// For information about launch templates, see Launch an instance from a launch
+	// template (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html)
+	// in the Amazon EC2 User Guide.
+	LaunchTemplateSpecification *FleetLaunchTemplateSpecification `json:"launchTemplateSpecification,omitempty"`
 }
 
 // Describes a block device for an EBS volume.
@@ -4660,18 +4823,42 @@ type OIDCOptions struct {
 
 // Describes the configuration of On-Demand Instances in an EC2 Fleet.
 type OnDemandOptions struct {
-	MaxTotalPrice          *string `json:"maxTotalPrice,omitempty"`
-	MinTargetCapacity      *int64  `json:"minTargetCapacity,omitempty"`
-	SingleAvailabilityZone *bool   `json:"singleAvailabilityZone,omitempty"`
-	SingleInstanceType     *bool   `json:"singleInstanceType,omitempty"`
+	AllocationStrategy *string `json:"allocationStrategy,omitempty"`
+	// Describes the strategy for using unused Capacity Reservations for fulfilling
+	// On-Demand capacity.
+	//
+	// This strategy can only be used if the EC2 Fleet is of type instant.
+	//
+	// For more information about Capacity Reservations, see On-Demand Capacity
+	// Reservations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html)
+	// in the Amazon EC2 User Guide. For examples of using Capacity Reservations
+	// in an EC2 Fleet, see EC2 Fleet example configurations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-examples.html)
+	// in the Amazon EC2 User Guide.
+	CapacityReservationOptions *CapacityReservationOptions `json:"capacityReservationOptions,omitempty"`
+	MaxTotalPrice              *string                     `json:"maxTotalPrice,omitempty"`
+	MinTargetCapacity          *int64                      `json:"minTargetCapacity,omitempty"`
+	SingleAvailabilityZone     *bool                       `json:"singleAvailabilityZone,omitempty"`
+	SingleInstanceType         *bool                       `json:"singleInstanceType,omitempty"`
 }
 
 // Describes the configuration of On-Demand Instances in an EC2 Fleet.
 type OnDemandOptionsRequest struct {
-	MaxTotalPrice          *string `json:"maxTotalPrice,omitempty"`
-	MinTargetCapacity      *int64  `json:"minTargetCapacity,omitempty"`
-	SingleAvailabilityZone *bool   `json:"singleAvailabilityZone,omitempty"`
-	SingleInstanceType     *bool   `json:"singleInstanceType,omitempty"`
+	AllocationStrategy *string `json:"allocationStrategy,omitempty"`
+	// Describes the strategy for using unused Capacity Reservations for fulfilling
+	// On-Demand capacity.
+	//
+	// This strategy can only be used if the EC2 Fleet is of type instant.
+	//
+	// For more information about Capacity Reservations, see On-Demand Capacity
+	// Reservations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html)
+	// in the Amazon EC2 User Guide. For examples of using Capacity Reservations
+	// in an EC2 Fleet, see EC2 Fleet example configurations (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-examples.html)
+	// in the Amazon EC2 User Guide.
+	CapacityReservationOptions *CapacityReservationOptionsRequest `json:"capacityReservationOptions,omitempty"`
+	MaxTotalPrice              *string                            `json:"maxTotalPrice,omitempty"`
+	MinTargetCapacity          *int64                             `json:"minTargetCapacity,omitempty"`
+	SingleAvailabilityZone     *bool                              `json:"singleAvailabilityZone,omitempty"`
+	SingleInstanceType         *bool                              `json:"singleInstanceType,omitempty"`
 }
 
 // Describes whether the resource is managed by a service provider and, if so,
@@ -6115,7 +6302,9 @@ type SpotFleetRequestConfigData struct {
 	SpotMaxTotalPrice                *string      `json:"spotMaxTotalPrice,omitempty"`
 	SpotPrice                        *string      `json:"spotPrice,omitempty"`
 	TargetCapacity                   *int64       `json:"targetCapacity,omitempty"`
+	TargetCapacityUnitType           *string      `json:"targetCapacityUnitType,omitempty"`
 	TerminateInstancesWithExpiration *bool        `json:"terminateInstancesWithExpiration,omitempty"`
+	Type                             *string      `json:"type_,omitempty"`
 	ValidFrom                        *metav1.Time `json:"validFrom,omitempty"`
 	ValidUntil                       *metav1.Time `json:"validUntil,omitempty"`
 }
@@ -6169,20 +6358,30 @@ type SpotMarketOptions struct {
 
 // Describes the configuration of Spot Instances in an EC2 Fleet.
 type SpotOptions struct {
-	InstancePoolsToUseCount *int64  `json:"instancePoolsToUseCount,omitempty"`
-	MaxTotalPrice           *string `json:"maxTotalPrice,omitempty"`
-	MinTargetCapacity       *int64  `json:"minTargetCapacity,omitempty"`
-	SingleAvailabilityZone  *bool   `json:"singleAvailabilityZone,omitempty"`
-	SingleInstanceType      *bool   `json:"singleInstanceType,omitempty"`
+	AllocationStrategy           *string `json:"allocationStrategy,omitempty"`
+	InstanceInterruptionBehavior *string `json:"instanceInterruptionBehavior,omitempty"`
+	InstancePoolsToUseCount      *int64  `json:"instancePoolsToUseCount,omitempty"`
+	// The strategies for managing your Spot Instances that are at an elevated risk
+	// of being interrupted.
+	MaintenanceStrategies  *FleetSpotMaintenanceStrategies `json:"maintenanceStrategies,omitempty"`
+	MaxTotalPrice          *string                         `json:"maxTotalPrice,omitempty"`
+	MinTargetCapacity      *int64                          `json:"minTargetCapacity,omitempty"`
+	SingleAvailabilityZone *bool                           `json:"singleAvailabilityZone,omitempty"`
+	SingleInstanceType     *bool                           `json:"singleInstanceType,omitempty"`
 }
 
 // Describes the configuration of Spot Instances in an EC2 Fleet request.
 type SpotOptionsRequest struct {
-	InstancePoolsToUseCount *int64  `json:"instancePoolsToUseCount,omitempty"`
-	MaxTotalPrice           *string `json:"maxTotalPrice,omitempty"`
-	MinTargetCapacity       *int64  `json:"minTargetCapacity,omitempty"`
-	SingleAvailabilityZone  *bool   `json:"singleAvailabilityZone,omitempty"`
-	SingleInstanceType      *bool   `json:"singleInstanceType,omitempty"`
+	AllocationStrategy           *string `json:"allocationStrategy,omitempty"`
+	InstanceInterruptionBehavior *string `json:"instanceInterruptionBehavior,omitempty"`
+	InstancePoolsToUseCount      *int64  `json:"instancePoolsToUseCount,omitempty"`
+	// The strategies for managing your Spot Instances that are at an elevated risk
+	// of being interrupted.
+	MaintenanceStrategies  *FleetSpotMaintenanceStrategiesRequest `json:"maintenanceStrategies,omitempty"`
+	MaxTotalPrice          *string                                `json:"maxTotalPrice,omitempty"`
+	MinTargetCapacity      *int64                                 `json:"minTargetCapacity,omitempty"`
+	SingleAvailabilityZone *bool                                  `json:"singleAvailabilityZone,omitempty"`
+	SingleInstanceType     *bool                                  `json:"singleInstanceType,omitempty"`
 }
 
 // Describes Spot Instance placement.
@@ -6389,9 +6588,11 @@ type TagSpecification struct {
 // located in OnDemandOptions (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_OnDemandOptions.html)
 // and SpotOptions (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_SpotOptions).
 type TargetCapacitySpecification struct {
-	OnDemandTargetCapacity *int64 `json:"onDemandTargetCapacity,omitempty"`
-	SpotTargetCapacity     *int64 `json:"spotTargetCapacity,omitempty"`
-	TotalTargetCapacity    *int64 `json:"totalTargetCapacity,omitempty"`
+	DefaultTargetCapacityType *string `json:"defaultTargetCapacityType,omitempty"`
+	OnDemandTargetCapacity    *int64  `json:"onDemandTargetCapacity,omitempty"`
+	SpotTargetCapacity        *int64  `json:"spotTargetCapacity,omitempty"`
+	TargetCapacityUnitType    *string `json:"targetCapacityUnitType,omitempty"`
+	TotalTargetCapacity       *int64  `json:"totalTargetCapacity,omitempty"`
 }
 
 // The number of units to request. You can choose to set the target capacity
@@ -6410,9 +6611,12 @@ type TargetCapacitySpecification struct {
 // parameters are located in OnDemandOptionsRequest (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_OnDemandOptionsRequest)
 // and SpotOptionsRequest (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_SpotOptionsRequest).
 type TargetCapacitySpecificationRequest struct {
-	OnDemandTargetCapacity *int64 `json:"onDemandTargetCapacity,omitempty"`
-	SpotTargetCapacity     *int64 `json:"spotTargetCapacity,omitempty"`
-	TotalTargetCapacity    *int64 `json:"totalTargetCapacity,omitempty"`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+	DefaultTargetCapacityType *string `json:"defaultTargetCapacityType,omitempty"`
+	OnDemandTargetCapacity    *int64  `json:"onDemandTargetCapacity,omitempty"`
+	SpotTargetCapacity        *int64  `json:"spotTargetCapacity,omitempty"`
+	TargetCapacityUnitType    *string `json:"targetCapacityUnitType,omitempty"`
+	TotalTargetCapacity       *int64  `json:"totalTargetCapacity,omitempty"`
 }
 
 // Information about the Convertible Reserved Instance offering.
