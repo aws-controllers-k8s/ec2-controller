@@ -1209,7 +1209,9 @@ type DNSOptions struct {
 
 // Describes the DNS options for an endpoint.
 type DNSOptionsSpecification struct {
-	DNSRecordIPType *string `json:"dnsRecordIPType,omitempty"`
+	DNSRecordIPType            *string   `json:"dnsRecordIPType,omitempty"`
+	PrivateDNSPreference       *string   `json:"privateDNSPreference,omitempty"`
+	PrivateDNSSpecifiedDomains []*string `json:"privateDNSSpecifiedDomains,omitempty"`
 }
 
 // Information about the DNS server to be used.
