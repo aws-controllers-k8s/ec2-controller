@@ -70,8 +70,6 @@ ignore:
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
     - CreateVpcEndpointInput.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
-    - CreateVpcEndpointInput.DnsOptions.PrivateDnsPreference
-    - CreateVpcEndpointInput.DnsOptions.PrivateDnsSpecifiedDomains
     - CreateVpcEndpointInput.ResourceConfigurationArn
     - CreateVpcEndpointInput.SubnetConfigurations
     - CreateVpcEndpointOutput.VpcEndpoint.FailureReason
