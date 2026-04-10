@@ -108,6 +108,9 @@ func newResourceDelta(
 			delta.Add("Spec.ServiceNetworkARN", a.ko.Spec.ServiceNetworkARN, b.ko.Spec.ServiceNetworkARN)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.ServiceRef, b.ko.Spec.ServiceRef) {
+		delta.Add("Spec.ServiceRef", a.ko.Spec.ServiceRef, b.ko.Spec.ServiceRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ServiceRegion, b.ko.Spec.ServiceRegion) {
 		delta.Add("Spec.ServiceRegion", a.ko.Spec.ServiceRegion, b.ko.Spec.ServiceRegion)
 	} else if a.ko.Spec.ServiceRegion != nil && b.ko.Spec.ServiceRegion != nil {
