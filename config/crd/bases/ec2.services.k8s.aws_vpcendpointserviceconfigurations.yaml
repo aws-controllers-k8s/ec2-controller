@@ -62,16 +62,50 @@ spec:
                   type: string
                 type: array
               gatewayLoadBalancerARNs:
-                description: The Amazon Resource Names (ARNs) of the Gateway Load
-                  Balancers.
                 items:
                   type: string
                 type: array
+              gatewayLoadBalancerRefs:
+                items:
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference\ntype to provide more user friendly syntax
+                    for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                    \ name: my-api"
+                  properties:
+                    from:
+                      description: |-
+                        AWSResourceReference provides all the values necessary to reference another
+                        k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                  type: object
+                type: array
               networkLoadBalancerARNs:
-                description: The Amazon Resource Names (ARNs) of the Network Load
-                  Balancers.
                 items:
                   type: string
+                type: array
+              networkLoadBalancerRefs:
+                items:
+                  description: "AWSResourceReferenceWrapper provides a wrapper around
+                    *AWSResourceReference\ntype to provide more user friendly syntax
+                    for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                    \ name: my-api"
+                  properties:
+                    from:
+                      description: |-
+                        AWSResourceReference provides all the values necessary to reference another
+                        k8s resource for finding the identifier(Id/ARN/Name)
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                      type: object
+                  type: object
                 type: array
               privateDNSName:
                 description: |-
