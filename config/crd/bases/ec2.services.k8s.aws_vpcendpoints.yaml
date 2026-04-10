@@ -131,7 +131,6 @@ spec:
                   type: object
                 type: array
               serviceName:
-                description: The name of the endpoint service.
                 type: string
               serviceNetworkARN:
                 description: |-
@@ -141,6 +140,23 @@ spec:
                 x-kubernetes-validations:
                 - message: Value is immutable once set
                   rule: self == oldSelf
+              serviceRef:
+                description: "AWSResourceReferenceWrapper provides a wrapper around
+                  *AWSResourceReference\ntype to provide more user friendly syntax
+                  for references using 'from' field\nEx:\nAPIIDRef:\n\n\tfrom:\n\t
+                  \ name: my-api"
+                properties:
+                  from:
+                    description: |-
+                      AWSResourceReference provides all the values necessary to reference another
+                      k8s resource for finding the identifier(Id/ARN/Name)
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                type: object
               serviceRegion:
                 description: The Region where the service is hosted. The default is
                   the current Region.

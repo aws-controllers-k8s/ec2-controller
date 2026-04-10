@@ -30274,6 +30274,11 @@ func (in *VPCEndpointSpec) DeepCopyInto(out *VPCEndpointSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ServiceRef != nil {
+		in, out := &in.ServiceRef, &out.ServiceRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ServiceRegion != nil {
 		in, out := &in.ServiceRegion, &out.ServiceRegion
 		*out = new(string)

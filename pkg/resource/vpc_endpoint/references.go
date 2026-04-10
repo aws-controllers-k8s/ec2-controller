@@ -45,6 +45,10 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 		ko.Spec.SecurityGroupIDs = nil
 	}
 
+	if ko.Spec.ServiceRef != nil {
+		ko.Spec.ServiceName = nil
+	}
+
 	if len(ko.Spec.SubnetRefs) > 0 {
 		ko.Spec.SubnetIDs = nil
 	}
@@ -84,6 +88,12 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForServiceName(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForSubnetIDs(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -109,6 +119,10 @@ func validateReferenceFields(ko *svcapitypes.VPCEndpoint) error {
 
 	if len(ko.Spec.SecurityGroupRefs) > 0 && len(ko.Spec.SecurityGroupIDs) > 0 {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupRefs")
+	}
+
+	if ko.Spec.ServiceRef != nil && ko.Spec.ServiceName != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("ServiceName", "ServiceRef")
 	}
 
 	if len(ko.Spec.SubnetRefs) > 0 && len(ko.Spec.SubnetIDs) > 0 {
@@ -296,6 +310,89 @@ func getReferencedResourceState_SecurityGroup(
 			"SecurityGroup",
 			namespace, name,
 			"Status.ID")
+	}
+	return nil
+}
+
+// resolveReferenceForServiceName reads the resource referenced
+// from ServiceRef field and sets the ServiceName
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForServiceName(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.VPCEndpoint,
+) (hasReferences bool, err error) {
+	if ko.Spec.ServiceRef != nil && ko.Spec.ServiceRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.ServiceRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: ServiceRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
+		}
+		obj := &svcapitypes.VPCEndpointServiceConfiguration{}
+		if err := getReferencedResourceState_VPCEndpointServiceConfiguration(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.ServiceName = (*string)(obj.Status.ServiceName)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_VPCEndpointServiceConfiguration looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_VPCEndpointServiceConfiguration(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.VPCEndpointServiceConfiguration,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"VPCEndpointServiceConfiguration",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"VPCEndpointServiceConfiguration",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"VPCEndpointServiceConfiguration",
+			namespace, name)
+	}
+	if obj.Status.ServiceName == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"VPCEndpointServiceConfiguration",
+			namespace, name,
+			"Status.ServiceName")
 	}
 	return nil
 }

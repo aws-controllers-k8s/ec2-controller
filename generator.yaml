@@ -1168,6 +1168,11 @@ resources:
       ServiceNetworkARN:
         # ServiceNetworkARN is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
+      ServiceName:
+        type: 'string'
+        references:
+          resource: VPCEndpointServiceConfiguration
+          path: Status.ServiceName
     exceptions:
       terminal_codes:
         - InvalidVpcId.Malformed
