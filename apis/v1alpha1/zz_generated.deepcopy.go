@@ -30053,6 +30053,17 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 			}
 		}
 	}
+	if in.GatewayLoadBalancerRefs != nil {
+		in, out := &in.GatewayLoadBalancerRefs, &out.GatewayLoadBalancerRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	if in.NetworkLoadBalancerARNs != nil {
 		in, out := &in.NetworkLoadBalancerARNs, &out.NetworkLoadBalancerARNs
 		*out = make([]*string, len(*in))
@@ -30061,6 +30072,17 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 				in, out := &(*in)[i], &(*out)[i]
 				*out = new(string)
 				**out = **in
+			}
+		}
+	}
+	if in.NetworkLoadBalancerRefs != nil {
+		in, out := &in.NetworkLoadBalancerRefs, &out.NetworkLoadBalancerRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}

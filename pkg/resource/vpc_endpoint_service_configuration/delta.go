@@ -20,6 +20,7 @@ import (
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
@@ -62,12 +63,18 @@ func newResourceDelta(
 			delta.Add("Spec.GatewayLoadBalancerARNs", a.ko.Spec.GatewayLoadBalancerARNs, b.ko.Spec.GatewayLoadBalancerARNs)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.GatewayLoadBalancerRefs, b.ko.Spec.GatewayLoadBalancerRefs) {
+		delta.Add("Spec.GatewayLoadBalancerRefs", a.ko.Spec.GatewayLoadBalancerRefs, b.ko.Spec.GatewayLoadBalancerRefs)
+	}
 	if len(a.ko.Spec.NetworkLoadBalancerARNs) != len(b.ko.Spec.NetworkLoadBalancerARNs) {
 		delta.Add("Spec.NetworkLoadBalancerARNs", a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs)
 	} else if len(a.ko.Spec.NetworkLoadBalancerARNs) > 0 {
 		if !ackcompare.SliceStringPEqual(a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs) {
 			delta.Add("Spec.NetworkLoadBalancerARNs", a.ko.Spec.NetworkLoadBalancerARNs, b.ko.Spec.NetworkLoadBalancerARNs)
 		}
+	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.NetworkLoadBalancerRefs, b.ko.Spec.NetworkLoadBalancerRefs) {
+		delta.Add("Spec.NetworkLoadBalancerRefs", a.ko.Spec.NetworkLoadBalancerRefs, b.ko.Spec.NetworkLoadBalancerRefs)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSName, b.ko.Spec.PrivateDNSName) {
 		delta.Add("Spec.PrivateDNSName", a.ko.Spec.PrivateDNSName, b.ko.Spec.PrivateDNSName)

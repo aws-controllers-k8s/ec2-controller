@@ -17,13 +17,25 @@ package vpc_endpoint_service_configuration
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	elbv2apitypes "github.com/aws-controllers-k8s/elbv2-controller/apis/v1alpha1"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
+
+// +kubebuilder:rbac:groups=elbv2.services.k8s.aws,resources=loadbalancers,verbs=get;list
+// +kubebuilder:rbac:groups=elbv2.services.k8s.aws,resources=loadbalancers/status,verbs=get;list
+
+// +kubebuilder:rbac:groups=elbv2.services.k8s.aws,resources=loadbalancers,verbs=get;list
+// +kubebuilder:rbac:groups=elbv2.services.k8s.aws,resources=loadbalancers/status,verbs=get;list
 
 // ClearResolvedReferences removes any reference values that were made
 // concrete in the spec. It returns a copy of the input AWSResource which
@@ -31,6 +43,14 @@ import (
 // values.
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if len(ko.Spec.GatewayLoadBalancerRefs) > 0 {
+		ko.Spec.GatewayLoadBalancerARNs = nil
+	}
+
+	if len(ko.Spec.NetworkLoadBalancerRefs) > 0 {
+		ko.Spec.NetworkLoadBalancerARNs = nil
+	}
 
 	return &resource{ko}
 }
@@ -47,11 +67,157 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	return res, false, nil
+	ko := rm.concreteResource(res).ko
+
+	resourceHasReferences := false
+	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForGatewayLoadBalancerARNs(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForNetworkLoadBalancerARNs(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	return &resource{ko}, resourceHasReferences, err
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.VPCEndpointServiceConfiguration) error {
+
+	if len(ko.Spec.GatewayLoadBalancerRefs) > 0 && len(ko.Spec.GatewayLoadBalancerARNs) > 0 {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("GatewayLoadBalancerARNs", "GatewayLoadBalancerRefs")
+	}
+
+	if len(ko.Spec.NetworkLoadBalancerRefs) > 0 && len(ko.Spec.NetworkLoadBalancerARNs) > 0 {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("NetworkLoadBalancerARNs", "NetworkLoadBalancerRefs")
+	}
 	return nil
+}
+
+// resolveReferenceForGatewayLoadBalancerARNs reads the resource referenced
+// from GatewayLoadBalancerRefs field and sets the GatewayLoadBalancerARNs
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForGatewayLoadBalancerARNs(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.VPCEndpointServiceConfiguration,
+) (hasReferences bool, err error) {
+	for _, f0iter := range ko.Spec.GatewayLoadBalancerRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: GatewayLoadBalancerRefs")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
+			}
+			obj := &elbv2apitypes.LoadBalancer{}
+			if err := getReferencedResourceState_LoadBalancer(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			if ko.Spec.GatewayLoadBalancerARNs == nil {
+				ko.Spec.GatewayLoadBalancerARNs = make([]*string, 0, 1)
+			}
+			ko.Spec.GatewayLoadBalancerARNs = append(ko.Spec.GatewayLoadBalancerARNs, (*string)(obj.Status.ACKResourceMetadata.ARN))
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_LoadBalancer looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_LoadBalancer(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *elbv2apitypes.LoadBalancer,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"LoadBalancer",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"LoadBalancer",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"LoadBalancer",
+			namespace, name)
+	}
+	if obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"LoadBalancer",
+			namespace, name,
+			"Status.ACKResourceMetadata.ARN")
+	}
+	return nil
+}
+
+// resolveReferenceForNetworkLoadBalancerARNs reads the resource referenced
+// from NetworkLoadBalancerRefs field and sets the NetworkLoadBalancerARNs
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForNetworkLoadBalancerARNs(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.VPCEndpointServiceConfiguration,
+) (hasReferences bool, err error) {
+	for _, f0iter := range ko.Spec.NetworkLoadBalancerRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: NetworkLoadBalancerRefs")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
+			}
+			obj := &elbv2apitypes.LoadBalancer{}
+			if err := getReferencedResourceState_LoadBalancer(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			if ko.Spec.NetworkLoadBalancerARNs == nil {
+				ko.Spec.NetworkLoadBalancerARNs = make([]*string, 0, 1)
+			}
+			ko.Spec.NetworkLoadBalancerARNs = append(ko.Spec.NetworkLoadBalancerARNs, (*string)(obj.Status.ACKResourceMetadata.ARN))
+		}
+	}
+
+	return hasReferences, nil
 }

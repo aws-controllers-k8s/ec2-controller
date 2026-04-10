@@ -1187,6 +1187,18 @@ resources:
       custom_method_name: customUpdateVPCEndpoint  
   VpcEndpointServiceConfiguration:
     fields:
+      GatewayLoadBalancerArns:
+        type: '[]string'
+        references:
+          service_name: elbv2
+          resource: LoadBalancer
+          path: Status.ACKResourceMetadata.ARN
+      NetworkLoadBalancerArns:
+        type: '[]string'
+        references:
+          service_name: elbv2
+          resource: LoadBalancer
+          path: Status.ACKResourceMetadata.ARN
       AllowedPrincipals:
         from:
           operation: ModifyVpcEndpointServicePermissions
