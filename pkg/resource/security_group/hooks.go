@@ -129,6 +129,72 @@ func (rm *resourceManager) referencesResolved(
 	return true
 }
 
+// normalizeSelfRefRules returns a deep-copied resource whose
+// UserIDGroupPairs are canonicalised: any pair identified as a
+// self-reference has its server-fillable fields (GroupID, UserID,
+// GroupName) cleared.
+//
+// A pair is identified as a self-reference when its GroupID either is nil
+// (the natural way to express "this SG" in the spec, since the ID is
+// unknown until AWS assigns it) or equals the SG's own ID (the form AWS
+// returns on DescribeSecurityGroups read-back).
+//
+// This mirrors the auto-fill performed on the outbound path (see
+// createSecurityGroupRules below), where a nil GroupID is substituted
+// with r.ko.Status.ID before being sent to AWS. Without this inbound
+// normalisation, compareIPPermission's DeepEqual on UserIDGroupPairs
+// flags a permanent diff and triggers an endless Revoke/Authorize loop
+// on every reconcile (AWS auto-fills GroupID *and* UserID, and may also
+// populate GroupName, on read-back).
+//
+// The original resource is never mutated; callers receive a deep copy
+// that is safe to feed into the diff comparison and the subsequent
+// create/delete API calls (which themselves auto-fill nil GroupID with
+// r.ko.Status.ID).
+//
+// Scope: this fix is limited to self-references. Cross-SG and
+// cross-account pairs may still exhibit perpetual diffs if the user
+// omits server-filled fields such as UserID or VPCID; those cases are
+// not addressed here.
+//
+// See aws-controllers-k8s/community#2822.
+func normalizeSelfRefRules(r *resource) *resource {
+	if r == nil {
+		return nil
+	}
+	cp := &resource{ko: r.ko.DeepCopy()}
+	if cp.ko.Status.ID == nil {
+		return cp
+	}
+	selfID := *cp.ko.Status.ID
+	normalize := func(rules []*svcapitypes.IPPermission) {
+		for _, rule := range rules {
+			if rule == nil {
+				continue
+			}
+			for _, pair := range rule.UserIDGroupPairs {
+				if pair == nil {
+					continue
+				}
+				isSelf := pair.GroupID == nil ||
+					*pair.GroupID == selfID
+				if !isSelf {
+					continue
+				}
+				// Clear server-fillable fields so the canonical
+				// (omitted) form and the AWS-returned (auto-filled)
+				// form compare equal.
+				pair.GroupID = nil
+				pair.UserID = nil
+				pair.GroupName = nil
+			}
+		}
+	}
+	normalize(cp.ko.Spec.IngressRules)
+	normalize(cp.ko.Spec.EgressRules)
+	return cp
+}
+
 // syncSGRules analyzes desired and latest (if any)
 // resources and executes API calls to Create/Delete
 // rules in order to achieve desired state.
@@ -140,6 +206,13 @@ func (rm *resourceManager) syncSGRules(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
+
+	// Operate on normalised deep copies so that self-referencing rules
+	// expressed with an omitted GroupID match those read back from AWS
+	// with GroupID = self-SG-id (and AWS-filled UserID/GroupName),
+	// without mutating the caller's data.
+	desired = normalizeSelfRefRules(desired)
+	latest = normalizeSelfRefRules(latest)
 
 	toAddIngress := []*svcapitypes.IPPermission{}
 	toAddEgress := []*svcapitypes.IPPermission{}
