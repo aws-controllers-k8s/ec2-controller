@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.egressOnlyInternetGatewayID
+    - jsonPath: .status.id
       name: ID
       type: string
     name: v1alpha1
@@ -165,7 +165,7 @@ spec:
                   - type
                   type: object
                 type: array
-              egressOnlyInternetGatewayID:
+              id:
                 description: The ID of the egress-only internet gateway.
                 type: string
             type: object

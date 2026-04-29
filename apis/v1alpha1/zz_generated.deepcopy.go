@@ -6304,8 +6304,8 @@ func (in *EgressOnlyInternetGatewayStatus) DeepCopyInto(out *EgressOnlyInternetG
 			}
 		}
 	}
-	if in.EgressOnlyInternetGatewayID != nil {
-		in, out := &in.EgressOnlyInternetGatewayID, &out.EgressOnlyInternetGatewayID
+	if in.ID != nil {
+		in, out := &in.ID, &out.ID
 		*out = new(string)
 		**out = **in
 	}

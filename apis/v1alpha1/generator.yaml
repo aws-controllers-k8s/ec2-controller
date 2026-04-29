@@ -545,8 +545,22 @@ resources:
     update_operation:
       custom_method_name: customUpdateFlowLog
   EgressOnlyInternetGateway:
+    renames:
+      operations:
+        CreateEgressOnlyInternetGateway:
+          output_fields:
+            EgressOnlyInternetGatewayId: ID
+        DescribeEgressOnlyInternetGateways:
+          input_fields:
+            EgressOnlyInternetGatewayIds: ID
+          output_fields:
+            EgressOnlyInternetGatewayId: ID
+        DeleteEgressOnlyInternetGateway:
+          input_fields:
+            EgressOnlyInternetGatewayId: ID
     fields:
-      EgressOnlyInternetGatewayID:
+      ID:
+        is_primary_key: true
         print:
           name: ID
       VpcId:
@@ -562,6 +576,8 @@ resources:
         template_path: hooks/egress_only_internet_gateway/sdk_create_post_build_request.go.tpl
       sdk_file_end:
         template_path: hooks/egress_only_internet_gateway/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateEgressOnlyInternetGateway
   InternetGateway:
     fields:
       Tags:

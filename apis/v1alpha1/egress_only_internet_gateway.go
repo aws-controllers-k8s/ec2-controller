@@ -52,13 +52,13 @@ type EgressOnlyInternetGatewayStatus struct {
 	Attachments []*InternetGatewayAttachment `json:"attachments,omitempty"`
 	// The ID of the egress-only internet gateway.
 	// +kubebuilder:validation:Optional
-	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
+	ID *string `json:"id,omitempty"`
 }
 
 // EgressOnlyInternetGateway is the Schema for the EgressOnlyInternetGateways API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.egressOnlyInternetGatewayID`
+// +kubebuilder:printcolumn:name="ID",type=string,priority=0,JSONPath=`.status.id`
 type EgressOnlyInternetGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

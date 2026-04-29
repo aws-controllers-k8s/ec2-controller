@@ -108,9 +108,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.Attachments = nil
 		}
 		if elem.EgressOnlyInternetGatewayId != nil {
-			ko.Status.EgressOnlyInternetGatewayID = elem.EgressOnlyInternetGatewayId
+			ko.Status.ID = elem.EgressOnlyInternetGatewayId
 		} else {
-			ko.Status.EgressOnlyInternetGatewayID = nil
+			ko.Status.ID = nil
 		}
 		if elem.Tags != nil {
 			f2 := []*svcapitypes.Tag{}
@@ -145,8 +145,7 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return r.ko.Status.EgressOnlyInternetGatewayID == nil
-
+	return false
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
@@ -156,9 +155,9 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeEgressOnlyInternetGatewaysInput, error) {
 	res := &svcsdk.DescribeEgressOnlyInternetGatewaysInput{}
 
-	if r.ko.Status.EgressOnlyInternetGatewayID != nil {
+	if r.ko.Status.ID != nil {
 		f1 := []string{}
-		f1 = append(f1, *r.ko.Status.EgressOnlyInternetGatewayID)
+		f1 = append(f1, *r.ko.Status.ID)
 		res.EgressOnlyInternetGatewayIds = f1
 	}
 
@@ -211,9 +210,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Status.Attachments = nil
 	}
 	if resp.EgressOnlyInternetGateway.EgressOnlyInternetGatewayId != nil {
-		ko.Status.EgressOnlyInternetGatewayID = resp.EgressOnlyInternetGateway.EgressOnlyInternetGatewayId
+		ko.Status.ID = resp.EgressOnlyInternetGateway.EgressOnlyInternetGatewayId
 	} else {
-		ko.Status.EgressOnlyInternetGatewayID = nil
+		ko.Status.ID = nil
 	}
 	if resp.EgressOnlyInternetGateway.Tags != nil {
 		f2 := []*svcapitypes.Tag{}
@@ -290,8 +289,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteEgressOnlyInternetGatewayInput, error) {
 	res := &svcsdk.DeleteEgressOnlyInternetGatewayInput{}
 
-	if r.ko.Status.EgressOnlyInternetGatewayID != nil {
-		res.EgressOnlyInternetGatewayId = r.ko.Status.EgressOnlyInternetGatewayID
+	if r.ko.Status.ID != nil {
+		res.EgressOnlyInternetGatewayId = r.ko.Status.ID
 	}
 
 	return res, nil
