@@ -564,6 +564,7 @@ resources:
         print:
           name: ID
       VpcId:
+        is_immutable: true
         references:
           resource: VPC
           path: Status.VPCID

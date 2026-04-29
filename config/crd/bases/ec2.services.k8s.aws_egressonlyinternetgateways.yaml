@@ -65,6 +65,9 @@ spec:
                 description: The ID of the VPC for which to create the egress-only
                   internet gateway.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               vpcRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around
                   *AWSResourceReference\ntype to provide more user friendly syntax

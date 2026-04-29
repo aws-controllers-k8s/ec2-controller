@@ -30,6 +30,7 @@ type EgressOnlyInternetGatewaySpec struct {
 	// to an empty string.
 	Tags []*Tag `json:"tags,omitempty"`
 	// The ID of the VPC for which to create the egress-only internet gateway.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	VPCID  *string                                  `json:"vpcID,omitempty"`
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }
