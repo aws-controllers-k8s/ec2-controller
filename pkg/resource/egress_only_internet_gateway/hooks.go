@@ -42,6 +42,7 @@ func (rm *resourceManager) customUpdateEgressOnlyInternetGateway(
 	// an error, then the update was successful and desired.Spec
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
+	updated.ko.Status = latest.ko.Status
 
 	if delta.DifferentAt("Spec.Tags") {
 		if err := tags.Sync(
