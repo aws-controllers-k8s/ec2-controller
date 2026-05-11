@@ -249,7 +249,9 @@ class TestVpc:
         (ref, cr) = simple_vpc
         resource_id = cr["status"]["vpcID"]
 
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        # Wait for the controller to finish reconciling (SG rule deletion
+        # happens inline during creation but the controller may be busy)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check VPC exists in AWS
         ec2_validator = EC2Validator(ec2_client)
