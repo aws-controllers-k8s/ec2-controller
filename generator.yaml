@@ -295,6 +295,8 @@ operations:
     custom_check_required_fields_missing_method: checkForMissingRequiredFields
   DescribeManagedPrefixLists:
     custom_check_required_fields_missing_method: checkForMissingRequiredFields
+  DescribeEgressOnlyInternetGateways:
+    custom_check_required_fields_missing_method: checkRequiredFieldsMissing
   CreateEgressOnlyInternetGateway:
     output_wrapper_field_path: EgressOnlyInternetGateway
   CreateNatGateway:

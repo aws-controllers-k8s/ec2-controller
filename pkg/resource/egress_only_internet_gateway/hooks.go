@@ -56,6 +56,15 @@ func (rm *resourceManager) customUpdateEgressOnlyInternetGateway(
 	return updated, nil
 }
 
+// checkRequiredFieldsMissing returns true if Status.ID is not yet set,
+// indicating the resource has not been created in AWS. Without the ID the
+// DescribeEgressOnlyInternetGateways call would be unfiltered and could
+// match an unrelated EIGW that belongs to a different VPC in the same
+// account, causing a spurious "Resource already exists" terminal error.
+func (rm *resourceManager) checkRequiredFieldsMissing(r *resource) bool {
+	return r.ko.Status.ID == nil
+}
+
 func updateTagSpecificationsInCreateRequest(r *resource,
 	input *svcsdk.CreateEgressOnlyInternetGatewayInput) {
 	input.TagSpecifications = nil
