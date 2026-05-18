@@ -127,7 +127,9 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	if delta.DifferentAt("Spec.DNSOptions") && desired.ko.Spec.DNSOptions != nil {
 		if desired.ko.Spec.DNSOptions != nil {
 			input.DnsOptions = &svcsdktypes.DnsOptionsSpecification{
-				DnsRecordIpType: svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType),
+				DnsRecordIpType:            svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType),
+				PrivateDnsPreference:       desired.ko.Spec.DNSOptions.PrivateDNSPreference,
+				PrivateDnsSpecifiedDomains: aws.ToStringSlice(desired.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains),
 			}
 		}
 	}
