@@ -129,28 +129,22 @@ func (rm *resourceManager) referencesResolved(
 	return true
 }
 
-// normalizeSelfRefRules returns a deep-copied resource whose
-// UserIDGroupPairs are canonicalised: any pair identified as a
-// self-reference has its server-fillable fields (GroupID, UserID,
-// GroupName) cleared.
+// normalizeSelfRefRules canonicalises self-referencing UserIDGroupPairs
+// on r.ko.Spec.{Ingress,Egress}Rules by clearing the server-fillable
+// fields (GroupID, UserID, GroupName) in place.
 //
-// A pair is identified as a self-reference when its GroupID either is nil
-// (the natural way to express "this SG" in the spec, since the ID is
-// unknown until AWS assigns it) or equals the SG's own ID (the form AWS
-// returns on DescribeSecurityGroups read-back).
+// A pair is identified as a self-reference when its GroupID either is
+// nil (the natural way to express "this SG" in the spec, since the ID
+// is unknown until AWS assigns it) or equals the SG's own ID (the form
+// AWS returns on DescribeSecurityGroups read-back).
 //
 // This mirrors the auto-fill performed on the outbound path (see
 // createSecurityGroupRules below), where a nil GroupID is substituted
-// with r.ko.Status.ID before being sent to AWS. Without this inbound
-// normalisation, compareIPPermission's DeepEqual on UserIDGroupPairs
-// flags a permanent diff and triggers an endless Revoke/Authorize loop
-// on every reconcile (AWS auto-fills GroupID *and* UserID, and may also
+// with r.ko.Status.ID before being sent to AWS. Without this
+// normalisation, newResourceDelta's DeepEqual on UserIDGroupPairs flags
+// a permanent diff and triggers an endless Revoke/Authorize loop on
+// every reconcile (AWS auto-fills GroupID *and* UserID, and may also
 // populate GroupName, on read-back).
-//
-// The original resource is never mutated; callers receive a deep copy
-// that is safe to feed into the diff comparison and the subsequent
-// create/delete API calls (which themselves auto-fill nil GroupID with
-// r.ko.Status.ID).
 //
 // Scope: this fix is limited to self-references. Cross-SG and
 // cross-account pairs may still exhibit perpetual diffs if the user
@@ -158,15 +152,11 @@ func (rm *resourceManager) referencesResolved(
 // not addressed here.
 //
 // See aws-controllers-k8s/community#2822.
-func normalizeSelfRefRules(r *resource) *resource {
-	if r == nil {
-		return nil
+func normalizeSelfRefRules(r *resource) {
+	if r == nil || r.ko.Status.ID == nil {
+		return
 	}
-	cp := &resource{ko: r.ko.DeepCopy()}
-	if cp.ko.Status.ID == nil {
-		return cp
-	}
-	selfID := *cp.ko.Status.ID
+	selfID := *r.ko.Status.ID
 	normalize := func(rules []*svcapitypes.IPPermission) {
 		for _, rule := range rules {
 			if rule == nil {
@@ -190,9 +180,32 @@ func normalizeSelfRefRules(r *resource) *resource {
 			}
 		}
 	}
-	normalize(cp.ko.Spec.IngressRules)
-	normalize(cp.ko.Spec.EgressRules)
-	return cp
+	normalize(r.ko.Spec.IngressRules)
+	normalize(r.ko.Spec.EgressRules)
+}
+
+// customPreCompare is injected at the top of the generated
+// newResourceDelta (see delta.go) via the `delta_pre_compare` hook in
+// generator.yaml. It canonicalises self-referencing UserIDGroupPairs on
+// both sides in place so that the subsequent field-by-field DeepEqual
+// does not report a spurious diff on Spec.IngressRules / Spec.EgressRules
+// when the only divergence is server-fill on self-references.
+//
+// Mutating a and b directly matches the convention used by RouteTable,
+// NetworkAcl, and VPC in this repo, and is safe here because:
+//   - ACK runtime patches only latest.ko.Status back to k8s, never Spec.
+//   - createSecurityGroupRules already canonicalises nil GroupID to
+//     r.ko.Status.ID before calling AWS, so clearing GroupID upstream
+//     does not change what AWS receives.
+//   - Each reconcile reads a fresh desired from k8s, so the mutation
+//     does not persist across cycles.
+func customPreCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	normalizeSelfRefRules(a)
+	normalizeSelfRefRules(b)
 }
 
 // syncSGRules analyzes desired and latest (if any)
@@ -206,13 +219,6 @@ func (rm *resourceManager) syncSGRules(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
-
-	// Operate on normalised deep copies so that self-referencing rules
-	// expressed with an omitted GroupID match those read back from AWS
-	// with GroupID = self-SG-id (and AWS-filled UserID/GroupName),
-	// without mutating the caller's data.
-	desired = normalizeSelfRefRules(desired)
-	latest = normalizeSelfRefRules(latest)
 
 	toAddIngress := []*svcapitypes.IPPermission{}
 	toAddEgress := []*svcapitypes.IPPermission{}

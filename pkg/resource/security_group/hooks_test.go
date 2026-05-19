@@ -55,34 +55,19 @@ func mkResource(ingress, egress []*svcapitypes.IPPermission) *resource {
 }
 
 func TestNormalizeSelfRefRules(t *testing.T) {
-	t.Run("nil resource returns nil", func(t *testing.T) {
-		assert.Nil(t, normalizeSelfRefRules(nil))
+	t.Run("nil resource does not panic", func(t *testing.T) {
+		assert.NotPanics(t, func() { normalizeSelfRefRules(nil) })
 	})
 
-	t.Run("nil status ID returns a copy untouched", func(t *testing.T) {
+	t.Run("nil status ID is a no-op", func(t *testing.T) {
 		r := mkResource(
 			[]*svcapitypes.IPPermission{ruleWithPairs(pair(aws.String(testSelfID), nil, nil))},
 			nil,
 		)
 		r.ko.Status.ID = nil
-		got := normalizeSelfRefRules(r)
-		assert.NotSame(t, r, got, "must return a distinct *resource")
-		assert.Equal(t, testSelfID, *got.ko.Spec.IngressRules[0].UserIDGroupPairs[0].GroupID,
+		normalizeSelfRefRules(r)
+		assert.Equal(t, testSelfID, *r.ko.Spec.IngressRules[0].UserIDGroupPairs[0].GroupID,
 			"GroupID must not be touched when Status.ID is nil")
-	})
-
-	t.Run("does not mutate the input resource (deep-copy guarantee)", func(t *testing.T) {
-		in := mkResource(
-			[]*svcapitypes.IPPermission{ruleWithPairs(
-				pair(aws.String(testSelfID), aws.String(testAccountID), aws.String(testSelfName)),
-			)},
-			nil,
-		)
-		_ = normalizeSelfRefRules(in)
-		got := in.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
-		assert.Equal(t, testSelfID, *got.GroupID, "input GroupID must be untouched")
-		assert.Equal(t, testAccountID, *got.UserID, "input UserID must be untouched")
-		assert.Equal(t, testSelfName, *got.GroupName, "input GroupName must be untouched")
 	})
 
 	t.Run("strips server-fillable fields on self-ref ingress pair", func(t *testing.T) {
@@ -92,7 +77,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			)},
 			nil,
 		)
-		got := normalizeSelfRefRules(r).ko.Spec.IngressRules[0].UserIDGroupPairs[0]
+		normalizeSelfRefRules(r)
+		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
 		assert.Nil(t, got.GroupID)
 		assert.Nil(t, got.UserID)
 		assert.Nil(t, got.GroupName)
@@ -105,7 +91,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 				pair(aws.String(testSelfID), aws.String(testAccountID), aws.String(testSelfName)),
 			)},
 		)
-		got := normalizeSelfRefRules(r).ko.Spec.EgressRules[0].UserIDGroupPairs[0]
+		normalizeSelfRefRules(r)
+		got := r.ko.Spec.EgressRules[0].UserIDGroupPairs[0]
 		assert.Nil(t, got.GroupID)
 		assert.Nil(t, got.UserID)
 		assert.Nil(t, got.GroupName)
@@ -118,7 +105,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			)},
 			nil,
 		)
-		got := normalizeSelfRefRules(r).ko.Spec.IngressRules[0].UserIDGroupPairs[0]
+		normalizeSelfRefRules(r)
+		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
 		assert.Equal(t, testOtherID, *got.GroupID)
 		assert.Equal(t, testAccountID, *got.UserID)
 	})
@@ -130,7 +118,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			)},
 			nil,
 		)
-		got := normalizeSelfRefRules(r).ko.Spec.IngressRules[0].UserIDGroupPairs[0]
+		normalizeSelfRefRules(r)
+		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
 		assert.Nil(t, got.GroupID)
 		assert.Nil(t, got.UserID)
 		assert.Nil(t, got.GroupName)
@@ -144,7 +133,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			)},
 			nil,
 		)
-		pairs := normalizeSelfRefRules(r).ko.Spec.IngressRules[0].UserIDGroupPairs
+		normalizeSelfRefRules(r)
+		pairs := r.ko.Spec.IngressRules[0].UserIDGroupPairs
 		assert.Nil(t, pairs[0].GroupID)
 		assert.Nil(t, pairs[0].UserID)
 		assert.Equal(t, testOtherID, *pairs[1].GroupID)
@@ -162,9 +152,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			},
 			nil,
 		)
-		var got *resource
-		assert.NotPanics(t, func() { got = normalizeSelfRefRules(r) })
-		p := got.ko.Spec.IngressRules[1].UserIDGroupPairs[1]
+		assert.NotPanics(t, func() { normalizeSelfRefRules(r) })
+		p := r.ko.Spec.IngressRules[1].UserIDGroupPairs[1]
 		assert.Nil(t, p.GroupID)
 		assert.Nil(t, p.UserID)
 	})
@@ -179,7 +168,8 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			})},
 			nil,
 		)
-		got := normalizeSelfRefRules(r).ko.Spec.IngressRules[0].UserIDGroupPairs[0]
+		normalizeSelfRefRules(r)
+		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
 		assert.Nil(t, got.GroupID)
 		assert.Nil(t, got.UserID)
 		assert.NotNil(t, got.Description)
@@ -187,38 +177,131 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 	})
 }
 
-// TestContainsRule_SelfRef_AfterNormalisation locks in the actual fix:
-// after normalisation, a desired rule expressed in canonical "GroupID
-// omitted" form must be recognised as already present in the latest set
-// when AWS auto-filled GroupID = self-SG-id and UserID = account-id on
-// read-back. Without normalisation, containsRule returns false and
-// syncSGRules schedules a Revoke + Authorize on every reconcile.
-func TestContainsRule_SelfRef_AfterNormalisation(t *testing.T) {
-	desc := aws.String("self-ref, description present, no userID, no groupID")
-	desiredRule := ruleWithPairs(&svcapitypes.UserIDGroupPair{Description: desc})
-	latestRule := ruleWithPairs(&svcapitypes.UserIDGroupPair{
-		Description: desc,
-		GroupID:     aws.String(testSelfID),
-		UserID:      aws.String(testAccountID),
-	})
-
-	// Pre-condition: without normalisation the two are NOT equal.
-	assert.False(t, containsRule([]*svcapitypes.IPPermission{latestRule}, desiredRule),
-		"pre-condition: raw self-ref desired must not match AWS-filled latest")
-
-	desired := normalizeSelfRefRules(mkResource(
-		[]*svcapitypes.IPPermission{desiredRule}, nil,
-	))
-	latest := normalizeSelfRefRules(mkResource(
-		[]*svcapitypes.IPPermission{latestRule}, nil,
-	))
-
-	assert.True(t,
-		containsRule(latest.ko.Spec.IngressRules, desired.ko.Spec.IngressRules[0]),
-		"after normalisation, desired self-ref must match latest self-ref",
+// TestCustomPreCompare_SelfRef_SuppressesDelta locks in the runtime-level
+// fix: newResourceDelta must NOT flag Spec.IngressRules / Spec.EgressRules
+// as different when the only divergence is server-fill on self-referencing
+// pairs. customPreCompare (wired in via the delta_pre_compare hook in
+// generator.yaml) normalises both sides before the generated DeepEqual.
+func TestCustomPreCompare_SelfRef_SuppressesDelta(t *testing.T) {
+	desc := aws.String("self-ref TCP/53")
+	desired := mkResource(
+		[]*svcapitypes.IPPermission{ruleWithPairs(&svcapitypes.UserIDGroupPair{
+			Description: desc,
+		})},
+		[]*svcapitypes.IPPermission{ruleWithPairs(&svcapitypes.UserIDGroupPair{
+			Description: desc,
+		})},
 	)
-	assert.True(t,
-		containsRule(desired.ko.Spec.IngressRules, latest.ko.Spec.IngressRules[0]),
-		"match must be symmetric",
+	latest := mkResource(
+		[]*svcapitypes.IPPermission{ruleWithPairs(&svcapitypes.UserIDGroupPair{
+			Description: desc,
+			GroupID:     aws.String(testSelfID),
+			UserID:      aws.String(testAccountID),
+			GroupName:   aws.String(testSelfName),
+		})},
+		[]*svcapitypes.IPPermission{ruleWithPairs(&svcapitypes.UserIDGroupPair{
+			Description: desc,
+			GroupID:     aws.String(testSelfID),
+			UserID:      aws.String(testAccountID),
+			GroupName:   aws.String(testSelfName),
+		})},
 	)
+
+	delta := newResourceDelta(desired, latest)
+
+	assert.False(t, delta.DifferentAt("Spec.IngressRules"),
+		"self-ref ingress must not appear in delta after normalisation")
+	assert.False(t, delta.DifferentAt("Spec.EgressRules"),
+		"self-ref egress must not appear in delta after normalisation")
+	assert.Empty(t, delta.Differences,
+		"no other field changed; delta must be empty")
+}
+
+// TestCustomPreCompare_RealDiff_StillFires confirms that legitimate rule
+// changes (e.g. port edits) are still surfaced after normalisation.
+func TestCustomPreCompare_RealDiff_StillFires(t *testing.T) {
+	desc := aws.String("self-ref")
+	desired := mkResource(
+		[]*svcapitypes.IPPermission{{
+			FromPort:         aws.Int64(53),
+			ToPort:           aws.Int64(53),
+			IPProtocol:       aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{Description: desc}},
+		}},
+		nil,
+	)
+	latest := mkResource(
+		[]*svcapitypes.IPPermission{{
+			FromPort:   aws.Int64(80), // <- changed
+			ToPort:     aws.Int64(80),
+			IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				Description: desc,
+				GroupID:     aws.String(testSelfID),
+				UserID:      aws.String(testAccountID),
+			}},
+		}},
+		nil,
+	)
+
+	delta := newResourceDelta(desired, latest)
+
+	assert.True(t, delta.DifferentAt("Spec.IngressRules"),
+		"a real port change must still produce a Spec.IngressRules diff")
+}
+
+// TestCustomPreCompare_CrossSGRef_NotSuppressed confirms scope: the fix is
+// limited to self-references. A pair pointing at a *different* SG with the
+// AWS-filled UserID missing on desired must still produce a delta, since
+// cross-SG normalisation is explicitly out of scope.
+func TestCustomPreCompare_CrossSGRef_NotSuppressed(t *testing.T) {
+	desired := mkResource(
+		[]*svcapitypes.IPPermission{ruleWithPairs(
+			pair(aws.String(testOtherID), nil, nil),
+		)},
+		nil,
+	)
+	latest := mkResource(
+		[]*svcapitypes.IPPermission{ruleWithPairs(
+			pair(aws.String(testOtherID), aws.String(testAccountID), nil),
+		)},
+		nil,
+	)
+
+	delta := newResourceDelta(desired, latest)
+
+	assert.True(t, delta.DifferentAt("Spec.IngressRules"),
+		"cross-SG ref with server-filled UserID must still produce a diff (out of scope for this fix)")
+}
+
+// TestCustomPreCompare_Mutates_a_and_b documents that customPreCompare
+// is intentionally allowed to mutate its inputs in place, matching the
+// convention used by RouteTable, NetworkAcl, and VPC. Downstream
+// consumers (sdkUpdate -> customUpdateSecurityGroup ->
+// createSecurityGroupRules) handle nil GroupID by auto-filling with
+// r.ko.Status.ID before the AWS API call, so the mutation is safe.
+func TestCustomPreCompare_Mutates_a_and_b(t *testing.T) {
+	a := mkResource(
+		[]*svcapitypes.IPPermission{ruleWithPairs(
+			pair(aws.String(testSelfID), aws.String(testAccountID), aws.String(testSelfName)),
+		)},
+		nil,
+	)
+	b := mkResource(
+		[]*svcapitypes.IPPermission{ruleWithPairs(
+			pair(aws.String(testSelfID), aws.String(testAccountID), aws.String(testSelfName)),
+		)},
+		nil,
+	)
+
+	_ = newResourceDelta(a, b)
+
+	aPair := a.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
+	bPair := b.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
+	assert.Nil(t, aPair.GroupID, "a self-ref GroupID must be cleared in place")
+	assert.Nil(t, aPair.UserID, "a self-ref UserID must be cleared in place")
+	assert.Nil(t, aPair.GroupName, "a self-ref GroupName must be cleared in place")
+	assert.Nil(t, bPair.GroupID, "b self-ref GroupID must be cleared in place")
+	assert.Nil(t, bPair.UserID, "b self-ref UserID must be cleared in place")
+	assert.Nil(t, bPair.GroupName, "b self-ref GroupName must be cleared in place")
 }
