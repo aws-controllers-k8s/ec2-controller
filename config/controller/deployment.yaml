@@ -106,7 +106,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       terminationGracePeriodSeconds: 10
-      serviceAccountName: ack-ec2-controller
+      serviceAccountName: ack--controller
       hostIPC: false
       hostPID: false
       hostNetwork: false

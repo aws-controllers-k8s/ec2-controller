@@ -145,7 +145,8 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return rm.checkRequiredFieldsMissing(r)
+	return r.ko.Status.ID == nil
+
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
