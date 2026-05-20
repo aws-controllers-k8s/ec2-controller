@@ -180,7 +180,8 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return false
+	return r.ko.Status.FlowLogID == nil
+
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
@@ -189,6 +190,12 @@ func (rm *resourceManager) newListRequestPayload(
 	r *resource,
 ) (*svcsdk.DescribeFlowLogsInput, error) {
 	res := &svcsdk.DescribeFlowLogsInput{}
+
+	if r.ko.Status.FlowLogID != nil {
+		f2 := []string{}
+		f2 = append(f2, *r.ko.Status.FlowLogID)
+		res.FlowLogIds = f2
+	}
 
 	return res, nil
 }
