@@ -925,6 +925,8 @@ resources:
             GroupIds: Ids
             GroupNames: Names
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
       sdk_file_end:
