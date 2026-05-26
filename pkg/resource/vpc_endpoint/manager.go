@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcendpoints,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcendpoints/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"PolicyDocument"}
+var lateInitializeFieldNames = []string{"PolicyDocument", "ServiceRegion"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -251,10 +251,6 @@ func (rm *resourceManager) LateInitialize(
 func (rm *resourceManager) incompleteLateInitialization(
 	res acktypes.AWSResource,
 ) bool {
-	ko := rm.concreteResource(res).ko.DeepCopy()
-	if ko.Spec.PolicyDocument == nil {
-		return true
-	}
 	return false
 }
 
@@ -268,6 +264,9 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
 	if observedKo.Spec.PolicyDocument != nil && latestKo.Spec.PolicyDocument == nil {
 		latestKo.Spec.PolicyDocument = observedKo.Spec.PolicyDocument
+	}
+	if observedKo.Spec.ServiceRegion != nil && latestKo.Spec.ServiceRegion == nil {
+		latestKo.Spec.ServiceRegion = observedKo.Spec.ServiceRegion
 	}
 	return &resource{latestKo}
 }
