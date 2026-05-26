@@ -196,19 +196,30 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.SupportedIPAddressTypes = nil
 		}
-		if elem.Tags != nil {
-			f14 := []*svcapitypes.Tag{}
-			for _, f14iter := range elem.Tags {
-				f14elem := &svcapitypes.Tag{}
-				if f14iter.Key != nil {
-					f14elem.Key = f14iter.Key
-				}
-				if f14iter.Value != nil {
-					f14elem.Value = f14iter.Value
-				}
+		if elem.SupportedRegions != nil {
+			f14 := []*string{}
+			for _, f14iter := range elem.SupportedRegions {
+				var f14elem *string
+				f14elem = f14iter.Region
 				f14 = append(f14, f14elem)
 			}
-			ko.Spec.Tags = f14
+			ko.Spec.SupportedRegions = f14
+		} else {
+			ko.Spec.SupportedRegions = nil
+		}
+		if elem.Tags != nil {
+			f15 := []*svcapitypes.Tag{}
+			for _, f15iter := range elem.Tags {
+				f15elem := &svcapitypes.Tag{}
+				if f15iter.Key != nil {
+					f15elem.Key = f15iter.Key
+				}
+				if f15iter.Value != nil {
+					f15elem.Value = f15iter.Value
+				}
+				f15 = append(f15, f15elem)
+			}
+			ko.Spec.Tags = f15
 		} else {
 			ko.Spec.Tags = nil
 		}
@@ -371,19 +382,30 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.SupportedIPAddressTypes = nil
 	}
-	if resp.ServiceConfiguration.Tags != nil {
-		f14 := []*svcapitypes.Tag{}
-		for _, f14iter := range resp.ServiceConfiguration.Tags {
-			f14elem := &svcapitypes.Tag{}
-			if f14iter.Key != nil {
-				f14elem.Key = f14iter.Key
-			}
-			if f14iter.Value != nil {
-				f14elem.Value = f14iter.Value
-			}
+	if resp.ServiceConfiguration.SupportedRegions != nil {
+		f14 := []*string{}
+		for _, f14iter := range resp.ServiceConfiguration.SupportedRegions {
+			var f14elem *string
+			f14elem = f14iter.Region
 			f14 = append(f14, f14elem)
 		}
-		ko.Spec.Tags = f14
+		ko.Spec.SupportedRegions = f14
+	} else {
+		ko.Spec.SupportedRegions = nil
+	}
+	if resp.ServiceConfiguration.Tags != nil {
+		f15 := []*svcapitypes.Tag{}
+		for _, f15iter := range resp.ServiceConfiguration.Tags {
+			f15elem := &svcapitypes.Tag{}
+			if f15iter.Key != nil {
+				f15elem.Key = f15iter.Key
+			}
+			if f15iter.Value != nil {
+				f15elem.Value = f15iter.Value
+			}
+			f15 = append(f15, f15elem)
+		}
+		ko.Spec.Tags = f15
 	} else {
 		ko.Spec.Tags = nil
 	}
@@ -391,7 +413,8 @@ func (rm *resourceManager) sdkCreate(
 	rm.setStatusDefaults(ko)
 
 	// This causes a requeue and the rest of the fields will be synced on the next reconciliation loop
-	return &resource{ko}, ackrequeue.Needed(errors.New("reconcile update only fields."))
+	ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, aws.String("Reconciling to sync additional fields"), nil)
+
 	return &resource{ko}, nil
 }
 
@@ -417,6 +440,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.SupportedIPAddressTypes != nil {
 		res.SupportedIpAddressTypes = aws.ToStringSlice(r.ko.Spec.SupportedIPAddressTypes)
+	}
+	if r.ko.Spec.SupportedRegions != nil {
+		res.SupportedRegions = aws.ToStringSlice(r.ko.Spec.SupportedRegions)
 	}
 
 	return res, nil
@@ -460,8 +486,16 @@ func (rm *resourceManager) sdkUpdate(
 		}
 	}
 
+	if delta.DifferentAt("Spec.SupportedRegions") {
+		if err := rm.syncSupportedRegions(ctx, desired, latest); err != nil {
+			updated = &resource{desired.ko.DeepCopy()}
+			ackcondition.SetSynced(updated, corev1.ConditionFalse, nil, nil)
+			return updated, err
+		}
+	}
+
 	// Only continue if something other than Tags or certain fields has changed in the Spec
-	if !delta.DifferentExcept("Spec.Tags", "Spec.AllowedPrincipals") {
+	if !delta.DifferentExcept("Spec.Tags", "Spec.AllowedPrincipals", "Spec.SupportedRegions") {
 		return updated, nil
 	}
 

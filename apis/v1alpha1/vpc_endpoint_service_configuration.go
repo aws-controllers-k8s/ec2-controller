@@ -39,6 +39,8 @@ type VPCEndpointServiceConfigurationSpec struct {
 	PrivateDNSName *string `json:"privateDNSName,omitempty"`
 	// The supported IP address types. The possible values are ipv4 and ipv6.
 	SupportedIPAddressTypes []*string `json:"supportedIPAddressTypes,omitempty"`
+	// The Regions from which service consumers can access the service.
+	SupportedRegions []*string `json:"supportedRegions,omitempty"`
 	// The tags. The value parameter is required, but if you don't want the tag
 	// to have a value, specify the parameter with no value, and we set the value
 	// to an empty string.
