@@ -23,7 +23,15 @@
 		}
 	}
 
+	if delta.DifferentAt("Spec.SupportedRegions") {
+		if err := rm.syncSupportedRegions(ctx, desired, latest); err != nil {
+			updated = &resource{desired.ko.DeepCopy()}
+			ackcondition.SetSynced(updated, corev1.ConditionFalse, nil, nil)
+			return updated, err
+		}
+	}
+
 	// Only continue if something other than Tags or certain fields has changed in the Spec
-	if !delta.DifferentExcept("Spec.Tags", "Spec.AllowedPrincipals") {
+	if !delta.DifferentExcept("Spec.Tags", "Spec.AllowedPrincipals", "Spec.SupportedRegions") {
 		return updated, nil
 	}

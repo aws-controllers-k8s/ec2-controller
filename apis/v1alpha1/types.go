@@ -5894,6 +5894,7 @@ type ServiceConfiguration struct {
 	ServiceState                *string                      `json:"serviceState,omitempty"`
 	ServiceType                 []*ServiceTypeDetail         `json:"serviceType,omitempty"`
 	SupportedIPAddressTypes     []*string                    `json:"supportedIPAddressTypes,omitempty"`
+	SupportedRegions            []*SupportedRegionDetail     `json:"supportedRegions,omitempty"`
 	Tags                        []*Tag                       `json:"tags,omitempty"`
 }
 

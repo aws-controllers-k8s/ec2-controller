@@ -84,6 +84,12 @@ spec:
                 items:
                   type: string
                 type: array
+              supportedRegions:
+                description: The Regions from which service consumers can access the
+                  service.
+                items:
+                  type: string
+                type: array
               tags:
                 description: |-
                   The tags. The value parameter is required, but if you don't want the tag

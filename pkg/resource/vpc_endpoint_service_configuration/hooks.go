@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -144,6 +145,76 @@ func (rm *resourceManager) modifyAllowedPrincipals(
 	}
 
 	return nil
+}
+
+func customPreCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	desiredRegions := a.ko.Spec.SupportedRegions
+	latestRegions := b.ko.Spec.SupportedRegions
+
+	if ackcompare.HasNilDifference(desiredRegions, latestRegions) {
+		delta.Add("Spec.SupportedRegions", desiredRegions, latestRegions)
+		return
+	}
+
+	if len(desiredRegions) != len(latestRegions) {
+		delta.Add("Spec.SupportedRegions", desiredRegions, latestRegions)
+		return
+	}
+
+	for _, r := range desiredRegions {
+		if !ackutil.InStringPs(*r, latestRegions) {
+			delta.Add("Spec.SupportedRegions", desiredRegions, latestRegions)
+			return
+		}
+	}
+}
+
+func (rm *resourceManager) syncSupportedRegions(
+	ctx context.Context,
+	desired *resource,
+	latest *resource,
+) error {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("syncSupportedRegions")
+	var err error
+	defer func() { exit(err) }()
+
+	toAdd := []string{}
+	toRemove := []string{}
+
+	for _, r := range desired.ko.Spec.SupportedRegions {
+		if !ackutil.InStringPs(*r, latest.ko.Spec.SupportedRegions) {
+			toAdd = append(toAdd, *r)
+		}
+	}
+
+	for _, r := range latest.ko.Spec.SupportedRegions {
+		if !ackutil.InStringPs(*r, desired.ko.Spec.SupportedRegions) {
+			toRemove = append(toRemove, *r)
+		}
+	}
+
+	if len(toAdd) == 0 && len(toRemove) == 0 {
+		return nil
+	}
+
+	input := &svcsdk.ModifyVpcEndpointServiceConfigurationInput{
+		ServiceId: latest.ko.Status.ServiceID,
+	}
+	if len(toAdd) > 0 {
+		input.AddSupportedRegions = toAdd
+	}
+	if len(toRemove) > 0 {
+		input.RemoveSupportedRegions = toRemove
+	}
+
+	_, err = rm.sdkapi.ModifyVpcEndpointServiceConfiguration(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpointServiceConfiguration", err)
+	return err
 }
 
 // Sets additional fields (not covered by CREATE Op) on the resource's object
