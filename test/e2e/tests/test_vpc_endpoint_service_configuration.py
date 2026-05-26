@@ -96,14 +96,15 @@ class TestVpcEndpointServiceConfiguration:
     def test_vpc_endpoint_service_configuration_create_delete(self, ec2_client, simple_vpc_endpoint_service_configuration):
         (ref, cr) = simple_vpc_endpoint_service_configuration
 
-        resource_id = cr["status"]["serviceID"]
-
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
-        # Check VPC Endpoint Service exists in AWS
         ec2_validator = EC2Validator(ec2_client)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        resource = k8s.get_resource(ref)
+        resource_id = resource["status"]["serviceID"]
+
         ec2_validator.assert_vpc_endpoint_service_configuration(resource_id)
-        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Check system and user tags exist in AWS 
         vpce_service = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
@@ -215,4 +216,62 @@ class TestVpcEndpointServiceConfiguration:
 
         # Check VPC Endpoint Service no longer exists in AWS
         ec2_validator.assert_vpc_endpoint_service_configuration(resource_id, exists=False)
-    
+
+    @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
+    def test_vpc_endpoint_service_configuration_supported_regions(self, ec2_client, simple_vpc_endpoint_service_configuration):
+        (ref, cr) = simple_vpc_endpoint_service_configuration
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        ec2_validator = EC2Validator(ec2_client)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        resource = k8s.get_resource(ref)
+        resource_id = resource["status"]["serviceID"]
+
+        updates = {
+            "spec": {
+                "supportedRegions": [REGION, "us-east-1"],
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        resource = k8s.get_resource(ref)
+        assert set(resource["spec"]["supportedRegions"]) == {REGION, "us-east-1"}
+        assert ec2_validator.get_active_supported_regions(resource_id) == {REGION, "us-east-1"}
+
+        updates = {
+            "spec": {
+                "supportedRegions": [REGION],
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        resource = k8s.get_resource(ref)
+        assert set(resource["spec"]["supportedRegions"]) == {REGION}
+        assert ec2_validator.get_active_supported_regions(resource_id) == {REGION}
+
+        updates = {
+            "spec": {
+                "supportedRegions": [REGION, "eu-west-1"],
+                "acceptanceRequired": True,
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
+        resource = k8s.get_resource(ref)
+        assert set(resource["spec"]["supportedRegions"]) == {REGION, "eu-west-1"}
+        assert resource["spec"]["acceptanceRequired"] is True
+        assert ec2_validator.get_active_supported_regions(resource_id) == {REGION, "eu-west-1"}
+
+        vpce_service = ec2_validator.get_vpc_endpoint_service_configuration(resource_id)
+        assert vpce_service["AcceptanceRequired"] is True
