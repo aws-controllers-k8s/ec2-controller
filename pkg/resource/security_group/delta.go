@@ -41,26 +41,32 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	if len(a.ko.Spec.IngressRules) != len(b.ko.Spec.IngressRules) {
+		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
+	} else {
+		for _, aRule := range a.ko.Spec.IngressRules {
+			if !containsRule(b.ko.Spec.IngressRules, aRule) {
+				delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
+				break
+			}
+		}
+	}
+	if len(a.ko.Spec.EgressRules) != len(b.ko.Spec.EgressRules) {
+		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
+	} else {
+		for _, aRule := range a.ko.Spec.EgressRules {
+			if !containsRule(b.ko.Spec.EgressRules, aRule) {
+				delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
+				break
+			}
+		}
+	}
 
 	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
 		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
 	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {
 		if *a.ko.Spec.Description != *b.ko.Spec.Description {
 			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
-		}
-	}
-	if len(a.ko.Spec.EgressRules) != len(b.ko.Spec.EgressRules) {
-		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
-	} else if len(a.ko.Spec.EgressRules) > 0 {
-		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.EgressRules, b.ko.Spec.EgressRules) {
-			delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
-		}
-	}
-	if len(a.ko.Spec.IngressRules) != len(b.ko.Spec.IngressRules) {
-		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
-	} else if len(a.ko.Spec.IngressRules) > 0 {
-		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.IngressRules, b.ko.Spec.IngressRules) {
-			delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
