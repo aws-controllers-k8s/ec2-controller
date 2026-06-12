@@ -373,6 +373,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 				coreCountCopy := int32(coreCountCopy0)
 				f0f2.CoreCount = &coreCountCopy
 			}
+			if r.ko.Spec.Data.CPUOptions.NestedVirtualization != nil {
+				f0f2.NestedVirtualization = svcsdktypes.NestedVirtualizationSpecification(*r.ko.Spec.Data.CPUOptions.NestedVirtualization)
+			}
 			if r.ko.Spec.Data.CPUOptions.ThreadsPerCore != nil {
 				threadsPerCoreCopy0 := *r.ko.Spec.Data.CPUOptions.ThreadsPerCore
 				if threadsPerCoreCopy0 > math.MaxInt32 || threadsPerCoreCopy0 < math.MinInt32 {
@@ -1159,6 +1162,9 @@ func (rm *resourceManager) sdkUpdate(
 				coreCountCopy := int64(*resp.LaunchTemplateVersion.LaunchTemplateData.CpuOptions.CoreCount)
 				f2f2.CoreCount = &coreCountCopy
 			}
+			if resp.LaunchTemplateVersion.LaunchTemplateData.CpuOptions.NestedVirtualization != "" {
+				f2f2.NestedVirtualization = aws.String(string(resp.LaunchTemplateVersion.LaunchTemplateData.CpuOptions.NestedVirtualization))
+			}
 			if resp.LaunchTemplateVersion.LaunchTemplateData.CpuOptions.ThreadsPerCore != nil {
 				threadsPerCoreCopy := int64(*resp.LaunchTemplateVersion.LaunchTemplateData.CpuOptions.ThreadsPerCore)
 				f2f2.ThreadsPerCore = &threadsPerCoreCopy
@@ -1829,6 +1835,9 @@ func (rm *resourceManager) newUpdateRequestPayload(
 				}
 				coreCountCopy := int32(coreCountCopy0)
 				f2f2.CoreCount = &coreCountCopy
+			}
+			if r.ko.Spec.Data.CPUOptions.NestedVirtualization != nil {
+				f2f2.NestedVirtualization = svcsdktypes.NestedVirtualizationSpecification(*r.ko.Spec.Data.CPUOptions.NestedVirtualization)
 			}
 			if r.ko.Spec.Data.CPUOptions.ThreadsPerCore != nil {
 				threadsPerCoreCopy0 := *r.ko.Spec.Data.CPUOptions.ThreadsPerCore
@@ -2701,6 +2710,9 @@ func (rm *resourceManager) setRequestLaunchTemplateData(
 		if resp.CpuOptions.CoreCount != nil {
 			coreCountCopy := int64(*resp.CpuOptions.CoreCount)
 			resf2.CoreCount = &coreCountCopy
+		}
+		if resp.CpuOptions.NestedVirtualization != "" {
+			resf2.NestedVirtualization = aws.String(string(resp.CpuOptions.NestedVirtualization))
 		}
 		if resp.CpuOptions.ThreadsPerCore != nil {
 			threadsPerCoreCopy := int64(*resp.CpuOptions.ThreadsPerCore)
