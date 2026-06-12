@@ -52,6 +52,20 @@ func newResourceDelta(
 				delta.Add("Spec.DNSOptions.DNSRecordIPType", a.ko.Spec.DNSOptions.DNSRecordIPType, b.ko.Spec.DNSOptions.DNSRecordIPType)
 			}
 		}
+		if ackcompare.HasNilDifference(a.ko.Spec.DNSOptions.PrivateDNSPreference, b.ko.Spec.DNSOptions.PrivateDNSPreference) {
+			delta.Add("Spec.DNSOptions.PrivateDNSPreference", a.ko.Spec.DNSOptions.PrivateDNSPreference, b.ko.Spec.DNSOptions.PrivateDNSPreference)
+		} else if a.ko.Spec.DNSOptions.PrivateDNSPreference != nil && b.ko.Spec.DNSOptions.PrivateDNSPreference != nil {
+			if *a.ko.Spec.DNSOptions.PrivateDNSPreference != *b.ko.Spec.DNSOptions.PrivateDNSPreference {
+				delta.Add("Spec.DNSOptions.PrivateDNSPreference", a.ko.Spec.DNSOptions.PrivateDNSPreference, b.ko.Spec.DNSOptions.PrivateDNSPreference)
+			}
+		}
+		if len(a.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains) != len(b.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains) {
+			delta.Add("Spec.DNSOptions.PrivateDNSSpecifiedDomains", a.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains, b.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains)
+		} else if len(a.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains, b.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains) {
+				delta.Add("Spec.DNSOptions.PrivateDNSSpecifiedDomains", a.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains, b.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains)
+			}
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType) {
 		delta.Add("Spec.IPAddressType", a.ko.Spec.IPAddressType, b.ko.Spec.IPAddressType)
