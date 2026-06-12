@@ -70,6 +70,43 @@ def simple_launch_template(request):
         pass
 
 
+@pytest.fixture
+def launch_template_with_nested_virtualization(request):
+    resource_name = random_suffix_name("lt-nested-virt", 24)
+    resource_file = "launch_template_nested_virtualization"
+
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["LAUNCH_TEMPLATE_NAME"] = resource_name
+
+    # Load LaunchTemplate CR
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    # Try to delete, if doesn't already exist
+    try:
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+        assert deleted
+    except:
+        pass
+
+
 @service_marker
 @pytest.mark.canary
 class TestLaunchTemplate:
@@ -216,3 +253,67 @@ class TestLaunchTemplate:
             expected=user_tags,
             actual=latest_tags,
         )
+
+    def test_nested_virtualization(self, ec2_client, launch_template_with_nested_virtualization):
+        """Test that a LaunchTemplate can be created with nestedVirtualization enabled
+        and updated to disabled.
+
+        Validates:
+        - LaunchTemplate is created with cpuOptions.nestedVirtualization
+        - The resource syncs without error
+        - The CR spec retains the value after reconciliation
+        - Updating the field creates a new version and the CR reflects the change
+
+        References: https://github.com/aws-controllers-k8s/community/issues/2881
+        """
+        (ref, cr) = launch_template_with_nested_virtualization
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        resource_id = cr["status"]["id"]
+
+        # Verify LaunchTemplate exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_launch_template(resource_id)
+
+        # Get the launch template version to confirm CpuOptions was accepted
+        lt_version = ec2_validator.get_launch_template_version(
+            launch_template_id=resource_id, version="1"
+        )
+        assert lt_version is not None
+        assert "CpuOptions" in lt_version["LaunchTemplateData"]
+
+        # Verify the CR spec retains the correct value after reconciliation
+        cr = k8s.get_resource(ref)
+        assert cr["spec"]["data"]["cpuOptions"]["nestedVirtualization"] == "enabled"
+
+        # Update nestedVirtualization to disabled
+        updates = {
+            "spec": {
+                "data": {
+                    "cpuOptions": {
+                        "nestedVirtualization": "disabled"
+                    }
+                }
+            }
+        }
+
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # Check resource synced successfully after update
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Verify a new version was created
+        lt_version = ec2_validator.get_launch_template_version(
+            launch_template_id=resource_id, version="2"
+        )
+        assert lt_version is not None
+        assert "CpuOptions" in lt_version["LaunchTemplateData"]
+
+        # Verify CR spec reflects the updated value
+        cr = k8s.get_resource(ref)
+        assert cr["spec"]["data"]["cpuOptions"]["nestedVirtualization"] == "disabled"
