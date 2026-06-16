@@ -118,6 +118,8 @@ func (rm *resourceManager) modifyInstanceAttributes(ctx context.Context, delta *
 		input.DisableApiStop = &svcsdktypes.AttributeBooleanValue{Value: desired.ko.Spec.DisableAPIStop}
 	} else if delta.DifferentAt("Spec.SecurityGroupIDs") {
 		input.Groups = aws.ToStringSlice(desired.ko.Spec.SecurityGroupIDs)
+	} else if delta.DifferentAt("Spec.SourceDestCheckEnabled") {
+		input.SourceDestCheck = &svcsdktypes.AttributeBooleanValue{Value: desired.ko.Spec.SourceDestCheckEnabled}
 	} else {
 		input = nil
 	}
@@ -157,6 +159,10 @@ func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 	ko.Spec.SecurityGroupIDs = []*string{}
 	for _, group := range instance.SecurityGroups {
 		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, group.GroupId)
+	}
+
+	if instance.SourceDestCheck != nil {
+		ko.Spec.SourceDestCheckEnabled = instance.SourceDestCheck
 	}
 
 	if monitoring := instance.Monitoring; monitoring != nil {

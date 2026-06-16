@@ -13534,6 +13534,11 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 			}
 		}
 	}
+	if in.SourceDestCheckEnabled != nil {
+		in, out := &in.SourceDestCheckEnabled, &out.SourceDestCheckEnabled
+		*out = new(bool)
+		**out = **in
+	}
 	if in.SubnetID != nil {
 		in, out := &in.SubnetID, &out.SubnetID
 		*out = new(string)
