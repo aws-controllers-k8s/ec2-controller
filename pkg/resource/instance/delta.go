@@ -88,6 +88,13 @@ func newResourceDelta(
 				delta.Add("Spec.CPUOptions.CoreCount", a.ko.Spec.CPUOptions.CoreCount, b.ko.Spec.CPUOptions.CoreCount)
 			}
 		}
+		if ackcompare.HasNilDifference(a.ko.Spec.CPUOptions.NestedVirtualization, b.ko.Spec.CPUOptions.NestedVirtualization) {
+			delta.Add("Spec.CPUOptions.NestedVirtualization", a.ko.Spec.CPUOptions.NestedVirtualization, b.ko.Spec.CPUOptions.NestedVirtualization)
+		} else if a.ko.Spec.CPUOptions.NestedVirtualization != nil && b.ko.Spec.CPUOptions.NestedVirtualization != nil {
+			if *a.ko.Spec.CPUOptions.NestedVirtualization != *b.ko.Spec.CPUOptions.NestedVirtualization {
+				delta.Add("Spec.CPUOptions.NestedVirtualization", a.ko.Spec.CPUOptions.NestedVirtualization, b.ko.Spec.CPUOptions.NestedVirtualization)
+			}
+		}
 		if ackcompare.HasNilDifference(a.ko.Spec.CPUOptions.ThreadsPerCore, b.ko.Spec.CPUOptions.ThreadsPerCore) {
 			delta.Add("Spec.CPUOptions.ThreadsPerCore", a.ko.Spec.CPUOptions.ThreadsPerCore, b.ko.Spec.CPUOptions.ThreadsPerCore)
 		} else if a.ko.Spec.CPUOptions.ThreadsPerCore != nil && b.ko.Spec.CPUOptions.ThreadsPerCore != nil {

@@ -374,10 +374,21 @@ type AvailabilityZoneAddress struct {
 	AvailabilityZoneID *string   `json:"availabilityZoneID,omitempty"`
 }
 
+// Describes the geography information for an Availability Zone or Local Zone.
+type AvailabilityZoneGeography struct {
+	Name *string `json:"name,omitempty"`
+}
+
 // Describes a message about an Availability Zone, Local Zone, or Wavelength
 // Zone.
 type AvailabilityZoneMessage struct {
 	Message *string `json:"message,omitempty"`
+}
+
+// Describes the sub-geography information for an Availability Zone or Local
+// Zone.
+type AvailabilityZoneSubGeography struct {
+	Name *string `json:"name,omitempty"`
 }
 
 // The capacity information for instances that can be launched onto the Dedicated
@@ -497,16 +508,18 @@ type CIDRBlock struct {
 
 // The CPU options for the instance.
 type CPUOptions struct {
-	AmdSevSnp      *string `json:"amdSevSnp,omitempty"`
-	CoreCount      *int64  `json:"coreCount,omitempty"`
-	ThreadsPerCore *int64  `json:"threadsPerCore,omitempty"`
+	AmdSevSnp            *string `json:"amdSevSnp,omitempty"`
+	CoreCount            *int64  `json:"coreCount,omitempty"`
+	NestedVirtualization *string `json:"nestedVirtualization,omitempty"`
+	ThreadsPerCore       *int64  `json:"threadsPerCore,omitempty"`
 }
 
 // The CPU options for the instance. Both the core count and threads per core
 // must be specified in the request.
 type CPUOptionsRequest struct {
-	CoreCount      *int64 `json:"coreCount,omitempty"`
-	ThreadsPerCore *int64 `json:"threadsPerCore,omitempty"`
+	CoreCount            *int64  `json:"coreCount,omitempty"`
+	NestedVirtualization *string `json:"nestedVirtualization,omitempty"`
+	ThreadsPerCore       *int64  `json:"threadsPerCore,omitempty"`
 }
 
 // The CPU performance to consider, using an instance family as the baseline
@@ -1438,6 +1451,7 @@ type EBSInstanceBlockDevice struct {
 	AssociatedResource  *string      `json:"associatedResource,omitempty"`
 	AttachTime          *metav1.Time `json:"attachTime,omitempty"`
 	DeleteOnTermination *bool        `json:"deleteOnTermination,omitempty"`
+	EBSCardIndex        *int64       `json:"ebsCardIndex,omitempty"`
 	// Describes whether the resource is managed by a service provider and, if so,
 	// describes the service provider that manages it.
 	Operator      *OperatorResponse `json:"operator,omitempty"`
@@ -3438,6 +3452,41 @@ type InstanceRequirementsWithMetadataRequest struct {
 	InstanceRequirements *InstanceRequirementsRequest `json:"instanceRequirements,omitempty"`
 }
 
+// Describes a secondary interface attached to an instance.
+type InstanceSecondaryInterface struct {
+	MacAddress      *string `json:"macAddress,omitempty"`
+	OwnerID         *string `json:"ownerID,omitempty"`
+	SourceDestCheck *bool   `json:"sourceDestCheck,omitempty"`
+}
+
+// Describes the attachment of a secondary interface to an instance.
+type InstanceSecondaryInterfaceAttachment struct {
+	AttachTime          *metav1.Time `json:"attachTime,omitempty"`
+	AttachmentID        *string      `json:"attachmentID,omitempty"`
+	DeleteOnTermination *bool        `json:"deleteOnTermination,omitempty"`
+	DeviceIndex         *int64       `json:"deviceIndex,omitempty"`
+	NetworkCardIndex    *int64       `json:"networkCardIndex,omitempty"`
+	Status              *string      `json:"status,omitempty"`
+}
+
+// Describes a private IPv4 address for a secondary interface.
+type InstanceSecondaryInterfacePrivateIPAddress struct {
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+}
+
+// Describes a private IPv4 address for a secondary interface request.
+type InstanceSecondaryInterfacePrivateIPAddressRequest struct {
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+}
+
+// Describes a secondary interface specification for launching an instance.
+type InstanceSecondaryInterfaceSpecificationRequest struct {
+	DeleteOnTermination   *bool  `json:"deleteOnTermination,omitempty"`
+	DeviceIndex           *int64 `json:"deviceIndex,omitempty"`
+	NetworkCardIndex      *int64 `json:"networkCardIndex,omitempty"`
+	PrivateIPAddressCount *int64 `json:"privateIPAddressCount,omitempty"`
+}
+
 // The instance details to specify which volumes should be snapshotted.
 type InstanceSpecification struct {
 	ExcludeBootVolume *bool `json:"excludeBootVolume,omitempty"`
@@ -3691,17 +3740,19 @@ type LaunchTemplateBlockDeviceMappingRequest struct {
 
 // The CPU options for the instance.
 type LaunchTemplateCPUOptions struct {
-	AmdSevSnp      *string `json:"amdSevSnp,omitempty"`
-	CoreCount      *int64  `json:"coreCount,omitempty"`
-	ThreadsPerCore *int64  `json:"threadsPerCore,omitempty"`
+	AmdSevSnp            *string `json:"amdSevSnp,omitempty"`
+	CoreCount            *int64  `json:"coreCount,omitempty"`
+	NestedVirtualization *string `json:"nestedVirtualization,omitempty"`
+	ThreadsPerCore       *int64  `json:"threadsPerCore,omitempty"`
 }
 
 // The CPU options for the instance. Both the core count and threads per core
 // must be specified in the request.
 type LaunchTemplateCPUOptionsRequest struct {
-	AmdSevSnp      *string `json:"amdSevSnp,omitempty"`
-	CoreCount      *int64  `json:"coreCount,omitempty"`
-	ThreadsPerCore *int64  `json:"threadsPerCore,omitempty"`
+	AmdSevSnp            *string `json:"amdSevSnp,omitempty"`
+	CoreCount            *int64  `json:"coreCount,omitempty"`
+	NestedVirtualization *string `json:"nestedVirtualization,omitempty"`
+	ThreadsPerCore       *int64  `json:"threadsPerCore,omitempty"`
 }
 
 // Describes an instance's Capacity Reservation targeting option. You can specify
@@ -3942,6 +3993,22 @@ type LaunchTemplateInstanceNetworkInterfaceSpecificationRequest struct {
 	PrivateIPAddresses             []*PrivateIPAddressSpecification  `json:"privateIPAddresses,omitempty"`
 	SecondaryPrivateIPAddressCount *int64                            `json:"secondaryPrivateIPAddressCount,omitempty"`
 	SubnetID                       *string                           `json:"subnetID,omitempty"`
+}
+
+// Describes a secondary interface specification in a launch template.
+type LaunchTemplateInstanceSecondaryInterfaceSpecification struct {
+	DeleteOnTermination   *bool  `json:"deleteOnTermination,omitempty"`
+	DeviceIndex           *int64 `json:"deviceIndex,omitempty"`
+	NetworkCardIndex      *int64 `json:"networkCardIndex,omitempty"`
+	PrivateIPAddressCount *int64 `json:"privateIPAddressCount,omitempty"`
+}
+
+// Describes a secondary interface specification for a launch template request.
+type LaunchTemplateInstanceSecondaryInterfaceSpecificationRequest struct {
+	DeleteOnTermination   *bool  `json:"deleteOnTermination,omitempty"`
+	DeviceIndex           *int64 `json:"deviceIndex,omitempty"`
+	NetworkCardIndex      *int64 `json:"networkCardIndex,omitempty"`
+	PrivateIPAddressCount *int64 `json:"privateIPAddressCount,omitempty"`
 }
 
 // Describes a license configuration.
@@ -4850,12 +4917,15 @@ type Placement struct {
 
 // Describes a placement group.
 type PlacementGroup struct {
-	GroupARN       *string `json:"groupARN,omitempty"`
-	GroupID        *string `json:"groupID,omitempty"`
-	GroupName      *string `json:"groupName,omitempty"`
-	LinkedGroupID  *string `json:"linkedGroupID,omitempty"`
-	PartitionCount *int64  `json:"partitionCount,omitempty"`
-	Tags           []*Tag  `json:"tags,omitempty"`
+	GroupARN      *string `json:"groupARN,omitempty"`
+	GroupID       *string `json:"groupID,omitempty"`
+	GroupName     *string `json:"groupName,omitempty"`
+	LinkedGroupID *string `json:"linkedGroupID,omitempty"`
+	// Describes whether the resource is managed by a service provider and, if so,
+	// describes the service provider that manages it.
+	Operator       *OperatorResponse `json:"operator,omitempty"`
+	PartitionCount *int64            `json:"partitionCount,omitempty"`
+	Tags           []*Tag            `json:"tags,omitempty"`
 }
 
 // Describes the placement of an instance.
@@ -5053,6 +5123,11 @@ type Region struct {
 	Endpoint    *string `json:"endpoint,omitempty"`
 	OptInStatus *string `json:"optInStatus,omitempty"`
 	RegionName  *string `json:"regionName,omitempty"`
+}
+
+// Describes the geography information for a Region.
+type RegionGeography struct {
+	Name *string `json:"name,omitempty"`
 }
 
 // A summary report for the attribute for a Region.
@@ -5765,6 +5840,75 @@ type ScheduledInstancesPlacement struct {
 type ScheduledInstancesPrivateIPAddressConfig struct {
 	Primary          *bool   `json:"primary,omitempty"`
 	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+}
+
+// Describes a secondary interface.
+type SecondaryInterface struct {
+	AvailabilityZone      *string `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID    *string `json:"availabilityZoneID,omitempty"`
+	MacAddress            *string `json:"macAddress,omitempty"`
+	OwnerID               *string `json:"ownerID,omitempty"`
+	SecondaryInterfaceARN *string `json:"secondaryInterfaceARN,omitempty"`
+	SourceDestCheck       *bool   `json:"sourceDestCheck,omitempty"`
+	Tags                  []*Tag  `json:"tags,omitempty"`
+}
+
+// Describes the attachment of a secondary interface to an instance.
+type SecondaryInterfaceAttachment struct {
+	AttachTime          *metav1.Time `json:"attachTime,omitempty"`
+	AttachmentID        *string      `json:"attachmentID,omitempty"`
+	DeleteOnTermination *bool        `json:"deleteOnTermination,omitempty"`
+	DeviceIndex         *int64       `json:"deviceIndex,omitempty"`
+	InstanceID          *string      `json:"instanceID,omitempty"`
+	InstanceOwnerID     *string      `json:"instanceOwnerID,omitempty"`
+	NetworkCardIndex    *int64       `json:"networkCardIndex,omitempty"`
+	Status              *string      `json:"status,omitempty"`
+}
+
+// Describes a private IPv4 address for a secondary interface.
+type SecondaryInterfaceIPv4Address struct {
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+}
+
+// Describes a private IPv4 address specification for a secondary interface.
+type SecondaryInterfacePrivateIPAddressSpecification struct {
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+}
+
+// Describes a private IPv4 address specification for a secondary interface
+// request.
+type SecondaryInterfacePrivateIPAddressSpecificationRequest struct {
+	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
+}
+
+// Describes a secondary network.
+type SecondaryNetwork struct {
+	OwnerID             *string `json:"ownerID,omitempty"`
+	SecondaryNetworkARN *string `json:"secondaryNetworkARN,omitempty"`
+	StateReason         *string `json:"stateReason,omitempty"`
+	Tags                []*Tag  `json:"tags,omitempty"`
+}
+
+// Describes an IPv4 CIDR block associated with a secondary network.
+type SecondaryNetworkIPv4CIDRBlockAssociation struct {
+	CIDRBlock   *string `json:"cidrBlock,omitempty"`
+	StateReason *string `json:"stateReason,omitempty"`
+}
+
+// Describes a secondary subnet.
+type SecondarySubnet struct {
+	AvailabilityZone   *string `json:"availabilityZone,omitempty"`
+	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
+	OwnerID            *string `json:"ownerID,omitempty"`
+	SecondarySubnetARN *string `json:"secondarySubnetARN,omitempty"`
+	StateReason        *string `json:"stateReason,omitempty"`
+	Tags               []*Tag  `json:"tags,omitempty"`
+}
+
+// Describes an IPv4 CIDR block associated with a secondary subnet.
+type SecondarySubnetIPv4CIDRBlockAssociation struct {
+	CIDRBlock   *string `json:"cidrBlock,omitempty"`
+	StateReason *string `json:"stateReason,omitempty"`
 }
 
 // A security group that can be used by interfaces in the VPC.

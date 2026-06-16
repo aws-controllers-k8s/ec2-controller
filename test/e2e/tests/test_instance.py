@@ -301,3 +301,78 @@ class TestInstance:
         # State needs to be 'terminated' in order to remove the dependency on the shared subnet
         # for successful test cleanup
         wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
+
+
+    def test_nested_virtualization(self, ec2_client):
+        """Test that an Instance can be created with nestedVirtualization in cpuOptions.
+
+        Validates:
+        - Instance is created with cpuOptions.nestedVirtualization set
+        - The resource syncs without error
+        - The CR spec retains the nestedVirtualization value
+        - The Instance reaches running state
+
+        References: https://github.com/aws-controllers-k8s/community/issues/2881
+        """
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("inst-nested-virt", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        subnet_id = test_vpc.public_subnets.subnet_ids[0]
+
+        ami_id = get_ami_id(ec2_client)
+        # c8i.large supports nested virtualization
+        test_resource_values["INSTANCE_NAME"] = resource_name
+        test_resource_values["INSTANCE_AMI_ID"] = ami_id
+        test_resource_values["INSTANCE_TYPE"] = "c8i.large"
+        test_resource_values["INSTANCE_SUBNET_ID"] = subnet_id
+        test_resource_values["INSTANCE_TAG_KEY"] = INSTANCE_TAG_KEY
+        test_resource_values["INSTANCE_TAG_VAL"] = INSTANCE_TAG_VAL
+
+        # Load Instance CR with nested virtualization
+        resource_data = load_ec2_resource(
+            "instance_nested_virtualization",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        try:
+            time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+            resource_id = cr["status"]["instanceID"]
+
+            # Check Instance exists
+            instance = get_instance(ec2_client, resource_id)
+            assert instance is not None
+
+            # Wait for instance to come up
+            wait_for_instance_or_die(ec2_client, resource_id, 'running', TIMEOUT_SECONDS)
+
+            # Check resource synced successfully
+            assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+            # Verify the CR spec retains nestedVirtualization after reconciliation
+            cr = k8s.get_resource(ref)
+            assert cr["spec"]["cpuOptions"]["nestedVirtualization"] == "enabled"
+
+        finally:
+            # Delete k8s resource
+            try:
+                _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+                assert deleted
+            except:
+                pass
+
+            # Wait for termination to release subnet dependency
+            if 'resource_id' in locals():
+                wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)

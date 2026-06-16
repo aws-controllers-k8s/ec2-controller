@@ -125,6 +125,10 @@ ignore:
     - EbsBlockDevice.AvailabilityZone
     - EbsBlockDevice.AvailabilityZoneId
     - EbsBlockDevice.VolumeInitializationRate
+    # EbsCardIndex: new multi-EBS-card field, requires separate design/testing
+    - EbsBlockDevice.EbsCardIndex
+    - LaunchTemplateEbsBlockDeviceRequest.EbsCardIndex
+    - LaunchTemplateEbsBlockDevice.EbsCardIndex
     - NatGateway.AttachedAppliances
     - NatGateway.AutoProvisionZones
     - NatGateway.AutoScalingIps
@@ -150,6 +154,12 @@ ignore:
     - LaunchTemplateInstanceNetworkInterfaceSpecification.EnaQueueCount
     - RequestLaunchTemplateData.NetworkPerformanceOptions
     - ResponseLaunchTemplateData.NetworkPerformanceOptions
+    # SecondaryInterfaces: new secondary network interface feature, requires
+    # separate resource design and is_primary_key configuration
+    - RequestLaunchTemplateData.SecondaryInterfaces
+    - ResponseLaunchTemplateData.SecondaryInterfaces
+    - RunInstancesInput.SecondaryInterfaces
+    - Instance.SecondaryInterfaces
     - LaunchTemplatePlacementRequest.AvailabilityZoneId
     - LaunchTemplatePlacement.AvailabilityZoneId
     - CreateManagedPrefixListInput.ClientToken
@@ -222,6 +232,10 @@ ignore:
     - RouteServer
     - RouteServerEndpoint
     - RouteServerPeer
+    # SecondaryNetwork/SecondarySubnet: new resources that lack is_primary_key
+    # configuration; need separate PR to properly configure and expose
+    - SecondaryNetwork
+    - SecondarySubnet
     #- SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
