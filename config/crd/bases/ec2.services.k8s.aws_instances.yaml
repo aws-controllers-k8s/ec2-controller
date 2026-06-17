@@ -118,6 +118,8 @@ spec:
                   coreCount:
                     format: int64
                     type: integer
+                  nestedVirtualization:
+                    type: string
                   threadsPerCore:
                     format: int64
                     type: integer

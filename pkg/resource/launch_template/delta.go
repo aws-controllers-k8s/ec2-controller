@@ -98,6 +98,13 @@ func newResourceDelta(
 					delta.Add("Spec.Data.CPUOptions.CoreCount", a.ko.Spec.Data.CPUOptions.CoreCount, b.ko.Spec.Data.CPUOptions.CoreCount)
 				}
 			}
+			if ackcompare.HasNilDifference(a.ko.Spec.Data.CPUOptions.NestedVirtualization, b.ko.Spec.Data.CPUOptions.NestedVirtualization) {
+				delta.Add("Spec.Data.CPUOptions.NestedVirtualization", a.ko.Spec.Data.CPUOptions.NestedVirtualization, b.ko.Spec.Data.CPUOptions.NestedVirtualization)
+			} else if a.ko.Spec.Data.CPUOptions.NestedVirtualization != nil && b.ko.Spec.Data.CPUOptions.NestedVirtualization != nil {
+				if *a.ko.Spec.Data.CPUOptions.NestedVirtualization != *b.ko.Spec.Data.CPUOptions.NestedVirtualization {
+					delta.Add("Spec.Data.CPUOptions.NestedVirtualization", a.ko.Spec.Data.CPUOptions.NestedVirtualization, b.ko.Spec.Data.CPUOptions.NestedVirtualization)
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.Data.CPUOptions.ThreadsPerCore, b.ko.Spec.Data.CPUOptions.ThreadsPerCore) {
 				delta.Add("Spec.Data.CPUOptions.ThreadsPerCore", a.ko.Spec.Data.CPUOptions.ThreadsPerCore, b.ko.Spec.Data.CPUOptions.ThreadsPerCore)
 			} else if a.ko.Spec.Data.CPUOptions.ThreadsPerCore != nil && b.ko.Spec.Data.CPUOptions.ThreadsPerCore != nil {
