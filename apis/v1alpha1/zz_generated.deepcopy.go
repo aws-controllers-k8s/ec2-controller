@@ -25114,6 +25114,17 @@ func (in *ServiceConfiguration) DeepCopyInto(out *ServiceConfiguration) {
 			}
 		}
 	}
+	if in.SupportedRegions != nil {
+		in, out := &in.SupportedRegions, &out.SupportedRegions
+		*out = make([]*SupportedRegionDetail, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(SupportedRegionDetail)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
 		*out = make([]*Tag, len(*in))
@@ -30834,6 +30845,17 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 	}
 	if in.SupportedIPAddressTypes != nil {
 		in, out := &in.SupportedIPAddressTypes, &out.SupportedIPAddressTypes
+		*out = make([]*string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(string)
+				**out = **in
+			}
+		}
+	}
+	if in.SupportedRegions != nil {
+		in, out := &in.SupportedRegions, &out.SupportedRegions
 		*out = make([]*string, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {

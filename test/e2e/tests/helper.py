@@ -304,6 +304,16 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
+
+    def get_active_supported_regions(self, vpc_endpoint_service_configuration_id: str) -> set:
+        config = self.get_vpc_endpoint_service_configuration(vpc_endpoint_service_configuration_id)
+        if config is None:
+            return set()
+        return {
+            detail["Region"]
+            for detail in config.get("SupportedRegions", [])
+            if detail.get("ServiceState") not in ("Deleting", "Deleted", "Failed", "Closed")
+        }
     
     def get_vpc_endpoint_service_permissions(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
         try:
