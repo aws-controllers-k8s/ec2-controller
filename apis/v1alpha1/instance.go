@@ -203,7 +203,8 @@ type InstanceSpec struct {
 	// as part of the network interface instead of using this parameter.
 	//
 	// Default: Amazon EC2 uses the default security group.
-	SecurityGroups []*string `json:"securityGroups,omitempty"`
+	SecurityGroups         []*string `json:"securityGroups,omitempty"`
+	SourceDestCheckEnabled *bool     `json:"sourceDestCheckEnabled,omitempty"`
 	// The ID of the subnet to launch the instance into.
 	//
 	// If you specify a network interface, you must specify any subnets as part
