@@ -5,6 +5,8 @@ metadata:
 spec:
   serviceName: $SERVICE_NAME
   vpcID: $VPC_ID
+  policyDocument: |
+    {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"*","Resource":"*"}]}
   tags:
     - key: $TAG_KEY
       value: $TAG_VALUE
