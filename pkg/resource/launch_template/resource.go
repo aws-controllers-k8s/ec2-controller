@@ -90,18 +90,18 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.ID = &identifier.NameOrID
+	r.ko.Spec.Name = &identifier.NameOrID
 
 	return nil
 }
 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
-	primaryKey, ok := fields["id"]
+	primaryKey, ok := fields["name"]
 	if !ok {
-		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: id"))
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: name"))
 	}
-	r.ko.Status.ID = &primaryKey
+	r.ko.Spec.Name = &primaryKey
 
 	return nil
 }
