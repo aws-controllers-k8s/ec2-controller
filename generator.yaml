@@ -1190,6 +1190,7 @@ resources:
     fields:
       PolicyDocument:
         late_initialize: {}
+        is_iam_policy: true
       Tags:
         from:
           operation: CreateTags

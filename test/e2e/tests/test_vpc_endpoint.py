@@ -147,6 +147,17 @@ class TestVpcEndpoint:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc_endpoint(resource_id)
 
+        # Update policyDocument with a different policy to verify
+        # updates still work with is_iam_policy comparison
+        updates = {
+            "spec": {
+                "policyDocument": '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::*"}]}'
+            }
+        }
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
