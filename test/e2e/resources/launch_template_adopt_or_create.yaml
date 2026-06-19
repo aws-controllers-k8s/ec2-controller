@@ -1,0 +1,13 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplate
+metadata:
+  name: $LAUNCH_TEMPLATE_NAME
+  annotations:
+    services.k8s.aws/adoption-policy: adopt-or-create
+    services.k8s.aws/deletion-policy: delete
+spec:
+  name: $LAUNCH_TEMPLATE_NAME
+  data:
+    instanceType: t2.nano
+    monitoring:
+      enabled: false

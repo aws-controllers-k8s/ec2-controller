@@ -43,9 +43,12 @@ func (rm *resourceManager) setLatestLaunchTemplateAttributes(
 		exit(err)
 	}()
 
-	input, err := rm.newListLaunchTemplateVersionRequestPayload(r)
+	input, err := rm.newListLaunchTemplateVersionRequestPayload(&resource{ko})
 	if err != nil {
 		return err
+	}
+	if input.LaunchTemplateId == nil && input.LaunchTemplateName == nil {
+		return nil
 	}
 
 	var resp *svcsdk.DescribeLaunchTemplateVersionsOutput
@@ -240,5 +243,15 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 }
 
 func (rm *resourceManager) checkForMissingRequiredFields(r *resource) bool {
-	return r.ko.Status.ID == nil
+	return r.ko.Spec.Name == nil && r.ko.Status.ID == nil
+}
+
+func setNameFromObserved(
+	resp *svcsdk.DescribeLaunchTemplatesOutput,
+	ko *svcapitypes.LaunchTemplate,
+) {
+	if ko.Spec.Name != nil || resp == nil || len(resp.LaunchTemplates) != 1 {
+		return
+	}
+	ko.Spec.Name = resp.LaunchTemplates[0].LaunchTemplateName
 }

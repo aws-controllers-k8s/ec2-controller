@@ -75,12 +75,20 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
+	if input.LaunchTemplateIds != nil {
+		input.LaunchTemplateNames = nil
+	}
+
 	var resp *svcsdk.DescribeLaunchTemplatesOutput
 	resp, err = rm.sdkapi.DescribeLaunchTemplates(ctx, input)
+	if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "InvalidLaunchTemplateName.NotFoundException" {
+		err = ackerr.NotFound
+	}
+
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeLaunchTemplates", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidLaunchTemplateName.NotFoundException" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidLaunchTemplateId.NotFound" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -111,6 +119,11 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.LatestVersion = elem.LatestVersionNumber
 		} else {
 			ko.Status.LatestVersion = nil
+		}
+		if elem.LaunchTemplateId != nil {
+			ko.Status.ID = elem.LaunchTemplateId
+		} else {
+			ko.Status.ID = nil
 		}
 		if elem.Operator != nil {
 			f6 := &svcapitypes.OperatorResponse{}
@@ -148,6 +161,7 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	setNameFromObserved(resp, ko)
 	err = rm.setLatestLaunchTemplateAttributes(ctx, r, ko)
 	if err != nil {
 		return &resource{ko}, nil
@@ -176,6 +190,11 @@ func (rm *resourceManager) newListRequestPayload(
 		f2 := []string{}
 		f2 = append(f2, *r.ko.Status.ID)
 		res.LaunchTemplateIds = f2
+	}
+	if r.ko.Spec.Name != nil {
+		f3 := []string{}
+		f3 = append(f3, *r.ko.Spec.Name)
+		res.LaunchTemplateNames = f3
 	}
 
 	return res, nil
@@ -1088,7 +1107,7 @@ func (rm *resourceManager) sdkUpdate(
 	// We want to update the defaultVersion after we create the new
 	// version if needed.
 	// Wondering how this works? find out in https://go.dev/play/p/10QSDg2xbTB
-	if delta.DifferentAt("Spec.DefaultVersion") {
+	if delta.DifferentAt("Spec.DefaultVersion") && desired.ko.Spec.DefaultVersion != nil {
 		defer func() {
 			err = rm.updateDefaultVersion(ctx, desired)
 		}()
