@@ -117,6 +117,12 @@ func (rm *resourceManager) sdkFind(
 			if elem.DnsOptions.DnsRecordIpType != "" {
 				f2.DNSRecordIPType = aws.String(string(elem.DnsOptions.DnsRecordIpType))
 			}
+			if elem.DnsOptions.PrivateDnsPreference != nil {
+				f2.PrivateDNSPreference = elem.DnsOptions.PrivateDnsPreference
+			}
+			if elem.DnsOptions.PrivateDnsSpecifiedDomains != nil {
+				f2.PrivateDNSSpecifiedDomains = aws.StringSlice(elem.DnsOptions.PrivateDnsSpecifiedDomains)
+			}
 			ko.Spec.DNSOptions = f2
 		} else {
 			ko.Spec.DNSOptions = nil
@@ -339,6 +345,12 @@ func (rm *resourceManager) sdkCreate(
 		if resp.VpcEndpoint.DnsOptions.DnsRecordIpType != "" {
 			f2.DNSRecordIPType = aws.String(string(resp.VpcEndpoint.DnsOptions.DnsRecordIpType))
 		}
+		if resp.VpcEndpoint.DnsOptions.PrivateDnsPreference != nil {
+			f2.PrivateDNSPreference = resp.VpcEndpoint.DnsOptions.PrivateDnsPreference
+		}
+		if resp.VpcEndpoint.DnsOptions.PrivateDnsSpecifiedDomains != nil {
+			f2.PrivateDNSSpecifiedDomains = aws.StringSlice(resp.VpcEndpoint.DnsOptions.PrivateDnsSpecifiedDomains)
+		}
 		ko.Spec.DNSOptions = f2
 	} else {
 		ko.Spec.DNSOptions = nil
@@ -484,6 +496,12 @@ func (rm *resourceManager) newCreateRequestPayload(
 		f0 := &svcsdktypes.DnsOptionsSpecification{}
 		if r.ko.Spec.DNSOptions.DNSRecordIPType != nil {
 			f0.DnsRecordIpType = svcsdktypes.DnsRecordIpType(*r.ko.Spec.DNSOptions.DNSRecordIPType)
+		}
+		if r.ko.Spec.DNSOptions.PrivateDNSPreference != nil {
+			f0.PrivateDnsPreference = r.ko.Spec.DNSOptions.PrivateDNSPreference
+		}
+		if r.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains != nil {
+			f0.PrivateDnsSpecifiedDomains = aws.ToStringSlice(r.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains)
 		}
 		res.DnsOptions = f0
 	}
