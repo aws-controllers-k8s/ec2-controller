@@ -145,6 +145,10 @@ ignore:
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
+    # LaunchTemplate is keyed by Name. DescribeLaunchTemplates rejects requests
+    # that set both names and IDs, so drop the ID-based filter and always read
+    # by Name (Status.ID is populated from the response).
+    - DescribeLaunchTemplatesInput.LaunchTemplateIds
     - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
     - LaunchTemplateEbsBlockDeviceRequest.VolumeInitializationRate
     - LaunchTemplateEbsBlockDevice.VolumeInitializationRate
@@ -665,13 +669,16 @@ resources:
             LaunchTemplateId: ID
         DescribeLaunchTemplates:
           input_fields:
-            LaunchTemplateIds: ID
+            LaunchTemplateNames: Name
           output_fields:
+            LaunchTemplateId: ID
             LatestVersionNumber: LatestVersion
             DefaultVersionNumber: DefaultVersion
     fields:
-      ID:
+      Name:
         is_primary_key: true
+        is_immutable: true
+      ID:
         print:
           name: ID
       Tags:
@@ -682,6 +689,12 @@ resources:
         from:
           operation: ModifyLaunchTemplate
           path: LaunchTemplate.DefaultVersionNumber
+        # DefaultVersion is server-populated (defaults to 1 on create). Late
+        # initialize it so an adopted template's observed version doesn't show
+        # as a spurious delta against an unset desired value, which would drive
+        # updateDefaultVersion into a "field DefaultVersion is required" error.
+        late_initialize:
+          skip_incomplete_check: {}
       Data.ElasticInferenceAccelerators.Type:
         go_tag: json:"type,omitempty"
       Data.ElasticGPUSpecifications.Type:

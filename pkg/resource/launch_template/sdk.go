@@ -112,6 +112,11 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.LatestVersion = nil
 		}
+		if elem.LaunchTemplateId != nil {
+			ko.Status.ID = elem.LaunchTemplateId
+		} else {
+			ko.Status.ID = nil
+		}
 		if elem.Operator != nil {
 			f6 := &svcapitypes.OperatorResponse{}
 			if elem.Operator.Managed != nil {
@@ -172,10 +177,10 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeLaunchTemplatesInput, error) {
 	res := &svcsdk.DescribeLaunchTemplatesInput{}
 
-	if r.ko.Status.ID != nil {
+	if r.ko.Spec.Name != nil {
 		f2 := []string{}
-		f2 = append(f2, *r.ko.Status.ID)
-		res.LaunchTemplateIds = f2
+		f2 = append(f2, *r.ko.Spec.Name)
+		res.LaunchTemplateNames = f2
 	}
 
 	return res, nil
@@ -1050,7 +1055,14 @@ func (rm *resourceManager) sdkUpdate(
 	// We want to update the defaultVersion after we create the new
 	// version if needed.
 	// Wondering how this works? find out in https://go.dev/play/p/10QSDg2xbTB
-	if delta.DifferentAt("Spec.DefaultVersion") {
+	//
+	// Only call ModifyLaunchTemplate when the user actually set a desired
+	// DefaultVersion. An adopted template reports its server-side default
+	// (e.g. 1) while the desired spec leaves it unset, producing a spurious
+	// delta; without this guard updateDefaultVersion would fail with
+	// "field DefaultVersion is required" before late initialization can
+	// populate it.
+	if delta.DifferentAt("Spec.DefaultVersion") && desired.ko.Spec.DefaultVersion != nil {
 		defer func() {
 			err = rm.updateDefaultVersion(ctx, desired)
 		}()

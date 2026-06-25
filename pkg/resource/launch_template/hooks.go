@@ -43,9 +43,16 @@ func (rm *resourceManager) setLatestLaunchTemplateAttributes(
 		exit(err)
 	}()
 
-	input, err := rm.newListLaunchTemplateVersionRequestPayload(r)
+	input, err := rm.newListLaunchTemplateVersionRequestPayload(&resource{ko})
 	if err != nil {
 		return err
+	}
+	// Without a template identifier, DescribeLaunchTemplateVersions returns
+	// versions across every template in the account, which would clobber this
+	// resource's LaunchTemplateData with unrelated data. Skip the lookup until
+	// the identifier is known (it is populated from sdkFind's response).
+	if input.LaunchTemplateId == nil && input.LaunchTemplateName == nil {
+		return nil
 	}
 
 	var resp *svcsdk.DescribeLaunchTemplateVersionsOutput
@@ -239,6 +246,12 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 	}
 }
 
+// checkForMissingRequiredFields gates sdkFind. LaunchTemplate is keyed by its
+// unique Name, so a DescribeLaunchTemplates lookup is possible as soon as
+// Spec.Name is set - even before Status.ID is populated. This lets
+// adopt-or-create discover a pre-existing template by name instead of looping
+// on CreateLaunchTemplate AlreadyExistsException. The generated default would
+// gate on Status.ID, which is nil until the first successful read.
 func (rm *resourceManager) checkForMissingRequiredFields(r *resource) bool {
-	return r.ko.Status.ID == nil
+	return r.ko.Spec.Name == nil
 }
