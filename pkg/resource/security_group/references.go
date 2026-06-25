@@ -39,6 +39,14 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
 	for f0idx, f0iter := range ko.Spec.EgressRules {
+		for f1idx, f1iter := range f0iter.PrefixListIDs {
+			if f1iter.PrefixListRef != nil {
+				ko.Spec.EgressRules[f0idx].PrefixListIDs[f1idx].PrefixListID = nil
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.EgressRules {
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.GroupRef != nil {
 				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].GroupID = nil
@@ -50,6 +58,22 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.VPCRef != nil {
 				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = nil
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.EgressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCPeeringConnectionRef != nil {
+				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].VPCPeeringConnectionID = nil
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.IngressRules {
+		for f1idx, f1iter := range f0iter.PrefixListIDs {
+			if f1iter.PrefixListRef != nil {
+				ko.Spec.IngressRules[f0idx].PrefixListIDs[f1idx].PrefixListID = nil
 			}
 		}
 	}
@@ -66,6 +90,14 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.VPCRef != nil {
 				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = nil
+			}
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.IngressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCPeeringConnectionRef != nil {
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].VPCPeeringConnectionID = nil
 			}
 		}
 	}
@@ -93,6 +125,12 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForEgressRules_PrefixListIDs_PrefixListID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForEgressRules_UserIDGroupPairs_GroupID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -105,6 +143,18 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForEgressRules_UserIDGroupPairs_VPCPeeringConnectionID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_PrefixListIDs_PrefixListID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_GroupID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
@@ -112,6 +162,12 @@ func (rm *resourceManager) ResolveReferences(
 	}
 
 	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_VPCID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForIngressRules_UserIDGroupPairs_VPCPeeringConnectionID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -131,6 +187,14 @@ func (rm *resourceManager) ResolveReferences(
 func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 
 	for _, f0iter := range ko.Spec.EgressRules {
+		for _, f1iter := range f0iter.PrefixListIDs {
+			if f1iter.PrefixListRef != nil && f1iter.PrefixListID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("EgressRules.PrefixListIDs.PrefixListID", "EgressRules.PrefixListIDs.PrefixListRef")
+			}
+		}
+	}
+
+	for _, f0iter := range ko.Spec.EgressRules {
 		for _, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.GroupRef != nil && f1iter.GroupID != nil {
 				return ackerr.ResourceReferenceAndIDNotSupportedFor("EgressRules.UserIDGroupPairs.GroupID", "EgressRules.UserIDGroupPairs.GroupRef")
@@ -142,6 +206,22 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 		for _, f1iter := range f0iter.UserIDGroupPairs {
 			if f1iter.VPCRef != nil && f1iter.VPCID != nil {
 				return ackerr.ResourceReferenceAndIDNotSupportedFor("EgressRules.UserIDGroupPairs.VPCID", "EgressRules.UserIDGroupPairs.VPCRef")
+			}
+		}
+	}
+
+	for _, f0iter := range ko.Spec.EgressRules {
+		for _, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCPeeringConnectionRef != nil && f1iter.VPCPeeringConnectionID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("EgressRules.UserIDGroupPairs.VPCPeeringConnectionID", "EgressRules.UserIDGroupPairs.VPCPeeringConnectionRef")
+			}
+		}
+	}
+
+	for _, f0iter := range ko.Spec.IngressRules {
+		for _, f1iter := range f0iter.PrefixListIDs {
+			if f1iter.PrefixListRef != nil && f1iter.PrefixListID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("IngressRules.PrefixListIDs.PrefixListID", "IngressRules.PrefixListIDs.PrefixListRef")
 			}
 		}
 	}
@@ -162,11 +242,114 @@ func validateReferenceFields(ko *svcapitypes.SecurityGroup) error {
 		}
 	}
 
+	for _, f0iter := range ko.Spec.IngressRules {
+		for _, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCPeeringConnectionRef != nil && f1iter.VPCPeeringConnectionID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("IngressRules.UserIDGroupPairs.VPCPeeringConnectionID", "IngressRules.UserIDGroupPairs.VPCPeeringConnectionRef")
+			}
+		}
+	}
+
 	if ko.Spec.VPCRef != nil && ko.Spec.VPCID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("VPCID", "VPCRef")
 	}
 	if ko.Spec.VPCRef == nil && ko.Spec.VPCID == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("VPCID", "VPCRef")
+	}
+	return nil
+}
+
+// resolveReferenceForEgressRules_PrefixListIDs_PrefixListID reads the resource referenced
+// from EgressRules.PrefixListIDs.PrefixListRef field and sets the EgressRules.PrefixListIDs.PrefixListID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForEgressRules_PrefixListIDs_PrefixListID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.SecurityGroup,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.EgressRules {
+		for f1idx, f1iter := range f0iter.PrefixListIDs {
+			if f1iter.PrefixListRef != nil && f1iter.PrefixListRef.From != nil {
+				hasReferences = true
+				arr := f1iter.PrefixListRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EgressRules.PrefixListIDs.PrefixListRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &svcapitypes.ManagedPrefixList{}
+				if err := getReferencedResourceState_ManagedPrefixList(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.EgressRules[f0idx].PrefixListIDs[f1idx].PrefixListID = (*string)(obj.Status.ID)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_ManagedPrefixList looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_ManagedPrefixList(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.ManagedPrefixList,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"ManagedPrefixList",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"ManagedPrefixList",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"ManagedPrefixList",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"ManagedPrefixList",
+			namespace, name,
+			"Status.ID")
 	}
 	return nil
 }
@@ -344,6 +527,142 @@ func getReferencedResourceState_VPC(
 	return nil
 }
 
+// resolveReferenceForEgressRules_UserIDGroupPairs_VPCPeeringConnectionID reads the resource referenced
+// from EgressRules.UserIDGroupPairs.VPCPeeringConnectionRef field and sets the EgressRules.UserIDGroupPairs.VPCPeeringConnectionID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForEgressRules_UserIDGroupPairs_VPCPeeringConnectionID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.SecurityGroup,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.EgressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCPeeringConnectionRef != nil && f1iter.VPCPeeringConnectionRef.From != nil {
+				hasReferences = true
+				arr := f1iter.VPCPeeringConnectionRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EgressRules.UserIDGroupPairs.VPCPeeringConnectionRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &svcapitypes.VPCPeeringConnection{}
+				if err := getReferencedResourceState_VPCPeeringConnection(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.EgressRules[f0idx].UserIDGroupPairs[f1idx].VPCPeeringConnectionID = (*string)(obj.Status.VPCPeeringConnectionID)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_VPCPeeringConnection looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_VPCPeeringConnection(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.VPCPeeringConnection,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"VPCPeeringConnection",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"VPCPeeringConnection",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"VPCPeeringConnection",
+			namespace, name)
+	}
+	if obj.Status.VPCPeeringConnectionID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"VPCPeeringConnection",
+			namespace, name,
+			"Status.VPCPeeringConnectionID")
+	}
+	return nil
+}
+
+// resolveReferenceForIngressRules_PrefixListIDs_PrefixListID reads the resource referenced
+// from IngressRules.PrefixListIDs.PrefixListRef field and sets the IngressRules.PrefixListIDs.PrefixListID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForIngressRules_PrefixListIDs_PrefixListID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.SecurityGroup,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.IngressRules {
+		for f1idx, f1iter := range f0iter.PrefixListIDs {
+			if f1iter.PrefixListRef != nil && f1iter.PrefixListRef.From != nil {
+				hasReferences = true
+				arr := f1iter.PrefixListRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.PrefixListIDs.PrefixListRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &svcapitypes.ManagedPrefixList{}
+				if err := getReferencedResourceState_ManagedPrefixList(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.IngressRules[f0idx].PrefixListIDs[f1idx].PrefixListID = (*string)(obj.Status.ID)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
 // resolveReferenceForIngressRules_UserIDGroupPairs_GroupID reads the resource referenced
 // from IngressRules.UserIDGroupPairs.GroupRef field and sets the IngressRules.UserIDGroupPairs.GroupID
 // from referenced resource. Returns a boolean indicating whether a reference
@@ -419,6 +738,47 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCI
 					return hasReferences, err
 				}
 				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].VPCID = (*string)(obj.Status.VPCID)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// resolveReferenceForIngressRules_UserIDGroupPairs_VPCPeeringConnectionID reads the resource referenced
+// from IngressRules.UserIDGroupPairs.VPCPeeringConnectionRef field and sets the IngressRules.UserIDGroupPairs.VPCPeeringConnectionID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCPeeringConnectionID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.SecurityGroup,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.IngressRules {
+		for f1idx, f1iter := range f0iter.UserIDGroupPairs {
+			if f1iter.VPCPeeringConnectionRef != nil && f1iter.VPCPeeringConnectionRef.From != nil {
+				hasReferences = true
+				arr := f1iter.VPCPeeringConnectionRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.VPCPeeringConnectionRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &svcapitypes.VPCPeeringConnection{}
+				if err := getReferencedResourceState_VPCPeeringConnection(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.IngressRules[f0idx].UserIDGroupPairs[f1idx].VPCPeeringConnectionID = (*string)(obj.Status.VPCPeeringConnectionID)
 			}
 		}
 	}

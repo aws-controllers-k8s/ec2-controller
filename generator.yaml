@@ -465,6 +465,14 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+      SecurityGroupIDs:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+      CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID:
+        references:
+          resource: CapacityReservation
+          path: Status.CapacityReservationID
       Tags:
         from:
           operation: CreateTags
@@ -674,6 +682,18 @@ resources:
         is_primary_key: true
         print:
           name: ID
+      Data.SecurityGroupIDs:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+      Data.NetworkInterfaces.SubnetID:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+      Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID:
+        references:
+          resource: CapacityReservation
+          path: Status.CapacityReservationID
       Tags:
         from:
           operation: CreateTags
@@ -861,6 +881,18 @@ resources:
         references:
           resource: VPCPeeringConnection
           path: Status.VPCPeeringConnectionID
+      Routes.DestinationPrefixListID:
+        references:
+          resource: ManagedPrefixList
+          path: Status.ID
+      Routes.EgressOnlyInternetGatewayID:
+        references:
+          resource: EgressOnlyInternetGateway
+          path: Status.ID
+      Routes.InstanceID:
+        references:
+          resource: Instance
+          path: Status.InstanceID
     hooks:
       delta_pre_compare:
         code: customPreCompare(delta, a, b)
@@ -921,6 +953,22 @@ resources:
           path: Status.ID
           skip_resource_state_validations: true
         is_required: false
+      IngressRules.PrefixListIDs.PrefixListID:
+        references:
+          resource: ManagedPrefixList
+          path: Status.ID
+      EgressRules.PrefixListIDs.PrefixListID:
+        references:
+          resource: ManagedPrefixList
+          path: Status.ID
+      IngressRules.UserIDGroupPairs.VPCPeeringConnectionID:
+        references:
+          resource: VPCPeeringConnection
+          path: Status.VPCPeeringConnectionID
+      EgressRules.UserIDGroupPairs.VPCPeeringConnectionID:
+        references:
+          resource: VPCPeeringConnection
+          path: Status.VPCPeeringConnectionID
     renames:
       operations:
         CreateSecurityGroup:
@@ -1246,6 +1294,16 @@ resources:
         from:
           operation: ModifyVpcEndpointServicePermissions
           path: AddAllowedPrincipals
+      GatewayLoadBalancerARNs:
+        references:
+          resource: LoadBalancer
+          service_name: elbv2
+          path: Status.ACKResourceMetadata.ARN
+      NetworkLoadBalancerARNs:
+        references:
+          resource: LoadBalancer
+          service_name: elbv2
+          path: Status.ACKResourceMetadata.ARN
       SupportedRegions:
         compare:
           is_ignored: true

@@ -746,8 +746,10 @@ type CapacityReservationStatus_SDK struct {
 
 // Describes a target Capacity Reservation or Capacity Reservation group.
 type CapacityReservationTarget struct {
-	CapacityReservationID               *string `json:"capacityReservationID,omitempty"`
-	CapacityReservationResourceGroupARN *string `json:"capacityReservationResourceGroupARN,omitempty"`
+	CapacityReservationID *string `json:"capacityReservationID,omitempty"`
+	// Reference field for CapacityReservationID
+	CapacityReservationRef              *ackv1alpha1.AWSResourceReferenceWrapper `json:"capacityReservationRef,omitempty"`
+	CapacityReservationResourceGroupARN *string                                  `json:"capacityReservationResourceGroupARN,omitempty"`
 }
 
 // Describes a target Capacity Reservation or Capacity Reservation group.
@@ -1084,16 +1086,22 @@ type CreateFleetInstance struct {
 }
 
 type CreateRouteInput struct {
-	CarrierGatewayID            *string `json:"carrierGatewayID,omitempty"`
-	CoreNetworkARN              *string `json:"coreNetworkARN,omitempty"`
-	DestinationCIDRBlock        *string `json:"destinationCIDRBlock,omitempty"`
-	DestinationIPv6CIDRBlock    *string `json:"destinationIPv6CIDRBlock,omitempty"`
-	DestinationPrefixListID     *string `json:"destinationPrefixListID,omitempty"`
-	EgressOnlyInternetGatewayID *string `json:"egressOnlyInternetGatewayID,omitempty"`
-	GatewayID                   *string `json:"gatewayID,omitempty"`
+	CarrierGatewayID         *string `json:"carrierGatewayID,omitempty"`
+	CoreNetworkARN           *string `json:"coreNetworkARN,omitempty"`
+	DestinationCIDRBlock     *string `json:"destinationCIDRBlock,omitempty"`
+	DestinationIPv6CIDRBlock *string `json:"destinationIPv6CIDRBlock,omitempty"`
+	DestinationPrefixListID  *string `json:"destinationPrefixListID,omitempty"`
+	// Reference field for DestinationPrefixListID
+	DestinationPrefixListRef    *ackv1alpha1.AWSResourceReferenceWrapper `json:"destinationPrefixListRef,omitempty"`
+	EgressOnlyInternetGatewayID *string                                  `json:"egressOnlyInternetGatewayID,omitempty"`
+	// Reference field for EgressOnlyInternetGatewayID
+	EgressOnlyInternetGatewayRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"egressOnlyInternetGatewayRef,omitempty"`
+	GatewayID                    *string                                  `json:"gatewayID,omitempty"`
 	// Reference field for GatewayID
-	GatewayRef     *ackv1alpha1.AWSResourceReferenceWrapper `json:"gatewayRef,omitempty"`
-	InstanceID     *string                                  `json:"instanceID,omitempty"`
+	GatewayRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"gatewayRef,omitempty"`
+	InstanceID *string                                  `json:"instanceID,omitempty"`
+	// Reference field for InstanceID
+	InstanceRef    *ackv1alpha1.AWSResourceReferenceWrapper `json:"instanceRef,omitempty"`
 	LocalGatewayID *string                                  `json:"localGatewayID,omitempty"`
 	NATGatewayID   *string                                  `json:"natGatewayID,omitempty"`
 	// Reference field for NATGatewayID
@@ -3991,6 +3999,8 @@ type LaunchTemplateInstanceNetworkInterfaceSpecificationRequest struct {
 	PrivateIPAddresses             []*PrivateIPAddressSpecification  `json:"privateIPAddresses,omitempty"`
 	SecondaryPrivateIPAddressCount *int64                            `json:"secondaryPrivateIPAddressCount,omitempty"`
 	SubnetID                       *string                           `json:"subnetID,omitempty"`
+	// Reference field for SubnetID
+	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 }
 
 // Describes a secondary interface specification in a launch template.
@@ -4965,6 +4975,8 @@ type PrefixListEntry struct {
 type PrefixListID struct {
 	Description  *string `json:"description,omitempty"`
 	PrefixListID *string `json:"prefixListID,omitempty"`
+	// Reference field for PrefixListID
+	PrefixListRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"prefixListRef,omitempty"`
 }
 
 // Describes the price for a Reserved Instance.
@@ -5284,8 +5296,10 @@ type RequestLaunchTemplateData struct {
 	PrivateDNSNameOptions *LaunchTemplatePrivateDNSNameOptionsRequest `json:"privateDNSNameOptions,omitempty"`
 	RAMDiskID             *string                                     `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs      []*string                                   `json:"securityGroupIDs,omitempty"`
-	SecurityGroups        []*string                                   `json:"securityGroups,omitempty"`
-	UserData              *string                                     `json:"userData,omitempty"`
+	// Reference field for SecurityGroupIDs
+	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
+	SecurityGroups    []*string                                  `json:"securityGroups,omitempty"`
+	UserData          *string                                    `json:"userData,omitempty"`
 }
 
 // Describes the launch specification for an instance.
@@ -7078,6 +7092,8 @@ type UserIDGroupPair struct {
 	UserID                 *string                                  `json:"userID,omitempty"`
 	VPCID                  *string                                  `json:"vpcID,omitempty"`
 	VPCPeeringConnectionID *string                                  `json:"vpcPeeringConnectionID,omitempty"`
+	// Reference field for VPCPeeringConnectionID
+	VPCPeeringConnectionRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcPeeringConnectionRef,omitempty"`
 	// Reference field for VPCID
 	VPCRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"vpcRef,omitempty"`
 }

@@ -91,6 +91,20 @@ spec:
                             type: string
                           prefixListID:
                             type: string
+                          prefixListRef:
+                            description: Reference field for PrefixListID
+                            properties:
+                              from:
+                                description: |-
+                                  AWSResourceReference provides all the values necessary to reference another
+                                  k8s resource for finding the identifier(Id/ARN/Name)
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                            type: object
                         type: object
                       type: array
                     toPort:
@@ -129,6 +143,20 @@ spec:
                             type: string
                           vpcPeeringConnectionID:
                             type: string
+                          vpcPeeringConnectionRef:
+                            description: Reference field for VPCPeeringConnectionID
+                            properties:
+                              from:
+                                description: |-
+                                  AWSResourceReference provides all the values necessary to reference another
+                                  k8s resource for finding the identifier(Id/ARN/Name)
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                            type: object
                           vpcRef:
                             description: Reference field for VPCID
                             properties:
@@ -184,6 +212,20 @@ spec:
                             type: string
                           prefixListID:
                             type: string
+                          prefixListRef:
+                            description: Reference field for PrefixListID
+                            properties:
+                              from:
+                                description: |-
+                                  AWSResourceReference provides all the values necessary to reference another
+                                  k8s resource for finding the identifier(Id/ARN/Name)
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                            type: object
                         type: object
                       type: array
                     toPort:
@@ -222,6 +264,20 @@ spec:
                             type: string
                           vpcPeeringConnectionID:
                             type: string
+                          vpcPeeringConnectionRef:
+                            description: Reference field for VPCPeeringConnectionID
+                            properties:
+                              from:
+                                description: |-
+                                  AWSResourceReference provides all the values necessary to reference another
+                                  k8s resource for finding the identifier(Id/ARN/Name)
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                            type: object
                           vpcRef:
                             description: Reference field for VPCID
                             properties:
