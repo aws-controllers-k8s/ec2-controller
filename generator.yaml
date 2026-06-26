@@ -884,9 +884,13 @@ resources:
       IngressRules:
         custom_field:
           list_of: IpPermission
+        compare:
+          is_ignored: true
       EgressRules:
         custom_field:
           list_of: IpPermission
+        compare:
+          is_ignored: true
       Rules:
         from:
           operation: DescribeSecurityGroupRules
@@ -937,6 +941,8 @@ resources:
             GroupIds: Ids
             GroupNames: Names
     hooks:
+      delta_pre_compare:
+        template_path: hooks/security_group/delta_pre_compare.go.tpl
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
       sdk_file_end:
@@ -1189,8 +1195,9 @@ resources:
   VpcEndpoint:
     fields:
       PolicyDocument:
-        late_initialize: {}
         is_iam_policy: true
+        late_initialize:
+          skip_incomplete_check: {}
       Tags:
         from:
           operation: CreateTags
@@ -1220,6 +1227,8 @@ resources:
       ServiceRegion:
         # ServiceRegion is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
+        late_initialize:
+          skip_incomplete_check: {}
       ServiceNetworkARN:
         # ServiceNetworkARN is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
