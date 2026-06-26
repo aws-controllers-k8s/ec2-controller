@@ -196,7 +196,8 @@ type InstanceSpec struct {
 	//
 	// If you specify a network interface, you must specify any security groups
 	// as part of the network interface instead of using this parameter.
-	SecurityGroupIDs []*string `json:"securityGroupIDs,omitempty"`
+	SecurityGroupIDs  []*string                                  `json:"securityGroupIDs,omitempty"`
+	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
 	// [Default VPC] The names of the security groups.
 	//
 	// If you specify a network interface, you must specify any security groups

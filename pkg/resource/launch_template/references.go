@@ -17,9 +17,15 @@ package launch_template
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -31,6 +37,30 @@ import (
 // values.
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
 	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if ko.Spec.Data != nil {
+		if ko.Spec.Data.CapacityReservationSpecification != nil {
+			if ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget != nil {
+				if ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef != nil {
+					ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID = nil
+				}
+			}
+		}
+	}
+
+	if ko.Spec.Data != nil {
+		for f0idx, f0iter := range ko.Spec.Data.NetworkInterfaces {
+			if f0iter.SubnetRef != nil {
+				ko.Spec.Data.NetworkInterfaces[f0idx].SubnetID = nil
+			}
+		}
+	}
+
+	if ko.Spec.Data != nil {
+		if len(ko.Spec.Data.SecurityGroupRefs) > 0 {
+			ko.Spec.Data.SecurityGroupIDs = nil
+		}
+	}
 
 	return &resource{ko}
 }
@@ -47,11 +77,347 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
-	return res, false, nil
+	ko := rm.concreteResource(res).ko
+
+	resourceHasReferences := false
+	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForData_CapacityReservationSpecification_CapacityReservationTarget_CapacityReservationID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForData_NetworkInterfaces_SubnetID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForData_SecurityGroupIDs(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	return &resource{ko}, resourceHasReferences, err
 }
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.LaunchTemplate) error {
+
+	if ko.Spec.Data != nil {
+		if ko.Spec.Data.CapacityReservationSpecification != nil {
+			if ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget != nil {
+				if ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef != nil && ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID != nil {
+					return ackerr.ResourceReferenceAndIDNotSupportedFor("Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID", "Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef")
+				}
+			}
+		}
+	}
+
+	if ko.Spec.Data != nil {
+		for _, f0iter := range ko.Spec.Data.NetworkInterfaces {
+			if f0iter.SubnetRef != nil && f0iter.SubnetID != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("Data.NetworkInterfaces.SubnetID", "Data.NetworkInterfaces.SubnetRef")
+			}
+		}
+	}
+
+	if ko.Spec.Data != nil {
+		if len(ko.Spec.Data.SecurityGroupRefs) > 0 && len(ko.Spec.Data.SecurityGroupIDs) > 0 {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("Data.SecurityGroupIDs", "Data.SecurityGroupRefs")
+		}
+	}
+	return nil
+}
+
+// resolveReferenceForData_CapacityReservationSpecification_CapacityReservationTarget_CapacityReservationID reads the resource referenced
+// from Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef field and sets the Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForData_CapacityReservationSpecification_CapacityReservationTarget_CapacityReservationID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.LaunchTemplate,
+) (hasReferences bool, err error) {
+	if ko.Spec.Data != nil {
+		if ko.Spec.Data.CapacityReservationSpecification != nil {
+			if ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget != nil {
+				if ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef != nil && ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef.From != nil {
+					hasReferences = true
+					arr := ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef.From
+					if arr.Name == nil || *arr.Name == "" {
+						return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationRef")
+					}
+					namespace, err := ackrt.ResolveCrossNamespaceReference(
+						ctx,
+						rm.cfg.EnableCrossNamespace,
+						&ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindResource,
+						ko.ObjectMeta.GetNamespace(),
+						arr.Namespace,
+						*arr.Name,
+					)
+					if err != nil {
+						return hasReferences, err
+					}
+					obj := &svcapitypes.CapacityReservation{}
+					if err := getReferencedResourceState_CapacityReservation(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+						return hasReferences, err
+					}
+					ko.Spec.Data.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID = (*string)(obj.Status.CapacityReservationID)
+				}
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_CapacityReservation looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_CapacityReservation(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.CapacityReservation,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"CapacityReservation",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"CapacityReservation",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"CapacityReservation",
+			namespace, name)
+	}
+	if obj.Status.CapacityReservationID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"CapacityReservation",
+			namespace, name,
+			"Status.CapacityReservationID")
+	}
+	return nil
+}
+
+// resolveReferenceForData_NetworkInterfaces_SubnetID reads the resource referenced
+// from Data.NetworkInterfaces.SubnetRef field and sets the Data.NetworkInterfaces.SubnetID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForData_NetworkInterfaces_SubnetID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.LaunchTemplate,
+) (hasReferences bool, err error) {
+	if ko.Spec.Data != nil {
+		for f0idx, f0iter := range ko.Spec.Data.NetworkInterfaces {
+			if f0iter.SubnetRef != nil && f0iter.SubnetRef.From != nil {
+				hasReferences = true
+				arr := f0iter.SubnetRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Data.NetworkInterfaces.SubnetRef")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &svcapitypes.Subnet{}
+				if err := getReferencedResourceState_Subnet(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.Data.NetworkInterfaces[f0idx].SubnetID = (*string)(obj.Status.SubnetID)
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_Subnet looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Subnet(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.Subnet,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Subnet",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Subnet",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Subnet",
+			namespace, name)
+	}
+	if obj.Status.SubnetID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Subnet",
+			namespace, name,
+			"Status.SubnetID")
+	}
+	return nil
+}
+
+// resolveReferenceForData_SecurityGroupIDs reads the resource referenced
+// from Data.SecurityGroupRefs field and sets the Data.SecurityGroupIDs
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForData_SecurityGroupIDs(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.LaunchTemplate,
+) (hasReferences bool, err error) {
+	if ko.Spec.Data != nil {
+		for _, f0iter := range ko.Spec.Data.SecurityGroupRefs {
+			if f0iter != nil && f0iter.From != nil {
+				hasReferences = true
+				arr := f0iter.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Data.SecurityGroupRefs")
+				}
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
+					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(),
+					arr.Namespace,
+					*arr.Name,
+				)
+				if err != nil {
+					return hasReferences, err
+				}
+				obj := &svcapitypes.SecurityGroup{}
+				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				if ko.Spec.Data.SecurityGroupIDs == nil {
+					ko.Spec.Data.SecurityGroupIDs = make([]*string, 0, 1)
+				}
+				ko.Spec.Data.SecurityGroupIDs = append(ko.Spec.Data.SecurityGroupIDs, (*string)(obj.Status.ID))
+			}
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_SecurityGroup looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_SecurityGroup(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.SecurityGroup,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"SecurityGroup",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"SecurityGroup",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"SecurityGroup",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"SecurityGroup",
+			namespace, name,
+			"Status.ID")
+	}
 	return nil
 }

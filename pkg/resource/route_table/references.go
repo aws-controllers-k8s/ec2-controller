@@ -39,8 +39,26 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
 	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.DestinationPrefixListRef != nil {
+			ko.Spec.Routes[f0idx].DestinationPrefixListID = nil
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.EgressOnlyInternetGatewayRef != nil {
+			ko.Spec.Routes[f0idx].EgressOnlyInternetGatewayID = nil
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.Routes {
 		if f0iter.GatewayRef != nil {
 			ko.Spec.Routes[f0idx].GatewayID = nil
+		}
+	}
+
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.InstanceRef != nil {
+			ko.Spec.Routes[f0idx].InstanceID = nil
 		}
 	}
 
@@ -91,7 +109,25 @@ func (rm *resourceManager) ResolveReferences(
 
 	resourceHasReferences := false
 	err := validateReferenceFields(ko)
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_DestinationPrefixListID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_EgressOnlyInternetGatewayID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	if fieldHasReferences, err := rm.resolveReferenceForRoutes_GatewayID(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
+	if fieldHasReferences, err := rm.resolveReferenceForRoutes_InstanceID(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -135,8 +171,26 @@ func (rm *resourceManager) ResolveReferences(
 func validateReferenceFields(ko *svcapitypes.RouteTable) error {
 
 	for _, f0iter := range ko.Spec.Routes {
+		if f0iter.DestinationPrefixListRef != nil && f0iter.DestinationPrefixListID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.DestinationPrefixListID", "Routes.DestinationPrefixListRef")
+		}
+	}
+
+	for _, f0iter := range ko.Spec.Routes {
+		if f0iter.EgressOnlyInternetGatewayRef != nil && f0iter.EgressOnlyInternetGatewayID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.EgressOnlyInternetGatewayID", "Routes.EgressOnlyInternetGatewayRef")
+		}
+	}
+
+	for _, f0iter := range ko.Spec.Routes {
 		if f0iter.GatewayRef != nil && f0iter.GatewayID != nil {
 			return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.GatewayID", "Routes.GatewayRef")
+		}
+	}
+
+	for _, f0iter := range ko.Spec.Routes {
+		if f0iter.InstanceRef != nil && f0iter.InstanceID != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.InstanceID", "Routes.InstanceRef")
 		}
 	}
 
@@ -169,6 +223,192 @@ func validateReferenceFields(ko *svcapitypes.RouteTable) error {
 	}
 	if ko.Spec.VPCRef == nil && ko.Spec.VPCID == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("VPCID", "VPCRef")
+	}
+	return nil
+}
+
+// resolveReferenceForRoutes_DestinationPrefixListID reads the resource referenced
+// from Routes.DestinationPrefixListRef field and sets the Routes.DestinationPrefixListID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForRoutes_DestinationPrefixListID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.RouteTable,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.DestinationPrefixListRef != nil && f0iter.DestinationPrefixListRef.From != nil {
+			hasReferences = true
+			arr := f0iter.DestinationPrefixListRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.DestinationPrefixListRef")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &svcapitypes.ManagedPrefixList{}
+			if err := getReferencedResourceState_ManagedPrefixList(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.Routes[f0idx].DestinationPrefixListID = (*string)(obj.Status.ID)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_ManagedPrefixList looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_ManagedPrefixList(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.ManagedPrefixList,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"ManagedPrefixList",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"ManagedPrefixList",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"ManagedPrefixList",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"ManagedPrefixList",
+			namespace, name,
+			"Status.ID")
+	}
+	return nil
+}
+
+// resolveReferenceForRoutes_EgressOnlyInternetGatewayID reads the resource referenced
+// from Routes.EgressOnlyInternetGatewayRef field and sets the Routes.EgressOnlyInternetGatewayID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForRoutes_EgressOnlyInternetGatewayID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.RouteTable,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.EgressOnlyInternetGatewayRef != nil && f0iter.EgressOnlyInternetGatewayRef.From != nil {
+			hasReferences = true
+			arr := f0iter.EgressOnlyInternetGatewayRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.EgressOnlyInternetGatewayRef")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &svcapitypes.EgressOnlyInternetGateway{}
+			if err := getReferencedResourceState_EgressOnlyInternetGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.Routes[f0idx].EgressOnlyInternetGatewayID = (*string)(obj.Status.ID)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_EgressOnlyInternetGateway looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_EgressOnlyInternetGateway(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.EgressOnlyInternetGateway,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"EgressOnlyInternetGateway",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"EgressOnlyInternetGateway",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"EgressOnlyInternetGateway",
+			namespace, name)
+	}
+	if obj.Status.ID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"EgressOnlyInternetGateway",
+			namespace, name,
+			"Status.ID")
 	}
 	return nil
 }
@@ -262,6 +502,99 @@ func getReferencedResourceState_InternetGateway(
 			"InternetGateway",
 			namespace, name,
 			"Status.InternetGatewayID")
+	}
+	return nil
+}
+
+// resolveReferenceForRoutes_InstanceID reads the resource referenced
+// from Routes.InstanceRef field and sets the Routes.InstanceID
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForRoutes_InstanceID(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.RouteTable,
+) (hasReferences bool, err error) {
+	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.InstanceRef != nil && f0iter.InstanceRef.From != nil {
+			hasReferences = true
+			arr := f0iter.InstanceRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.InstanceRef")
+			}
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
+				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(),
+				arr.Namespace,
+				*arr.Name,
+			)
+			if err != nil {
+				return hasReferences, err
+			}
+			obj := &svcapitypes.Instance{}
+			if err := getReferencedResourceState_Instance(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.Routes[f0idx].InstanceID = (*string)(obj.Status.InstanceID)
+		}
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_Instance looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_Instance(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *svcapitypes.Instance,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"Instance",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"Instance",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"Instance",
+			namespace, name)
+	}
+	if obj.Status.InstanceID == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"Instance",
+			namespace, name,
+			"Status.InstanceID")
 	}
 	return nil
 }

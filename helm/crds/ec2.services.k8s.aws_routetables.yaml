@@ -59,8 +59,36 @@ spec:
                       type: string
                     destinationPrefixListID:
                       type: string
+                    destinationPrefixListRef:
+                      description: Reference field for DestinationPrefixListID
+                      properties:
+                        from:
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
                     egressOnlyInternetGatewayID:
                       type: string
+                    egressOnlyInternetGatewayRef:
+                      description: Reference field for EgressOnlyInternetGatewayID
+                      properties:
+                        from:
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
                     gatewayID:
                       type: string
                     gatewayRef:
@@ -79,6 +107,20 @@ spec:
                       type: object
                     instanceID:
                       type: string
+                    instanceRef:
+                      description: Reference field for InstanceID
+                      properties:
+                        from:
+                          description: |-
+                            AWSResourceReference provides all the values necessary to reference another
+                            k8s resource for finding the identifier(Id/ARN/Name)
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
                     localGatewayID:
                       type: string
                     natGatewayID:
