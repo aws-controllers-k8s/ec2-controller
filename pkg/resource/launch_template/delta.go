@@ -758,6 +758,13 @@ func newResourceDelta(
 				delta.Add("Spec.Data.SecurityGroups", a.ko.Spec.Data.SecurityGroups, b.ko.Spec.Data.SecurityGroups)
 			}
 		}
+		if len(a.ko.Spec.Data.TagSpecifications) != len(b.ko.Spec.Data.TagSpecifications) {
+			delta.Add("Spec.Data.TagSpecifications", a.ko.Spec.Data.TagSpecifications, b.ko.Spec.Data.TagSpecifications)
+		} else if len(a.ko.Spec.Data.TagSpecifications) > 0 {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.TagSpecifications, b.ko.Spec.Data.TagSpecifications) {
+				delta.Add("Spec.Data.TagSpecifications", a.ko.Spec.Data.TagSpecifications, b.ko.Spec.Data.TagSpecifications)
+			}
+		}
 		if ackcompare.HasNilDifference(a.ko.Spec.Data.UserData, b.ko.Spec.Data.UserData) {
 			delta.Add("Spec.Data.UserData", a.ko.Spec.Data.UserData, b.ko.Spec.Data.UserData)
 		} else if a.ko.Spec.Data.UserData != nil && b.ko.Spec.Data.UserData != nil {

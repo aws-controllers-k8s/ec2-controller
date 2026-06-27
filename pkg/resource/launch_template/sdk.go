@@ -1011,6 +1011,31 @@ func (rm *resourceManager) newCreateRequestPayload(
 		if r.ko.Spec.Data.SecurityGroups != nil {
 			f0.SecurityGroups = aws.ToStringSlice(r.ko.Spec.Data.SecurityGroups)
 		}
+		if r.ko.Spec.Data.TagSpecifications != nil {
+			f0f29 := []svcsdktypes.LaunchTemplateTagSpecificationRequest{}
+			for _, f0f29iter := range r.ko.Spec.Data.TagSpecifications {
+				f0f29elem := &svcsdktypes.LaunchTemplateTagSpecificationRequest{}
+				if f0f29iter.ResourceType != nil {
+					f0f29elem.ResourceType = svcsdktypes.ResourceType(*f0f29iter.ResourceType)
+				}
+				if f0f29iter.Tags != nil {
+					f0f29elemf1 := []svcsdktypes.Tag{}
+					for _, f0f29elemf1iter := range f0f29iter.Tags {
+						f0f29elemf1elem := &svcsdktypes.Tag{}
+						if f0f29elemf1iter.Key != nil {
+							f0f29elemf1elem.Key = f0f29elemf1iter.Key
+						}
+						if f0f29elemf1iter.Value != nil {
+							f0f29elemf1elem.Value = f0f29elemf1iter.Value
+						}
+						f0f29elemf1 = append(f0f29elemf1, *f0f29elemf1elem)
+					}
+					f0f29elem.Tags = f0f29elemf1
+				}
+				f0f29 = append(f0f29, *f0f29elem)
+			}
+			f0.TagSpecifications = f0f29
+		}
 		if r.ko.Spec.Data.UserData != nil {
 			f0.UserData = r.ko.Spec.Data.UserData
 		}
@@ -1695,6 +1720,31 @@ func (rm *resourceManager) sdkUpdate(
 		}
 		if resp.LaunchTemplateVersion.LaunchTemplateData.SecurityGroups != nil {
 			f2.SecurityGroups = aws.StringSlice(resp.LaunchTemplateVersion.LaunchTemplateData.SecurityGroups)
+		}
+		if resp.LaunchTemplateVersion.LaunchTemplateData.TagSpecifications != nil {
+			f2f30 := []*svcapitypes.LaunchTemplateTagSpecificationRequest{}
+			for _, f2f30iter := range resp.LaunchTemplateVersion.LaunchTemplateData.TagSpecifications {
+				f2f30elem := &svcapitypes.LaunchTemplateTagSpecificationRequest{}
+				if f2f30iter.ResourceType != "" {
+					f2f30elem.ResourceType = aws.String(string(f2f30iter.ResourceType))
+				}
+				if f2f30iter.Tags != nil {
+					f2f30elemf1 := []*svcapitypes.Tag{}
+					for _, f2f30elemf1iter := range f2f30iter.Tags {
+						f2f30elemf1elem := &svcapitypes.Tag{}
+						if f2f30elemf1iter.Key != nil {
+							f2f30elemf1elem.Key = f2f30elemf1iter.Key
+						}
+						if f2f30elemf1iter.Value != nil {
+							f2f30elemf1elem.Value = f2f30elemf1iter.Value
+						}
+						f2f30elemf1 = append(f2f30elemf1, f2f30elemf1elem)
+					}
+					f2f30elem.Tags = f2f30elemf1
+				}
+				f2f30 = append(f2f30, f2f30elem)
+			}
+			f2.TagSpecifications = f2f30
 		}
 		if resp.LaunchTemplateVersion.LaunchTemplateData.UserData != nil {
 			f2.UserData = resp.LaunchTemplateVersion.LaunchTemplateData.UserData
@@ -2474,6 +2524,31 @@ func (rm *resourceManager) newUpdateRequestPayload(
 		if r.ko.Spec.Data.SecurityGroups != nil {
 			f2.SecurityGroups = aws.ToStringSlice(r.ko.Spec.Data.SecurityGroups)
 		}
+		if r.ko.Spec.Data.TagSpecifications != nil {
+			f2f29 := []svcsdktypes.LaunchTemplateTagSpecificationRequest{}
+			for _, f2f29iter := range r.ko.Spec.Data.TagSpecifications {
+				f2f29elem := &svcsdktypes.LaunchTemplateTagSpecificationRequest{}
+				if f2f29iter.ResourceType != nil {
+					f2f29elem.ResourceType = svcsdktypes.ResourceType(*f2f29iter.ResourceType)
+				}
+				if f2f29iter.Tags != nil {
+					f2f29elemf1 := []svcsdktypes.Tag{}
+					for _, f2f29elemf1iter := range f2f29iter.Tags {
+						f2f29elemf1elem := &svcsdktypes.Tag{}
+						if f2f29elemf1iter.Key != nil {
+							f2f29elemf1elem.Key = f2f29elemf1iter.Key
+						}
+						if f2f29elemf1iter.Value != nil {
+							f2f29elemf1elem.Value = f2f29elemf1iter.Value
+						}
+						f2f29elemf1 = append(f2f29elemf1, *f2f29elemf1elem)
+					}
+					f2f29elem.Tags = f2f29elemf1
+				}
+				f2f29 = append(f2f29, *f2f29elem)
+			}
+			f2.TagSpecifications = f2f29
+		}
 		if r.ko.Spec.Data.UserData != nil {
 			f2.UserData = r.ko.Spec.Data.UserData
 		}
@@ -3244,6 +3319,31 @@ func (rm *resourceManager) setRequestLaunchTemplateData(
 	}
 	if resp.SecurityGroups != nil {
 		res.SecurityGroups = aws.StringSlice(resp.SecurityGroups)
+	}
+	if resp.TagSpecifications != nil {
+		resf30 := []*svcapitypes.LaunchTemplateTagSpecificationRequest{}
+		for _, resf30iter := range resp.TagSpecifications {
+			resf30elem := &svcapitypes.LaunchTemplateTagSpecificationRequest{}
+			if resf30iter.ResourceType != "" {
+				resf30elem.ResourceType = aws.String(string(resf30iter.ResourceType))
+			}
+			if resf30iter.Tags != nil {
+				resf30elemf1 := []*svcapitypes.Tag{}
+				for _, resf30elemf1iter := range resf30iter.Tags {
+					resf30elemf1elem := &svcapitypes.Tag{}
+					if resf30elemf1iter.Key != nil {
+						resf30elemf1elem.Key = resf30elemf1iter.Key
+					}
+					if resf30elemf1iter.Value != nil {
+						resf30elemf1elem.Value = resf30elemf1iter.Value
+					}
+					resf30elemf1 = append(resf30elemf1, resf30elemf1elem)
+				}
+				resf30elem.Tags = resf30elemf1
+			}
+			resf30 = append(resf30, resf30elem)
+		}
+		res.TagSpecifications = resf30
 	}
 	if resp.UserData != nil {
 		res.UserData = resp.UserData

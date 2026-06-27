@@ -5285,6 +5285,7 @@ type RequestLaunchTemplateData struct {
 	RAMDiskID             *string                                     `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs      []*string                                   `json:"securityGroupIDs,omitempty"`
 	SecurityGroups        []*string                                   `json:"securityGroups,omitempty"`
+	TagSpecifications     []*LaunchTemplateTagSpecificationRequest    `json:"tagSpecifications,omitempty"`
 	UserData              *string                                     `json:"userData,omitempty"`
 }
 
