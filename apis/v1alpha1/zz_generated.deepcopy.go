@@ -21815,6 +21815,17 @@ func (in *RequestLaunchTemplateData) DeepCopyInto(out *RequestLaunchTemplateData
 			}
 		}
 	}
+	if in.TagSpecifications != nil {
+		in, out := &in.TagSpecifications, &out.TagSpecifications
+		*out = make([]*LaunchTemplateTagSpecificationRequest, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(LaunchTemplateTagSpecificationRequest)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	if in.UserData != nil {
 		in, out := &in.UserData, &out.UserData
 		*out = new(string)

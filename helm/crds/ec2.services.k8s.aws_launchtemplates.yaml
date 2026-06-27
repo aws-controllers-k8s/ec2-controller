@@ -602,6 +602,26 @@ spec:
                     items:
                       type: string
                     type: array
+                  tagSpecifications:
+                    items:
+                      description: |-
+                        The tags specification for the resources that are created during instance
+                        launch.
+                      properties:
+                        resourceType:
+                          type: string
+                        tags:
+                          items:
+                            description: Describes a tag.
+                            properties:
+                              key:
+                                type: string
+                              value:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
                   userData:
                     type: string
                 type: object
