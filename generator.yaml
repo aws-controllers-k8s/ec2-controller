@@ -145,7 +145,6 @@ ignore:
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
-    - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
     - LaunchTemplateEbsBlockDeviceRequest.VolumeInitializationRate
     - LaunchTemplateEbsBlockDevice.VolumeInitializationRate
     - InstanceRequirementsRequest.RequireEncryptionInTransit
