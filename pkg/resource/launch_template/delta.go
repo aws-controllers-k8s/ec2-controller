@@ -98,6 +98,13 @@ func newResourceDelta(
 					delta.Add("Spec.Data.CPUOptions.CoreCount", a.ko.Spec.Data.CPUOptions.CoreCount, b.ko.Spec.Data.CPUOptions.CoreCount)
 				}
 			}
+			if ackcompare.HasNilDifference(a.ko.Spec.Data.CPUOptions.NestedVirtualization, b.ko.Spec.Data.CPUOptions.NestedVirtualization) {
+				delta.Add("Spec.Data.CPUOptions.NestedVirtualization", a.ko.Spec.Data.CPUOptions.NestedVirtualization, b.ko.Spec.Data.CPUOptions.NestedVirtualization)
+			} else if a.ko.Spec.Data.CPUOptions.NestedVirtualization != nil && b.ko.Spec.Data.CPUOptions.NestedVirtualization != nil {
+				if *a.ko.Spec.Data.CPUOptions.NestedVirtualization != *b.ko.Spec.Data.CPUOptions.NestedVirtualization {
+					delta.Add("Spec.Data.CPUOptions.NestedVirtualization", a.ko.Spec.Data.CPUOptions.NestedVirtualization, b.ko.Spec.Data.CPUOptions.NestedVirtualization)
+				}
+			}
 			if ackcompare.HasNilDifference(a.ko.Spec.Data.CPUOptions.ThreadsPerCore, b.ko.Spec.Data.CPUOptions.ThreadsPerCore) {
 				delta.Add("Spec.Data.CPUOptions.ThreadsPerCore", a.ko.Spec.Data.CPUOptions.ThreadsPerCore, b.ko.Spec.Data.CPUOptions.ThreadsPerCore)
 			} else if a.ko.Spec.Data.CPUOptions.ThreadsPerCore != nil && b.ko.Spec.Data.CPUOptions.ThreadsPerCore != nil {
@@ -749,6 +756,13 @@ func newResourceDelta(
 		} else if len(a.ko.Spec.Data.SecurityGroups) > 0 {
 			if !ackcompare.SliceStringPEqual(a.ko.Spec.Data.SecurityGroups, b.ko.Spec.Data.SecurityGroups) {
 				delta.Add("Spec.Data.SecurityGroups", a.ko.Spec.Data.SecurityGroups, b.ko.Spec.Data.SecurityGroups)
+			}
+		}
+		if len(a.ko.Spec.Data.TagSpecifications) != len(b.ko.Spec.Data.TagSpecifications) {
+			delta.Add("Spec.Data.TagSpecifications", a.ko.Spec.Data.TagSpecifications, b.ko.Spec.Data.TagSpecifications)
+		} else if len(a.ko.Spec.Data.TagSpecifications) > 0 {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Data.TagSpecifications, b.ko.Spec.Data.TagSpecifications) {
+				delta.Add("Spec.Data.TagSpecifications", a.ko.Spec.Data.TagSpecifications, b.ko.Spec.Data.TagSpecifications)
 			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.Data.UserData, b.ko.Spec.Data.UserData) {

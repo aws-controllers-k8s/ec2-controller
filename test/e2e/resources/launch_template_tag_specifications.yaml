@@ -1,0 +1,13 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: LaunchTemplate
+metadata:
+  name: $LAUNCH_TEMPLATE_NAME
+spec:
+  name: $LAUNCH_TEMPLATE_NAME
+  data:
+    instanceType: t2.nano
+    tagSpecifications:
+      - resourceType: instance
+        tags:
+          - key: $INSTANCE_TAG_KEY
+            value: $INSTANCE_TAG_VALUE

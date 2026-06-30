@@ -74,6 +74,7 @@ rules:
   resources:
   - capacityreservations
   - dhcpoptions
+  - egressonlyinternetgateways
   - elasticipaddresses
   - flowlogs
   - instances
@@ -104,6 +105,7 @@ rules:
   resources:
   - capacityreservations/status
   - dhcpoptions/status
+  - egressonlyinternetgateways/status
   - elasticipaddresses/status
   - flowlogs/status
   - instances/status

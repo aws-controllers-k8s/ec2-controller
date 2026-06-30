@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcendpointserviceconfigurations,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcendpointserviceconfigurations/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{}
+var lateInitializeFieldNames = []string{"SupportedRegions"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -75,6 +75,8 @@ type resourceManager struct {
 	awsAccountID ackv1alpha1.AWSAccountID
 	// The AWS Region that this resource manager targets
 	awsRegion ackv1alpha1.AWSRegion
+	// The AWS Partition that this resource manager targets
+	awsPartition ackv1alpha1.AWSPartition
 	// sdk is a pointer to the AWS service API client exposed by the
 	// aws-sdk-go-v2/services/{alias} package.
 	sdkapi *svcsdk.Client
@@ -193,7 +195,8 @@ func (rm *resourceManager) Delete(
 // name for the resource
 func (rm *resourceManager) ARNFromName(name string) string {
 	return fmt.Sprintf(
-		"arn:aws:ec2:%s:%s:%s",
+		"arn:%s:ec2:%s:%s:%s",
+		rm.awsPartition,
 		rm.awsRegion,
 		rm.awsAccountID,
 		name,
@@ -257,7 +260,12 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	observed acktypes.AWSResource,
 	latest acktypes.AWSResource,
 ) acktypes.AWSResource {
-	return latest
+	observedKo := rm.concreteResource(observed).ko.DeepCopy()
+	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.SupportedRegions != nil && latestKo.Spec.SupportedRegions == nil {
+		latestKo.Spec.SupportedRegions = observedKo.Spec.SupportedRegions
+	}
+	return &resource{latestKo}
 }
 
 // IsSynced returns true if the resource is synced.
@@ -381,6 +389,7 @@ func newResourceManager(
 		rr:           rr,
 		awsAccountID: id,
 		awsRegion:    region,
+		awsPartition: ackv1alpha1.AWSPartition(cfg.Partition),
 		sdkapi:       svcsdk.NewFromConfig(clientcfg),
 	}, nil
 }

@@ -304,6 +304,16 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
+
+    def get_active_supported_regions(self, vpc_endpoint_service_configuration_id: str) -> set:
+        config = self.get_vpc_endpoint_service_configuration(vpc_endpoint_service_configuration_id)
+        if config is None:
+            return set()
+        return {
+            detail["Region"]
+            for detail in config.get("SupportedRegions", [])
+            if detail.get("ServiceState") not in ("Deleting", "Deleted", "Failed", "Closed")
+        }
     
     def get_vpc_endpoint_service_permissions(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
         try:
@@ -441,3 +451,17 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
+
+    def get_egress_only_internet_gateway(self, eigw_id: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_egress_only_internet_gateways(
+                EgressOnlyInternetGatewayIds=[eigw_id]
+            )
+            if len(aws_res["EgressOnlyInternetGateways"]) > 0:
+                return aws_res["EgressOnlyInternetGateways"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def assert_egress_only_internet_gateway(self, eigw_id: str, exists=True):
+        assert (self.get_egress_only_internet_gateway(eigw_id) is not None) == exists

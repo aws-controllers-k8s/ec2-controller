@@ -159,6 +159,9 @@ func (rm *resourceManager) sdkFind(
 					coreCountCopy := int64(*elem.CpuOptions.CoreCount)
 					f6.CoreCount = &coreCountCopy
 				}
+				if elem.CpuOptions.NestedVirtualization != "" {
+					f6.NestedVirtualization = aws.String(string(elem.CpuOptions.NestedVirtualization))
+				}
 				if elem.CpuOptions.ThreadsPerCore != nil {
 					threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
 					f6.ThreadsPerCore = &threadsPerCoreCopy
@@ -784,6 +787,9 @@ func (rm *resourceManager) sdkCreate(
 				coreCountCopy := int64(*elem.CpuOptions.CoreCount)
 				f6.CoreCount = &coreCountCopy
 			}
+			if elem.CpuOptions.NestedVirtualization != "" {
+				f6.NestedVirtualization = aws.String(string(elem.CpuOptions.NestedVirtualization))
+			}
 			if elem.CpuOptions.ThreadsPerCore != nil {
 				threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
 				f6.ThreadsPerCore = &threadsPerCoreCopy
@@ -1371,6 +1377,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 			coreCountCopy := int32(coreCountCopy0)
 			f2.CoreCount = &coreCountCopy
 		}
+		if r.ko.Spec.CPUOptions.NestedVirtualization != nil {
+			f2.NestedVirtualization = svcsdktypes.NestedVirtualizationSpecification(*r.ko.Spec.CPUOptions.NestedVirtualization)
+		}
 		if r.ko.Spec.CPUOptions.ThreadsPerCore != nil {
 			threadsPerCoreCopy0 := *r.ko.Spec.CPUOptions.ThreadsPerCore
 			if threadsPerCoreCopy0 > math.MaxInt32 || threadsPerCoreCopy0 < math.MinInt32 {
@@ -1829,6 +1838,9 @@ func (rm *resourceManager) setStatusDefaults(
 	}
 	if ko.Status.ACKResourceMetadata.Region == nil {
 		ko.Status.ACKResourceMetadata.Region = &rm.awsRegion
+	}
+	if ko.Status.ACKResourceMetadata.Partition == nil {
+		ko.Status.ACKResourceMetadata.Partition = &rm.awsPartition
 	}
 	if ko.Status.ACKResourceMetadata.OwnerAccountID == nil {
 		ko.Status.ACKResourceMetadata.OwnerAccountID = &rm.awsAccountID

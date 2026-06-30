@@ -11,6 +11,7 @@ rules:
   resources:
   - capacityreservations
   - dhcpoptions
+  - egressonlyinternetgateways
   - elasticipaddresses
   - flowlogs
   - instances
