@@ -70,7 +70,7 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 			"GroupID must not be touched when Status.ID is nil")
 	})
 
-	t.Run("strips server-fillable fields on self-ref ingress pair", func(t *testing.T) {
+	t.Run("clears UserID/GroupName but preserves GroupID on self-ref ingress pair", func(t *testing.T) {
 		r := mkResource(
 			[]*svcapitypes.IPPermission{ruleWithPairs(
 				pair(aws.String(testSelfID), aws.String(testAccountID), aws.String(testSelfName)),
@@ -79,12 +79,13 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 		)
 		normalizeSelfRefRules(r)
 		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
-		assert.Nil(t, got.GroupID)
+		assert.Equal(t, testSelfID, *got.GroupID,
+			"GroupID must be preserved so referencesResolved still gates syncSGRules open")
 		assert.Nil(t, got.UserID)
 		assert.Nil(t, got.GroupName)
 	})
 
-	t.Run("strips server-fillable fields on self-ref egress pair", func(t *testing.T) {
+	t.Run("clears UserID/GroupName but preserves GroupID on self-ref egress pair", func(t *testing.T) {
 		r := mkResource(
 			nil,
 			[]*svcapitypes.IPPermission{ruleWithPairs(
@@ -93,7 +94,7 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 		)
 		normalizeSelfRefRules(r)
 		got := r.ko.Spec.EgressRules[0].UserIDGroupPairs[0]
-		assert.Nil(t, got.GroupID)
+		assert.Equal(t, testSelfID, *got.GroupID)
 		assert.Nil(t, got.UserID)
 		assert.Nil(t, got.GroupName)
 	})
@@ -120,7 +121,7 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 		)
 		normalizeSelfRefRules(r)
 		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
-		assert.Nil(t, got.GroupID)
+		assert.Nil(t, got.GroupID, "a nil GroupID stays nil (nothing to preserve)")
 		assert.Nil(t, got.UserID)
 		assert.Nil(t, got.GroupName)
 	})
@@ -135,7 +136,7 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 		)
 		normalizeSelfRefRules(r)
 		pairs := r.ko.Spec.IngressRules[0].UserIDGroupPairs
-		assert.Nil(t, pairs[0].GroupID)
+		assert.Equal(t, testSelfID, *pairs[0].GroupID)
 		assert.Nil(t, pairs[0].UserID)
 		assert.Equal(t, testOtherID, *pairs[1].GroupID)
 		assert.Equal(t, testAccountID, *pairs[1].UserID)
@@ -154,7 +155,7 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 		)
 		assert.NotPanics(t, func() { normalizeSelfRefRules(r) })
 		p := r.ko.Spec.IngressRules[1].UserIDGroupPairs[1]
-		assert.Nil(t, p.GroupID)
+		assert.Equal(t, testSelfID, *p.GroupID)
 		assert.Nil(t, p.UserID)
 	})
 
@@ -170,7 +171,7 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 		)
 		normalizeSelfRefRules(r)
 		got := r.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
-		assert.Nil(t, got.GroupID)
+		assert.Equal(t, testSelfID, *got.GroupID)
 		assert.Nil(t, got.UserID)
 		assert.NotNil(t, got.Description)
 		assert.Equal(t, *desc, *got.Description)
@@ -182,14 +183,22 @@ func TestNormalizeSelfRefRules(t *testing.T) {
 // as different when the only divergence is server-fill on self-referencing
 // pairs. customPreCompare (wired in via the delta_pre_compare hook in
 // generator.yaml) normalises both sides before the generated DeepEqual.
+//
+// The desired pairs carry GroupID=testSelfID to mirror the real reconcile:
+// ACK ResolveReferences populates GroupID from GroupRef before the delta is
+// computed (this is also what referencesResolved relies on). AWS additionally
+// fills UserID/GroupName on read-back (latest); those are the only fields
+// that must be normalised away.
 func TestCustomPreCompare_SelfRef_SuppressesDelta(t *testing.T) {
 	desc := aws.String("self-ref TCP/53")
 	desired := mkResource(
 		[]*svcapitypes.IPPermission{ruleWithPairs(&svcapitypes.UserIDGroupPair{
 			Description: desc,
+			GroupID:     aws.String(testSelfID),
 		})},
 		[]*svcapitypes.IPPermission{ruleWithPairs(&svcapitypes.UserIDGroupPair{
 			Description: desc,
+			GroupID:     aws.String(testSelfID),
 		})},
 	)
 	latest := mkResource(
@@ -223,10 +232,13 @@ func TestCustomPreCompare_RealDiff_StillFires(t *testing.T) {
 	desc := aws.String("self-ref")
 	desired := mkResource(
 		[]*svcapitypes.IPPermission{{
-			FromPort:         aws.Int64(53),
-			ToPort:           aws.Int64(53),
-			IPProtocol:       aws.String("tcp"),
-			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{Description: desc}},
+			FromPort:   aws.Int64(53),
+			ToPort:     aws.Int64(53),
+			IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				Description: desc,
+				GroupID:     aws.String(testSelfID),
+			}},
 		}},
 		nil,
 	)
@@ -276,10 +288,13 @@ func TestCustomPreCompare_CrossSGRef_NotSuppressed(t *testing.T) {
 
 // TestCustomPreCompare_Mutates_a_and_b documents that customPreCompare
 // is intentionally allowed to mutate its inputs in place, matching the
-// convention used by RouteTable, NetworkAcl, and VPC. Downstream
-// consumers (sdkUpdate -> customUpdateSecurityGroup ->
-// createSecurityGroupRules) handle nil GroupID by auto-filling with
-// r.ko.Status.ID before the AWS API call, so the mutation is safe.
+// convention used by RouteTable, NetworkAcl, and VPC.
+//
+// Only UserID and GroupName are cleared. GroupID is preserved: the same
+// desired object flows into customUpdateSecurityGroup, whose referencesResolved
+// gate treats a pair with GroupRef set but GroupID nil as unresolved and skips
+// syncSGRules. Clearing GroupID here would therefore permanently block creation
+// of the self-ref rule (regression caught by the e2e perpetual-diff test).
 func TestCustomPreCompare_Mutates_a_and_b(t *testing.T) {
 	a := mkResource(
 		[]*svcapitypes.IPPermission{ruleWithPairs(
@@ -298,10 +313,10 @@ func TestCustomPreCompare_Mutates_a_and_b(t *testing.T) {
 
 	aPair := a.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
 	bPair := b.ko.Spec.IngressRules[0].UserIDGroupPairs[0]
-	assert.Nil(t, aPair.GroupID, "a self-ref GroupID must be cleared in place")
+	assert.Equal(t, testSelfID, *aPair.GroupID, "a self-ref GroupID must be preserved in place")
 	assert.Nil(t, aPair.UserID, "a self-ref UserID must be cleared in place")
 	assert.Nil(t, aPair.GroupName, "a self-ref GroupName must be cleared in place")
-	assert.Nil(t, bPair.GroupID, "b self-ref GroupID must be cleared in place")
+	assert.Equal(t, testSelfID, *bPair.GroupID, "b self-ref GroupID must be preserved in place")
 	assert.Nil(t, bPair.UserID, "b self-ref UserID must be cleared in place")
 	assert.Nil(t, bPair.GroupName, "b self-ref GroupName must be cleared in place")
 }

@@ -587,3 +587,68 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id_1, exists=False)
         ec2_validator.assert_security_group(resource_id_2, exists=False)
         ec2_validator.assert_security_group(resource_id_3, exists=False)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_self_ref"})
+    def test_self_ref_rule_no_perpetual_diff(self, ec2_client, simple_security_group):
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+
+        # Self-referencing rule resolution requires a second reconcile after
+        # the SG's own ID is known; use the cyclic-ref wait budget.
+        time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+
+        # Check resource is synced successfully
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Check Security Group exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_security_group(resource_id)
+
+        # Verify the self-referencing ingress rule was created in AWS
+        sg_group = ec2_validator.get_security_group(resource_id)
+        assert len(sg_group["IpPermissions"]) == 1
+        rule = sg_group["IpPermissions"][0]
+        assert rule["IpProtocol"] == "tcp"
+        assert rule["FromPort"] == 443
+        assert rule["ToPort"] == 443
+        assert len(rule["UserIdGroupPairs"]) == 1
+        # AWS auto-fills GroupId on read-back; confirm it equals the SG's own ID
+        assert rule["UserIdGroupPairs"][0]["GroupId"] == resource_id
+
+        # Capture the self-referencing rule's ID. The perpetual-diff bug
+        # (#2822) revokes and re-authorizes the rule on every reconcile, so
+        # AWS assigns a NEW securityGroupRuleID each cycle. A stable ID across
+        # reconciles is therefore the definitive signal that the diff is
+        # suppressed -- ACK.ResourceSynced alone is not, since the original
+        # bug churned the rule while still reporting Synced=True.
+        def _self_ref_rule_id():
+            latest = k8s.get_resource(ref)
+            rules = latest.get("status", {}).get("rules", []) or []
+            self_ref = [r for r in rules if not r.get("isEgress") and r.get("fromPort") == 443]
+            assert len(self_ref) == 1, f"expected exactly one self-ref ingress rule, got {rules}"
+            rule_id = self_ref[0].get("securityGroupRuleID")
+            assert rule_id, f"securityGroupRuleID not populated: {self_ref[0]}"
+            return rule_id
+
+        rule_id_before = _self_ref_rule_id()
+
+        # Sleep through another full reconcile cycle and assert the rule did
+        # not churn. With the bug present the controller would either leave
+        # ResourceSynced False (rule never created) or re-authorize the rule
+        # (new ID); the fix keeps both stable.
+        time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        rule_id_after = _self_ref_rule_id()
+        assert rule_id_after == rule_id_before, (
+            f"self-ref rule churned across reconciles: "
+            f"{rule_id_before} -> {rule_id_after} (perpetual Revoke/Authorize diff)"
+        )
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check Security Group no longer exists in AWS
+        ec2_validator.assert_security_group(resource_id, exists=False)
