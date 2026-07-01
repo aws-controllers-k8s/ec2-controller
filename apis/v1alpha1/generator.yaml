@@ -84,8 +84,6 @@ ignore:
     - CreateVpcEndpointServiceConfigurationInput.ClientToken
     - CreateVpcEndpointServiceConfigurationInput.DryRun
     - CreateVpcEndpointServiceConfigurationInput.TagSpecifications
-    - CreateVpcEndpointServiceConfigurationInput.SupportedRegions
-    - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.SupportedRegions
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.RemoteAccessEnabled
     - CreateVpcEndpointServiceConfigurationOutput.ServiceConfiguration.AvailabilityZoneIds
@@ -145,7 +143,6 @@ ignore:
     - CreateLaunchTemplateInput.DryRun
     - CreateLaunchTemplateInput.ClientToken
     - CreateLaunchTemplateInput.TagSpecifications
-    - CreateLaunchTemplateVersionInput.LaunchTemplateData.TagSpecifications
     - LaunchTemplateEbsBlockDeviceRequest.VolumeInitializationRate
     - LaunchTemplateEbsBlockDevice.VolumeInitializationRate
     - InstanceRequirementsRequest.RequireEncryptionInTransit
@@ -1190,6 +1187,7 @@ resources:
     fields:
       PolicyDocument:
         late_initialize: {}
+        is_iam_policy: true
       Tags:
         from:
           operation: CreateTags
@@ -1245,6 +1243,13 @@ resources:
         from:
           operation: ModifyVpcEndpointServicePermissions
           path: AddAllowedPrincipals
+      SupportedRegions:
+        compare:
+          is_ignored: true
+        late_initialize:
+          skip_incomplete_check: {}
+        set:
+          - from: Region
       ServiceID:
         is_primary_key: true
         is_read_only: true
@@ -1267,6 +1272,8 @@ resources:
       match_fields:
         - ServiceId
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_create_post_build_request.go.tpl
       sdk_create_post_set_output:
@@ -1279,6 +1286,8 @@ resources:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_file_end.go.tpl
       sdk_update_pre_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_update_pre_build_request.go.tpl
+      sdk_read_many_pre_set_output:
+        template_path: hooks/vpc_endpoint_service_configuration/sdk_read_many_pre_set_output.go.tpl
       sdk_read_many_post_set_output:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_read_many_post_set_output.go.tpl
       sdk_read_many_post_build_request:

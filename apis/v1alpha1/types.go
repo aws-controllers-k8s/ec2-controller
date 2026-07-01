@@ -5287,6 +5287,7 @@ type RequestLaunchTemplateData struct {
 	RAMDiskID             *string                                     `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs      []*string                                   `json:"securityGroupIDs,omitempty"`
 	SecurityGroups        []*string                                   `json:"securityGroups,omitempty"`
+	TagSpecifications     []*LaunchTemplateTagSpecificationRequest    `json:"tagSpecifications,omitempty"`
 	UserData              *string                                     `json:"userData,omitempty"`
 }
 
@@ -6040,6 +6041,7 @@ type ServiceConfiguration struct {
 	ServiceState                *string                      `json:"serviceState,omitempty"`
 	ServiceType                 []*ServiceTypeDetail         `json:"serviceType,omitempty"`
 	SupportedIPAddressTypes     []*string                    `json:"supportedIPAddressTypes,omitempty"`
+	SupportedRegions            []*SupportedRegionDetail     `json:"supportedRegions,omitempty"`
 	Tags                        []*Tag                       `json:"tags,omitempty"`
 }
 
