@@ -129,6 +129,101 @@ func (rm *resourceManager) referencesResolved(
 	return true
 }
 
+// normalizeSelfRefRules canonicalises self-referencing UserIDGroupPairs
+// on r.ko.Spec.{Ingress,Egress}Rules by clearing the server-fillable
+// fields that the spec form omits (UserID, GroupName) in place. GroupID
+// is intentionally left untouched (see below).
+//
+// A pair is identified as a self-reference when its GroupID either is
+// nil (the natural way to express "this SG" in the spec, since the ID
+// is unknown until AWS assigns it) or equals the SG's own ID (the form
+// AWS returns on DescribeSecurityGroups read-back).
+//
+// Without this normalisation, newResourceDelta's DeepEqual on
+// UserIDGroupPairs flags a permanent diff and triggers an endless
+// Revoke/Authorize loop on every reconcile (AWS auto-fills UserID, and
+// may also populate GroupName, on read-back, while the spec omits them).
+//
+// GroupID must NOT be cleared. For a self-reference it already equals
+// the SG's own ID on both sides after ResolveReferences, so it never
+// drives the diff. Clearing it would make referencesResolved (and the
+// gate in customUpdateSecurityGroup) treat the pair as an unresolved
+// reference, permanently skipping syncSGRules so the rule is never
+// created.
+//
+// Scope: this fix is limited to self-references. Cross-SG and
+// cross-account pairs may still exhibit perpetual diffs if the user
+// omits server-filled fields such as UserID or VPCID; those cases are
+// not addressed here.
+//
+// See aws-controllers-k8s/community#2822.
+func normalizeSelfRefRules(r *resource) {
+	if r == nil || r.ko.Status.ID == nil {
+		return
+	}
+	selfID := *r.ko.Status.ID
+	normalize := func(rules []*svcapitypes.IPPermission) {
+		for _, rule := range rules {
+			if rule == nil {
+				continue
+			}
+			for _, pair := range rule.UserIDGroupPairs {
+				if pair == nil {
+					continue
+				}
+				isSelf := pair.GroupID == nil ||
+					*pair.GroupID == selfID
+				if !isSelf {
+					continue
+				}
+				// Clear only the fields AWS auto-fills on read-back
+				// that the spec form omits, so the canonical and the
+				// AWS-returned forms compare equal.
+				//
+				// GroupID is deliberately NOT cleared: for a
+				// self-reference it equals selfID on both the desired
+				// (post ResolveReferences) and the AWS-returned side, so
+				// it never drives the diff. More importantly,
+				// referencesResolved (and the gate in
+				// customUpdateSecurityGroup) treats a pair with
+				// GroupRef set but GroupID nil as unresolved and skips
+				// syncSGRules entirely -- clearing GroupID here would
+				// permanently block creation of the self-ref rule.
+				pair.UserID = nil
+				pair.GroupName = nil
+			}
+		}
+	}
+	normalize(r.ko.Spec.IngressRules)
+	normalize(r.ko.Spec.EgressRules)
+}
+
+// customPreCompare is injected at the top of the generated
+// newResourceDelta (see delta.go) via the `delta_pre_compare` hook in
+// generator.yaml. It canonicalises self-referencing UserIDGroupPairs on
+// both sides in place so that the subsequent field-by-field DeepEqual
+// does not report a spurious diff on Spec.IngressRules / Spec.EgressRules
+// when the only divergence is server-fill on self-references.
+//
+// Mutating a and b directly matches the convention used by RouteTable,
+// NetworkAcl, and VPC in this repo, and is safe here because:
+//   - ACK patches Spec on Create/Update output in general, but
+//     SecurityGroup's sdkUpdate returns a deep copy of desired, so the
+//     in-place mutation does not escape back into the reconcile loop.
+//   - Only UserID and GroupName are cleared; GroupID is preserved so the
+//     referencesResolved gate in customUpdateSecurityGroup still sees the
+//     self-reference as resolved and proceeds to syncSGRules.
+//   - Each reconcile reads a fresh desired from k8s, so the mutation
+//     does not persist across cycles.
+func customPreCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	normalizeSelfRefRules(a)
+	normalizeSelfRefRules(b)
+}
+
 // syncSGRules analyzes desired and latest (if any)
 // resources and executes API calls to Create/Delete
 // rules in order to achieve desired state.
