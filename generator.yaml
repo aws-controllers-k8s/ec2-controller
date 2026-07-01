@@ -75,8 +75,6 @@ ignore:
     - CreateVpcEndpointInput.TagSpecifications
     - CreateVpcEndpointInput.ClientToken
     - CreateVpcEndpointInput.DnsOptions.PrivateDnsOnlyForInboundResolverEndpoint
-    - CreateVpcEndpointInput.DnsOptions.PrivateDnsPreference
-    - CreateVpcEndpointInput.DnsOptions.PrivateDnsSpecifiedDomains
     - CreateVpcEndpointInput.ResourceConfigurationArn
     - CreateVpcEndpointInput.SubnetConfigurations
     - CreateVpcEndpointOutput.VpcEndpoint.FailureReason
@@ -273,16 +271,16 @@ ignore:
     - VpnConnectionRoute
     - VpnConcentrator
     - VpnConnection
-    - VpnGateway    
+    - VpnGateway
 
 operations:
   AllocateAddress:
-    operation_type: 
+    operation_type:
     - Create
     resource_name: ElasticIPAddress
   CancelCapacityReservation:
     operation_type:
-    - Delete 
+    - Delete
     resource_name: CapacityReservation
   DescribeAddresses:
     operation_type:
@@ -336,7 +334,7 @@ operations:
     resource_name: FlowLog
   DeleteFlowLogs:
     operation_type:
-    - Delete 
+    - Delete
     resource_name: FlowLog
   RunInstances:
     #ouput shape: Reservation
@@ -345,7 +343,7 @@ operations:
       - Create
     resource_name: Instance
     override_values:
-      # Hard-code MaxCount and MinCount to 1 so the Reservation 
+      # Hard-code MaxCount and MinCount to 1 so the Reservation
       # response can only contain a single instance. This
       # instance will be managed by the Instance controller.
       # Although RunInstances can handle creating multiple 
@@ -676,7 +674,7 @@ resources:
       Tags:
         from:
           operation: CreateTags
-          path: Tags    
+          path: Tags
       DefaultVersion:
         from:
           operation: ModifyLaunchTemplate
@@ -992,7 +990,7 @@ resources:
             NetworkAclId: Id
         ReplaceNetworkAclEntry:
           input_fields:
-            NetworkAclId: Id    
+            NetworkAclId: Id
     hooks:
       delta_pre_compare:
         code: customPreCompare(delta, a, b)
@@ -1238,7 +1236,7 @@ resources:
       sdk_file_end:
         template_path: hooks/vpc_endpoint/sdk_file_end.go.tpl
     update_operation:
-      custom_method_name: customUpdateVPCEndpoint  
+      custom_method_name: customUpdateVPCEndpoint
   VpcEndpointServiceConfiguration:
     fields:
       AllowedPrincipals:
@@ -1295,7 +1293,7 @@ resources:
       sdk_read_many_post_build_request:
         template_path: hooks/vpc_endpoint_service_configuration/sdk_read_many_post_build_request.go.tpl
   VpcPeeringConnection:
-    fields:      
+    fields:
       VpcId:
         references:
           resource: VPC

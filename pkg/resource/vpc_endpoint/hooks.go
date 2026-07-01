@@ -16,8 +16,11 @@ package vpc_endpoint
 import (
 	"context"
 	"errors"
+	"fmt"
+	"slices"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -73,6 +76,34 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
+	// ServiceNetwork DnsOptions are immutable in AWS (silently no-op).
+	// Guard before tags.Sync to avoid partial-apply.
+	if delta.DifferentAt("Spec.DNSOptions") && desired.ko.Spec.DNSOptions != nil {
+		if latest.ko.Spec.VPCEndpointType != nil && *latest.ko.Spec.VPCEndpointType == "ServiceNetwork" {
+			desiredDNS := desired.ko.Spec.DNSOptions
+			latestDNS := latest.ko.Spec.DNSOptions
+
+			// If the user is trying to set or change DNS options when they shouldn't
+			if desiredDNS != nil {
+				// 1. Check PrivateDnsPreference
+				if desiredDNS.PrivateDNSPreference != nil {
+					if latestDNS == nil || latestDNS.PrivateDNSPreference == nil ||
+						*desiredDNS.PrivateDNSPreference != *latestDNS.PrivateDNSPreference {
+						return latest, ackerrors.NewTerminalError(fmt.Errorf("DnsOptions.PrivateDnsPreference cannot be modified for ServiceNetwork endpoints"))
+					}
+				}
+
+				// 2. Check PrivateDnsSpecifiedDomains (since they work hand-in-hand)
+				if len(desiredDNS.PrivateDNSSpecifiedDomains) > 0 {
+					if latestDNS == nil || len(latestDNS.PrivateDNSSpecifiedDomains) == 0 ||
+						!stringSlicesEqual(desiredDNS.PrivateDNSSpecifiedDomains, latestDNS.PrivateDNSSpecifiedDomains) {
+						return latest, ackerrors.NewTerminalError(fmt.Errorf("DnsOptions.PrivateDnsSpecifiedDomains cannot be modified for ServiceNetwork endpoints"))
+					}
+				}
+			}
+		}
+	}
+
 	if delta.DifferentAt("Spec.Tags") {
 		if err := tags.Sync(
 			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.VPCEndpointID,
@@ -125,11 +156,18 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	}
 
 	if delta.DifferentAt("Spec.DNSOptions") && desired.ko.Spec.DNSOptions != nil {
-		if desired.ko.Spec.DNSOptions != nil {
-			input.DnsOptions = &svcsdktypes.DnsOptionsSpecification{
-				DnsRecordIpType: svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType),
-			}
+		dnsOptions := &svcsdktypes.DnsOptionsSpecification{}
+		if desired.ko.Spec.DNSOptions.DNSRecordIPType != nil {
+			dnsOptions.DnsRecordIpType = svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType)
 		}
+
+		if delta.DifferentAt("Spec.DNSOptions.PrivateDNSPreference") {
+			dnsOptions.PrivateDnsPreference = desired.ko.Spec.DNSOptions.PrivateDNSPreference
+		}
+		if delta.DifferentAt("Spec.DNSOptions.PrivateDNSSpecifiedDomains") {
+			dnsOptions.PrivateDnsSpecifiedDomains = aws.ToStringSlice(desired.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains)
+		}
+		input.DnsOptions = dnsOptions
 	}
 
 	if delta.DifferentAt("Spec.IPAddressType") {
@@ -209,4 +247,13 @@ func calculateSubnetDifferences(desired, latest []string) ([]string, []string) {
 	}
 
 	return toAdd, toRemove
+}
+
+// stringSlicesEqual reports whether a and b have the same elements
+// (order-insensitive). nil and "" are treated as equivalent.
+func stringSlicesEqual(a, b []*string) bool {
+	aS, bS := aws.ToStringSlice(a), aws.ToStringSlice(b)
+	slices.Sort(aS)
+	slices.Sort(bS)
+	return slices.Equal(aS, bS)
 }
