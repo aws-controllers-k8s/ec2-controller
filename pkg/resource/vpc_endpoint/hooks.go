@@ -79,7 +79,7 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	// ServiceNetwork DnsOptions are immutable in AWS (silently no-op).
 	// Guard before tags.Sync to avoid partial-apply.
 	if delta.DifferentAt("Spec.DNSOptions") && desired.ko.Spec.DNSOptions != nil {
-		if desired.ko.Spec.VPCEndpointType != nil && *desired.ko.Spec.VPCEndpointType == "ServiceNetwork" {
+		if latest.ko.Spec.VPCEndpointType != nil && *latest.ko.Spec.VPCEndpointType == "ServiceNetwork" {
 			desiredDNS := desired.ko.Spec.DNSOptions
 			latestDNS := latest.ko.Spec.DNSOptions
 
