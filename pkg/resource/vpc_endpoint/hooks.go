@@ -16,8 +16,10 @@ package vpc_endpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -73,6 +75,23 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	// (now updated.Spec) reflects the latest resource state.
 	updated = rm.concreteResource(desired.DeepCopy())
 
+	// ServiceNetwork DnsOptions are immutable in AWS (silently no-op).
+	// Guard before tags.Sync to avoid partial-apply.
+	if delta.DifferentAt("Spec.DNSOptions") {
+		if latest.ko.Spec.VPCEndpointType != nil && *latest.ko.Spec.VPCEndpointType == "ServiceNetwork" {
+			if delta.DifferentAt("Spec.DNSOptions.PrivateDNSPreference") {
+				return latest, ackerrors.NewTerminalError(fmt.Errorf("DnsOptions.PrivateDNSPreference cannot be modified for ServiceNetwork endpoints"))
+			}
+			if delta.DifferentAt("Spec.DNSOptions.DNSRecordIPType") {
+				return latest, ackerrors.NewTerminalError(fmt.Errorf("DnsOptions.DNSRecordIPType cannot be modified for ServiceNetwork endpoints"))
+			}
+			if delta.DifferentAt("Spec.DNSOptions.PrivateDNSSpecifiedDomains") {
+				return latest, ackerrors.NewTerminalError(fmt.Errorf("DnsOptions.PrivateDNSSpecifiedDomains cannot be modified for ServiceNetwork endpoints"))
+			}
+			return latest, ackerrors.NewTerminalError(fmt.Errorf("DnsOptions cannot be modified for ServiceNetwork endpoints"))
+		}
+	}
+
 	if delta.DifferentAt("Spec.Tags") {
 		if err := tags.Sync(
 			ctx, rm.sdkapi, rm.metrics, *latest.ko.Status.VPCEndpointID,
@@ -125,11 +144,17 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	}
 
 	if delta.DifferentAt("Spec.DNSOptions") && desired.ko.Spec.DNSOptions != nil {
-		if desired.ko.Spec.DNSOptions != nil {
-			input.DnsOptions = &svcsdktypes.DnsOptionsSpecification{
-				DnsRecordIpType: svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType),
-			}
+		dnsOptions := &svcsdktypes.DnsOptionsSpecification{}
+		if desired.ko.Spec.DNSOptions.DNSRecordIPType != nil {
+			dnsOptions.DnsRecordIpType = svcsdktypes.DnsRecordIpType(*desired.ko.Spec.DNSOptions.DNSRecordIPType)
 		}
+		if delta.DifferentAt("Spec.DNSOptions.PrivateDNSPreference") {
+			dnsOptions.PrivateDnsPreference = desired.ko.Spec.DNSOptions.PrivateDNSPreference
+		}
+		if delta.DifferentAt("Spec.DNSOptions.PrivateDNSSpecifiedDomains") {
+			dnsOptions.PrivateDnsSpecifiedDomains = aws.ToStringSlice(desired.ko.Spec.DNSOptions.PrivateDNSSpecifiedDomains)
+		}
+		input.DnsOptions = dnsOptions
 	}
 
 	if delta.DifferentAt("Spec.IPAddressType") {
