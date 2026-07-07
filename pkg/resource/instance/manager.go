@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=instances,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=instances/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"HibernationOptions"}
+var lateInitializeFieldNames = []string{"HibernationOptions", "SourceDestCheckEnabled"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -268,6 +268,9 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
 	if observedKo.Spec.HibernationOptions != nil && latestKo.Spec.HibernationOptions == nil {
 		latestKo.Spec.HibernationOptions = observedKo.Spec.HibernationOptions
+	}
+	if observedKo.Spec.SourceDestCheckEnabled != nil && latestKo.Spec.SourceDestCheckEnabled == nil {
+		latestKo.Spec.SourceDestCheckEnabled = observedKo.Spec.SourceDestCheckEnabled
 	}
 	return &resource{latestKo}
 }
