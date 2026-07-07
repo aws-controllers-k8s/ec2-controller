@@ -1188,7 +1188,8 @@ resources:
   VpcEndpoint:
     fields:
       PolicyDocument:
-        late_initialize: {}
+        late_initialize:
+          skip_incomplete_check: {}
         is_iam_policy: true
       Tags:
         from:
