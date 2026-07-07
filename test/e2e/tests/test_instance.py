@@ -302,6 +302,102 @@ class TestInstance:
         # for successful test cleanup
         wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
 
+    def test_source_dest_check(self, ec2_client):
+        """Test that SourceDestCheck can be disabled and re-enabled on an Instance.
+
+        Validates:
+        - Instance is created with sourceDestCheckEnabled: false
+        - AWS resource has SourceDestCheck disabled
+        - sourceDestCheckEnabled can be re-enabled via patch
+        - The resource syncs without error after each update
+
+        References: https://github.com/aws-controllers-k8s/community/issues/2883
+        """
+        test_resource_values = REPLACEMENT_VALUES.copy()
+        resource_name = random_suffix_name("inst-src-dst-chk", 24)
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        subnet_id = test_vpc.public_subnets.subnet_ids[0]
+
+        ami_id = get_ami_id(ec2_client)
+        test_resource_values["INSTANCE_NAME"] = resource_name
+        test_resource_values["INSTANCE_AMI_ID"] = ami_id
+        test_resource_values["INSTANCE_TYPE"] = INSTANCE_TYPE
+        test_resource_values["INSTANCE_SUBNET_ID"] = subnet_id
+        test_resource_values["INSTANCE_TAG_KEY"] = INSTANCE_TAG_KEY
+        test_resource_values["INSTANCE_TAG_VAL"] = INSTANCE_TAG_VAL
+
+        # Load Instance CR with sourceDestCheckEnabled: false
+        resource_data = load_ec2_resource(
+            "instance_source_dest_check",
+            additional_replacements=test_resource_values,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        try:
+            time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+            resource_id = cr["status"]["instanceID"]
+
+            # Check Instance exists
+            instance = get_instance(ec2_client, resource_id)
+            assert instance is not None
+
+            # Wait for instance to come up
+            wait_for_instance_or_die(ec2_client, resource_id, 'running', TIMEOUT_SECONDS)
+
+            # Check resource synced successfully
+            assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+            # Verify SourceDestCheck is disabled in AWS
+            instance = get_instance(ec2_client, resource_id)
+            assert instance["SourceDestCheck"] is False
+
+            # Verify the CR spec shows sourceDestCheckEnabled: false
+            cr = k8s.get_resource(ref)
+            assert cr["spec"]["sourceDestCheckEnabled"] is False
+
+            # Re-enable SourceDestCheck
+            updates = {
+                "spec": {
+                    "sourceDestCheckEnabled": True
+                }
+            }
+            k8s.patch_custom_resource(ref, updates)
+            time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+            # Check resource synced successfully
+            assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+            # Verify SourceDestCheck is now enabled in AWS
+            instance = get_instance(ec2_client, resource_id)
+            assert instance["SourceDestCheck"] is True
+
+            # Verify the CR spec shows sourceDestCheckEnabled: true
+            cr = k8s.get_resource(ref)
+            assert cr["spec"]["sourceDestCheckEnabled"] is True
+
+        finally:
+            # Delete k8s resource
+            try:
+                _, deleted = k8s.delete_custom_resource(ref, 3, 10)
+                assert deleted
+            except:
+                pass
+
+            # Wait for termination to release subnet dependency
+            if 'resource_id' in locals():
+                wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
 
     def test_nested_virtualization(self, ec2_client):
         """Test that an Instance can be created with nestedVirtualization in cpuOptions.
