@@ -515,6 +515,13 @@ func newResourceDelta(
 			delta.Add("Spec.SecurityGroups", a.ko.Spec.SecurityGroups, b.ko.Spec.SecurityGroups)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.SourceDestCheckEnabled, b.ko.Spec.SourceDestCheckEnabled) {
+		delta.Add("Spec.SourceDestCheckEnabled", a.ko.Spec.SourceDestCheckEnabled, b.ko.Spec.SourceDestCheckEnabled)
+	} else if a.ko.Spec.SourceDestCheckEnabled != nil && b.ko.Spec.SourceDestCheckEnabled != nil {
+		if *a.ko.Spec.SourceDestCheckEnabled != *b.ko.Spec.SourceDestCheckEnabled {
+			delta.Add("Spec.SourceDestCheckEnabled", a.ko.Spec.SourceDestCheckEnabled, b.ko.Spec.SourceDestCheckEnabled)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.SubnetID, b.ko.Spec.SubnetID) {
 		delta.Add("Spec.SubnetID", a.ko.Spec.SubnetID, b.ko.Spec.SubnetID)
 	} else if a.ko.Spec.SubnetID != nil && b.ko.Spec.SubnetID != nil {

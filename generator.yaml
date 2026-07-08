@@ -454,6 +454,12 @@ resources:
       SecurityGroups:
         set:
           - from: GroupName
+      SourceDestCheckEnabled:
+        type: bool
+        # Optional field, applied post-create; late-init the observed value to
+        # avoid a phantom delta when unset.
+        late_initialize:
+          skip_incomplete_check: {}
       LaunchTemplate.LaunchTemplateID:
         references:
           resource: LaunchTemplate
