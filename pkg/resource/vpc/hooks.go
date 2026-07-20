@@ -347,6 +347,7 @@ func (rm *resourceManager) customUpdateVPC(
 		}
 	}
 	updated.ko.Status.CIDRBlockAssociationSet = latest.ko.Status.CIDRBlockAssociationSet
+	updated.ko.Status.IPv6CIDRBlockAssociationSet = latest.ko.Status.IPv6CIDRBlockAssociationSet
 
 	if delta.DifferentAt("Spec.DisallowSecurityGroupDefaultRules") {
 		if desired.ko.Spec.DisallowSecurityGroupDefaultRules != nil && *desired.ko.Spec.DisallowSecurityGroupDefaultRules {
