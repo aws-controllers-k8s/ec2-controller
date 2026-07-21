@@ -213,6 +213,44 @@ def security_groups_cyclic_ref():
         pass
 
 
+def _sg_status_rule_ids(ref):
+    """Return the sorted securityGroupRuleIDs currently in the CR's status."""
+    latest = k8s.get_resource(ref)
+    rules = latest.get("status", {}).get("rules", []) or []
+    ids = sorted(r.get("securityGroupRuleID") for r in rules if r.get("securityGroupRuleID"))
+    assert ids, f"no securityGroupRuleIDs populated in status: {rules}"
+    return ids
+
+
+def _assert_no_perpetual_diff(ref):
+    """Force a reconcile with an update unrelated to the rules and assert the
+    security group rule IDs in status do not change.
+
+    A tag edit bumps metadata.generation, so the controller reconciles right
+    away rather than waiting for the (up to 10h) resync period. That reconcile
+    recomputes the ingress/egress rule delta; if any rule diff is spurious the
+    rules are revoked and re-authorized and AWS assigns brand new
+    securityGroupRuleIDs. Stable IDs across this forced reconcile are therefore
+    the definitive signal that the delta logic sees no rule change --
+    ACK.ResourceSynced=True alone is not, since the original #2822 bug churned
+    the rules while still reporting Synced=True.
+    """
+    ids_before = _sg_status_rule_ids(ref)
+
+    # Unrelated update: add a tag. This does not touch any ingress/egress rule.
+    k8s.patch_custom_resource(
+        ref, {"spec": {"tags": [{"key": "force-reconcile", "value": "1"}]}}
+    )
+    time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+    ids_after = _sg_status_rule_ids(ref)
+    assert ids_after == ids_before, (
+        f"security group rules churned after an unrelated (tag) update: "
+        f"{ids_before} -> {ids_after}; a perpetual delta re-authorized the rules"
+    )
+
+
 @service_marker
 @pytest.mark.canary
 class TestSecurityGroup:
@@ -587,3 +625,191 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id_1, exists=False)
         ec2_validator.assert_security_group(resource_id_2, exists=False)
         ec2_validator.assert_security_group(resource_id_3, exists=False)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_self_ref"})
+    def test_self_ref_rule_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # 1. Create the SecurityGroup (self-reference expressed by omitting
+        #    groupID entirely -- the #2822 pattern).
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+
+        # 2. Wait for the resource to sync.
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        # 3. Verify via the AWS API that the security group looks correct: the
+        #    self-referencing ingress rule exists with GroupId auto-filled to
+        #    the SG's own ID.
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_security_group(resource_id)
+        sg_group = ec2_validator.get_security_group(resource_id)
+        assert len(sg_group["IpPermissions"]) == 1
+        rule = sg_group["IpPermissions"][0]
+        assert rule["IpProtocol"] == "tcp"
+        assert rule["FromPort"] == 443
+        assert rule["ToPort"] == 443
+        assert len(rule["UserIdGroupPairs"]) == 1
+        assert rule["UserIdGroupPairs"][0]["GroupId"] == resource_id
+
+        # 4 + 5. Force a reconcile with an unrelated (tag) update and confirm
+        #        the self-ref rule ID in status does not change.
+        _assert_no_perpetual_diff(ref)
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    def test_self_ref_groupref_no_perpetual_diff(self, ec2_client):
+        # Self-reference expressed via groupRef pointing at the SG itself. This
+        # is a distinct code path from the omitted-groupID form: ResolveRefs
+        # populates GroupID from GroupRef (so GroupRef is set on desired but
+        # nil on the AWS read-back), and it resolves only on the second
+        # reconcile once the SG's own ID is known.
+        name = random_suffix_name("sg-selfref-groupref", 24)
+        ref = create_security_group_with_sg_ref(name, name)  # references itself
+        try:
+            time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+            assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+            cr = k8s.get_resource(ref)
+            resource_id = cr["status"]["id"]
+            ec2_validator = EC2Validator(ec2_client)
+            ec2_validator.assert_security_group(resource_id)
+            sg = ec2_validator.get_security_group(resource_id)
+
+            # Both the ingress and egress tcp/443 self-ref rules resolve to the
+            # SG's own ID (also exercises egress self-reference).
+            for perms in (sg["IpPermissions"], sg["IpPermissionsEgress"]):
+                match = [p for p in perms if p.get("FromPort") == 443]
+                assert len(match) == 1, f"expected one tcp/443 rule, got {perms}"
+                pairs = match[0]["UserIdGroupPairs"]
+                assert len(pairs) == 1
+                assert pairs[0]["GroupId"] == resource_id
+
+            _assert_no_perpetual_diff(ref)
+        finally:
+            k8s.delete_custom_resource(ref)
+            time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    def test_cross_sg_userid_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # A rule referencing a *different* (peer) SG in the same account. The
+        # user omits userID; AWS auto-fills it with the owning account. The fix
+        # must clear that owner userID (while keeping the peer GroupID), so no
+        # perpetual diff -- distinct from the self-ref branch.
+        (peer_ref, _) = simple_security_group
+        assert k8s.wait_on_condition(peer_ref, "ACK.ResourceSynced", "True", wait_periods=8)
+        peer_id = k8s.get_resource(peer_ref)["status"]["id"]
+
+        name = random_suffix_name("sg-cross-ref", 24)
+        ref = create_security_group_with_sg_ref(name, peer_ref.name)  # references the peer
+        try:
+            time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+            assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+            cr = k8s.get_resource(ref)
+            resource_id = cr["status"]["id"]
+            ec2_validator = EC2Validator(ec2_client)
+            sg = ec2_validator.get_security_group(resource_id)
+
+            ing = [p for p in sg["IpPermissions"] if p.get("FromPort") == 443]
+            assert len(ing) == 1
+            pairs = ing[0]["UserIdGroupPairs"]
+            assert len(pairs) == 1
+            assert pairs[0]["GroupId"] == peer_id, "cross-SG GroupID must be preserved"
+            # AWS auto-fills the owner account id even though the spec omits it.
+            assert pairs[0]["UserId"] == str(get_account_id())
+
+            _assert_no_perpetual_diff(ref)
+        finally:
+            k8s.delete_custom_resource(ref)
+            time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_allproto"})
+    def test_all_protocol_ports_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # Isolated: AWS drops the port range for an all-protocols ("-1") rule.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+        egress = [e for e in sg["IpPermissionsEgress"] if e["IpProtocol"] == "-1"]
+        assert len(egress) == 1
+        assert "FromPort" not in egress[0]
+        assert "ToPort" not in egress[0]
+
+        _assert_no_perpetual_diff(ref)
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_protocol_notation"})
+    def test_protocol_notation_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # Isolated: numeric protocol "6" is stored/returned by AWS as "tcp".
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+        rule = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8006]
+        assert len(rule) == 1, f"expected one tcp/8006 rule, got {sg['IpPermissions']}"
+        assert rule[0]["IpProtocol"] == "tcp"
+
+        _assert_no_perpetual_diff(ref)
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_cidr_canon"})
+    def test_cidr_canonicalization_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # Isolated: AWS canonicalizes CIDRs. IPv4 and IPv6 are on separate
+        # ports so a regression in one cannot mask the other.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+
+        ipv4 = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8010]
+        assert len(ipv4) == 1
+        assert ipv4[0]["IpRanges"][0]["CidrIp"] == "172.16.0.0/16"
+
+        ipv6 = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8011]
+        assert len(ipv6) == 1
+        assert ipv6[0]["Ipv6Ranges"][0]["CidrIpv6"] == "2001:db8:abcd:12::/64"
+
+        _assert_no_perpetual_diff(ref)
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_aggregation"})
+    def test_grant_aggregation_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # Isolated: two spec rules sharing (tcp, 8020, 8020) are returned by
+        # AWS as a single aggregated IpPermission carrying both CIDRs.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+        agg = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8020]
+        assert len(agg) == 1, f"expected one aggregated permission, got {sg['IpPermissions']}"
+        cidrs = sorted(r["CidrIp"] for r in agg[0]["IpRanges"])
+        assert cidrs == ["10.2.0.0/16", "10.3.0.0/16"]
+
+        _assert_no_perpetual_diff(ref)
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
