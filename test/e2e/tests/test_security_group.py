@@ -178,6 +178,33 @@ def create_security_group_with_sg_ref(resource_name, reference_name):
     return ref
 
 
+def create_security_group_self_owner_userid(resource_name):
+    """Create an SG with an omitted-group self-ref pair that also carries the
+    redundant owner account in userID (exercises the field-drop path in
+    canonicalizeGroupPair)."""
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["VPC_ID"] = get_bootstrap_resources().SharedTestVPC.vpc_id
+    replacements["SECURITY_GROUP_NAME"] = resource_name
+    replacements["USER_ID"] = str(get_account_id())
+
+    resource_data = load_ec2_resource(
+        "security_group_self_owner_userid",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP,
+        CRD_VERSION,
+        RESOURCE_PLURAL,
+        resource_name,
+        namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+
+    return ref
+
+
 @pytest.fixture
 def security_groups_cyclic_ref():
     resource_name_1 = random_suffix_name("security-group-test", 24)
@@ -818,3 +845,185 @@ class TestSecurityGroup:
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_multi_grant"})
+    def test_multiple_grants_sorted_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # Comment 2 (sortGrants): a single rule carrying several CIDRs must be
+        # ordered deterministically so the read-back order never drives a
+        # perpetual diff. This validates the reachable (populated) sortGrants
+        # path. A nil grant element -- the case the nil-guard question was
+        # about -- cannot occur: the CRD schema rejects null list entries and
+        # the read-back setter always allocates each element, so it is not
+        # exercisable end-to-end.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+        rule = [p for p in sg["IpPermissions"] if p.get("FromPort") == 9090]
+        assert len(rule) == 1, f"expected one tcp/9090 rule, got {sg['IpPermissions']}"
+        v4 = sorted(r["CidrIp"] for r in rule[0].get("IpRanges", []))
+        assert v4 == ["10.10.0.0/16", "10.20.0.0/16", "10.30.0.0/16"]
+        v6 = sorted(r["CidrIpv6"] for r in rule[0].get("Ipv6Ranges", []))
+        assert v6 == ["2001:db8:1::/48", "2001:db8:2::/48"]
+
+        # A forced reconcile must not churn despite the many grants in the rule.
+        _assert_no_perpetual_diff(ref)
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    def test_dangling_groupref_not_self_authorized(self, ec2_client):
+        # Comment 3 (why the omitted-self check excludes GroupRef): a groupRef
+        # is NOT an omitted self-reference. A groupRef whose target does not
+        # exist must fail reference resolution rather than be silently
+        # canonicalized into a self-reference. If the GroupRef term were
+        # dropped from the omitted-self detection, such a pair would be stamped
+        # to the SG's own id and wrongly self-authorized.
+        name = random_suffix_name("dangling-ref", 24)
+        missing = random_suffix_name("nonexistent-peer", 24)
+        ref = create_security_group_with_sg_ref(name, missing)
+        try:
+            time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+            # The reference cannot resolve, so the SG must NOT become synced ...
+            synced = k8s.wait_on_condition(
+                ref, "ACK.ResourceSynced", "True", wait_periods=3
+            )
+            assert not synced, "an unresolved groupRef must not reach Synced=True"
+            # ... and must not have been created and self-authorized in AWS.
+            resource_id = k8s.get_resource(ref).get("status", {}).get("id")
+            if resource_id:
+                ec2_validator = EC2Validator(ec2_client)
+                sg = ec2_validator.get_security_group(resource_id)
+                for p in (sg or {}).get("IpPermissions", []):
+                    for pair in p.get("UserIdGroupPairs", []):
+                        assert pair.get("GroupId") != resource_id, (
+                            "a dangling groupRef must not be canonicalized "
+                            "into a self-reference"
+                        )
+        finally:
+            k8s.delete_custom_resource(ref)
+            time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    def test_self_ref_groupref_persisted_in_spec(self, ec2_client):
+        # Comment 4 (clearing GroupRef during compare): nilling GroupRef inside
+        # the delta comparison must not clear the user's groupRef from the
+        # persisted CR spec, nor inject a canonical groupID into it -- neither
+        # on first sync nor after an update-path reconcile.
+        name = random_suffix_name("selfref-persist", 24)
+        ref = create_security_group_with_sg_ref(name, name)  # references itself
+        try:
+            time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
+            assert k8s.wait_on_condition(
+                ref, "ACK.ResourceSynced", "True", wait_periods=8
+            )
+
+            def _assert_groupref_retained():
+                pair = k8s.get_resource(ref)["spec"]["ingressRules"][0][
+                    "userIDGroupPairs"
+                ][0]
+                assert (
+                    pair.get("groupRef", {}).get("from", {}).get("name") == name
+                ), f"user groupRef must be preserved in the persisted spec, got: {pair}"
+                assert "groupID" not in pair, (
+                    f"canonical groupID must not leak into the persisted spec, "
+                    f"got: {pair}"
+                )
+
+            _assert_groupref_retained()      # after initial sync
+            _assert_no_perpetual_diff(ref)   # force an update-path reconcile
+            _assert_groupref_retained()      # still intact after the update
+        finally:
+            k8s.delete_custom_resource(ref)
+            time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+    @pytest.mark.resource_data({"resource_file": "security_group_self_ref"})
+    def test_self_ref_port_change_applied(self, ec2_client, simple_security_group):
+        # Regression guard (NOT comment 5): self-ref canonicalization must not
+        # mask a genuine change made *within* a normalized rule. Change the
+        # port of a self-referencing rule and confirm the edit is applied. This
+        # covers the "edit not swallowed" property; comment 5 (field dropping)
+        # is covered by test_self_ref_owner_userid_no_data_loss below.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+        orig = [p for p in sg["IpPermissions"] if p.get("FromPort") == 443]
+        assert len(orig) == 1
+        assert orig[0]["UserIdGroupPairs"][0]["GroupId"] == resource_id
+
+        # Change only the port; keep the (omitted-groupID) self-reference form.
+        patch = {
+            "spec": {
+                "ingressRules": [
+                    {
+                        "fromPort": 8443,
+                        "toPort": 8443,
+                        "ipProtocol": "tcp",
+                        "userIDGroupPairs": [{"description": "self-referencing rule"}],
+                    }
+                ]
+            }
+        }
+        k8s.patch_custom_resource(ref, patch)
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        sg = ec2_validator.get_security_group(resource_id)
+        assert not [
+            p for p in sg["IpPermissions"] if p.get("FromPort") == 443
+        ], "old tcp/443 self-ref rule should have been revoked"
+        updated = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8443]
+        assert len(updated) == 1, (
+            f"port change to 8443 was not applied: {sg['IpPermissions']}"
+        )
+        assert updated[0]["UserIdGroupPairs"][0]["GroupId"] == resource_id
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
+    def test_self_ref_owner_userid_no_data_loss(self, ec2_client):
+        # Comment 5 (does clearing UserID/GroupName/GroupRef on a self-ref drop
+        # meaningful data?): an omitted-group self-ref pair that ALSO carries
+        # the redundant owner account in userID is classified as self, and
+        # canonicalizeGroupPair drops that userID. This is lossless -- verified
+        # against the EC2 API: {GroupId=self} and {GroupId=self,UserId=owner}
+        # produce the identical rule (AWS auto-fills the owner account either
+        # way). So the resulting self-ref rule is correct and does not churn.
+        #
+        # (The only case a *foreign* userID is dropped is when GroupId==selfID,
+        # which AWS itself rejects as InvalidGroup.NotFound; a legitimate
+        # cross-account ref uses GroupId=peer and is preserved -- covered by the
+        # unit test TestCustomPreCompare_CrossAccount_NotSuppressed.)
+        name = random_suffix_name("selfref-owner-uid", 24)
+        ref = create_security_group_self_owner_userid(name)
+        try:
+            time.sleep(CREATE_WAIT_AFTER_SECONDS)
+            assert k8s.wait_on_condition(
+                ref, "ACK.ResourceSynced", "True", wait_periods=8
+            )
+            resource_id = k8s.get_resource(ref)["status"]["id"]
+
+            ec2_validator = EC2Validator(ec2_client)
+            sg = ec2_validator.get_security_group(resource_id)
+            rule = [p for p in sg["IpPermissions"] if p.get("FromPort") == 443]
+            assert len(rule) == 1, f"expected one tcp/443 rule, got {sg['IpPermissions']}"
+            pairs = rule[0]["UserIdGroupPairs"]
+            assert len(pairs) == 1
+            # Correct self-reference; the owner account is present exactly as it
+            # would be for a bare self-ref -- the dropped userID lost nothing.
+            assert pairs[0]["GroupId"] == resource_id
+            assert pairs[0]["UserId"] == str(get_account_id())
+
+            # The dropped owner userID must not drive a perpetual diff.
+            _assert_no_perpetual_diff(ref)
+        finally:
+            k8s.delete_custom_resource(ref)
+            time.sleep(DELETE_WAIT_AFTER_SECONDS)

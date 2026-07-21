@@ -187,7 +187,7 @@ func canonicalizeCIDR(cidr *string) *string {
 // DeepEqual does not report spurious diffs that arise purely from how AWS
 // normalises rules on DescribeSecurityGroups read-back.
 //
-// It closes four independent perpetual-diff sources (see
+// It closes six independent perpetual-diff sources (see
 // aws-controllers-k8s/community#2822):
 //
 //  1. Self-references. A pair is a self-reference when GroupID equals the
@@ -407,20 +407,53 @@ func ruleAggregationKey(rule *svcapitypes.IPPermission) string {
 
 // sortGrants sorts every grant collection of a rule into a deterministic
 // order so that read-back ordering within a rule never drives a diff.
+//
+// The per-element sort keys are nil-safe (a nil element sorts as ""), matching
+// the nil check in canonicalizeRuleList. Neither the CRD schema (which rejects
+// null list entries) nor the read-back setter (which always allocates each
+// element) can produce a nil element, so this is defensive only -- but it keeps
+// the comparators panic-free and consistent with the rest of the file.
 func sortGrants(rule *svcapitypes.IPPermission) {
+	if rule == nil {
+		return
+	}
 	sort.Slice(rule.IPRanges, func(i, j int) bool {
-		return derefStr(rule.IPRanges[i].CIDRIP) < derefStr(rule.IPRanges[j].CIDRIP)
+		return ipRangeSortKey(rule.IPRanges[i]) < ipRangeSortKey(rule.IPRanges[j])
 	})
 	sort.Slice(rule.IPv6Ranges, func(i, j int) bool {
-		return derefStr(rule.IPv6Ranges[i].CIDRIPv6) < derefStr(rule.IPv6Ranges[j].CIDRIPv6)
+		return ipv6RangeSortKey(rule.IPv6Ranges[i]) < ipv6RangeSortKey(rule.IPv6Ranges[j])
 	})
 	sort.Slice(rule.PrefixListIDs, func(i, j int) bool {
-		return derefStr(rule.PrefixListIDs[i].PrefixListID) < derefStr(rule.PrefixListIDs[j].PrefixListID)
+		return prefixListIDSortKey(rule.PrefixListIDs[i]) < prefixListIDSortKey(rule.PrefixListIDs[j])
 	})
 	sort.Slice(rule.UserIDGroupPairs, func(i, j int) bool {
 		return userIDGroupPairSortKey(rule.UserIDGroupPairs[i]) <
 			userIDGroupPairSortKey(rule.UserIDGroupPairs[j])
 	})
+}
+
+// ipRangeSortKey builds a nil-safe stable sort key for an IPv4 CIDR grant.
+func ipRangeSortKey(r *svcapitypes.IPRange) string {
+	if r == nil {
+		return ""
+	}
+	return derefStr(r.CIDRIP)
+}
+
+// ipv6RangeSortKey builds a nil-safe stable sort key for an IPv6 CIDR grant.
+func ipv6RangeSortKey(r *svcapitypes.IPv6Range) string {
+	if r == nil {
+		return ""
+	}
+	return derefStr(r.CIDRIPv6)
+}
+
+// prefixListIDSortKey builds a nil-safe stable sort key for a prefix-list grant.
+func prefixListIDSortKey(p *svcapitypes.PrefixListID) string {
+	if p == nil {
+		return ""
+	}
+	return derefStr(p.PrefixListID)
 }
 
 // userIDGroupPairSortKey builds a stable sort key for a group pair from the

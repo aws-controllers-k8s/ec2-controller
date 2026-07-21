@@ -1,0 +1,29 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg multi-grant deterministic sort
+  vpcID: $VPC_ID
+  ingressRules:
+    # A single rule carrying several already-canonical CIDRs (IPv4 + IPv6) in
+    # deliberately non-sorted order. sortGrants must order the grants
+    # deterministically; if it did not, the read-back order would drive a
+    # perpetual diff. This exercises the reachable (populated, non-nil) grant
+    # path of sortGrants.
+    - fromPort: 9090
+      toPort: 9090
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 10.30.0.0/16
+          description: c
+        - cidrIP: 10.10.0.0/16
+          description: a
+        - cidrIP: 10.20.0.0/16
+          description: b
+      ipv6Ranges:
+        - cidrIPv6: 2001:db8:2::/48
+          description: v6-b
+        - cidrIPv6: 2001:db8:1::/48
+          description: v6-a

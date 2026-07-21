@@ -171,6 +171,55 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 	})
 }
 
+// TestCanonicalizeGroupPair_InconsistentInputs documents what happens to the
+// UserID/GroupName fields that the self-ref branch drops when the input is
+// inconsistent. Ground truth, verified directly against the EC2 API:
+//
+//   - {GroupId=self}              -> accepted; AWS auto-fills UserId=owner
+//   - {GroupId=self, UserId=owner} -> accepted; identical rule to the above
+//   - {GroupId=self, UserId=foreign} -> REJECTED (InvalidGroup.NotFound): a
+//     foreign UserId scopes the group lookup to that account, where the SG's
+//     own id does not exist
+//   - {UserId=foreign} (no group) -> REJECTED (MissingParameter)
+//
+// So dropping the owner UserId/GroupName on a genuine self-reference is
+// lossless, and the only case a foreign UserId is dropped is when
+// GroupId==selfID -- an impossible input AWS rejects anyway. A legitimate
+// cross-account reference always uses GroupId=peer (!= selfID) and is
+// preserved (see TestCustomPreCompare_CrossAccount_NotSuppressed).
+func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
+	t.Run("self GroupID + foreign UserID: classified self, foreign UserID dropped", func(t *testing.T) {
+		p := &svcapitypes.UserIDGroupPair{
+			GroupID: aws.String(testSelfID),
+			UserID:  aws.String(testPeerAcctID),
+		}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Equal(t, testSelfID, *p.GroupID)
+		assert.Nil(t, p.UserID,
+			"a foreign UserID paired with the SG's own GroupID is nonsensical "+
+				"(AWS rejects it as InvalidGroup.NotFound); dropping it is safe")
+	})
+
+	t.Run("omitted group + foreign UserID: classified self, UserID dropped", func(t *testing.T) {
+		// {UserID: foreign} with no group is invalid to AWS (MissingParameter).
+		p := &svcapitypes.UserIDGroupPair{UserID: aws.String(testPeerAcctID)}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Equal(t, testSelfID, *p.GroupID)
+		assert.Nil(t, p.UserID)
+	})
+
+	t.Run("peer GroupID + foreign UserID: NOT self, cross-account preserved", func(t *testing.T) {
+		p := &svcapitypes.UserIDGroupPair{
+			GroupID: aws.String(testOtherID),
+			UserID:  aws.String(testPeerAcctID),
+		}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Equal(t, testOtherID, *p.GroupID)
+		assert.Equal(t, testPeerAcctID, *p.UserID,
+			"a legitimate cross-account reference (GroupId=peer) must be preserved")
+	})
+}
+
 // -----------------------------------------------------------------------------
 // canonicalizeRuleList
 // -----------------------------------------------------------------------------
@@ -363,6 +412,32 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			}, testSelfID, testOwnerAcctID)
 		})
 		assert.Len(t, out, 1, "the nil rule is skipped, the real one is kept")
+	})
+
+	t.Run("handles nil CIDR/prefix grant elements without panic", func(t *testing.T) {
+		// Defensive: sortGrants and the per-element loops must tolerate a nil
+		// element in IPRanges/IPv6Ranges/PrefixListIDs. This cannot occur via
+		// a CR (schema rejects null list entries) or on read-back (the setter
+		// always allocates), but the guards keep the comparators panic-free.
+		var out []*svcapitypes.IPPermission
+		assert.NotPanics(t, func() {
+			out = canonicalizeRuleList([]*svcapitypes.IPPermission{{
+				IPProtocol: aws.String("tcp"), FromPort: aws.Int64(80), ToPort: aws.Int64(80),
+				IPRanges: []*svcapitypes.IPRange{
+					nil,
+					{CIDRIP: aws.String("10.0.0.0/16")},
+				},
+				IPv6Ranges: []*svcapitypes.IPv6Range{
+					nil,
+					{CIDRIPv6: aws.String("2001:db8::/48")},
+				},
+				PrefixListIDs: []*svcapitypes.PrefixListID{
+					nil,
+					{PrefixListID: aws.String("pl-11")},
+				},
+			}}, testSelfID, testOwnerAcctID)
+		})
+		assert.Len(t, out, 1)
 	})
 
 	t.Run("mixed self + cross-SG pairs in one rule are handled independently", func(t *testing.T) {
