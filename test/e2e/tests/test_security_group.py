@@ -666,7 +666,10 @@ class TestSecurityGroup:
         # populates GroupID from GroupRef (so GroupRef is set on desired but
         # nil on the AWS read-back), and it resolves only on the second
         # reconcile once the SG's own ID is known.
-        name = random_suffix_name("sg-selfref-groupref", 24)
+        # NB: the resource name is also used as the EC2 GroupName, and AWS
+        # rejects any GroupName in the "sg-*" format, so it must not start with
+        # "sg-".
+        name = random_suffix_name("selfref-groupref", 24)
         ref = create_security_group_with_sg_ref(name, name)  # references itself
         try:
             time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
@@ -701,7 +704,9 @@ class TestSecurityGroup:
         assert k8s.wait_on_condition(peer_ref, "ACK.ResourceSynced", "True", wait_periods=8)
         peer_id = k8s.get_resource(peer_ref)["status"]["id"]
 
-        name = random_suffix_name("sg-cross-ref", 24)
+        # See note above: the name doubles as the EC2 GroupName, which cannot
+        # be in the "sg-*" format.
+        name = random_suffix_name("cross-ref", 24)
         ref = create_security_group_with_sg_ref(name, peer_ref.name)  # references the peer
         try:
             time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
