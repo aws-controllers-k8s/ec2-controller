@@ -954,22 +954,58 @@ class TestSecurityGroup:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    @pytest.mark.resource_data({"resource_file": "security_group_self_ref"})
-    def test_self_ref_port_change_applied(self, ec2_client, simple_security_group):
-        # Self-ref canonicalization must not mask a genuine change within a
-        # normalized rule: change the port of a self-referencing rule and
-        # confirm the edit is applied.
+    @pytest.mark.resource_data({"resource_file": "security_group_combined_canon"})
+    def test_combined_canonicalizations_update_applied(self, ec2_client, simple_security_group):
+        # Broad coverage: a single SecurityGroup that exercises every
+        # canonicalization path at once -- self-reference (omitted groupID),
+        # numeric protocol notation, IPv4 CIDR canonicalization, the icmpv6
+        # -1/-1 wildcard, grant aggregation, all-protocol ("-1") egress, and a
+        # non-standard (ESP/50) egress. It confirms the combined create has no
+        # perpetual diff, then applies an update that touches several canonical
+        # paths simultaneously and verifies the edits land while the untouched
+        # rules do not churn. (Supersedes the narrower self-ref-only port-change
+        # test; the self-ref port change is retained as one of the paths.)
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
 
         ec2_validator = EC2Validator(ec2_client)
         sg = ec2_validator.get_security_group(resource_id)
-        orig = [p for p in sg["IpPermissions"] if p.get("FromPort") == 443]
-        assert len(orig) == 1
-        assert orig[0]["UserIdGroupPairs"][0]["GroupId"] == resource_id
 
-        # Change only the port; keep the (omitted-groupID) self-reference form.
+        # --- Each canonical form must land as AWS returns it ---
+        # self-ref tcp/443 -> groupID auto-filled to self
+        selfref = [p for p in sg["IpPermissions"] if p.get("FromPort") == 443]
+        assert len(selfref) == 1, f"expected one tcp/443 rule, got {sg['IpPermissions']}"
+        assert selfref[0]["IpProtocol"] == "tcp"
+        assert selfref[0]["UserIdGroupPairs"][0]["GroupId"] == resource_id
+        # numeric "6" -> "tcp"; CIDR 172.16.5.9/16 -> 172.16.0.0/16
+        numeric = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8006]
+        assert len(numeric) == 1
+        assert numeric[0]["IpProtocol"] == "tcp"
+        assert numeric[0]["IpRanges"][0]["CidrIp"] == "172.16.0.0/16"
+        # icmpv6 with no type/code -> -1/-1 wildcard
+        icmpv6 = [p for p in sg["IpPermissions"] if p.get("IpProtocol") in ("icmpv6", "58")]
+        assert len(icmpv6) == 1
+        assert icmpv6[0].get("FromPort") == -1 and icmpv6[0].get("ToPort") == -1
+        # grant aggregation -> one tcp/9090 rule carrying both CIDRs
+        agg = [p for p in sg["IpPermissions"] if p.get("FromPort") == 9090]
+        assert len(agg) == 1, f"expected one aggregated tcp/9090 rule, got {sg['IpPermissions']}"
+        assert sorted(r["CidrIp"] for r in agg[0]["IpRanges"]) == ["10.10.0.0/16", "10.20.0.0/16"]
+        # egress: ESP (50) returned without a port range
+        esp = [e for e in sg["IpPermissionsEgress"] if e["IpProtocol"] == "50"]
+        assert len(esp) == 1
+        assert "FromPort" not in esp[0] and "ToPort" not in esp[0]
+
+        # The full combined spec must not churn on a forced reconcile.
+        _assert_no_perpetual_diff(ref)
+
+        # --- Update touching multiple canonical paths at once ---
+        # * self-ref port 443 -> 8443 (self-ref canon + a genuine change)
+        # * numeric-proto rule CIDR 172.16.5.9/16 -> non-canonical 192.168.5.9/24
+        #   (protocol-notation + CIDR canon; canonicalises to 192.168.5.0/24)
+        # icmpv6 and the two aggregation grants are repeated unchanged; egress is
+        # omitted from the merge patch so it stays put -- together verifying those
+        # paths neither get lost nor churn while other rules change.
         patch = {
             "spec": {
                 "ingressRules": [
@@ -978,7 +1014,31 @@ class TestSecurityGroup:
                         "toPort": 8443,
                         "ipProtocol": "tcp",
                         "userIDGroupPairs": [{"description": "self-referencing rule"}],
-                    }
+                    },
+                    {
+                        "fromPort": 8006,
+                        "toPort": 8006,
+                        "ipProtocol": "6",
+                        "ipRanges": [
+                            {"cidrIP": "192.168.5.9/24", "description": "numeric proto + non-canonical cidr"}
+                        ],
+                    },
+                    {
+                        "ipProtocol": "icmpv6",
+                        "ipv6Ranges": [{"cidrIPv6": "::/0", "description": "icmpv6 all types and codes"}],
+                    },
+                    {
+                        "fromPort": 9090,
+                        "toPort": 9090,
+                        "ipProtocol": "tcp",
+                        "ipRanges": [{"cidrIP": "10.10.0.0/16", "description": "aggregation A"}],
+                    },
+                    {
+                        "fromPort": 9090,
+                        "toPort": 9090,
+                        "ipProtocol": "tcp",
+                        "ipRanges": [{"cidrIP": "10.20.0.0/16", "description": "aggregation B"}],
+                    },
                 ]
             }
         }
@@ -987,14 +1047,41 @@ class TestSecurityGroup:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
 
         sg = ec2_validator.get_security_group(resource_id)
+        # self-ref moved 443 -> 8443
         assert not [
             p for p in sg["IpPermissions"] if p.get("FromPort") == 443
         ], "old tcp/443 self-ref rule should have been revoked"
         updated = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8443]
-        assert len(updated) == 1, (
-            f"port change to 8443 was not applied: {sg['IpPermissions']}"
-        )
+        assert len(updated) == 1, f"port change to 8443 was not applied: {sg['IpPermissions']}"
         assert updated[0]["UserIdGroupPairs"][0]["GroupId"] == resource_id
+        # numeric-proto rule CIDR changed and canonicalised: 192.168.5.9/24 -> 192.168.5.0/24
+        numeric = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8006]
+        assert len(numeric) == 1
+        assert numeric[0]["IpRanges"][0]["CidrIp"] == "192.168.5.0/24", (
+            f"numeric-proto rule CIDR not updated/canonicalised: {numeric[0]['IpRanges']}"
+        )
+        # untouched paths still present and intact
+        assert [
+            p for p in sg["IpPermissions"] if p.get("IpProtocol") in ("icmpv6", "58")
+        ], "icmpv6 rule should have survived the update"
+        agg = [p for p in sg["IpPermissions"] if p.get("FromPort") == 9090]
+        assert len(agg) == 1 and len(agg[0]["IpRanges"]) == 2, "aggregated tcp/9090 rule should be intact"
+        assert [
+            e for e in sg["IpPermissionsEgress"] if e["IpProtocol"] == "50"
+        ], "ESP egress rule should have survived the update"
+
+        # The post-update combined state must itself be free of perpetual diff.
+        # Use a distinct tag value so the reconcile is genuinely re-triggered
+        # (the pre-update _assert_no_perpetual_diff already set force-reconcile=1).
+        ids_before = _sg_status_rule_ids(ref)
+        k8s.patch_custom_resource(
+            ref, {"spec": {"tags": [{"key": "force-reconcile", "value": "2"}]}}
+        )
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        assert _sg_status_rule_ids(ref) == ids_before, (
+            "combined security group rules churned after the update settled"
+        )
 
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
