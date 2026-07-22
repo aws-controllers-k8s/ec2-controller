@@ -133,16 +133,13 @@ func (rm *resourceManager) referencesResolved(
 	return true
 }
 
-// allProtocols is the IpProtocol value EC2 uses to mean "all protocols".
-// For such rules AWS ignores the port range and DescribeSecurityGroups
-// returns the rule with FromPort/ToPort unset.
+// allProtocols is the IpProtocol value for "all protocols"; AWS drops the port
+// range for such rules on read-back.
 const allProtocols = "-1"
 
-// wellKnownProtocols maps the IANA protocol numbers that EC2 canonicalises to
-// names on DescribeSecurityGroups read-back. A spec that uses the numeric form
-// (e.g. "6") would otherwise perpetually differ from the name AWS returns
-// ("tcp"). Protocols outside this set are returned by AWS as-is (their number),
-// so they need no mapping; "-1" (all protocols) is already canonical.
+// wellKnownProtocols are the IANA protocol numbers EC2 returns by name on
+// read-back, so a numeric spec value ("6") would otherwise differ forever from
+// the name ("tcp"). Other protocols (and "-1") are already canonical.
 var wellKnownProtocols = map[string]string{
 	"1":  "icmp",
 	"6":  "tcp",
@@ -150,9 +147,8 @@ var wellKnownProtocols = map[string]string{
 	"58": "icmpv6",
 }
 
-// canonicalizeProtocol maps a numeric IpProtocol to the name EC2 returns on
-// read-back so that numeric and name spellings of the same protocol compare
-// equal. Unknown protocols and names are returned unchanged.
+// canonicalizeProtocol maps a numeric IpProtocol to the name EC2 returns;
+// unknown protocols and names pass through unchanged.
 func canonicalizeProtocol(proto *string) *string {
 	if proto == nil {
 		return nil
@@ -163,12 +159,9 @@ func canonicalizeProtocol(proto *string) *string {
 	return proto
 }
 
-// canonicalizeCIDR rewrites a CIDR to the network form EC2 returns on
-// read-back: host bits are masked off and (for IPv6) the text is normalised
-// to lowercase, zero-compressed RFC 5952 form -- e.g. "100.68.0.18/18" ->
-// "100.68.0.0/18" and "2001:DB8:abcd:0012::1/64" -> "2001:db8:abcd:12::/64".
-// A value that does not parse as a CIDR is returned unchanged (AWS will
-// reject a truly malformed CIDR on the API call).
+// canonicalizeCIDR rewrites a CIDR to the network form EC2 returns: host bits
+// masked off, IPv6 lowercased and zero-compressed (e.g. "100.68.0.18/18" ->
+// "100.68.0.0/18"). An unparseable value passes through unchanged.
 func canonicalizeCIDR(cidr *string) *string {
 	if cidr == nil {
 		return nil
@@ -181,38 +174,13 @@ func canonicalizeCIDR(cidr *string) *string {
 	return &canon
 }
 
-// customPostCompare is injected at the end of the generated newResourceDelta
-// (see delta.go) via the `delta_post_compare` hook in generator.yaml. The
-// generated field-by-field comparison skips Spec.IngressRules and
-// Spec.EgressRules entirely (they are marked `compare.is_ignored: true`);
-// this hook compares them instead.
-//
-// Unlike a `delta_pre_compare` hook, it MUST NOT mutate a or b: the same
-// objects are used downstream as the merge-patch base in
-// patchResourceMetadataAndSpec, so any mutation here would leak into the
-// persisted Spec. Instead it compares canonical *copies* and records a delta
-// against the original (un-normalised) values, so genuine changes are
-// reported while server-side normalisation never produces a spurious diff.
-//
-// canonicalizeCopiedRuleLists closes the perpetual-diff sources from
-// aws-controllers-k8s/community#2822:
-//
-//  1. Reference wrappers and self-references. GroupRef/VPCRef are spec-only
-//     wrappers AWS never returns; they are cleared in the copy. A pair is a
-//     self-reference when GroupID equals the SG's own ID, or when the group
-//     identifiers are all omitted (the spec shorthand). We canonicalise to
-//     {GroupID: selfID} and clear GroupName/UserID.
-//  2. All-protocol ("-1") port ranges. AWS drops FromPort/ToPort for these.
-//  3. Server-filled owner account. AWS populates UserID with the owning
-//     account for same-account grants; we clear it. Cross-account grants
-//     (UserID != owner) are preserved so the reference stays intact.
-//  4. Grant aggregation. AWS merges grants sharing (protocol, fromPort,
-//     toPort) into one IpPermission; we aggregate both sides by that key and
-//     sort deterministically so ordering never drives a diff.
-//  5. Protocol notation. AWS canonicalises well-known IANA protocol numbers
-//     to names on read-back ("6" -> "tcp").
-//  6. CIDR canonicalisation. AWS masks host bits and normalises IPv6 text
-//     ("100.68.0.18/18" -> "100.68.0.0/18").
+// customPostCompare compares Spec.IngressRules/EgressRules, which the generated
+// delta skips (they are marked compare.is_ignored). It normalises canonical
+// *copies* of both sides -- never a or b, which become the merge-patch base in
+// patchResourceMetadataAndSpec -- so the server-side rule normalisation behind
+// aws-controllers-k8s/community#2822 never drives a spurious diff, while genuine
+// changes still register. See canonicalizeRuleList and canonicalizeGroupPair for
+// the specific normalisations.
 func customPostCompare(
 	delta *ackcompare.Delta,
 	a *resource,
@@ -231,10 +199,9 @@ func customPostCompare(
 	}
 }
 
-// canonicalizeCopiedRuleLists returns canonical *copies* of r's Ingress and
-// Egress rule lists. r is never mutated, so callers can use the result purely
-// for comparison (customPostCompare) or to build AWS Authorize/Revoke inputs
-// (syncSGRules) without affecting the persisted Spec.
+// canonicalizeCopiedRuleLists returns canonical *copies* of r's rule lists; r is
+// never mutated. Used for comparison (customPostCompare) and to build AWS
+// Authorize/Revoke inputs (syncSGRules).
 func canonicalizeCopiedRuleLists(
 	r *resource,
 ) (ingress []*svcapitypes.IPPermission, egress []*svcapitypes.IPPermission) {
@@ -255,9 +222,8 @@ func canonicalizeCopiedRuleLists(
 	return ingress, egress
 }
 
-// deepCopyRuleList returns a deep copy of a rule list so that in-place
-// canonicalisation never touches the caller's backing data. A nil input
-// returns nil so an empty and an absent rule list keep comparing equal.
+// deepCopyRuleList deep-copies a rule list so canonicalisation never touches the
+// caller's data. nil in -> nil out (absent and empty stay equal).
 func deepCopyRuleList(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermission {
 	if rules == nil {
 		return nil
@@ -269,10 +235,9 @@ func deepCopyRuleList(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermis
 	return out
 }
 
-// canonicalizeRuleList normalises each rule (ports + grants), aggregates
-// rules sharing the same (protocol, fromPort, toPort) key, and returns the
-// result sorted deterministically. A nil input returns nil so an empty and
-// an absent rule list keep comparing equal.
+// canonicalizeRuleList normalises each rule and its grants, aggregates rules
+// sharing the same (protocol, fromPort, toPort) key, and returns them
+// deterministically sorted. nil in -> nil out.
 func canonicalizeRuleList(
 	rules []*svcapitypes.IPPermission,
 	selfID string,
@@ -282,21 +247,16 @@ func canonicalizeRuleList(
 		return nil
 	}
 
-	// Per-rule field normalisation.
+	// Per-rule field normalisation to match the AWS read-back form.
 	for _, rule := range rules {
 		if rule == nil {
 			continue
 		}
-		// Gap 5: AWS returns well-known protocols by name ("tcp"), so map a
-		// numeric spec value ("6") to the same name before comparing.
 		rule.IPProtocol = canonicalizeProtocol(rule.IPProtocol)
-		// Gap 1: AWS ignores and drops the port range for "-1" rules.
 		if rule.IPProtocol != nil && *rule.IPProtocol == allProtocols {
-			rule.FromPort = nil
+			rule.FromPort = nil // AWS drops the port range for "-1" rules.
 			rule.ToPort = nil
 		}
-		// Gap 6: AWS canonicalises CIDRs (masks host bits; lowercases and
-		// zero-compresses IPv6). Match that form on both sides.
 		for _, r := range rule.IPRanges {
 			if r != nil {
 				r.CIDRIP = canonicalizeCIDR(r.CIDRIP)
@@ -312,9 +272,8 @@ func canonicalizeRuleList(
 		}
 	}
 
-	// Gap 3: aggregate rules that share the same (protocol, fromPort,
-	// toPort) key, preserving first-seen order for stability before the
-	// final sort.
+	// AWS merges grants sharing a (protocol, fromPort, toPort) key into one
+	// IpPermission; aggregate the same way, keeping first-seen order.
 	byKey := map[string]*svcapitypes.IPPermission{}
 	order := make([]string, 0, len(rules))
 	for _, rule := range rules {
@@ -329,8 +288,7 @@ func canonicalizeRuleList(
 			existing.UserIDGroupPairs = append(existing.UserIDGroupPairs, rule.UserIDGroupPairs...)
 			continue
 		}
-		// Copy the rule and its grant slices so aggregation never aliases
-		// or mutates the caller's backing arrays.
+		// Copy so aggregation never aliases the caller's backing arrays.
 		merged := &svcapitypes.IPPermission{
 			FromPort:         rule.FromPort,
 			ToPort:           rule.ToPort,
@@ -350,19 +308,15 @@ func canonicalizeRuleList(
 		sortGrants(rule)
 		out = append(out, rule)
 	}
-	// Sort rules by their aggregation key so read-back ordering never drives
-	// a diff. Keys are unique after aggregation, so the order is total.
+	// Sort by aggregation key (unique after aggregation) so read-back ordering
+	// never drives a diff.
 	sort.Slice(out, func(i, j int) bool {
 		return ruleAggregationKey(out[i]) < ruleAggregationKey(out[j])
 	})
 	return out
 }
 
-// canonicalizeGroupPair normalises a single UserIDGroupPair in place. Its
-// first act is to strip the spec-only reference wrappers (GroupRef/VPCRef) so
-// they play no part whatsoever in the delta; it then covers the
-// self-reference (gap driving #2822) and server-filled owner account (gap 2)
-// cases against the resolved concrete IDs.
+// canonicalizeGroupPair normalises a single UserIDGroupPair (on a copy).
 func canonicalizeGroupPair(
 	pair *svcapitypes.UserIDGroupPair,
 	selfID string,
@@ -371,21 +325,16 @@ func canonicalizeGroupPair(
 	if pair == nil {
 		return
 	}
-	// Step 1, before anything else: drop the spec-only reference wrappers.
-	// GroupRef/VPCRef are resolved into their concrete IDs (GroupID/VPCID) by
-	// ResolveReferences before the delta ever runs, and AWS never returns them
-	// on read-back. By the time we compare, the resolved ID is authoritative
-	// and the wrapper is dead weight, so it must not influence the delta in
-	// any way. A groupRef that has not resolved yet (GroupID still nil) is not
-	// this code's concern: the referencesResolved guard defers rule sync until
-	// the referenced ID is populated, so we assume GroupID is resolved here.
+	// GroupRef/VPCRef are spec-only wrappers ResolveReferences turns into
+	// concrete IDs before the delta and AWS never returns; drop them so they
+	// never drive a diff. GroupID is assumed resolved (referencesResolved
+	// defers sync until it is).
 	pair.GroupRef = nil
 	pair.VPCRef = nil
 
-	// A self-reference is an explicit reference to the SG's own (resolved) ID,
-	// or the spec shorthand that omits every group identifier ("this SG",
-	// since the ID is unknown until AWS assigns it). GroupRef is intentionally
-	// absent from this test: it has already been cleared above.
+	// Self-reference: GroupID == selfID, or all group identifiers omitted (the
+	// spec shorthand, since the ID is unknown until AWS assigns it). AWS fills
+	// GroupID/UserID/GroupName on read-back, so canonicalise to {GroupID: selfID}.
 	isSelf := (pair.GroupID != nil && selfID != "" && *pair.GroupID == selfID) ||
 		(pair.GroupID == nil && pair.GroupName == nil)
 	if isSelf {
@@ -397,10 +346,9 @@ func canonicalizeGroupPair(
 		pair.UserID = nil
 		return
 	}
-	// Non-self pairs: AWS auto-fills UserID with the owning account for
-	// same-account grants. Clear it so its absence in the spec is not a
-	// diff. Cross-account grants (UserID != owner) are preserved -- the
-	// account is required to identify the referenced group.
+	// AWS fills UserID with the owner account for same-account grants; clear it.
+	// Cross-account grants (UserID != owner) are kept -- the account identifies
+	// the referenced group.
 	if pair.UserID != nil && ownerAccountID != "" && *pair.UserID == ownerAccountID {
 		pair.UserID = nil
 	}
@@ -424,14 +372,9 @@ func ruleAggregationKey(rule *svcapitypes.IPPermission) string {
 	return proto + "/" + from + "/" + to
 }
 
-// sortGrants sorts every grant collection of a rule into a deterministic
-// order so that read-back ordering within a rule never drives a diff.
-//
-// The per-element sort keys are nil-safe (a nil element sorts as ""), matching
-// the nil check in canonicalizeRuleList. Neither the CRD schema (which rejects
-// null list entries) nor the read-back setter (which always allocates each
-// element) can produce a nil element, so this is defensive only -- but it keeps
-// the comparators panic-free and consistent with the rest of the file.
+// sortGrants deterministically orders a rule's grant collections so read-back
+// ordering never drives a diff. Sort keys are nil-safe (defensive; the schema
+// and setters never emit nil elements).
 func sortGrants(rule *svcapitypes.IPPermission) {
 	if rule == nil {
 		return
@@ -504,11 +447,9 @@ func (rm *resourceManager) syncSGRules(
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
 
-	// Compare and authorise the canonical form of both sides so that
-	// server-side normalisation (see customPostCompare) never revokes and
-	// re-authorises an equivalent rule. Copies are used so neither desired
-	// nor latest -- and therefore neither the persisted Spec nor the AWS
-	// read-back reflected into it -- is mutated.
+	// Compare and authorise canonical copies so server-side normalisation never
+	// re-authorises an equivalent rule, without mutating desired/latest (and so
+	// the persisted Spec).
 	desiredIngressRules, desiredEgressRules := canonicalizeCopiedRuleLists(desired)
 	var latestIngressRules, latestEgressRules []*svcapitypes.IPPermission
 	if latest != nil {
