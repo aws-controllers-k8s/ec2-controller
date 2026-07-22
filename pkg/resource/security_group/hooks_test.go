@@ -107,6 +107,31 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 		assert.Nil(t, p.GroupRef, "GroupRef must be cleared to match AWS read-back form")
 	})
 
+	t.Run("GroupRef is cleared even on a resolved cross-SG pair", func(t *testing.T) {
+		// A groupRef pointing at another SG resolves to that SG's GroupID.
+		// The wrapper is stripped; the resolved GroupID is authoritative.
+		p := &svcapitypes.UserIDGroupPair{
+			GroupID:  aws.String(testOtherID),
+			GroupRef: groupRef("other"),
+		}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Nil(t, p.GroupRef, "GroupRef must never survive into the delta")
+		assert.Equal(t, testOtherID, *p.GroupID, "resolved GroupID is preserved")
+	})
+
+	t.Run("groupRef with an unresolved (nil) GroupID canonicalises to self", func(t *testing.T) {
+		// Accepted tradeoff: the delta assumes GroupID is resolved. A pair
+		// that still carries a groupRef with no resolved GroupID is stripped
+		// of the wrapper and, being otherwise identifier-less, treated as a
+		// self-reference. The referencesResolved guard is what actually keeps
+		// an unresolved reference from being authorised prematurely; this
+		// function only shapes the delta.
+		p := &svcapitypes.UserIDGroupPair{GroupRef: groupRef("not-yet-created")}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Nil(t, p.GroupRef)
+		assert.Equal(t, testSelfID, *p.GroupID)
+	})
+
 	t.Run("cross-SG same-account: clear owner UserID, keep GroupID", func(t *testing.T) {
 		p := &svcapitypes.UserIDGroupPair{
 			GroupID: aws.String(testOtherID),
@@ -135,6 +160,29 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Equal(t, testOtherID, *p.GroupID)
 		assert.Nil(t, p.GroupRef)
+	})
+
+	t.Run("VPCRef cleared, VPCID preserved on a cross-SG pair", func(t *testing.T) {
+		// VPCRef is a spec-only reference wrapper AWS never returns; VPCID is
+		// the concrete value AWS does return on read-back and must survive.
+		p := &svcapitypes.UserIDGroupPair{
+			GroupID: aws.String(testOtherID),
+			VPCID:   aws.String("vpc-123"),
+			VPCRef:  groupRef("my-vpc"),
+		}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Nil(t, p.VPCRef, "VPCRef must be cleared to match AWS read-back form")
+		assert.Equal(t, "vpc-123", *p.VPCID, "concrete VPCID must be preserved")
+	})
+
+	t.Run("VPCRef cleared on a self-ref pair", func(t *testing.T) {
+		p := &svcapitypes.UserIDGroupPair{
+			GroupID: aws.String(testSelfID),
+			VPCRef:  groupRef("my-vpc"),
+		}
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Equal(t, testSelfID, *p.GroupID)
+		assert.Nil(t, p.VPCRef, "VPCRef must be cleared on a self-reference too")
 	})
 
 	t.Run("by-name reference is not treated as self-ref", func(t *testing.T) {
@@ -545,6 +593,29 @@ func TestCustomPreCompare_SelfRef_Omitted_NoDiff(t *testing.T) {
 
 	got := desiredLatestDelta(desired, latest)
 	assert.False(t, got.ing, "omitted-groupID self-ref (#2822) must not produce a diff")
+}
+
+func TestCustomPreCompare_GroupRefOnly_NoDiff(t *testing.T) {
+	// desired mirrors the post-ResolveReferences state for a cross-SG rule
+	// written with a groupRef: the wrapper is still set AND GroupID is
+	// resolved. latest is the AWS read-back: GroupID only, no wrapper. The
+	// spec-only groupRef must not drive a diff.
+	desired := mkResource([]*svcapitypes.IPPermission{{
+		FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+		UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+			GroupID:  aws.String(testOtherID),
+			GroupRef: groupRef("other-sg"),
+		}},
+	}}, nil)
+	latest := mkResource([]*svcapitypes.IPPermission{{
+		FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+		UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+			GroupID: aws.String(testOtherID),
+		}},
+	}}, nil)
+
+	got := desiredLatestDelta(desired, latest)
+	assert.False(t, got.ing, "a spec-only groupRef must never produce a diff")
 }
 
 func TestCustomPreCompare_AllProtocolPorts_NoDiff(t *testing.T) {

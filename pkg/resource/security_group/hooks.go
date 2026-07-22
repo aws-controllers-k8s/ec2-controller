@@ -190,11 +190,16 @@ func canonicalizeCIDR(cidr *string) *string {
 // It closes six independent perpetual-diff sources (see
 // aws-controllers-k8s/community#2822):
 //
-//  1. Self-references. A pair is a self-reference when GroupID equals the
-//     SG's own ID, or when GroupID/GroupRef/GroupName are all omitted (the
-//     spec form, since the ID is unknown until AWS assigns it). AWS fills
-//     GroupID, UserID and sometimes GroupName on read-back. We canonicalise
-//     to {GroupID: selfID} and clear GroupRef/UserID/GroupName.
+//  1. Reference wrappers and self-references. GroupRef/VPCRef are spec-only
+//     reference wrappers that ACK resolves into concrete IDs (GroupID/VPCID)
+//     before the delta runs and that AWS never returns on read-back; they are
+//     cleared first so they play no part in the delta at all. We assume the
+//     resolved ID is present (the referencesResolved guard defers rule sync
+//     until it is). A pair is additionally a self-reference when GroupID
+//     equals the SG's own ID, or when the group identifiers are all omitted
+//     (the spec shorthand, since the ID is unknown until AWS assigns it). AWS
+//     fills GroupID, UserID and sometimes GroupName on read-back. We
+//     canonicalise to {GroupID: selfID} and clear GroupName/UserID.
 //  2. All-protocol ("-1") port ranges. AWS drops FromPort/ToPort for these;
 //     we drop them on both sides.
 //  3. Server-filled owner account. AWS populates UserID with the owning
@@ -344,9 +349,11 @@ func canonicalizeRuleList(
 	return out
 }
 
-// canonicalizeGroupPair normalises a single UserIDGroupPair in place,
-// covering the self-reference (gap driving #2822) and server-filled owner
-// account (gap 2) cases.
+// canonicalizeGroupPair normalises a single UserIDGroupPair in place. Its
+// first act is to strip the spec-only reference wrappers (GroupRef/VPCRef) so
+// they play no part whatsoever in the delta; it then covers the
+// self-reference (gap driving #2822) and server-filled owner account (gap 2)
+// cases against the resolved concrete IDs.
 func canonicalizeGroupPair(
 	pair *svcapitypes.UserIDGroupPair,
 	selfID string,
@@ -355,20 +362,28 @@ func canonicalizeGroupPair(
 	if pair == nil {
 		return
 	}
-	// A self-reference is either an explicit reference to the SG's own ID
-	// (how AWS returns it, and how ResolveReferences fills a self groupRef)
-	// or a pair that omits all group identifiers (the spec shorthand for
-	// "this SG", since the ID is unknown until AWS assigns it).
+	// Step 1, before anything else: drop the spec-only reference wrappers.
+	// GroupRef/VPCRef are resolved into their concrete IDs (GroupID/VPCID) by
+	// ResolveReferences before the delta ever runs, and AWS never returns them
+	// on read-back. By the time we compare, the resolved ID is authoritative
+	// and the wrapper is dead weight, so it must not influence the delta in
+	// any way. A groupRef that has not resolved yet (GroupID still nil) is not
+	// this code's concern: the referencesResolved guard defers rule sync until
+	// the referenced ID is populated, so we assume GroupID is resolved here.
+	pair.GroupRef = nil
+	pair.VPCRef = nil
+
+	// A self-reference is an explicit reference to the SG's own (resolved) ID,
+	// or the spec shorthand that omits every group identifier ("this SG",
+	// since the ID is unknown until AWS assigns it). GroupRef is intentionally
+	// absent from this test: it has already been cleared above.
 	isSelf := (pair.GroupID != nil && selfID != "" && *pair.GroupID == selfID) ||
-		(pair.GroupID == nil && pair.GroupRef == nil && pair.GroupName == nil)
+		(pair.GroupID == nil && pair.GroupName == nil)
 	if isSelf {
 		if selfID != "" {
 			id := selfID
 			pair.GroupID = &id
 		}
-		// GroupRef is a spec-only reference wrapper never present on AWS
-		// read-back; once GroupID is set it is redundant for comparison.
-		pair.GroupRef = nil
 		pair.GroupName = nil
 		pair.UserID = nil
 		return
@@ -379,11 +394,6 @@ func canonicalizeGroupPair(
 	// account is required to identify the referenced group.
 	if pair.UserID != nil && ownerAccountID != "" && *pair.UserID == ownerAccountID {
 		pair.UserID = nil
-	}
-	// A resolved cross-SG reference carries both GroupRef (spec-only) and
-	// GroupID; drop GroupRef so it matches the AWS-returned form.
-	if pair.GroupRef != nil && pair.GroupID != nil {
-		pair.GroupRef = nil
 	}
 }
 
