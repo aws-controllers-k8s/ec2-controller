@@ -797,6 +797,35 @@ class TestSecurityGroup:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
 
+    @pytest.mark.resource_data({"resource_file": "security_group_nonstandard_proto"})
+    def test_nonstandard_protocol_ports_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # Isolated: a protocol outside {tcp, udp, icmp, icmpv6} -- here ESP (IP
+        # protocol 50) -- has its port range dropped by AWS on read-back, even
+        # though the spec carries the -1/-1 sentinel. This is distinct from the
+        # "-1" all-protocols drop: it covers every other IP protocol number.
+        # Canonicalization must drop the spec ports to match, or the rule churns
+        # every reconcile.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+        # Protocol 50 has no well-known name, so AWS returns it as the number.
+        esp = [e for e in sg["IpPermissionsEgress"] if e.get("IpProtocol") == "50"]
+        assert len(esp) == 1, f"expected one ESP egress rule, got {sg['IpPermissionsEgress']}"
+        # The backend contract this fix depends on: ports are omitted for
+        # protocols outside {tcp, udp, icmp, icmpv6}.
+        assert "FromPort" not in esp[0]
+        assert "ToPort" not in esp[0]
+
+        _assert_no_perpetual_diff(ref)
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
     @pytest.mark.resource_data({"resource_file": "security_group_icmpv6_no_typecode"})
     def test_icmpv6_no_typecode_no_perpetual_diff(self, ec2_client, simple_security_group):
         # Isolated: icmpv6 does not require a type/code (it is excluded from the

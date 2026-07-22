@@ -134,16 +134,26 @@ func (rm *resourceManager) referencesResolved(
 	return true
 }
 
-// allProtocols is the IpProtocol value for "all protocols"; AWS drops the port
-// range for such rules on read-back.
-const allProtocols = "-1"
-
 // icmpv6Protocol is the canonical protocol name canonicalizeProtocol emits for
 // protocol 58. Unlike icmp, icmpv6 does not require an ICMP type/code (it is not
 // in the backend's PROTOCOLS_THAT_MUST_RECEIVE_ICMP_OPTION set), so the spec may
 // omit fromPort/toPort while AWS returns the "all types and codes" wildcard as
 // -1/-1 on read-back.
 const icmpv6Protocol = "icmpv6"
+
+// portCarryingProtocols are the protocols EC2 keeps a port range for (or, for
+// ICMP, an overloaded type/code) on read-back. This mirrors the backend's
+// PROTOCOLS_THAT_CAN_RECEIVE_PORT_RANGE_OPTION_FROM_PAPERWORK set in EC2-NM-Frontend's
+// TypeSecurityGroupTrafficFilter. For every other protocol -- "-1" (all traffic)
+// and any other IP protocol number such as 50 (ESP) or 47 (GRE) -- AWS omits
+// fromPort/toPort on read-back. Keyed by the canonical name canonicalizeProtocol
+// emits (numeric 6/17/1/58 are mapped to tcp/udp/icmp/icmpv6 first).
+var portCarryingProtocols = map[string]struct{}{
+	"tcp":          {},
+	"udp":          {},
+	"icmp":         {},
+	icmpv6Protocol: {},
+}
 
 // wellKnownProtocols are the IANA protocol numbers EC2 returns by name on
 // read-back, so a numeric spec value ("6") would otherwise differ forever from
@@ -311,21 +321,28 @@ func canonicalizeRuleList(
 			continue
 		}
 		rule.IPProtocol = canonicalizeProtocol(rule.IPProtocol)
-		if rule.IPProtocol != nil && *rule.IPProtocol == allProtocols {
-			rule.FromPort = nil // AWS drops the port range for "-1" rules.
-			rule.ToPort = nil
-		} else if rule.IPProtocol != nil && *rule.IPProtocol == icmpv6Protocol {
-			// icmpv6 overloads fromPort/toPort as ICMP type/code and, unlike
-			// icmp, allows omitting them: the spec may leave them nil while AWS
-			// returns the "all types and codes" wildcard as -1/-1 on read-back.
-			// Collapse that -1 wildcard to nil so the omitted and explicit
-			// spellings compare equal. A real type/code (0-255) is left
-			// untouched, and icmp (which requires a type/code) is unaffected.
-			if rule.FromPort != nil && *rule.FromPort == -1 {
+		if rule.IPProtocol != nil {
+			proto := *rule.IPProtocol
+			if _, carriesPorts := portCarryingProtocols[proto]; !carriesPorts {
+				// AWS omits the port range for every protocol outside
+				// {tcp, udp, icmp, icmpv6}: "-1" (all traffic) and any other IP
+				// protocol number such as 50 (ESP) or 47 (GRE). Drop them so the
+				// spec form matches the read-back form.
 				rule.FromPort = nil
-			}
-			if rule.ToPort != nil && *rule.ToPort == -1 {
 				rule.ToPort = nil
+			} else if proto == icmpv6Protocol {
+				// icmpv6 overloads fromPort/toPort as ICMP type/code and, unlike
+				// icmp, allows omitting them: the spec may leave them nil while AWS
+				// returns the "all types and codes" wildcard as -1/-1 on read-back.
+				// Collapse that -1 wildcard to nil so the omitted and explicit
+				// spellings compare equal. A real type/code (0-255) is left
+				// untouched, and icmp (which requires a type/code) is unaffected.
+				if rule.FromPort != nil && *rule.FromPort == -1 {
+					rule.FromPort = nil
+				}
+				if rule.ToPort != nil && *rule.ToPort == -1 {
+					rule.ToPort = nil
+				}
 			}
 		}
 		for _, r := range rule.IPRanges {

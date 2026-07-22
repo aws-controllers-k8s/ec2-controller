@@ -278,6 +278,38 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		assert.Nil(t, out[0].ToPort)
 	})
 
+	t.Run("drops ports for protocols outside tcp/udp/icmp/icmpv6", func(t *testing.T) {
+		// AWS omits the port range on read-back for any protocol not in
+		// {tcp, udp, icmp, icmpv6}, e.g. 50 (ESP) or 47 (GRE). A spec that
+		// carries ports for such a protocol must be canonicalised to no ports.
+		out := canonicalizeRuleList([]*svcapitypes.IPPermission{
+			{IPProtocol: aws.String("50"), FromPort: aws.Int64(-1), ToPort: aws.Int64(-1),
+				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/8")}}},
+			{IPProtocol: aws.String("47"), FromPort: aws.Int64(0), ToPort: aws.Int64(0),
+				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("192.168.0.0/16")}}},
+		}, testSelfID, testOwnerAcctID)
+		assert.Len(t, out, 2)
+		for _, r := range out {
+			assert.Nil(t, r.FromPort, "protocol %s must drop fromPort", *r.IPProtocol)
+			assert.Nil(t, r.ToPort, "protocol %s must drop toPort", *r.IPProtocol)
+		}
+	})
+
+	t.Run("non-standard protocol: ported spec matches portless read-back", func(t *testing.T) {
+		// The motivating diff: a spec written with -1/-1 ports on an ESP rule
+		// must compare equal to the AWS read-back, which drops the ports
+		// entirely. After canonicalisation both sides are portless and identical.
+		spec := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("50"), FromPort: aws.Int64(-1), ToPort: aws.Int64(-1),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/8")}},
+		}}, testSelfID, testOwnerAcctID)
+		readBack := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("50"),
+			IPRanges:   []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/8")}},
+		}}, testSelfID, testOwnerAcctID)
+		assert.Equal(t, readBack, spec, "ported spec and portless read-back must canonicalise equal")
+	})
+
 	t.Run("maps well-known numeric protocols to names, leaves others as-is", func(t *testing.T) {
 		out := canonicalizeRuleList([]*svcapitypes.IPPermission{
 			{IPProtocol: aws.String("6"), FromPort: aws.Int64(22), ToPort: aws.Int64(22)},
