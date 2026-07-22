@@ -120,12 +120,9 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 	})
 
 	t.Run("groupRef with an unresolved (nil) GroupID canonicalises to self", func(t *testing.T) {
-		// Accepted tradeoff: the delta assumes GroupID is resolved. A pair
-		// that still carries a groupRef with no resolved GroupID is stripped
-		// of the wrapper and, being otherwise identifier-less, treated as a
-		// self-reference. The referencesResolved guard is what actually keeps
-		// an unresolved reference from being authorised prematurely; this
-		// function only shapes the delta.
+		// The delta assumes GroupID is resolved: a wrapper-only pair is
+		// stripped and, being identifier-less, treated as self. Guarding an
+		// unresolved reference is referencesResolved's job, not this function's.
 		p := &svcapitypes.UserIDGroupPair{GroupRef: groupRef("not-yet-created")}
 		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupRef)
@@ -219,22 +216,13 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 	})
 }
 
-// TestCanonicalizeGroupPair_InconsistentInputs documents what happens to the
-// UserID/GroupName fields that the self-ref branch drops when the input is
-// inconsistent. Ground truth, verified directly against the EC2 API:
-//
-//   - {GroupId=self}              -> accepted; AWS auto-fills UserId=owner
-//   - {GroupId=self, UserId=owner} -> accepted; identical rule to the above
-//   - {GroupId=self, UserId=foreign} -> REJECTED (InvalidGroup.NotFound): a
-//     foreign UserId scopes the group lookup to that account, where the SG's
-//     own id does not exist
-//   - {UserId=foreign} (no group) -> REJECTED (MissingParameter)
-//
-// So dropping the owner UserId/GroupName on a genuine self-reference is
-// lossless, and the only case a foreign UserId is dropped is when
-// GroupId==selfID -- an impossible input AWS rejects anyway. A legitimate
-// cross-account reference always uses GroupId=peer (!= selfID) and is
-// preserved (see TestCustomPostCompare_CrossAccount_NotSuppressed).
+// TestCanonicalizeGroupPair_InconsistentInputs documents, against real EC2
+// behavior, that dropping the owner UserID on a self-ref is lossless:
+// {GroupId=self} and {GroupId=self, UserId=owner} produce the identical rule
+// (AWS auto-fills the owner). A foreign UserID is only ever dropped when paired
+// with the SG's own GroupID -- an input AWS rejects anyway; a legitimate
+// cross-account ref uses GroupId=peer and is preserved (see
+// TestCustomPostCompare_CrossAccount_NotSuppressed).
 func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
 	t.Run("self GroupID + foreign UserID: classified self, foreign UserID dropped", func(t *testing.T) {
 		p := &svcapitypes.UserIDGroupPair{
@@ -463,10 +451,8 @@ func TestCanonicalizeRuleList(t *testing.T) {
 	})
 
 	t.Run("handles nil CIDR/prefix grant elements without panic", func(t *testing.T) {
-		// Defensive: sortGrants and the per-element loops must tolerate a nil
-		// element in IPRanges/IPv6Ranges/PrefixListIDs. This cannot occur via
-		// a CR (schema rejects null list entries) or on read-back (the setter
-		// always allocates), but the guards keep the comparators panic-free.
+		// Defensive only: a nil grant element can't occur via a CR or read-back,
+		// but sortGrants and the per-element loops must tolerate it.
 		var out []*svcapitypes.IPPermission
 		assert.NotPanics(t, func() {
 			out = canonicalizeRuleList([]*svcapitypes.IPPermission{{
@@ -805,9 +791,9 @@ func TestCustomPostCompare_CrossAccount_NotSuppressed(t *testing.T) {
 }
 
 func TestCustomPostCompare_SelfRef_StaysResolved(t *testing.T) {
-	// customUpdateSecurityGroup relies on GroupID being non-nil after
-	// normalisation so that referencesResolved keeps syncSGRules open for a
-	// self-reference expressed via groupRef.
+	// customPostCompare works on copies and must not mutate desired, so
+	// referencesResolved still sees the resolved GroupID and keeps syncSGRules
+	// open for a groupRef self-reference.
 	desired := mkResource([]*svcapitypes.IPPermission{{
 		FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("tcp"),
 		UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
@@ -820,5 +806,5 @@ func TestCustomPostCompare_SelfRef_StaysResolved(t *testing.T) {
 
 	rm := &resourceManager{}
 	assert.True(t, rm.referencesResolved(desired),
-		"after normalisation a self-ref must still be seen as resolved")
+		"delta must not nil the resolved GroupID of a self-ref")
 }

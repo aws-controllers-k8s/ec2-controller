@@ -7,10 +7,9 @@ spec:
   description: test sg self-ref
   vpcID: $VPC_ID
   ingressRules:
-    # Self-reference expressed by omitting groupID entirely (no groupRef,
-    # no groupID) -- the exact pattern reported in
-    # aws-controllers-k8s/community#2822. AWS auto-fills groupID (the SG's
-    # own ID) and userID on DescribeSecurityGroups read-back.
+    # Self-reference by omitting groupID entirely (no groupRef, no groupID) --
+    # the aws-controllers-k8s/community#2822 pattern. AWS auto-fills groupID
+    # (self) and userID on read-back.
     - fromPort: 443
       toPort: 443
       ipProtocol: tcp

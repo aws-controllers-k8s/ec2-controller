@@ -887,11 +887,9 @@ resources:
       IngressRules:
         custom_field:
           list_of: IpPermission
-        # Rule lists are compared in the delta_post_compare hook
-        # (customPostCompare), which canonicalises copies of both sides so
-        # server-side normalisation never produces a spurious diff. The
-        # generated field-by-field comparison is skipped to avoid a raw
-        # DeepEqual on the un-normalised lists.
+        # Compared in the delta_post_compare hook (customPostCompare) on
+        # canonicalised copies, so server-side normalisation never drives a
+        # spurious diff; the generated field comparison is skipped.
         compare:
           is_ignored: true
       EgressRules:

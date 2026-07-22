@@ -7,11 +7,9 @@ spec:
   description: test sg multi-grant deterministic sort
   vpcID: $VPC_ID
   ingressRules:
-    # A single rule carrying several already-canonical CIDRs (IPv4 + IPv6) in
-    # deliberately non-sorted order. sortGrants must order the grants
-    # deterministically; if it did not, the read-back order would drive a
-    # perpetual diff. This exercises the reachable (populated, non-nil) grant
-    # path of sortGrants.
+    # Several already-canonical CIDRs (IPv4 + IPv6) in deliberately non-sorted
+    # order. sortGrants must order them deterministically, else read-back order
+    # would drive a perpetual diff.
     - fromPort: 9090
       toPort: 9090
       ipProtocol: tcp

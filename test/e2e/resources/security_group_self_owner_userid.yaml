@@ -7,11 +7,9 @@ spec:
   description: self-ref via omitted group carrying an explicit owner userID
   vpcID: $VPC_ID
   ingressRules:
-    # An omitted-group self-reference (the #2822 shorthand) that ALSO carries
-    # the redundant owner account in userID. canonicalizeGroupPair classifies
-    # this as self and drops the userID. This must be lossless: AWS produces
-    # the identical self-ref rule (GroupId=self, UserId=owner auto-filled)
-    # whether or not the owner userID is supplied.
+    # An omitted-group self-reference (#2822 shorthand) that also carries the
+    # redundant owner account in userID. Dropping that userID is lossless: AWS
+    # produces the identical self-ref rule either way.
     - fromPort: 443
       toPort: 443
       ipProtocol: tcp

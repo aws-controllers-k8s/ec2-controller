@@ -250,17 +250,14 @@ def _sg_status_rule_ids(ref):
 
 
 def _assert_no_perpetual_diff(ref):
-    """Force a reconcile with an update unrelated to the rules and assert the
-    security group rule IDs in status do not change.
+    """Force a reconcile unrelated to the rules and assert the security group
+    rule IDs in status do not change.
 
-    A tag edit bumps metadata.generation, so the controller reconciles right
-    away rather than waiting for the (up to 10h) resync period. That reconcile
-    recomputes the ingress/egress rule delta; if any rule diff is spurious the
-    rules are revoked and re-authorized and AWS assigns brand new
-    securityGroupRuleIDs. Stable IDs across this forced reconcile are therefore
-    the definitive signal that the delta logic sees no rule change --
-    ACK.ResourceSynced=True alone is not, since the original #2822 bug churned
-    the rules while still reporting Synced=True.
+    A tag edit bumps metadata.generation, forcing an immediate reconcile that
+    recomputes the rule delta. A spurious diff revokes and re-authorizes the
+    rules, so AWS assigns new securityGroupRuleIDs. Stable IDs are the definitive
+    signal of no rule churn -- ACK.ResourceSynced=True is not, since the #2822
+    bug churned rules while still reporting Synced=True.
     """
     ids_before = _sg_status_rule_ids(ref)
 
@@ -688,14 +685,11 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id, exists=False)
 
     def test_self_ref_groupref_no_perpetual_diff(self, ec2_client):
-        # Self-reference expressed via groupRef pointing at the SG itself. This
-        # is a distinct code path from the omitted-groupID form: ResolveRefs
-        # populates GroupID from GroupRef (so GroupRef is set on desired but
-        # nil on the AWS read-back), and it resolves only on the second
-        # reconcile once the SG's own ID is known.
-        # NB: the resource name is also used as the EC2 GroupName, and AWS
-        # rejects any GroupName in the "sg-*" format, so it must not start with
-        # "sg-".
+        # Self-reference via a groupRef pointing at the SG itself -- a distinct
+        # path from the omitted-groupID form: GroupID resolves from GroupRef only
+        # once the SG's own ID is known (second reconcile).
+        # NB: the name doubles as the EC2 GroupName, which AWS rejects in the
+        # "sg-*" format, so it must not start with "sg-".
         name = random_suffix_name("selfref-groupref", 24)
         ref = create_security_group_with_sg_ref(name, name)  # references itself
         try:
@@ -723,10 +717,9 @@ class TestSecurityGroup:
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
     def test_cross_sg_userid_no_perpetual_diff(self, ec2_client, simple_security_group):
-        # A rule referencing a *different* (peer) SG in the same account. The
-        # user omits userID; AWS auto-fills it with the owning account. The fix
-        # must clear that owner userID (while keeping the peer GroupID), so no
-        # perpetual diff -- distinct from the self-ref branch.
+        # A rule referencing a *different* (peer) SG in the same account: the
+        # user omits userID, AWS auto-fills the owner account. Clearing that
+        # owner userID while keeping the peer GroupID avoids a perpetual diff.
         (peer_ref, _) = simple_security_group
         assert k8s.wait_on_condition(peer_ref, "ACK.ResourceSynced", "True", wait_periods=8)
         peer_id = k8s.get_resource(peer_ref)["status"]["id"]
@@ -848,13 +841,11 @@ class TestSecurityGroup:
 
     @pytest.mark.resource_data({"resource_file": "security_group_multi_grant"})
     def test_multiple_grants_sorted_no_perpetual_diff(self, ec2_client, simple_security_group):
-        # Comment 2 (sortGrants): a single rule carrying several CIDRs must be
-        # ordered deterministically so the read-back order never drives a
-        # perpetual diff. This validates the reachable (populated) sortGrants
-        # path. A nil grant element -- the case the nil-guard question was
-        # about -- cannot occur: the CRD schema rejects null list entries and
-        # the read-back setter always allocates each element, so it is not
-        # exercisable end-to-end.
+        # A single rule carrying several CIDRs must be ordered deterministically
+        # so read-back order never drives a perpetual diff. (A nil grant element
+        # can't occur end-to-end -- the schema rejects null entries and the
+        # read-back setter always allocates -- so only the populated sort path
+        # is reachable here.)
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
@@ -877,12 +868,11 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id, exists=False)
 
     def test_dangling_groupref_not_self_authorized(self, ec2_client):
-        # Comment 3 (why the omitted-self check excludes GroupRef): a groupRef
-        # is NOT an omitted self-reference. A groupRef whose target does not
-        # exist must fail reference resolution rather than be silently
-        # canonicalized into a self-reference. If the GroupRef term were
-        # dropped from the omitted-self detection, such a pair would be stamped
-        # to the SG's own id and wrongly self-authorized.
+        # A groupRef pointing at a security group that does not exist must fail
+        # reference resolution (the referenced object can't be read), so the SG
+        # never reaches Synced and is never created or self-authorized. The
+        # delta's self-detection is not involved -- an unresolved reference
+        # never reaches it.
         name = random_suffix_name("dangling-ref", 24)
         missing = random_suffix_name("nonexistent-peer", 24)
         ref = create_security_group_with_sg_ref(name, missing)
@@ -909,10 +899,10 @@ class TestSecurityGroup:
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
     def test_self_ref_groupref_persisted_in_spec(self, ec2_client):
-        # Comment 4 (clearing GroupRef during compare): nilling GroupRef inside
-        # the delta comparison must not clear the user's groupRef from the
-        # persisted CR spec, nor inject a canonical groupID into it -- neither
-        # on first sync nor after an update-path reconcile.
+        # The delta canonicalizes copies (clearing GroupRef, stamping groupID);
+        # that must never leak into the persisted spec. The user's groupRef must
+        # survive and no canonical groupID may be injected -- on first sync and
+        # after an update-path reconcile.
         name = random_suffix_name("selfref-persist", 24)
         ref = create_security_group_with_sg_ref(name, name)  # references itself
         try:
@@ -942,11 +932,9 @@ class TestSecurityGroup:
 
     @pytest.mark.resource_data({"resource_file": "security_group_self_ref"})
     def test_self_ref_port_change_applied(self, ec2_client, simple_security_group):
-        # Regression guard (NOT comment 5): self-ref canonicalization must not
-        # mask a genuine change made *within* a normalized rule. Change the
-        # port of a self-referencing rule and confirm the edit is applied. This
-        # covers the "edit not swallowed" property; comment 5 (field dropping)
-        # is covered by test_self_ref_owner_userid_no_data_loss below.
+        # Self-ref canonicalization must not mask a genuine change within a
+        # normalized rule: change the port of a self-referencing rule and
+        # confirm the edit is applied.
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
@@ -990,18 +978,14 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id, exists=False)
 
     def test_self_ref_owner_userid_no_data_loss(self, ec2_client):
-        # Comment 5 (does clearing UserID/GroupName/GroupRef on a self-ref drop
-        # meaningful data?): an omitted-group self-ref pair that ALSO carries
-        # the redundant owner account in userID is classified as self, and
-        # canonicalizeGroupPair drops that userID. This is lossless -- verified
-        # against the EC2 API: {GroupId=self} and {GroupId=self,UserId=owner}
-        # produce the identical rule (AWS auto-fills the owner account either
-        # way). So the resulting self-ref rule is correct and does not churn.
-        #
-        # (The only case a *foreign* userID is dropped is when GroupId==selfID,
-        # which AWS itself rejects as InvalidGroup.NotFound; a legitimate
-        # cross-account ref uses GroupId=peer and is preserved -- covered by the
-        # unit test TestCustomPreCompare_CrossAccount_NotSuppressed.)
+        # An omitted-group self-ref that also carries the redundant owner
+        # account in userID is classified as self, and canonicalizeGroupPair
+        # drops that userID. This is lossless: {GroupId=self} and
+        # {GroupId=self,UserId=owner} produce the identical rule (AWS auto-fills
+        # the owner). A foreign userID is only dropped when paired with the SG's
+        # own GroupID -- an input AWS rejects; a cross-account ref uses
+        # GroupId=peer and is preserved (unit test
+        # TestCustomPostCompare_CrossAccount_NotSuppressed).
         name = random_suffix_name("selfref-owner-uid", 24)
         ref = create_security_group_self_owner_userid(name)
         try:
