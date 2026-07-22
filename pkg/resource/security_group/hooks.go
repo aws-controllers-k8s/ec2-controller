@@ -18,6 +18,7 @@ import (
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
@@ -159,18 +160,70 @@ func canonicalizeProtocol(proto *string) *string {
 	return proto
 }
 
-// canonicalizeCIDR rewrites a CIDR to the network form EC2 returns: host bits
-// masked off, IPv6 lowercased and zero-compressed (e.g. "100.68.0.18/18" ->
-// "100.68.0.0/18"). An unparseable value passes through unchanged.
+// canonicalizeCIDR rewrites a CIDR to the exact network form the EC2 backend
+// stores. It is a direct port of com.amazon.ec2.nm.CidrBlock.canonicalizeAddress
+// (package EC2-NM-Common, the class the EC2 control plane uses): a network mask
+// is built one byte at a time from the prefix length and ANDed with the address,
+// masking off every host bit. The masked address is rendered in the same text
+// form AWS returns on read-back -- dotted-quad for IPv4, RFC 5952 lowercase
+// zero-compressed for IPv6 (matching the backend's Guava
+// InetAddresses.toAddrString) -- so "100.68.0.18/18" -> "100.68.0.0/18" and
+// "2001:DB8:abcd:0012::1/64" -> "2001:db8:abcd:12::/64".
+//
+// Applying the backend's own conversion here, before both the delta comparison
+// and the Authorize/Revoke request, is what stops the spurious diff: the desired
+// spec form and the AWS read-back form collapse to the identical network. It
+// also avoids the InvalidPermission.Duplicate error AWS throws when a
+// non-canonical CIDR is submitted for a rule already stored in canonical form.
+//
+// A value that is not a well-formed CIDR -- or whose prefix is longer than the
+// address, which the backend rejects -- passes through unchanged.
 func canonicalizeCIDR(cidr *string) *string {
 	if cidr == nil {
 		return nil
 	}
-	_, ipNet, err := net.ParseCIDR(*cidr)
-	if err != nil {
+	slash := strings.LastIndex(*cidr, "/")
+	if slash < 0 {
 		return cidr
 	}
-	canon := ipNet.String()
+	ip := net.ParseIP((*cidr)[:slash])
+	prefixLength, err := strconv.Atoi((*cidr)[slash+1:])
+	if ip == nil || err != nil || prefixLength < 0 {
+		return cidr
+	}
+
+	// Match the backend's byte layout: 4 bytes for IPv4, 16 for IPv6.
+	addr := ip.To4()
+	if addr == nil {
+		addr = ip.To16()
+	}
+	if addr == nil {
+		return cidr
+	}
+
+	// Build the network mask exactly as CidrBlock.canonicalizeAddress does --
+	// one byte at a time -- and AND it into the address. Bytes past the prefix
+	// stay zero, which is the host-bit masking.
+	remaining := prefixLength
+	network := make(net.IP, len(addr))
+	for i := 0; i < len(addr) && remaining > 0; i++ {
+		var maskByte byte
+		if remaining > 8 {
+			maskByte = 0xff
+			remaining -= 8
+		} else {
+			maskByte = byte(((1 << remaining) - 1) << (8 - remaining))
+			remaining = 0
+		}
+		network[i] = addr[i] & maskByte
+	}
+	// remaining != 0 means the prefix is longer than the address (e.g. /40 on an
+	// IPv4 address); the backend treats this as malformed, so leave it untouched.
+	if remaining != 0 {
+		return cidr
+	}
+
+	canon := network.String() + "/" + strconv.Itoa(prefixLength)
 	return &canon
 }
 
