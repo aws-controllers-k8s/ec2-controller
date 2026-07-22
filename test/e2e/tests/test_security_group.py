@@ -728,8 +728,12 @@ class TestSecurityGroup:
                 assert len(pairs) == 1
                 assert pairs[0]["GroupId"] == resource_id
 
+            # The delta canonicalizes copies (clearing GroupRef, stamping
+            # groupID); that must never leak into the persisted spec. Verify the
+            # user's groupRef survives -- both after the initial sync and after a
+            # forced update-path reconcile -- with no canonical groupID injected.
+            _assert_groupref_retained(ref, name)
             _assert_no_perpetual_diff(ref)
-            # The self groupRef must survive the forced reconcile intact.
             _assert_groupref_retained(ref, name)
         finally:
             k8s.delete_custom_resource(ref)
@@ -888,26 +892,6 @@ class TestSecurityGroup:
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
-
-    def test_self_ref_groupref_persisted_in_spec(self, ec2_client):
-        # The delta canonicalizes copies (clearing GroupRef, stamping groupID);
-        # that must never leak into the persisted spec. The user's groupRef must
-        # survive and no canonical groupID may be injected -- on first sync and
-        # after an update-path reconcile.
-        name = random_suffix_name("selfref-persist", 24)
-        ref = create_security_group_with_sg_ref(name, name)  # references itself
-        try:
-            time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
-            assert k8s.wait_on_condition(
-                ref, "ACK.ResourceSynced", "True", wait_periods=8
-            )
-
-            _assert_groupref_retained(ref, name)   # after initial sync
-            _assert_no_perpetual_diff(ref)         # force an update-path reconcile
-            _assert_groupref_retained(ref, name)   # still intact after the update
-        finally:
-            k8s.delete_custom_resource(ref)
-            time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
     @pytest.mark.resource_data({"resource_file": "security_group_self_ref"})
     def test_self_ref_port_change_applied(self, ec2_client, simple_security_group):
