@@ -172,9 +172,7 @@ func canonicalizeProtocol(proto *string) *string {
 //
 // Applying the backend's own conversion here, before both the delta comparison
 // and the Authorize/Revoke request, is what stops the spurious diff: the desired
-// spec form and the AWS read-back form collapse to the identical network. It
-// also avoids the InvalidPermission.Duplicate error AWS throws when a
-// non-canonical CIDR is submitted for a rule already stored in canonical form.
+// spec form and the AWS read-back form collapse to the identical network.
 //
 // A value that is not a well-formed CIDR -- or whose prefix is longer than the
 // address, which the backend rejects -- passes through unchanged.
