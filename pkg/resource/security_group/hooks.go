@@ -138,6 +138,13 @@ func (rm *resourceManager) referencesResolved(
 // range for such rules on read-back.
 const allProtocols = "-1"
 
+// icmpv6Protocol is the canonical protocol name canonicalizeProtocol emits for
+// protocol 58. Unlike icmp, icmpv6 does not require an ICMP type/code (it is not
+// in the backend's PROTOCOLS_THAT_MUST_RECEIVE_ICMP_OPTION set), so the spec may
+// omit fromPort/toPort while AWS returns the "all types and codes" wildcard as
+// -1/-1 on read-back.
+const icmpv6Protocol = "icmpv6"
+
 // wellKnownProtocols are the IANA protocol numbers EC2 returns by name on
 // read-back, so a numeric spec value ("6") would otherwise differ forever from
 // the name ("tcp"). Other protocols (and "-1") are already canonical.
@@ -307,6 +314,19 @@ func canonicalizeRuleList(
 		if rule.IPProtocol != nil && *rule.IPProtocol == allProtocols {
 			rule.FromPort = nil // AWS drops the port range for "-1" rules.
 			rule.ToPort = nil
+		} else if rule.IPProtocol != nil && *rule.IPProtocol == icmpv6Protocol {
+			// icmpv6 overloads fromPort/toPort as ICMP type/code and, unlike
+			// icmp, allows omitting them: the spec may leave them nil while AWS
+			// returns the "all types and codes" wildcard as -1/-1 on read-back.
+			// Collapse that -1 wildcard to nil so the omitted and explicit
+			// spellings compare equal. A real type/code (0-255) is left
+			// untouched, and icmp (which requires a type/code) is unaffected.
+			if rule.FromPort != nil && *rule.FromPort == -1 {
+				rule.FromPort = nil
+			}
+			if rule.ToPort != nil && *rule.ToPort == -1 {
+				rule.ToPort = nil
+			}
 		}
 		for _, r := range rule.IPRanges {
 			if r != nil {

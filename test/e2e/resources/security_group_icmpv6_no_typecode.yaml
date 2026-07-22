@@ -1,0 +1,19 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg icmpv6 wildcard type/code
+  vpcID: $VPC_ID
+  ingressRules:
+    # ICMPv6 with no type/code (fromPort/toPort omitted). Unlike icmp, icmpv6
+    # does not require a type/code, so the EC2 backend treats this as the "all
+    # types and codes" wildcard and returns it as fromPort/toPort = -1 on
+    # read-back. This is a distinct path from the all-protocols "-1" rule:
+    # ICMP/ICMPv6 overload fromPort/toPort as type/code, so the "-1" port-drop
+    # branch does not cover it.
+    - ipProtocol: icmpv6
+      ipv6Ranges:
+        - cidrIPv6: ::/0
+          description: icmpv6 all types and codes

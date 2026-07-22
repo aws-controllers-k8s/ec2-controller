@@ -19,6 +19,7 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/api/equality"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -350,6 +351,68 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		assert.Len(t, out, 1)
 		assert.NotNil(t, out[0].FromPort)
 		assert.NotNil(t, out[0].ToPort)
+	})
+
+	t.Run("collapses the icmpv6 -1 wildcard type/code to nil", func(t *testing.T) {
+		// icmpv6 read back from AWS as the "all types and codes" wildcard
+		// carries FromPort/ToPort = -1. Canonicalise it to nil so it matches a
+		// spec that simply omits the type/code.
+		out := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("icmpv6"),
+			FromPort:   aws.Int64(-1),
+			ToPort:     aws.Int64(-1),
+			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("::/0")}},
+		}}, testSelfID, testOwnerAcctID)
+		assert.Len(t, out, 1)
+		assert.Nil(t, out[0].FromPort)
+		assert.Nil(t, out[0].ToPort)
+	})
+
+	t.Run("numeric protocol 58 also collapses the -1 wildcard", func(t *testing.T) {
+		// "58" canonicalises to "icmpv6", so the wildcard collapse must apply to
+		// the numeric spelling too.
+		out := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("58"),
+			FromPort:   aws.Int64(-1),
+			ToPort:     aws.Int64(-1),
+		}}, testSelfID, testOwnerAcctID)
+		assert.Len(t, out, 1)
+		assert.Equal(t, "icmpv6", *out[0].IPProtocol)
+		assert.Nil(t, out[0].FromPort)
+		assert.Nil(t, out[0].ToPort)
+	})
+
+	t.Run("omitted and explicit-wildcard icmpv6 canonicalise equal", func(t *testing.T) {
+		// The read-back form (-1/-1) and the spec shorthand (omitted) are the
+		// same rule; both must collapse to the identical canonical shape so no
+		// perpetual diff arises (aws-controllers-k8s/community#2822).
+		omitted := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("icmpv6"),
+			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("::/0")}},
+		}}, testSelfID, testOwnerAcctID)
+		wildcard := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("icmpv6"),
+			FromPort:   aws.Int64(-1),
+			ToPort:     aws.Int64(-1),
+			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("::/0")}},
+		}}, testSelfID, testOwnerAcctID)
+		assert.True(t, equality.Semantic.DeepEqual(omitted, wildcard),
+			"omitted and -1/-1 icmpv6 must be indistinguishable after canonicalisation")
+	})
+
+	t.Run("preserves a real icmpv6 type/code", func(t *testing.T) {
+		// A concrete type/code (e.g. 128/0, echo request) is not the wildcard
+		// and must survive so a genuine change is not swallowed.
+		out := canonicalizeRuleList([]*svcapitypes.IPPermission{{
+			IPProtocol: aws.String("icmpv6"),
+			FromPort:   aws.Int64(128),
+			ToPort:     aws.Int64(0),
+		}}, testSelfID, testOwnerAcctID)
+		assert.Len(t, out, 1)
+		assert.NotNil(t, out[0].FromPort)
+		assert.EqualValues(t, 128, *out[0].FromPort)
+		assert.NotNil(t, out[0].ToPort)
+		assert.EqualValues(t, 0, *out[0].ToPort)
 	})
 
 	t.Run("aggregates rules sharing (proto, fromPort, toPort)", func(t *testing.T) {
