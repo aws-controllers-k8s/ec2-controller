@@ -275,6 +275,23 @@ def _assert_no_perpetual_diff(ref):
     )
 
 
+def _assert_groupref_retained(ref, expected_ref_name):
+    """Assert the user's groupRef survives in the persisted spec (ingress and
+    egress) and that no canonical groupID leaked into it."""
+    spec = k8s.get_resource(ref)["spec"]
+    for rules_field in ("ingressRules", "egressRules"):
+        for rule in spec.get(rules_field, []):
+            for pair in rule.get("userIDGroupPairs", []):
+                assert (
+                    pair.get("groupRef", {}).get("from", {}).get("name")
+                    == expected_ref_name
+                ), f"{rules_field}: user groupRef must survive in the spec, got: {pair}"
+                assert "groupID" not in pair, (
+                    f"{rules_field}: canonical groupID must not leak into the "
+                    f"spec, got: {pair}"
+                )
+
+
 @service_marker
 @pytest.mark.canary
 class TestSecurityGroup:
@@ -712,6 +729,8 @@ class TestSecurityGroup:
                 assert pairs[0]["GroupId"] == resource_id
 
             _assert_no_perpetual_diff(ref)
+            # The self groupRef must survive the forced reconcile intact.
+            _assert_groupref_retained(ref, name)
         finally:
             k8s.delete_custom_resource(ref)
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -746,6 +765,9 @@ class TestSecurityGroup:
             assert pairs[0]["UserId"] == str(get_account_id())
 
             _assert_no_perpetual_diff(ref)
+            # The peer groupRef must survive the forced reconcile intact (not
+            # rewritten to a concrete groupID).
+            _assert_groupref_retained(ref, peer_ref.name)
         finally:
             k8s.delete_custom_resource(ref)
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -911,21 +933,9 @@ class TestSecurityGroup:
                 ref, "ACK.ResourceSynced", "True", wait_periods=8
             )
 
-            def _assert_groupref_retained():
-                pair = k8s.get_resource(ref)["spec"]["ingressRules"][0][
-                    "userIDGroupPairs"
-                ][0]
-                assert (
-                    pair.get("groupRef", {}).get("from", {}).get("name") == name
-                ), f"user groupRef must be preserved in the persisted spec, got: {pair}"
-                assert "groupID" not in pair, (
-                    f"canonical groupID must not leak into the persisted spec, "
-                    f"got: {pair}"
-                )
-
-            _assert_groupref_retained()      # after initial sync
-            _assert_no_perpetual_diff(ref)   # force an update-path reconcile
-            _assert_groupref_retained()      # still intact after the update
+            _assert_groupref_retained(ref, name)   # after initial sync
+            _assert_no_perpetual_diff(ref)         # force an update-path reconcile
+            _assert_groupref_retained(ref, name)   # still intact after the update
         finally:
             k8s.delete_custom_resource(ref)
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
