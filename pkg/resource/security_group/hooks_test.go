@@ -234,7 +234,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 // lossless, and the only case a foreign UserId is dropped is when
 // GroupId==selfID -- an impossible input AWS rejects anyway. A legitimate
 // cross-account reference always uses GroupId=peer (!= selfID) and is
-// preserved (see TestCustomPreCompare_CrossAccount_NotSuppressed).
+// preserved (see TestCustomPostCompare_CrossAccount_NotSuppressed).
 func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
 	t.Run("self GroupID + foreign UserID: classified self, foreign UserID dropped", func(t *testing.T) {
 		p := &svcapitypes.UserIDGroupPair{
@@ -515,16 +515,16 @@ func TestCanonicalizeRuleList(t *testing.T) {
 }
 
 // -----------------------------------------------------------------------------
-// canonicalizeSGRules (resource-level guards)
+// canonicalizeCopiedRuleLists (resource-level guards, non-mutating)
 // -----------------------------------------------------------------------------
 
-func TestCanonicalizeSGRules_Guards(t *testing.T) {
+func TestCanonicalizeCopiedRuleLists_Guards(t *testing.T) {
 	t.Run("nil resource does not panic", func(t *testing.T) {
-		assert.NotPanics(t, func() { canonicalizeSGRules(nil) })
+		assert.NotPanics(t, func() { canonicalizeCopiedRuleLists(nil) })
 	})
 
 	t.Run("nil ko does not panic", func(t *testing.T) {
-		assert.NotPanics(t, func() { canonicalizeSGRules(&resource{}) })
+		assert.NotPanics(t, func() { canonicalizeCopiedRuleLists(&resource{}) })
 	})
 
 	t.Run("nil Status.ID: omitted self-ref pair is left group-id-less", func(t *testing.T) {
@@ -533,17 +533,36 @@ func TestCanonicalizeSGRules_Guards(t *testing.T) {
 			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{Description: aws.String("coredns")}},
 		}}, nil)
 		r.ko.Status.ID = nil
-		assert.NotPanics(t, func() { canonicalizeSGRules(r) })
+		var ingress []*svcapitypes.IPPermission
+		assert.NotPanics(t, func() { ingress, _ = canonicalizeCopiedRuleLists(r) })
+		assert.Nil(t, ingress[0].UserIDGroupPairs[0].GroupID)
+	})
+
+	t.Run("does not mutate the source resource", func(t *testing.T) {
+		// The whole point of the copy-based approach: canonicalisation must
+		// never touch the caller's rule lists (they become the merge-patch
+		// base in patchResourceMetadataAndSpec).
+		r := mkResource([]*svcapitypes.IPPermission{{
+			FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("6"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{GroupRef: groupRef("myself")}},
+		}}, nil)
+		ingress, _ := canonicalizeCopiedRuleLists(r)
+		// Source untouched: numeric protocol and groupRef preserved, no groupID injected.
+		assert.Equal(t, "6", *r.ko.Spec.IngressRules[0].IPProtocol)
+		assert.NotNil(t, r.ko.Spec.IngressRules[0].UserIDGroupPairs[0].GroupRef)
 		assert.Nil(t, r.ko.Spec.IngressRules[0].UserIDGroupPairs[0].GroupID)
+		// Copy canonicalised: protocol mapped to name, self-ref resolved to selfID.
+		assert.Equal(t, "tcp", *ingress[0].IPProtocol)
+		assert.Equal(t, testSelfID, *ingress[0].UserIDGroupPairs[0].GroupID)
 	})
 }
 
 // -----------------------------------------------------------------------------
-// customPreCompare via newResourceDelta (end-to-end delta suppression)
+// customPostCompare via newResourceDelta (end-to-end delta suppression)
 // -----------------------------------------------------------------------------
 
 // desiredLatestDelta normalises both sides through newResourceDelta (which
-// invokes customPreCompare) and returns the resulting delta.
+// invokes customPostCompare) and returns the resulting delta.
 func desiredLatestDelta(desired, latest *resource) *struct{ ing, egr bool } {
 	d := newResourceDelta(desired, latest)
 	return &struct{ ing, egr bool }{
@@ -552,7 +571,7 @@ func desiredLatestDelta(desired, latest *resource) *struct{ ing, egr bool } {
 	}
 }
 
-func TestCustomPreCompare_SelfRef_GroupRef_NoDiff(t *testing.T) {
+func TestCustomPostCompare_SelfRef_GroupRef_NoDiff(t *testing.T) {
 	// desired mirrors the post-ResolveReferences state: GroupRef set AND
 	// GroupID filled with selfID. latest is the AWS read-back: GroupID set,
 	// UserID/GroupName filled, no GroupRef.
@@ -574,7 +593,7 @@ func TestCustomPreCompare_SelfRef_GroupRef_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "self-ref via groupRef must not produce a diff")
 }
 
-func TestCustomPreCompare_SelfRef_Omitted_NoDiff(t *testing.T) {
+func TestCustomPostCompare_SelfRef_Omitted_NoDiff(t *testing.T) {
 	// The exact #2822 reproducer: userIDGroupPair with only description +
 	// userID, no groupID and no groupRef. latest has GroupID filled by AWS.
 	desired := mkResource([]*svcapitypes.IPPermission{{
@@ -595,7 +614,7 @@ func TestCustomPreCompare_SelfRef_Omitted_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "omitted-groupID self-ref (#2822) must not produce a diff")
 }
 
-func TestCustomPreCompare_GroupRefOnly_NoDiff(t *testing.T) {
+func TestCustomPostCompare_GroupRefOnly_NoDiff(t *testing.T) {
 	// desired mirrors the post-ResolveReferences state for a cross-SG rule
 	// written with a groupRef: the wrapper is still set AND GroupID is
 	// resolved. latest is the AWS read-back: GroupID only, no wrapper. The
@@ -618,7 +637,7 @@ func TestCustomPreCompare_GroupRefOnly_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "a spec-only groupRef must never produce a diff")
 }
 
-func TestCustomPreCompare_AllProtocolPorts_NoDiff(t *testing.T) {
+func TestCustomPostCompare_AllProtocolPorts_NoDiff(t *testing.T) {
 	desired := mkResource(nil, []*svcapitypes.IPPermission{{
 		IPProtocol: aws.String("-1"), FromPort: aws.Int64(0), ToPort: aws.Int64(0),
 		IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}},
@@ -632,7 +651,7 @@ func TestCustomPreCompare_AllProtocolPorts_NoDiff(t *testing.T) {
 	assert.False(t, got.egr, "-1 rule with spec ports vs AWS-dropped ports must not diff")
 }
 
-func TestCustomPreCompare_GrantAggregation_NoDiff(t *testing.T) {
+func TestCustomPostCompare_GrantAggregation_NoDiff(t *testing.T) {
 	// desired: two separate rules; latest: AWS-aggregated single rule, and
 	// grants in reversed order to also exercise sorting.
 	desired := mkResource([]*svcapitypes.IPPermission{
@@ -653,7 +672,7 @@ func TestCustomPreCompare_GrantAggregation_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "split desired rules vs AWS-aggregated latest must not diff")
 }
 
-func TestCustomPreCompare_SelfRef_Egress_NoDiff(t *testing.T) {
+func TestCustomPostCompare_SelfRef_Egress_NoDiff(t *testing.T) {
 	// Same self-ref suppression must hold on the egress side (symmetric code
 	// path through canonicalizeRuleList).
 	desired := mkResource(nil, []*svcapitypes.IPPermission{{
@@ -672,7 +691,7 @@ func TestCustomPreCompare_SelfRef_Egress_NoDiff(t *testing.T) {
 	assert.False(t, got.egr, "self-ref egress must not produce a diff")
 }
 
-func TestCustomPreCompare_DescriptionChange_StillFires(t *testing.T) {
+func TestCustomPostCompare_DescriptionChange_StillFires(t *testing.T) {
 	// Description participates in comparison and must NOT be normalised away:
 	// a description-only change on an otherwise-identical rule must diff.
 	desired := mkResource([]*svcapitypes.IPPermission{{
@@ -688,7 +707,7 @@ func TestCustomPreCompare_DescriptionChange_StillFires(t *testing.T) {
 	assert.True(t, got.ing, "a description-only change must still produce a diff")
 }
 
-func TestCustomPreCompare_NumericProtocol_NoDiff(t *testing.T) {
+func TestCustomPostCompare_NumericProtocol_NoDiff(t *testing.T) {
 	// Verified against AWS: submitting IpProtocol "6" is stored and returned
 	// as "tcp". The spec numeric form must not perpetually diff from the
 	// name AWS returns.
@@ -705,7 +724,7 @@ func TestCustomPreCompare_NumericProtocol_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "numeric protocol (6) vs name (tcp) must not diff")
 }
 
-func TestCustomPreCompare_DifferentProtocol_StillFires(t *testing.T) {
+func TestCustomPostCompare_DifferentProtocol_StillFires(t *testing.T) {
 	// A genuine protocol change (tcp -> udp) must still be detected.
 	desired := mkResource([]*svcapitypes.IPPermission{{
 		FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("6"),
@@ -720,7 +739,7 @@ func TestCustomPreCompare_DifferentProtocol_StillFires(t *testing.T) {
 	assert.True(t, got.ing, "tcp vs udp must still produce a diff")
 }
 
-func TestCustomPreCompare_NonCanonicalCIDR_NoDiff(t *testing.T) {
+func TestCustomPostCompare_NonCanonicalCIDR_NoDiff(t *testing.T) {
 	// Verified against AWS: submitting "100.68.0.18/18" is stored/returned as
 	// "100.68.0.0/18"; IPv6 is also masked and text-normalised. The spec's
 	// non-canonical form must not perpetually diff from the read-back form.
@@ -739,7 +758,7 @@ func TestCustomPreCompare_NonCanonicalCIDR_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "non-canonical CIDR vs AWS-canonicalized form must not diff")
 }
 
-func TestCustomPreCompare_DifferentCIDR_StillFires(t *testing.T) {
+func TestCustomPostCompare_DifferentCIDR_StillFires(t *testing.T) {
 	// A genuinely different network must still diff.
 	desired := mkResource([]*svcapitypes.IPPermission{{
 		FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
@@ -754,7 +773,7 @@ func TestCustomPreCompare_DifferentCIDR_StillFires(t *testing.T) {
 	assert.True(t, got.ing, "a different CIDR network must still produce a diff")
 }
 
-func TestCustomPreCompare_RealDiff_StillFires(t *testing.T) {
+func TestCustomPostCompare_RealDiff_StillFires(t *testing.T) {
 	desired := mkResource([]*svcapitypes.IPPermission{{
 		FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("tcp"),
 		UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{GroupID: aws.String(testSelfID)}},
@@ -770,7 +789,7 @@ func TestCustomPreCompare_RealDiff_StillFires(t *testing.T) {
 	assert.True(t, got.ing, "a genuine port change must still produce a diff")
 }
 
-func TestCustomPreCompare_CrossAccount_NotSuppressed(t *testing.T) {
+func TestCustomPostCompare_CrossAccount_NotSuppressed(t *testing.T) {
 	// desired omits the cross-account UserID; latest carries the peer
 	// account. Because the peer account differs from the owner account it is
 	// NOT stripped, so the missing UserID on desired remains a real diff.
@@ -785,7 +804,7 @@ func TestCustomPreCompare_CrossAccount_NotSuppressed(t *testing.T) {
 	assert.True(t, got.ing, "cross-account UserID divergence must remain a diff (not silently dropped)")
 }
 
-func TestCustomPreCompare_SelfRef_StaysResolved(t *testing.T) {
+func TestCustomPostCompare_SelfRef_StaysResolved(t *testing.T) {
 	// customUpdateSecurityGroup relies on GroupID being non-nil after
 	// normalisation so that referencesResolved keeps syncSGRules open for a
 	// self-reference expressed via groupRef.

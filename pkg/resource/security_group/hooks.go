@@ -27,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	awserr "github.com/aws/aws-sdk-go/aws/awserr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -180,72 +181,65 @@ func canonicalizeCIDR(cidr *string) *string {
 	return &canon
 }
 
-// customPreCompare is injected at the top of the generated
-// newResourceDelta (see delta.go) via the `delta_pre_compare` hook in
-// generator.yaml. It rewrites Spec.IngressRules / Spec.EgressRules on both
-// sides into a single canonical form so the subsequent field-by-field
-// DeepEqual does not report spurious diffs that arise purely from how AWS
-// normalises rules on DescribeSecurityGroups read-back.
+// customPostCompare is injected at the end of the generated newResourceDelta
+// (see delta.go) via the `delta_post_compare` hook in generator.yaml. The
+// generated field-by-field comparison skips Spec.IngressRules and
+// Spec.EgressRules entirely (they are marked `compare.is_ignored: true`);
+// this hook compares them instead.
 //
-// It closes six independent perpetual-diff sources (see
-// aws-controllers-k8s/community#2822):
+// Unlike a `delta_pre_compare` hook, it MUST NOT mutate a or b: the same
+// objects are used downstream as the merge-patch base in
+// patchResourceMetadataAndSpec, so any mutation here would leak into the
+// persisted Spec. Instead it compares canonical *copies* and records a delta
+// against the original (un-normalised) values, so genuine changes are
+// reported while server-side normalisation never produces a spurious diff.
+//
+// canonicalizeCopiedRuleLists closes the perpetual-diff sources from
+// aws-controllers-k8s/community#2822:
 //
 //  1. Reference wrappers and self-references. GroupRef/VPCRef are spec-only
-//     reference wrappers that ACK resolves into concrete IDs (GroupID/VPCID)
-//     before the delta runs and that AWS never returns on read-back; they are
-//     cleared first so they play no part in the delta at all. We assume the
-//     resolved ID is present (the referencesResolved guard defers rule sync
-//     until it is). A pair is additionally a self-reference when GroupID
-//     equals the SG's own ID, or when the group identifiers are all omitted
-//     (the spec shorthand, since the ID is unknown until AWS assigns it). AWS
-//     fills GroupID, UserID and sometimes GroupName on read-back. We
-//     canonicalise to {GroupID: selfID} and clear GroupName/UserID.
-//  2. All-protocol ("-1") port ranges. AWS drops FromPort/ToPort for these;
-//     we drop them on both sides.
+//     wrappers AWS never returns; they are cleared in the copy. A pair is a
+//     self-reference when GroupID equals the SG's own ID, or when the group
+//     identifiers are all omitted (the spec shorthand). We canonicalise to
+//     {GroupID: selfID} and clear GroupName/UserID.
+//  2. All-protocol ("-1") port ranges. AWS drops FromPort/ToPort for these.
 //  3. Server-filled owner account. AWS populates UserID with the owning
 //     account for same-account grants; we clear it. Cross-account grants
 //     (UserID != owner) are preserved so the reference stays intact.
 //  4. Grant aggregation. AWS merges grants sharing (protocol, fromPort,
-//     toPort) into one IpPermission with array-valued grants; the spec may
-//     list them as separate rules. We aggregate both sides by that key and
-//     sort deterministically so ordering never drives a diff either.
+//     toPort) into one IpPermission; we aggregate both sides by that key and
+//     sort deterministically so ordering never drives a diff.
 //  5. Protocol notation. AWS canonicalises well-known IANA protocol numbers
-//     to names on read-back ("6" -> "tcp"); we map numeric spec values to the
-//     same names so the two forms compare equal.
+//     to names on read-back ("6" -> "tcp").
 //  6. CIDR canonicalisation. AWS masks host bits and normalises IPv6 text
-//     ("100.68.0.18/18" -> "100.68.0.0/18"); we rewrite CIDRs to the same
-//     network form so the spec and read-back compare equal.
-//
-// Mutating a and b in place matches the convention used by RouteTable,
-// NetworkAcl and VPC in this repo. It is safe against accidental spec
-// persistence because customUpdateSecurityGroup returns a deep copy of the
-// (already-normalised) desired, so the runtime's metadata+spec patch is
-// computed as diff(desired, updated) and is empty for these fields; nothing
-// escapes back to the Kubernetes object. Each reconcile also reads a fresh
-// desired from the API server, so the mutation never accumulates.
-//
-// GroupID is canonicalised to selfID (not cleared) on self-references so
-// that referencesResolved -- and the gate in customUpdateSecurityGroup --
-// still sees the pair as resolved and proceeds to syncSGRules. Because the
-// normalised objects flow into syncSGRules/containsRule as well, the same
-// canonical form suppresses churn at the compareIPPermission layer, and the
-// AWS Authorize/Revoke inputs it builds remain valid (GroupId defaults to
-// selfID, "-1" rules ignore ports, aggregated grants are accepted).
-func customPreCompare(
+//     ("100.68.0.18/18" -> "100.68.0.0/18").
+func customPostCompare(
 	delta *ackcompare.Delta,
 	a *resource,
 	b *resource,
 ) {
-	canonicalizeSGRules(a)
-	canonicalizeSGRules(b)
+	if a == nil || b == nil || a.ko == nil || b.ko == nil {
+		return
+	}
+	aIngress, aEgress := canonicalizeCopiedRuleLists(a)
+	bIngress, bEgress := canonicalizeCopiedRuleLists(b)
+	if !equality.Semantic.DeepEqual(aIngress, bIngress) {
+		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
+	}
+	if !equality.Semantic.DeepEqual(aEgress, bEgress) {
+		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
+	}
 }
 
-// canonicalizeSGRules rewrites the Ingress and Egress rule lists of r into a
-// canonical form used only for delta comparison and rule syncing. See
-// customPreCompare for the rationale and safety argument.
-func canonicalizeSGRules(r *resource) {
+// canonicalizeCopiedRuleLists returns canonical *copies* of r's Ingress and
+// Egress rule lists. r is never mutated, so callers can use the result purely
+// for comparison (customPostCompare) or to build AWS Authorize/Revoke inputs
+// (syncSGRules) without affecting the persisted Spec.
+func canonicalizeCopiedRuleLists(
+	r *resource,
+) (ingress []*svcapitypes.IPPermission, egress []*svcapitypes.IPPermission) {
 	if r == nil || r.ko == nil {
-		return
+		return nil, nil
 	}
 	var selfID string
 	if r.ko.Status.ID != nil {
@@ -256,8 +250,23 @@ func canonicalizeSGRules(r *resource) {
 		r.ko.Status.ACKResourceMetadata.OwnerAccountID != nil {
 		ownerAccountID = string(*r.ko.Status.ACKResourceMetadata.OwnerAccountID)
 	}
-	r.ko.Spec.IngressRules = canonicalizeRuleList(r.ko.Spec.IngressRules, selfID, ownerAccountID)
-	r.ko.Spec.EgressRules = canonicalizeRuleList(r.ko.Spec.EgressRules, selfID, ownerAccountID)
+	ingress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.IngressRules), selfID, ownerAccountID)
+	egress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.EgressRules), selfID, ownerAccountID)
+	return ingress, egress
+}
+
+// deepCopyRuleList returns a deep copy of a rule list so that in-place
+// canonicalisation never touches the caller's backing data. A nil input
+// returns nil so an empty and an absent rule list keep comparing equal.
+func deepCopyRuleList(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermission {
+	if rules == nil {
+		return nil
+	}
+	out := make([]*svcapitypes.IPPermission, len(rules))
+	for i, r := range rules {
+		out[i] = r.DeepCopy()
+	}
+	return out
 }
 
 // canonicalizeRuleList normalises each rule (ports + grants), aggregates
@@ -495,31 +504,42 @@ func (rm *resourceManager) syncSGRules(
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
 
+	// Compare and authorise the canonical form of both sides so that
+	// server-side normalisation (see customPostCompare) never revokes and
+	// re-authorises an equivalent rule. Copies are used so neither desired
+	// nor latest -- and therefore neither the persisted Spec nor the AWS
+	// read-back reflected into it -- is mutated.
+	desiredIngressRules, desiredEgressRules := canonicalizeCopiedRuleLists(desired)
+	var latestIngressRules, latestEgressRules []*svcapitypes.IPPermission
+	if latest != nil {
+		latestIngressRules, latestEgressRules = canonicalizeCopiedRuleLists(latest)
+	}
+
 	toAddIngress := []*svcapitypes.IPPermission{}
 	toAddEgress := []*svcapitypes.IPPermission{}
 	toDeleteIngress := []*svcapitypes.IPPermission{}
 	toDeleteEgress := []*svcapitypes.IPPermission{}
 
-	for _, desiredIngress := range desired.ko.Spec.IngressRules {
-		if latest == nil || !containsRule(latest.ko.Spec.IngressRules, desiredIngress) {
+	for _, desiredIngress := range desiredIngressRules {
+		if latest == nil || !containsRule(latestIngressRules, desiredIngress) {
 			// a desired rule is not in the latest resource; therefore, create
 			toAddIngress = append(toAddIngress, desiredIngress)
 		}
 	}
-	for _, desiredEgress := range desired.ko.Spec.EgressRules {
-		if latest == nil || !containsRule(latest.ko.Spec.EgressRules, desiredEgress) {
+	for _, desiredEgress := range desiredEgressRules {
+		if latest == nil || !containsRule(latestEgressRules, desiredEgress) {
 			toAddEgress = append(toAddEgress, desiredEgress)
 		}
 	}
 	if latest != nil {
-		for _, latestIngress := range latest.ko.Spec.IngressRules {
-			if !containsRule(desired.ko.Spec.IngressRules, latestIngress) {
+		for _, latestIngress := range latestIngressRules {
+			if !containsRule(desiredIngressRules, latestIngress) {
 				// a rule is in latest resource, but not in desired resource; therefore, delete
 				toDeleteIngress = append(toDeleteIngress, latestIngress)
 			}
 		}
-		for _, latestEgress := range latest.ko.Spec.EgressRules {
-			if !containsRule(desired.ko.Spec.EgressRules, latestEgress) {
+		for _, latestEgress := range latestEgressRules {
+			if !containsRule(desiredEgressRules, latestEgress) {
 				toDeleteEgress = append(toDeleteEgress, latestEgress)
 			}
 		}

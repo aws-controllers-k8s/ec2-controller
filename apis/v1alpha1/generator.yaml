@@ -887,9 +887,18 @@ resources:
       IngressRules:
         custom_field:
           list_of: IpPermission
+        # Rule lists are compared in the delta_post_compare hook
+        # (customPostCompare), which canonicalises copies of both sides so
+        # server-side normalisation never produces a spurious diff. The
+        # generated field-by-field comparison is skipped to avoid a raw
+        # DeepEqual on the un-normalised lists.
+        compare:
+          is_ignored: true
       EgressRules:
         custom_field:
           list_of: IpPermission
+        compare:
+          is_ignored: true
       Rules:
         from:
           operation: DescribeSecurityGroupRules
@@ -940,8 +949,8 @@ resources:
             GroupIds: Ids
             GroupNames: Names
     hooks:
-      delta_pre_compare:
-        code: customPreCompare(delta, a, b)
+      delta_post_compare:
+        code: customPostCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
       sdk_file_end:
