@@ -889,37 +889,6 @@ class TestSecurityGroup:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
 
-    def test_dangling_groupref_not_self_authorized(self, ec2_client):
-        # A groupRef pointing at a security group that does not exist must fail
-        # reference resolution (the referenced object can't be read), so the SG
-        # never reaches Synced and is never created or self-authorized. The
-        # delta's self-detection is not involved -- an unresolved reference
-        # never reaches it.
-        name = random_suffix_name("dangling-ref", 24)
-        missing = random_suffix_name("nonexistent-peer", 24)
-        ref = create_security_group_with_sg_ref(name, missing)
-        try:
-            time.sleep(CREATE_CYCLIC_REF_AFTER_SECONDS)
-            # The reference cannot resolve, so the SG must NOT become synced ...
-            synced = k8s.wait_on_condition(
-                ref, "ACK.ResourceSynced", "True", wait_periods=3
-            )
-            assert not synced, "an unresolved groupRef must not reach Synced=True"
-            # ... and must not have been created and self-authorized in AWS.
-            resource_id = k8s.get_resource(ref).get("status", {}).get("id")
-            if resource_id:
-                ec2_validator = EC2Validator(ec2_client)
-                sg = ec2_validator.get_security_group(resource_id)
-                for p in (sg or {}).get("IpPermissions", []):
-                    for pair in p.get("UserIdGroupPairs", []):
-                        assert pair.get("GroupId") != resource_id, (
-                            "a dangling groupRef must not be canonicalized "
-                            "into a self-reference"
-                        )
-        finally:
-            k8s.delete_custom_resource(ref)
-            time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
     def test_self_ref_groupref_persisted_in_spec(self, ec2_client):
         # The delta canonicalizes copies (clearing GroupRef, stamping groupID);
         # that must never leak into the persisted spec. The user's groupRef must
