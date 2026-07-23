@@ -1056,3 +1056,111 @@ func TestCustomPostCompare_SelfRef_StaysResolved(t *testing.T) {
 	assert.True(t, rm.referencesResolved(desired),
 		"delta must not nil the resolved GroupID of a self-ref")
 }
+
+// -----------------------------------------------------------------------------
+// Full delta path: composite ingress + egress
+//
+// The tests above each isolate a single normalisation on one rule list. These
+// exercise the whole delta path (newResourceDelta -> customPostCompare) with a
+// realistic resource that stacks many normalisations across BOTH ingress and
+// egress in one pass: self-reference by omission, grant aggregation, CIDR
+// canonicalisation, read-only peer metadata, all-protocol port dropping and
+// numeric-protocol naming -- desired in raw spec form, latest in AWS read-back
+// form.
+// -----------------------------------------------------------------------------
+
+// compositeSpec builds a desired (raw spec) resource that combines several
+// normalisations on both rule lists.
+func compositeSpec() *resource {
+	ingress := []*svcapitypes.IPPermission{
+		// self-reference by omission (#2822): no groupID, no groupRef
+		{FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{Description: aws.String("coredns")}}},
+		// two grants AWS aggregates under 443/tcp, one CIDR non-canonical
+		{FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/20")}}},
+		{FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("100.68.0.18/18")}}},
+		// cross-SG reference; read-only peer metadata omitted in spec
+		{FromPort: aws.Int64(8443), ToPort: aws.Int64(8443), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{GroupID: aws.String(testOtherID)}}},
+	}
+	egress := []*svcapitypes.IPPermission{
+		// all-protocol rule with explicit ports AWS drops
+		{IPProtocol: aws.String("-1"), FromPort: aws.Int64(0), ToPort: aws.Int64(0),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}}},
+		// numeric protocol AWS returns by name
+		{FromPort: aws.Int64(22), ToPort: aws.Int64(22), IPProtocol: aws.String("6"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/16")}}},
+	}
+	return mkResource(ingress, egress)
+}
+
+// compositeReadBack builds the latest resource as AWS returns it: rules
+// aggregated, CIDRs canonicalised, grants reordered, self/owner and peer
+// metadata filled, ports dropped, protocols named. Callers may tweak the
+// returned lists to introduce a genuine change.
+func compositeReadBack() *resource {
+	ingress := []*svcapitypes.IPPermission{
+		// self-reference: AWS filled groupID (self) + owner userID
+		{FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				Description: aws.String("coredns"), GroupID: aws.String(testSelfID),
+				UserID: aws.String(testOwnerAcctID)}}},
+		// aggregated 443/tcp, CIDRs canonical and in reversed order
+		{FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			IPRanges: []*svcapitypes.IPRange{
+				{CIDRIP: aws.String("100.68.0.0/18")},
+				{CIDRIP: aws.String("10.0.0.0/20")}}},
+		// cross-SG reference: owner userID + derived read-only peer metadata
+		{FromPort: aws.Int64(8443), ToPort: aws.Int64(8443), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				GroupID: aws.String(testOtherID), UserID: aws.String(testOwnerAcctID),
+				VPCID: aws.String("vpc-peer-b"), PeeringStatus: aws.String("active"),
+				VPCPeeringConnectionID: aws.String("pcx-realvalue")}}},
+	}
+	egress := []*svcapitypes.IPPermission{
+		// all-protocol rule: ports dropped
+		{IPProtocol: aws.String("-1"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}}},
+		// protocol returned as name
+		{FromPort: aws.Int64(22), ToPort: aws.Int64(22), IPProtocol: aws.String("tcp"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/16")}}},
+	}
+	return mkResource(ingress, egress)
+}
+
+func TestCustomPostCompare_Composite_IngressAndEgress_NoDiff(t *testing.T) {
+	// A realistic resource stacking many normalisations on both lists must
+	// converge with zero delta on ingress AND egress in a single pass.
+	got := desiredLatestDelta(compositeSpec(), compositeReadBack())
+	assert.False(t, got.ing, "composite ingress normalisations must not diff")
+	assert.False(t, got.egr, "composite egress normalisations must not diff")
+}
+
+func TestCustomPostCompare_Composite_RealEgressChange_FiresEgressOnly(t *testing.T) {
+	// Same fully-normalised resource, but with one genuine change buried in
+	// the egress list (the 22/tcp rule's CIDR). The full path must still
+	// suppress the (unchanged) ingress and surface the real egress diff --
+	// the two lists are evaluated independently.
+	desired := compositeSpec()
+	latest := compositeReadBack()
+	latest.ko.Spec.EgressRules[1].IPRanges[0].CIDRIP = aws.String("10.1.0.0/16") // was 10.0.0.0/16
+
+	got := desiredLatestDelta(desired, latest)
+	assert.False(t, got.ing, "unchanged ingress must stay suppressed")
+	assert.True(t, got.egr, "a genuine egress CIDR change must produce a diff")
+}
+
+func TestCustomPostCompare_Composite_RealIngressChange_FiresIngressOnly(t *testing.T) {
+	// Symmetric to the above: a genuine change buried in the ingress list
+	// (the cross-SG reference now points at a different group) must surface on
+	// ingress while the fully-normalised egress stays suppressed.
+	desired := compositeSpec()
+	latest := compositeReadBack()
+	latest.ko.Spec.IngressRules[2].UserIDGroupPairs[0].GroupID = aws.String("sg-different0000")
+
+	got := desiredLatestDelta(desired, latest)
+	assert.True(t, got.ing, "a genuine ingress group reference change must produce a diff")
+	assert.False(t, got.egr, "unchanged egress must stay suppressed")
+}
