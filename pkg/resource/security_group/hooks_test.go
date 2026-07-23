@@ -817,6 +817,60 @@ func TestCustomPostCompare_GroupRefOnly_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "a spec-only groupRef must never produce a diff")
 }
 
+// TestCustomPostCompare_ReadOnlyPeerMetadata_NoDiff proves that VPCID,
+// PeeringStatus and VPCPeeringConnectionID never drive a delta. These are
+// read-only values EC2 derives from the referenced group (populated on a
+// cross-VPC peer read-back, absent on a same-VPC one) -- the authorize path
+// accepts and discards any client-supplied value. Neither an omitted spec
+// value nor a stale/mismatched one may churn against the AWS-filled read-back.
+func TestCustomPostCompare_ReadOnlyPeerMetadata_NoDiff(t *testing.T) {
+	// latest mirrors a cross-VPC peer reference as AWS returns it: GroupID +
+	// owner UserID plus the three derived read-only fields.
+	awsReadBack := func() []*svcapitypes.IPPermission {
+		return []*svcapitypes.IPPermission{{
+			FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				GroupID:                aws.String(testOtherID),
+				UserID:                 aws.String(testOwnerAcctID),
+				VPCID:                  aws.String("vpc-peer-b"),
+				PeeringStatus:          aws.String("active"),
+				VPCPeeringConnectionID: aws.String("pcx-realvalue"),
+			}},
+		}}
+	}
+
+	t.Run("spec omits the read-only fields", func(t *testing.T) {
+		desired := mkResource([]*svcapitypes.IPPermission{{
+			FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				GroupID: aws.String(testOtherID),
+			}},
+		}}, nil)
+		latest := mkResource(awsReadBack(), nil)
+
+		got := desiredLatestDelta(desired, latest)
+		assert.False(t, got.ing, "AWS-derived peer metadata absent from spec must not diff")
+	})
+
+	t.Run("spec carries stale/bogus values for all three", func(t *testing.T) {
+		// Even a spec value that disagrees with the AWS read-back must not
+		// churn: EC2 ignores these on authorize, so they carry no real intent.
+		desired := mkResource([]*svcapitypes.IPPermission{{
+			FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				GroupID:                aws.String(testOtherID),
+				VPCID:                  aws.String("vpc-STALEbogus"),
+				PeeringStatus:          aws.String("pending-acceptance"),
+				VPCPeeringConnectionID: aws.String("pcx-STALEbogus"),
+			}},
+		}}, nil)
+		latest := mkResource(awsReadBack(), nil)
+
+		got := desiredLatestDelta(desired, latest)
+		assert.False(t, got.ing, "stale spec peer metadata must not diff against AWS-derived values")
+	})
+}
+
 func TestCustomPostCompare_AllProtocolPorts_NoDiff(t *testing.T) {
 	desired := mkResource(nil, []*svcapitypes.IPPermission{{
 		IPProtocol: aws.String("-1"), FromPort: aws.Int64(0), ToPort: aws.Int64(0),
