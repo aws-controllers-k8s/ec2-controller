@@ -251,6 +251,12 @@ func customPostCompare(
 	if a == nil || b == nil || a.ko == nil || b.ko == nil {
 		return
 	}
+	// Rule canonicalisation needs the SG's ID and owner account, which are nil
+	// pre-create. Skip rather than emit an unreliable diff; the next reconcile
+	// recomputes it once the identity is known.
+	if !securityGroupIdentityKnown(a) || !securityGroupIdentityKnown(b) {
+		return
+	}
 	aIngress, aEgress := canonicalizeCopiedRuleLists(a)
 	bIngress, bEgress := canonicalizeCopiedRuleLists(b)
 	if !equality.Semantic.DeepEqual(aIngress, bIngress) {
@@ -261,27 +267,29 @@ func customPostCompare(
 	}
 }
 
+// securityGroupIdentityKnown reports whether the SG's ID and owner account are
+// populated -- both required for a meaningful rule delta, and only set
+// post-create.
+func securityGroupIdentityKnown(r *resource) bool {
+	return r != nil && r.ko != nil &&
+		r.ko.Status.ID != nil &&
+		r.ko.Status.ACKResourceMetadata != nil &&
+		r.ko.Status.ACKResourceMetadata.OwnerAccountID != nil
+}
+
 // canonicalizeCopiedRuleLists returns canonical *copies* of r's rule lists; r is
-// never mutated. Used only for delta comparison (customPostCompare). The sync
-// path intentionally does NOT use this -- it authorises/revokes the raw spec
-// rules so a canonicalisation defect can never alter what is sent to AWS.
+// never mutated. Used only for delta comparison, never the sync path (which
+// authorises/revokes the raw spec rules). Precondition (guaranteed by
+// customPostCompare's identity guard + Name being required): Status.ID,
+// OwnerAccountID and Spec.Name are all non-nil.
 func canonicalizeCopiedRuleLists(
 	r *resource,
 ) (ingress []*svcapitypes.IPPermission, egress []*svcapitypes.IPPermission) {
-	if r == nil || r.ko == nil {
-		return nil, nil
-	}
-	var selfID string
-	if r.ko.Status.ID != nil {
-		selfID = *r.ko.Status.ID
-	}
-	var ownerAccountID string
-	if r.ko.Status.ACKResourceMetadata != nil &&
-		r.ko.Status.ACKResourceMetadata.OwnerAccountID != nil {
-		ownerAccountID = string(*r.ko.Status.ACKResourceMetadata.OwnerAccountID)
-	}
-	ingress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.IngressRules), selfID, ownerAccountID)
-	egress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.EgressRules), selfID, ownerAccountID)
+	selfID := *r.ko.Status.ID
+	ownerAccountID := string(*r.ko.Status.ACKResourceMetadata.OwnerAccountID)
+	selfName := *r.ko.Spec.Name
+	ingress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.IngressRules), selfID, selfName, ownerAccountID)
+	egress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.EgressRules), selfID, selfName, ownerAccountID)
 	return ingress, egress
 }
 
@@ -304,6 +312,7 @@ func deepCopyRuleList(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermis
 func canonicalizeRuleList(
 	rules []*svcapitypes.IPPermission,
 	selfID string,
+	selfName string,
 	ownerAccountID string,
 ) []*svcapitypes.IPPermission {
 	if rules == nil {
@@ -351,7 +360,7 @@ func canonicalizeRuleList(
 			}
 		}
 		for _, pair := range rule.UserIDGroupPairs {
-			canonicalizeGroupPair(pair, selfID, ownerAccountID)
+			canonicalizeGroupPair(pair, selfID, selfName, ownerAccountID)
 		}
 	}
 
@@ -403,6 +412,7 @@ func canonicalizeRuleList(
 func canonicalizeGroupPair(
 	pair *svcapitypes.UserIDGroupPair,
 	selfID string,
+	selfName string,
 	ownerAccountID string,
 ) {
 	if pair == nil {
@@ -415,39 +425,29 @@ func canonicalizeGroupPair(
 	pair.GroupRef = nil
 	pair.VPCRef = nil
 
-	// VPCID, PeeringStatus and VPCPeeringConnectionID are read-only reference
-	// metadata EC2 derives from the referenced group -- not customer inputs. The
-	// authorize path ignores them, and DescribeSecurityGroups fills them in from
-	// the peer group itself: VPCID is set to the peer group's network only when
-	// it differs from the containing group's VPC (i.e. a cross-VPC reference),
-	// PeeringStatus/VPCPeeringConnectionID likewise. Because the spec cannot set
-	// them meaningfully, an omitted VPCID would otherwise churn forever against
-	// the AWS-filled value on a cross-VPC peer reference. Clear them on the
-	// canonical copy (applied to both desired and latest) so they never drive a
-	// delta. The sync path authorises/revokes the raw spec rules, so this never
-	// affects what is sent to AWS.
+	// VPCID, PeeringStatus and VPCPeeringConnectionID are read-only: EC2 derives
+	// them from the referenced group and ignores any spec value (verified against
+	// the live API), so clear them on the copy to keep an AWS-filled cross-VPC
+	// read-back from churning against an omitted spec value.
 	pair.VPCID = nil
 	pair.PeeringStatus = nil
 	pair.VPCPeeringConnectionID = nil
 
-	// Self-reference: GroupID == selfID, or all group identifiers omitted (the
-	// spec shorthand, since the ID is unknown until AWS assigns it). AWS fills
-	// GroupID/UserID/GroupName on read-back, so canonicalise to {GroupID: selfID}.
-	isSelf := (pair.GroupID != nil && selfID != "" && *pair.GroupID == selfID) ||
-		(pair.GroupID == nil && pair.GroupName == nil)
-	if isSelf {
-		if selfID != "" {
-			id := selfID
-			pair.GroupID = &id
-		}
+	// Self-reference: AWS returns the SG's own GroupID/GroupName on read-back
+	// while the spec shorthand omits the group. Strip a self GroupID and a
+	// GroupName matching the SG's own name so both sides converge. A non-matching
+	// GroupName is a real value (by-name cross-ref, or user error) and is kept so
+	// a genuine diff still surfaces.
+	if pair.GroupID != nil && *pair.GroupID == selfID {
+		pair.GroupID = nil
+	}
+	if pair.GroupName != nil && *pair.GroupName == selfName {
 		pair.GroupName = nil
-		pair.UserID = nil
-		return
 	}
 	// AWS fills UserID with the owner account for same-account grants; clear it.
 	// Cross-account grants (UserID != owner) are kept -- the account identifies
 	// the referenced group.
-	if pair.UserID != nil && ownerAccountID != "" && *pair.UserID == ownerAccountID {
+	if pair.UserID != nil && *pair.UserID == ownerAccountID {
 		pair.UserID = nil
 	}
 }
