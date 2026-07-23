@@ -415,6 +415,21 @@ func canonicalizeGroupPair(
 	pair.GroupRef = nil
 	pair.VPCRef = nil
 
+	// VPCID, PeeringStatus and VPCPeeringConnectionID are read-only reference
+	// metadata EC2 derives from the referenced group -- not customer inputs. The
+	// authorize path ignores them, and DescribeSecurityGroups fills them in from
+	// the peer group itself: VPCID is set to the peer group's network only when
+	// it differs from the containing group's VPC (i.e. a cross-VPC reference),
+	// PeeringStatus/VPCPeeringConnectionID likewise. Because the spec cannot set
+	// them meaningfully, an omitted VPCID would otherwise churn forever against
+	// the AWS-filled value on a cross-VPC peer reference. Clear them on the
+	// canonical copy (applied to both desired and latest) so they never drive a
+	// delta. The sync path authorises/revokes the raw spec rules, so this never
+	// affects what is sent to AWS.
+	pair.VPCID = nil
+	pair.PeeringStatus = nil
+	pair.VPCPeeringConnectionID = nil
+
 	// Self-reference: GroupID == selfID, or all group identifiers omitted (the
 	// spec shorthand, since the ID is unknown until AWS assigns it). AWS fills
 	// GroupID/UserID/GroupName on read-back, so canonicalise to {GroupID: selfID}.

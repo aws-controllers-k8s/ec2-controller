@@ -160,17 +160,24 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 		assert.Nil(t, p.GroupRef)
 	})
 
-	t.Run("VPCRef cleared, VPCID preserved on a cross-SG pair", func(t *testing.T) {
-		// VPCRef is a spec-only reference wrapper AWS never returns; VPCID is
-		// the concrete value AWS does return on read-back and must survive.
+	t.Run("read-only reference metadata cleared on a cross-SG pair", func(t *testing.T) {
+		// VPCID, PeeringStatus and VPCPeeringConnectionID are read-only values
+		// EC2 derives from the referenced group (VPCID is filled only for a
+		// cross-VPC peer). The customer cannot set them meaningfully, so they
+		// must never drive a delta -- clear them alongside the VPCRef wrapper.
 		p := &svcapitypes.UserIDGroupPair{
-			GroupID: aws.String(testOtherID),
-			VPCID:   aws.String("vpc-123"),
-			VPCRef:  groupRef("my-vpc"),
+			GroupID:                aws.String(testOtherID),
+			VPCID:                  aws.String("vpc-123"),
+			VPCRef:                 groupRef("my-vpc"),
+			PeeringStatus:          aws.String("active"),
+			VPCPeeringConnectionID: aws.String("pcx-123"),
 		}
 		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Equal(t, testOtherID, *p.GroupID, "resolved GroupID is preserved")
 		assert.Nil(t, p.VPCRef, "VPCRef must be cleared to match AWS read-back form")
-		assert.Equal(t, "vpc-123", *p.VPCID, "concrete VPCID must be preserved")
+		assert.Nil(t, p.VPCID, "server-derived VPCID must be cleared")
+		assert.Nil(t, p.PeeringStatus, "read-only PeeringStatus must be cleared")
+		assert.Nil(t, p.VPCPeeringConnectionID, "read-only VPCPeeringConnectionID must be cleared")
 	})
 
 	t.Run("VPCRef cleared on a self-ref pair", func(t *testing.T) {
