@@ -963,8 +963,15 @@ class TestSecurityGroup:
         # non-standard (ESP/50) egress. It confirms the combined create has no
         # perpetual diff, then applies an update that touches several canonical
         # paths simultaneously and verifies the edits land while the untouched
-        # rules do not churn. (Supersedes the narrower self-ref-only port-change
-        # test; the self-ref port change is retained as one of the paths.)
+        # rules survive intact. (Supersedes the narrower self-ref-only
+        # port-change test; the self-ref port change is retained as one of the
+        # paths.)
+        #
+        # NOTE: sync operates on the raw spec rules, so a non-canonically-spelled
+        # untouched rule may be revoked and re-authorized (its ruleID churns)
+        # during an update; it still ends up present and correct. The invariant
+        # asserted here is "not lost", not "same ruleID". Steady-state no-churn
+        # (no update pending) is covered by _assert_no_perpetual_diff.
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
@@ -1005,7 +1012,7 @@ class TestSecurityGroup:
         #   (protocol-notation + CIDR canon; canonicalises to 192.168.5.0/24)
         # icmpv6 and the two aggregation grants are repeated unchanged; egress is
         # omitted from the merge patch so it stays put -- together verifying those
-        # paths neither get lost nor churn while other rules change.
+        # paths are not lost while other rules change.
         patch = {
             "spec": {
                 "ingressRules": [

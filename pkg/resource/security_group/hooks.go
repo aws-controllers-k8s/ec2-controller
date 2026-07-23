@@ -268,8 +268,9 @@ func customPostCompare(
 }
 
 // canonicalizeCopiedRuleLists returns canonical *copies* of r's rule lists; r is
-// never mutated. Used for comparison (customPostCompare) and to build AWS
-// Authorize/Revoke inputs (syncSGRules).
+// never mutated. Used only for delta comparison (customPostCompare). The sync
+// path intentionally does NOT use this -- it authorises/revokes the raw spec
+// rules so a canonicalisation defect can never alter what is sent to AWS.
 func canonicalizeCopiedRuleLists(
 	r *resource,
 ) (ingress []*svcapitypes.IPPermission, egress []*svcapitypes.IPPermission) {
@@ -535,40 +536,38 @@ func (rm *resourceManager) syncSGRules(
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
 
-	// Compare and authorise canonical copies so server-side normalisation never
-	// re-authorises an equivalent rule, without mutating desired/latest (and so
-	// the persisted Spec).
-	desiredIngressRules, desiredEgressRules := canonicalizeCopiedRuleLists(desired)
-	var latestIngressRules, latestEgressRules []*svcapitypes.IPPermission
-	if latest != nil {
-		latestIngressRules, latestEgressRules = canonicalizeCopiedRuleLists(latest)
-	}
-
+	// The sync path deliberately matches and authorises/revokes the RAW spec
+	// rules, never canonicalised copies. Canonicalisation lives only in the
+	// delta (customPostCompare): the canonical delta gates whether sync fires
+	// and converges once the state matches, so a canonicalisation defect can, at
+	// worst, mis-scope which rules churn -- it can never change the rule content
+	// sent to AWS. Keeping the raw spec here means the values submitted to
+	// Authorize/Revoke are always exactly what the user declared (or what AWS
+	// itself returned), which AWS then normalises server-side.
 	toAddIngress := []*svcapitypes.IPPermission{}
 	toAddEgress := []*svcapitypes.IPPermission{}
 	toDeleteIngress := []*svcapitypes.IPPermission{}
 	toDeleteEgress := []*svcapitypes.IPPermission{}
-
-	for _, desiredIngress := range desiredIngressRules {
-		if latest == nil || !containsRule(latestIngressRules, desiredIngress) {
+	for _, desiredIngress := range desired.ko.Spec.IngressRules {
+		if latest == nil || !containsRule(latest.ko.Spec.IngressRules, desiredIngress) {
 			// a desired rule is not in the latest resource; therefore, create
 			toAddIngress = append(toAddIngress, desiredIngress)
 		}
 	}
-	for _, desiredEgress := range desiredEgressRules {
-		if latest == nil || !containsRule(latestEgressRules, desiredEgress) {
+	for _, desiredEgress := range desired.ko.Spec.EgressRules {
+		if latest == nil || !containsRule(latest.ko.Spec.EgressRules, desiredEgress) {
 			toAddEgress = append(toAddEgress, desiredEgress)
 		}
 	}
 	if latest != nil {
-		for _, latestIngress := range latestIngressRules {
-			if !containsRule(desiredIngressRules, latestIngress) {
+		for _, latestIngress := range latest.ko.Spec.IngressRules {
+			if !containsRule(desired.ko.Spec.IngressRules, latestIngress) {
 				// a rule is in latest resource, but not in desired resource; therefore, delete
 				toDeleteIngress = append(toDeleteIngress, latestIngress)
 			}
 		}
-		for _, latestEgress := range latestEgressRules {
-			if !containsRule(desiredEgressRules, latestEgress) {
+		for _, latestEgress := range latest.ko.Spec.EgressRules {
+			if !containsRule(desired.ko.Spec.EgressRules, latestEgress) {
 				toDeleteEgress = append(toDeleteEgress, latestEgress)
 			}
 		}
