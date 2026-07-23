@@ -596,7 +596,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 }
 
 // -----------------------------------------------------------------------------
-// canonicalizeCIDR (direct port of EC2-NM-Common CidrBlock.canonicalizeAddress)
+// canonicalizeCIDR
 // -----------------------------------------------------------------------------
 
 func TestCanonicalizeCIDR(t *testing.T) {
@@ -614,7 +614,7 @@ func TestCanonicalizeCIDR(t *testing.T) {
 		// dropped -- the RFC 5952 form AWS returns on read-back.
 		{"IPv6 host bits masked and normalized", aws.String("2001:DB8:abcd:0012::1/64"), aws.String("2001:db8:abcd:12::/64")},
 		{"IPv6 already canonical", aws.String("2600:1f16::/48"), aws.String("2600:1f16::/48")},
-		// The backend rejects a prefix longer than the address; we leave it
+		// AWS rejects a prefix longer than the address; we leave it
 		// untouched rather than emit a bogus network.
 		{"IPv4 prefix too long passes through", aws.String("10.0.0.0/40"), aws.String("10.0.0.0/40")},
 		{"IPv6 prefix too long passes through", aws.String("2001:db8::/129"), aws.String("2001:db8::/129")},
@@ -644,39 +644,37 @@ func TestCanonicalizeCIDR(t *testing.T) {
 	})
 }
 
-// TestCanonicalizeCIDR_BackendParityVectors reuses the boundary vectors from the
-// EC2 backend's own unit test, com.amazon.ec2.nm.TestCidrBlock#testCanonicalizing
-// (and its isValidAndCanonical* cases), in package EC2-NM-Common. The backend
-// tests parseAsCanonical, which *rejects* a non-canonical CIDR; canonicalizeCIDR
-// instead *rewrites* it to the canonical form, so each backend "not canonical"
-// case becomes an input->expected-network assertion here. These vectors exercise
-// the partial-byte mask at the /7, /8, /9, /31 and /127 boundaries -- the part of
-// the ported CidrBlock.canonicalizeAddress loop most prone to off-by-one bugs.
-func TestCanonicalizeCIDR_BackendParityVectors(t *testing.T) {
+// TestCanonicalizeCIDR_BoundaryVectors exercises the partial-byte network mask
+// at the /7, /8, /9, /31 and /127 prefix boundaries -- the part of the
+// canonicalizeCIDR mask loop most prone to off-by-one bugs. Each case pairs a
+// non-canonical input (one that carries host bits, which AWS rejects on input)
+// with the canonical network canonicalizeCIDR rewrites it to, alongside the
+// already-canonical form that must pass through unchanged.
+func TestCanonicalizeCIDR_BoundaryVectors(t *testing.T) {
 	cases := []struct {
 		in   string
 		want string
 	}{
-		// testCanonicalizing: IPv6 /8 boundary (first byte only).
-		{"ff10::/8", "ff00::/8"}, // backend rejects as non-canonical
-		{"ff00::/8", "ff00::/8"}, // backend accepts as canonical
-		// testCanonicalizing: IPv6 /7 boundary (first byte mask 0xfe).
-		{"ff00::/7", "fe00::/7"}, // backend rejects
-		{"fe00::/7", "fe00::/7"}, // backend accepts
-		// testCanonicalizing: IPv4 /9 boundary (second byte mask 0x80).
-		{"10.64.0.0/9", "10.0.0.0/9"},    // backend rejects
-		{"10.128.0.0/9", "10.128.0.0/9"}, // backend accepts
-		// testCanonicalizing: IPv6 /8 with a host bit in the last hextet.
-		{"::1/8", "::/8"}, // backend rejects
-		{"::/8", "::/8"},  // backend accepts
-		// isValidAndCanonicalIpv4: /31 boundary (last byte mask 0xfe).
-		{"255.255.255.255/31", "255.255.255.254/31"}, // backend rejects
-		{"0.0.0.0/0", "0.0.0.0/0"},                   // backend accepts
-		{"255.255.255.255/32", "255.255.255.255/32"}, // backend accepts
-		// isValidAndCanonicalIpv6: /127 boundary and a canonical /64.
-		{"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/127", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/127"}, // backend rejects
-		{"ffff:ffff:ffff:ffff::/64", "ffff:ffff:ffff:ffff::/64"},                                       // backend accepts
-		{"6be8:7177:fd47:df14:f49b:a890:3a67:8000/113", "6be8:7177:fd47:df14:f49b:a890:3a67:8000/113"}, // backend accepts (/113 boundary)
+		// IPv6 /8 boundary (first byte only).
+		{"ff10::/8", "ff00::/8"}, // AWS rejects as non-canonical
+		{"ff00::/8", "ff00::/8"}, // AWS accepts as canonical
+		// IPv6 /7 boundary (first byte mask 0xfe).
+		{"ff00::/7", "fe00::/7"}, // AWS rejects
+		{"fe00::/7", "fe00::/7"}, // AWS accepts
+		// IPv4 /9 boundary (second byte mask 0x80).
+		{"10.64.0.0/9", "10.0.0.0/9"},    // AWS rejects
+		{"10.128.0.0/9", "10.128.0.0/9"}, // AWS accepts
+		// IPv6 /8 with a host bit in the last hextet.
+		{"::1/8", "::/8"}, // AWS rejects
+		{"::/8", "::/8"},  // AWS accepts
+		// IPv4 /31 boundary (last byte mask 0xfe).
+		{"255.255.255.255/31", "255.255.255.254/31"}, // AWS rejects
+		{"0.0.0.0/0", "0.0.0.0/0"},                   // AWS accepts
+		{"255.255.255.255/32", "255.255.255.255/32"}, // AWS accepts
+		// IPv6 /127 boundary and a canonical /64.
+		{"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/127", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/127"}, // AWS rejects
+		{"ffff:ffff:ffff:ffff::/64", "ffff:ffff:ffff:ffff::/64"},                                       // AWS accepts
+		{"6be8:7177:fd47:df14:f49b:a890:3a67:8000/113", "6be8:7177:fd47:df14:f49b:a890:3a67:8000/113"}, // AWS accepts (/113 boundary)
 	}
 	for _, tc := range cases {
 		t.Run(tc.in, func(t *testing.T) {

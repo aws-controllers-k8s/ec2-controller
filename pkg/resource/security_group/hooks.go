@@ -135,19 +135,17 @@ func (rm *resourceManager) referencesResolved(
 }
 
 // icmpv6Protocol is the canonical protocol name canonicalizeProtocol emits for
-// protocol 58. Unlike icmp, icmpv6 does not require an ICMP type/code (it is not
-// in the backend's PROTOCOLS_THAT_MUST_RECEIVE_ICMP_OPTION set), so the spec may
-// omit fromPort/toPort while AWS returns the "all types and codes" wildcard as
-// -1/-1 on read-back.
+// protocol 58. Unlike icmp, icmpv6 does not require an ICMP type/code, so the
+// spec may omit fromPort/toPort while AWS returns the "all types and codes"
+// wildcard as -1/-1 on read-back.
 const icmpv6Protocol = "icmpv6"
 
 // portCarryingProtocols are the protocols EC2 keeps a port range for (or, for
-// ICMP, an overloaded type/code) on read-back. This mirrors the backend's
-// PROTOCOLS_THAT_CAN_RECEIVE_PORT_RANGE_OPTION_FROM_PAPERWORK set in EC2-NM-Frontend's
-// TypeSecurityGroupTrafficFilter. For every other protocol -- "-1" (all traffic)
-// and any other IP protocol number such as 50 (ESP) or 47 (GRE) -- AWS omits
-// fromPort/toPort on read-back. Keyed by the canonical name canonicalizeProtocol
-// emits (numeric 6/17/1/58 are mapped to tcp/udp/icmp/icmpv6 first).
+// ICMP, an overloaded type/code) on read-back. For every other protocol -- "-1"
+// (all traffic) and any other IP protocol number such as 50 (ESP) or 47 (GRE)
+// -- AWS omits fromPort/toPort on read-back. Keyed by the canonical name
+// canonicalizeProtocol emits (numeric 6/17/1/58 are mapped to tcp/udp/icmp/icmpv6
+// first).
 var portCarryingProtocols = map[string]struct{}{
 	"tcp":          {},
 	"udp":          {},
@@ -177,22 +175,19 @@ func canonicalizeProtocol(proto *string) *string {
 	return proto
 }
 
-// canonicalizeCIDR rewrites a CIDR to the exact network form the EC2 backend
-// stores. It is a direct port of com.amazon.ec2.nm.CidrBlock.canonicalizeAddress
-// (package EC2-NM-Common, the class the EC2 control plane uses): a network mask
-// is built one byte at a time from the prefix length and ANDed with the address,
-// masking off every host bit. The masked address is rendered in the same text
-// form AWS returns on read-back -- dotted-quad for IPv4, RFC 5952 lowercase
-// zero-compressed for IPv6 (matching the backend's Guava
-// InetAddresses.toAddrString) -- so "100.68.0.18/18" -> "100.68.0.0/18" and
-// "2001:DB8:abcd:0012::1/64" -> "2001:db8:abcd:12::/64".
+// canonicalizeCIDR rewrites a CIDR to the exact network form AWS stores and
+// returns on read-back: a network mask is built one byte at a time from the
+// prefix length and ANDed with the address, masking off every host bit. The
+// masked address is rendered in the same text form AWS returns -- dotted-quad
+// for IPv4, RFC 5952 lowercase zero-compressed for IPv6 -- so "100.68.0.18/18"
+// -> "100.68.0.0/18" and "2001:DB8:abcd:0012::1/64" -> "2001:db8:abcd:12::/64".
 //
-// Applying the backend's own conversion here, before both the delta comparison
-// and the Authorize/Revoke request, is what stops the spurious diff: the desired
-// spec form and the AWS read-back form collapse to the identical network.
+// Applying this conversion before the delta comparison is what stops the
+// spurious diff: the desired spec form and the AWS read-back form collapse to
+// the identical network.
 //
 // A value that is not a well-formed CIDR -- or whose prefix is longer than the
-// address, which the backend rejects -- passes through unchanged.
+// address, which AWS rejects -- passes through unchanged.
 func canonicalizeCIDR(cidr *string) *string {
 	if cidr == nil {
 		return nil
@@ -207,7 +202,7 @@ func canonicalizeCIDR(cidr *string) *string {
 		return cidr
 	}
 
-	// Match the backend's byte layout: 4 bytes for IPv4, 16 for IPv6.
+	// Use the canonical byte layout: 4 bytes for IPv4, 16 for IPv6.
 	addr := ip.To4()
 	if addr == nil {
 		addr = ip.To16()
@@ -216,9 +211,8 @@ func canonicalizeCIDR(cidr *string) *string {
 		return cidr
 	}
 
-	// Build the network mask exactly as CidrBlock.canonicalizeAddress does --
-	// one byte at a time -- and AND it into the address. Bytes past the prefix
-	// stay zero, which is the host-bit masking.
+	// Build the network mask one byte at a time and AND it into the address.
+	// Bytes past the prefix stay zero, which is the host-bit masking.
 	remaining := prefixLength
 	network := make(net.IP, len(addr))
 	for i := 0; i < len(addr) && remaining > 0; i++ {
@@ -233,7 +227,7 @@ func canonicalizeCIDR(cidr *string) *string {
 		network[i] = addr[i] & maskByte
 	}
 	// remaining != 0 means the prefix is longer than the address (e.g. /40 on an
-	// IPv4 address); the backend treats this as malformed, so leave it untouched.
+	// IPv4 address); AWS treats this as malformed, so leave it untouched.
 	if remaining != 0 {
 		return cidr
 	}

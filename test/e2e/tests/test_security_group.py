@@ -814,7 +814,7 @@ class TestSecurityGroup:
         # Protocol 50 has no well-known name, so AWS returns it as the number.
         esp = [e for e in sg["IpPermissionsEgress"] if e.get("IpProtocol") == "50"]
         assert len(esp) == 1, f"expected one ESP egress rule, got {sg['IpPermissionsEgress']}"
-        # The backend contract this fix depends on: ports are omitted for
+        # The AWS behavior this fix depends on: ports are omitted for
         # protocols outside {tcp, udp, icmp, icmpv6}.
         assert "FromPort" not in esp[0]
         assert "ToPort" not in esp[0]
@@ -828,13 +828,11 @@ class TestSecurityGroup:
 
     @pytest.mark.resource_data({"resource_file": "security_group_icmpv6_no_typecode"})
     def test_icmpv6_no_typecode_no_perpetual_diff(self, ec2_client, simple_security_group):
-        # Isolated: icmpv6 does not require a type/code (it is excluded from the
-        # backend's must-receive-type/code set), so the spec may omit
-        # fromPort/toPort. The EC2 backend treats protocol 58 with no type/code
-        # as the "all types and codes" wildcard and returns it as
-        # FromPort=-1/ToPort=-1 on read-back -- a path distinct from the "-1"
-        # all-protocols port drop, since ICMP/ICMPv6 overload the ports as
-        # type/code.
+        # Isolated: icmpv6 does not require a type/code, so the spec may omit
+        # fromPort/toPort. AWS treats protocol 58 with no type/code as the "all
+        # types and codes" wildcard and returns it as FromPort=-1/ToPort=-1 on
+        # read-back -- a path distinct from the "-1" all-protocols port drop,
+        # since ICMP/ICMPv6 overload the ports as type/code.
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
@@ -844,10 +842,9 @@ class TestSecurityGroup:
         # AWS may report protocol 58 as the name "icmpv6" or the number "58".
         icmpv6 = [p for p in sg["IpPermissions"] if p.get("IpProtocol") in ("icmpv6", "58")]
         assert len(icmpv6) == 1, f"expected one icmpv6 rule, got {sg['IpPermissions']}"
-        # Document the backend contract this fix depends on: the omitted
-        # type/code reads back as the -1/-1 wildcard. Canonicalisation must
-        # collapse it to the omitted spec form, or the rule churns every
-        # reconcile.
+        # Document the AWS behavior this fix depends on: the omitted type/code
+        # reads back as the -1/-1 wildcard. Canonicalisation must collapse it to
+        # the omitted spec form, or the rule churns every reconcile.
         assert icmpv6[0].get("FromPort") == -1
         assert icmpv6[0].get("ToPort") == -1
 
