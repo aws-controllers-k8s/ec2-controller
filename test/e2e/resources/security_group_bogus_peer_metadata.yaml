@@ -1,0 +1,23 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg with bogus read-only peer metadata
+  vpcID: $VPC_ID
+  ingressRules:
+    # Self-reference by omitting groupID (the aws-controllers-k8s/community#2822
+    # pattern), but carrying BOGUS read-only peer metadata: vpcID, peeringStatus
+    # and vpcPeeringConnectionID. EC2 accepts these on authorize without error,
+    # silently discards them, and derives the real values from the referenced
+    # group -- so they never match what DescribeSecurityGroups returns. A correct
+    # controller canonicalizes them out of the delta and must not churn the rule.
+    - fromPort: 443
+      toPort: 443
+      ipProtocol: tcp
+      userIDGroupPairs:
+        - description: self-ref with bogus peer metadata
+          vpcID: vpc-00000000000bogus0
+          peeringStatus: made-up-nonsense
+          vpcPeeringConnectionID: pcx-00000000000bogus0

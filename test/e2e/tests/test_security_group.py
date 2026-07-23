@@ -776,6 +776,52 @@ class TestSecurityGroup:
             k8s.delete_custom_resource(ref)
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
+    @pytest.mark.resource_data({"resource_file": "security_group_bogus_peer_metadata"})
+    def test_bogus_peer_metadata_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # vpcID, peeringStatus and vpcPeeringConnectionID on a userIDGroupPair
+        # are read-only values EC2 derives from the referenced group. The spec
+        # here supplies deliberately BOGUS values for all three on a self-ref
+        # rule; EC2 discards them on authorize (verified empirically) and returns
+        # its own derived form, so the spec can never match the read-back. A
+        # correct controller canonicalizes them out of the delta -- the rule must
+        # not churn, and the user's (bogus) spec values must survive unmutated.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        sg = ec2_validator.get_security_group(resource_id)
+
+        # AWS resolved the omitted-groupID pair to the SG itself and dropped all
+        # three bogus read-only fields (same-VPC self-ref returns none of them).
+        ing = [p for p in sg["IpPermissions"] if p.get("FromPort") == 443]
+        assert len(ing) == 1, f"expected one tcp/443 rule, got {sg['IpPermissions']}"
+        pairs = ing[0]["UserIdGroupPairs"]
+        assert len(pairs) == 1
+        pair = pairs[0]
+        assert pair["GroupId"] == resource_id, "self-ref must resolve to the SG's own id"
+        assert "VpcId" not in pair, f"AWS must not echo the bogus vpcID: {pair}"
+        assert "PeeringStatus" not in pair, f"AWS must not echo the bogus peeringStatus: {pair}"
+        assert "VpcPeeringConnectionId" not in pair, (
+            f"AWS must not echo the bogus vpcPeeringConnectionID: {pair}"
+        )
+
+        # The decisive assertion: despite the spec values never matching the AWS
+        # read-back, a forced reconcile must not re-authorize the rule.
+        _assert_no_perpetual_diff(ref)
+
+        # Canonicalization runs on copies, so the user's bogus values must remain
+        # in the persisted spec (no silent mutation of user input).
+        spec_pairs = k8s.get_resource(ref)["spec"]["ingressRules"][0]["userIDGroupPairs"]
+        assert spec_pairs[0]["vpcID"] == "vpc-00000000000bogus0"
+        assert spec_pairs[0]["peeringStatus"] == "made-up-nonsense"
+        assert spec_pairs[0]["vpcPeeringConnectionID"] == "pcx-00000000000bogus0"
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
     @pytest.mark.resource_data({"resource_file": "security_group_allproto"})
     def test_all_protocol_ports_no_perpetual_diff(self, ec2_client, simple_security_group):
         # Isolated: AWS drops the port range for an all-protocols ("-1") rule.
