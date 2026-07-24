@@ -69,16 +69,15 @@ func mkResource(ingress, egress []*svcapitypes.IPPermission) *resource {
 
 func TestCanonicalizeGroupPair(t *testing.T) {
 	t.Run("nil pair does not panic", func(t *testing.T) {
-		assert.NotPanics(t, func() { canonicalizeGroupPair(nil, testSelfID, testSelfName, testOwnerAcctID) })
+		assert.NotPanics(t, func() { canonicalizeGroupPair(nil, testSelfID, testOwnerAcctID) })
 	})
 
 	t.Run("self-ref by explicit self GroupID: stripped group-id-less", func(t *testing.T) {
 		p := &svcapitypes.UserIDGroupPair{
-			GroupID:   aws.String(testSelfID),
-			UserID:    aws.String(testOwnerAcctID),
-			GroupName: aws.String(testSelfName),
+			GroupID: aws.String(testSelfID),
+			UserID:  aws.String(testOwnerAcctID),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID, "self GroupID is stripped so it matches the omitted spec form")
 		assert.Nil(t, p.UserID)
 		assert.Nil(t, p.GroupName)
@@ -90,7 +89,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			Description: aws.String("coredns"),
 			UserID:      aws.String(testOwnerAcctID),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		// The #2822 fix: the omitted-groupID spec form must match the AWS
 		// read-back, whose self GroupID is stripped to nil on the latest side.
 		assert.Nil(t, p.GroupID)
@@ -103,7 +102,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID:  aws.String(testSelfID),
 			GroupRef: groupRef("myself"),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID, "self GroupID stripped")
 		assert.Nil(t, p.GroupRef, "GroupRef must be cleared to match AWS read-back form")
 	})
@@ -115,7 +114,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID:  aws.String(testOtherID),
 			GroupRef: groupRef("other"),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupRef, "GroupRef must never survive into the delta")
 		assert.Equal(t, testOtherID, *p.GroupID, "resolved GroupID is preserved")
 	})
@@ -125,7 +124,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 		// stripped. Guarding an unresolved reference is referencesResolved's
 		// job, not this function's.
 		p := &svcapitypes.UserIDGroupPair{GroupRef: groupRef("not-yet-created")}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupRef)
 		assert.Nil(t, p.GroupID)
 	})
@@ -135,7 +134,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID: aws.String(testOtherID),
 			UserID:  aws.String(testOwnerAcctID),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Equal(t, testOtherID, *p.GroupID)
 		assert.Nil(t, p.UserID, "server-filled owner account cleared")
 	})
@@ -145,7 +144,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID: aws.String(testOtherID),
 			UserID:  aws.String(testPeerAcctID),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Equal(t, testOtherID, *p.GroupID)
 		assert.Equal(t, testPeerAcctID, *p.UserID, "cross-account UserID must be preserved")
 	})
@@ -155,7 +154,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID:  aws.String(testOtherID),
 			GroupRef: groupRef("other"),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Equal(t, testOtherID, *p.GroupID)
 		assert.Nil(t, p.GroupRef)
 	})
@@ -172,7 +171,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			PeeringStatus:          aws.String("active"),
 			VPCPeeringConnectionID: aws.String("pcx-123"),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Equal(t, testOtherID, *p.GroupID, "resolved GroupID is preserved")
 		assert.Nil(t, p.VPCRef, "VPCRef must be cleared to match AWS read-back form")
 		assert.Nil(t, p.VPCID, "server-derived VPCID must be cleared")
@@ -185,23 +184,24 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID: aws.String(testSelfID),
 			VPCRef:  groupRef("my-vpc"),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID, "self GroupID stripped")
 		assert.Nil(t, p.VPCRef, "VPCRef must be cleared on a self-reference too")
 	})
 
 	t.Run("by-name reference to another SG (non-matching name) is preserved", func(t *testing.T) {
 		p := &svcapitypes.UserIDGroupPair{GroupName: aws.String("some-named-sg")}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID, "a by-name pair must not be canonicalised to selfID")
 		assert.Equal(t, "some-named-sg", *p.GroupName, "a non-self GroupName must survive")
 	})
 
-	t.Run("self-ref by GroupName matching own name is stripped", func(t *testing.T) {
-		// A self-reference expressed purely by the SG's own name (no GroupID).
+	t.Run("self-ref by GroupName matching own name is left untouched (name refs not canonicalized)", func(t *testing.T) {
+		// GroupName is never canonicalized (see canonicalizeGroupPair), so even a
+		// self-referencing name is preserved rather than stripped.
 		p := &svcapitypes.UserIDGroupPair{GroupName: aws.String(testSelfName)}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
-		assert.Nil(t, p.GroupName, "a GroupName matching the SG's own name is stripped")
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
+		assert.Equal(t, testSelfName, *p.GroupName, "GroupName is preserved, not stripped")
 		assert.Nil(t, p.GroupID)
 	})
 
@@ -212,7 +212,7 @@ func TestCanonicalizeGroupPair(t *testing.T) {
 			GroupID:   aws.String(testSelfID),
 			GroupName: aws.String("some-other-name"),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID, "self GroupID stripped")
 		assert.Equal(t, "some-other-name", *p.GroupName, "a non-self GroupName must not be swallowed")
 	})
@@ -233,7 +233,7 @@ func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
 			GroupID: aws.String(testSelfID),
 			UserID:  aws.String(testPeerAcctID),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID)
 		assert.Equal(t, testPeerAcctID, *p.UserID)
 	})
@@ -241,7 +241,7 @@ func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
 	t.Run("omitted group + foreign UserID: stays group-id-less, UserID kept", func(t *testing.T) {
 		// {UserID: foreign} with no group is invalid to AWS (MissingParameter).
 		p := &svcapitypes.UserIDGroupPair{UserID: aws.String(testPeerAcctID)}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Nil(t, p.GroupID)
 		assert.Equal(t, testPeerAcctID, *p.UserID)
 	})
@@ -251,7 +251,7 @@ func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
 			GroupID: aws.String(testOtherID),
 			UserID:  aws.String(testPeerAcctID),
 		}
-		canonicalizeGroupPair(p, testSelfID, testSelfName, testOwnerAcctID)
+		canonicalizeGroupPair(p, testSelfID, testOwnerAcctID)
 		assert.Equal(t, testOtherID, *p.GroupID)
 		assert.Equal(t, testPeerAcctID, *p.UserID,
 			"a legitimate cross-account reference (GroupId=peer) must be preserved")
@@ -264,7 +264,7 @@ func TestCanonicalizeGroupPair_InconsistentInputs(t *testing.T) {
 
 func TestCanonicalizeRuleList(t *testing.T) {
 	t.Run("nil stays nil (absent == empty)", func(t *testing.T) {
-		assert.Nil(t, canonicalizeRuleList(nil, testSelfID, testSelfName, testOwnerAcctID))
+		assert.Nil(t, canonicalizeRuleList(nil, testSelfID, testOwnerAcctID))
 	})
 
 	t.Run("drops port range for all-protocol -1 rules", func(t *testing.T) {
@@ -273,7 +273,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			FromPort:   aws.Int64(0),
 			ToPort:     aws.Int64(0),
 			IPRanges:   []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1)
 		assert.Nil(t, out[0].FromPort)
 		assert.Nil(t, out[0].ToPort)
@@ -288,7 +288,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/8")}}},
 			{IPProtocol: aws.String("47"), FromPort: aws.Int64(0), ToPort: aws.Int64(0),
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("192.168.0.0/16")}}},
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 2)
 		for _, r := range out {
 			assert.Nil(t, r.FromPort, "protocol %s must drop fromPort", *r.IPProtocol)
@@ -303,11 +303,11 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		spec := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("50"), FromPort: aws.Int64(-1), ToPort: aws.Int64(-1),
 			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/8")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		readBack := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("50"),
 			IPRanges:   []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/8")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Equal(t, readBack, spec, "ported spec and portless read-back must canonicalise equal")
 	})
 
@@ -319,7 +319,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			{IPProtocol: aws.String("58")},
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(80), ToPort: aws.Int64(80)},
 			{IPProtocol: aws.String("47")}, // GRE: not well-known, kept as number
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		got := map[string]bool{}
 		for _, r := range out {
 			got[*r.IPProtocol] = true
@@ -339,7 +339,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/20")}}},
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("192.168.0.0/16")}}},
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1, "6 and tcp on the same port are the same protocol")
 	})
 
@@ -348,7 +348,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 			IPRanges:   []*svcapitypes.IPRange{{CIDRIP: aws.String("100.68.0.18/18")}},
 			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("2001:DB8:abcd:0012::1/64")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Equal(t, "100.68.0.0/18", *out[0].IPRanges[0].CIDRIP)
 		assert.Equal(t, "2001:db8:abcd:12::/64", *out[0].IPv6Ranges[0].CIDRIPv6)
 	})
@@ -359,11 +359,11 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		a := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("100.68.0.18/18")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		b := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("100.68.0.0/18")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Equal(t, *a[0].IPRanges[0].CIDRIP, *b[0].IPRanges[0].CIDRIP)
 	})
 
@@ -371,7 +371,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		out := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("not-a-cidr")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Equal(t, "not-a-cidr", *out[0].IPRanges[0].CIDRIP)
 	})
 
@@ -380,7 +380,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			IPProtocol: aws.String("icmp"),
 			FromPort:   aws.Int64(-1),
 			ToPort:     aws.Int64(-1),
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1)
 		assert.NotNil(t, out[0].FromPort)
 		assert.NotNil(t, out[0].ToPort)
@@ -395,7 +395,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			FromPort:   aws.Int64(-1),
 			ToPort:     aws.Int64(-1),
 			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("::/0")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1)
 		assert.Nil(t, out[0].FromPort)
 		assert.Nil(t, out[0].ToPort)
@@ -408,7 +408,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			IPProtocol: aws.String("58"),
 			FromPort:   aws.Int64(-1),
 			ToPort:     aws.Int64(-1),
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1)
 		assert.Equal(t, "icmpv6", *out[0].IPProtocol)
 		assert.Nil(t, out[0].FromPort)
@@ -422,13 +422,13 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		omitted := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("icmpv6"),
 			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("::/0")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		wildcard := canonicalizeRuleList([]*svcapitypes.IPPermission{{
 			IPProtocol: aws.String("icmpv6"),
 			FromPort:   aws.Int64(-1),
 			ToPort:     aws.Int64(-1),
 			IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("::/0")}},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.True(t, equality.Semantic.DeepEqual(omitted, wildcard),
 			"omitted and -1/-1 icmpv6 must be indistinguishable after canonicalisation")
 	})
@@ -440,7 +440,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			IPProtocol: aws.String("icmpv6"),
 			FromPort:   aws.Int64(128),
 			ToPort:     aws.Int64(0),
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1)
 		assert.NotNil(t, out[0].FromPort)
 		assert.EqualValues(t, 128, *out[0].FromPort)
@@ -454,7 +454,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/20")}}},
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("192.168.0.0/16")}}},
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1, "the two rules must merge into one")
 		assert.Len(t, out[0].IPRanges, 2)
 	})
@@ -463,7 +463,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 		out := canonicalizeRuleList([]*svcapitypes.IPPermission{
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(80), ToPort: aws.Int64(80)},
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443)},
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 2)
 	})
 
@@ -476,8 +476,8 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(80), ToPort: aws.Int64(80)},
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443)},
 		}
-		out1 := canonicalizeRuleList(in1, testSelfID, testSelfName, testOwnerAcctID)
-		out2 := canonicalizeRuleList(in2, testSelfID, testSelfName, testOwnerAcctID)
+		out1 := canonicalizeRuleList(in1, testSelfID, testOwnerAcctID)
+		out2 := canonicalizeRuleList(in2, testSelfID, testOwnerAcctID)
 		assert.Equal(t, ruleAggregationKey(out1[0]), ruleAggregationKey(out2[0]))
 		assert.Equal(t, ruleAggregationKey(out1[1]), ruleAggregationKey(out2[1]))
 	})
@@ -491,7 +491,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			orig,
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 				IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("192.168.0.0/16")}}},
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		assert.Len(t, orig.IPRanges, 1, "the caller's original rule must not be mutated by aggregation")
 	})
 
@@ -503,7 +503,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 			{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
 				IPv6Ranges:    []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("2001:db8:1::/48")}},
 				PrefixListIDs: []*svcapitypes.PrefixListID{{PrefixListID: aws.String("pl-11")}}},
-		}, testSelfID, testSelfName, testOwnerAcctID)
+		}, testSelfID, testOwnerAcctID)
 		assert.Len(t, out, 1, "same (proto,from,to) rules merge")
 		// merged and sorted ascending (lexicographic: '1' < ':')
 		assert.Equal(t, []string{"2001:db8:1::/48", "2001:db8::/48"},
@@ -523,8 +523,8 @@ func TestCanonicalizeRuleList(t *testing.T) {
 				UserIDGroupPairs: pairs,
 			}}
 		}
-		a := canonicalizeRuleList(mk("sg-aaa", "sg-bbb"), testSelfID, testSelfName, testOwnerAcctID)
-		b := canonicalizeRuleList(mk("sg-bbb", "sg-aaa"), testSelfID, testSelfName, testOwnerAcctID)
+		a := canonicalizeRuleList(mk("sg-aaa", "sg-bbb"), testSelfID, testOwnerAcctID)
+		b := canonicalizeRuleList(mk("sg-bbb", "sg-aaa"), testSelfID, testOwnerAcctID)
 		assert.Equal(t,
 			[]string{*a[0].UserIDGroupPairs[0].GroupID, *a[0].UserIDGroupPairs[1].GroupID},
 			[]string{*b[0].UserIDGroupPairs[0].GroupID, *b[0].UserIDGroupPairs[1].GroupID},
@@ -541,7 +541,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 						nil,
 						{GroupID: aws.String(testSelfID)},
 					}},
-			}, testSelfID, testSelfName, testOwnerAcctID)
+			}, testSelfID, testOwnerAcctID)
 		})
 		assert.Len(t, out, 1, "the nil rule is skipped, the real one is kept")
 	})
@@ -565,7 +565,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 					nil,
 					{PrefixListID: aws.String("pl-11")},
 				},
-			}}, testSelfID, testSelfName, testOwnerAcctID)
+			}}, testSelfID, testOwnerAcctID)
 		})
 		assert.Len(t, out, 1)
 	})
@@ -577,7 +577,7 @@ func TestCanonicalizeRuleList(t *testing.T) {
 				{GroupName: nil, UserID: aws.String(testOwnerAcctID)},                  // omitted self-ref
 				{GroupID: aws.String(testOtherID), UserID: aws.String(testPeerAcctID)}, // cross-account
 			},
-		}}, testSelfID, testSelfName, testOwnerAcctID)
+		}}, testSelfID, testOwnerAcctID)
 		pairs := out[0].UserIDGroupPairs
 		// the self-ref pair is stripped group-id-less; the cross-SG pair keeps its id
 		var self, cross *svcapitypes.UserIDGroupPair
@@ -727,8 +727,8 @@ func desiredLatestDelta(desired, latest *resource) *struct{ ing, egr bool } {
 
 func TestCustomPostCompare_SelfRef_GroupRef_NoDiff(t *testing.T) {
 	// desired mirrors the post-ResolveReferences state: GroupRef set AND
-	// GroupID filled with selfID. latest is the AWS read-back: GroupID set,
-	// UserID/GroupName filled, no GroupRef.
+	// GroupID filled with selfID. latest is the AWS read-back: GroupID + UserID
+	// filled, no GroupRef and no GroupName (AWS never returns a name on read-back).
 	desired := mkResource([]*svcapitypes.IPPermission{{
 		FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("tcp"),
 		UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
@@ -739,7 +739,6 @@ func TestCustomPostCompare_SelfRef_GroupRef_NoDiff(t *testing.T) {
 		FromPort: aws.Int64(53), ToPort: aws.Int64(53), IPProtocol: aws.String("tcp"),
 		UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
 			GroupID: aws.String(testSelfID), UserID: aws.String(testOwnerAcctID),
-			GroupName: aws.String(testSelfName),
 		}},
 	}}, nil)
 

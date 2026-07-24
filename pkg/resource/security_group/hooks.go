@@ -280,16 +280,14 @@ func securityGroupIdentityKnown(r *resource) bool {
 // canonicalizeCopiedRuleLists returns canonical *copies* of r's rule lists; r is
 // never mutated. Used only for delta comparison, never the sync path (which
 // authorises/revokes the raw spec rules). Precondition (guaranteed by
-// customPostCompare's identity guard + Name being required): Status.ID,
-// OwnerAccountID and Spec.Name are all non-nil.
+// customPostCompare's identity guard): Status.ID and OwnerAccountID are non-nil.
 func canonicalizeCopiedRuleLists(
 	r *resource,
 ) (ingress []*svcapitypes.IPPermission, egress []*svcapitypes.IPPermission) {
 	selfID := *r.ko.Status.ID
 	ownerAccountID := string(*r.ko.Status.ACKResourceMetadata.OwnerAccountID)
-	selfName := *r.ko.Spec.Name
-	ingress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.IngressRules), selfID, selfName, ownerAccountID)
-	egress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.EgressRules), selfID, selfName, ownerAccountID)
+	ingress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.IngressRules), selfID, ownerAccountID)
+	egress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.EgressRules), selfID, ownerAccountID)
 	return ingress, egress
 }
 
@@ -312,7 +310,6 @@ func deepCopyRuleList(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermis
 func canonicalizeRuleList(
 	rules []*svcapitypes.IPPermission,
 	selfID string,
-	selfName string,
 	ownerAccountID string,
 ) []*svcapitypes.IPPermission {
 	if rules == nil {
@@ -360,7 +357,7 @@ func canonicalizeRuleList(
 			}
 		}
 		for _, pair := range rule.UserIDGroupPairs {
-			canonicalizeGroupPair(pair, selfID, selfName, ownerAccountID)
+			canonicalizeGroupPair(pair, selfID, ownerAccountID)
 		}
 	}
 
@@ -412,7 +409,6 @@ func canonicalizeRuleList(
 func canonicalizeGroupPair(
 	pair *svcapitypes.UserIDGroupPair,
 	selfID string,
-	selfName string,
 	ownerAccountID string,
 ) {
 	if pair == nil {
@@ -433,17 +429,18 @@ func canonicalizeGroupPair(
 	pair.PeeringStatus = nil
 	pair.VPCPeeringConnectionID = nil
 
-	// Self-reference: AWS returns the SG's own GroupID/GroupName on read-back
-	// while the spec shorthand omits the group. Strip a self GroupID and a
-	// GroupName matching the SG's own name so both sides converge. A non-matching
-	// GroupName is a real value (by-name cross-ref, or user error) and is kept so
-	// a genuine diff still surfaces.
+	// Self-reference: AWS returns the SG's own GroupID on read-back while the
+	// spec shorthand omits the group, so strip a self GroupID to converge both
+	// sides.
 	if pair.GroupID != nil && *pair.GroupID == selfID {
 		pair.GroupID = nil
 	}
-	if pair.GroupName != nil && *pair.GroupName == selfName {
-		pair.GroupName = nil
-	}
+
+	// GroupName is left untouched: AWS never returns it on read-back (it resolves
+	// names to a GroupID), and by-name references only work in a default VPC. A
+	// bare-GroupName reference therefore can't converge and will diff every
+	// reconcile -- an accepted trade-off for a rare, default-VPC-only pattern.
+
 	// AWS fills UserID with the owner account for same-account grants; clear it.
 	// Cross-account grants (UserID != owner) are kept -- the account identifies
 	// the referenced group.
