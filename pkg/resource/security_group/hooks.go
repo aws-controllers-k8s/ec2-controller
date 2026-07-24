@@ -15,6 +15,10 @@ package security_group
 
 import (
 	"context"
+	"net"
+	"sort"
+	"strconv"
+	"strings"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
@@ -24,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	awserr "github.com/aws/aws-sdk-go/aws/awserr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -129,6 +134,402 @@ func (rm *resourceManager) referencesResolved(
 	return true
 }
 
+// icmpv6Protocol is the canonical protocol name canonicalizeProtocol emits for
+// protocol 58. Unlike icmp, icmpv6 does not require an ICMP type/code, so the
+// spec may omit fromPort/toPort while AWS returns the "all types and codes"
+// wildcard as -1/-1 on read-back.
+const icmpv6Protocol = "icmpv6"
+
+// portCarryingProtocols are the protocols EC2 keeps a port range for (or, for
+// ICMP, an overloaded type/code) on read-back. For every other protocol -- "-1"
+// (all traffic) and any other IP protocol number such as 50 (ESP) or 47 (GRE)
+// -- AWS omits fromPort/toPort on read-back. Keyed by the canonical name
+// canonicalizeProtocol emits (numeric 6/17/1/58 are mapped to tcp/udp/icmp/icmpv6
+// first).
+var portCarryingProtocols = map[string]struct{}{
+	"tcp":          {},
+	"udp":          {},
+	"icmp":         {},
+	icmpv6Protocol: {},
+}
+
+// wellKnownProtocols are the IANA protocol numbers EC2 returns by name on
+// read-back, so a numeric spec value ("6") would otherwise differ forever from
+// the name ("tcp"). Other protocols (and "-1") are already canonical.
+var wellKnownProtocols = map[string]string{
+	"1":  "icmp",
+	"6":  "tcp",
+	"17": "udp",
+	"58": "icmpv6",
+}
+
+// canonicalizeProtocol maps a numeric IpProtocol to the name EC2 returns;
+// unknown protocols and names pass through unchanged.
+func canonicalizeProtocol(proto *string) *string {
+	if proto == nil {
+		return nil
+	}
+	if name, ok := wellKnownProtocols[*proto]; ok {
+		return &name
+	}
+	return proto
+}
+
+// canonicalizeCIDR rewrites a CIDR to the exact network form AWS stores and
+// returns on read-back: a network mask is built one byte at a time from the
+// prefix length and ANDed with the address, masking off every host bit. The
+// masked address is rendered in the same text form AWS returns -- dotted-quad
+// for IPv4, RFC 5952 lowercase zero-compressed for IPv6 -- so "100.68.0.18/18"
+// -> "100.68.0.0/18" and "2001:DB8:abcd:0012::1/64" -> "2001:db8:abcd:12::/64".
+//
+// Applying this conversion before the delta comparison is what stops the
+// spurious diff: the desired spec form and the AWS read-back form collapse to
+// the identical network.
+//
+// A value that is not a well-formed CIDR -- or whose prefix is longer than the
+// address, which AWS rejects -- passes through unchanged.
+func canonicalizeCIDR(cidr *string) *string {
+	if cidr == nil {
+		return nil
+	}
+	slash := strings.LastIndex(*cidr, "/")
+	if slash < 0 {
+		return cidr
+	}
+	ip := net.ParseIP((*cidr)[:slash])
+	prefixLength, err := strconv.Atoi((*cidr)[slash+1:])
+	if ip == nil || err != nil || prefixLength < 0 {
+		return cidr
+	}
+
+	// Use the canonical byte layout: 4 bytes for IPv4, 16 for IPv6.
+	addr := ip.To4()
+	if addr == nil {
+		addr = ip.To16()
+	}
+	if addr == nil {
+		return cidr
+	}
+
+	// Build the network mask one byte at a time and AND it into the address.
+	// Bytes past the prefix stay zero, which is the host-bit masking.
+	remaining := prefixLength
+	network := make(net.IP, len(addr))
+	for i := 0; i < len(addr) && remaining > 0; i++ {
+		var maskByte byte
+		if remaining > 8 {
+			maskByte = 0xff
+			remaining -= 8
+		} else {
+			maskByte = byte(((1 << remaining) - 1) << (8 - remaining))
+			remaining = 0
+		}
+		network[i] = addr[i] & maskByte
+	}
+	// remaining != 0 means the prefix is longer than the address (e.g. /40 on an
+	// IPv4 address); AWS treats this as malformed, so leave it untouched.
+	if remaining != 0 {
+		return cidr
+	}
+
+	canon := network.String() + "/" + strconv.Itoa(prefixLength)
+	return &canon
+}
+
+// customPostCompare compares Spec.IngressRules/EgressRules, which the generated
+// delta skips (they are marked compare.is_ignored). It normalises canonical
+// *copies* of both sides -- never a or b, which become the merge-patch base in
+// patchResourceMetadataAndSpec -- so the server-side rule normalisation behind
+// aws-controllers-k8s/community#2822 never drives a spurious diff, while genuine
+// changes still register. See canonicalizeRuleList and canonicalizeGroupPair for
+// the specific normalisations.
+func customPostCompare(
+	delta *ackcompare.Delta,
+	a *resource,
+	b *resource,
+) {
+	if a == nil || b == nil || a.ko == nil || b.ko == nil {
+		return
+	}
+	// Rule canonicalisation needs the SG's ID and owner account, which are nil
+	// pre-create. Skip rather than emit an unreliable diff; the next reconcile
+	// recomputes it once the identity is known.
+	if !securityGroupIdentityKnown(a) || !securityGroupIdentityKnown(b) {
+		return
+	}
+	aIngress, aEgress := canonicalizeCopiedRuleLists(a)
+	bIngress, bEgress := canonicalizeCopiedRuleLists(b)
+	if !equality.Semantic.DeepEqual(aIngress, bIngress) {
+		delta.Add("Spec.IngressRules", a.ko.Spec.IngressRules, b.ko.Spec.IngressRules)
+	}
+	if !equality.Semantic.DeepEqual(aEgress, bEgress) {
+		delta.Add("Spec.EgressRules", a.ko.Spec.EgressRules, b.ko.Spec.EgressRules)
+	}
+}
+
+// securityGroupIdentityKnown reports whether the SG's ID and owner account are
+// populated -- both required for a meaningful rule delta, and only set
+// post-create.
+func securityGroupIdentityKnown(r *resource) bool {
+	return r != nil && r.ko != nil &&
+		r.ko.Status.ID != nil &&
+		r.ko.Status.ACKResourceMetadata != nil &&
+		r.ko.Status.ACKResourceMetadata.OwnerAccountID != nil
+}
+
+// canonicalizeCopiedRuleLists returns canonical *copies* of r's rule lists; r is
+// never mutated. Used only for delta comparison, never the sync path (which
+// authorises/revokes the raw spec rules). Precondition (guaranteed by
+// customPostCompare's identity guard): Status.ID and OwnerAccountID are non-nil.
+func canonicalizeCopiedRuleLists(
+	r *resource,
+) (ingress []*svcapitypes.IPPermission, egress []*svcapitypes.IPPermission) {
+	selfID := *r.ko.Status.ID
+	ownerAccountID := string(*r.ko.Status.ACKResourceMetadata.OwnerAccountID)
+	ingress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.IngressRules), selfID, ownerAccountID)
+	egress = canonicalizeRuleList(deepCopyRuleList(r.ko.Spec.EgressRules), selfID, ownerAccountID)
+	return ingress, egress
+}
+
+// deepCopyRuleList deep-copies a rule list so canonicalisation never touches the
+// caller's data. nil in -> nil out (absent and empty stay equal).
+func deepCopyRuleList(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermission {
+	if rules == nil {
+		return nil
+	}
+	out := make([]*svcapitypes.IPPermission, len(rules))
+	for i, r := range rules {
+		out[i] = r.DeepCopy()
+	}
+	return out
+}
+
+// canonicalizeRuleList normalises each rule and its grants, aggregates rules
+// sharing the same (protocol, fromPort, toPort) key, and returns them
+// deterministically sorted. nil in -> nil out.
+func canonicalizeRuleList(
+	rules []*svcapitypes.IPPermission,
+	selfID string,
+	ownerAccountID string,
+) []*svcapitypes.IPPermission {
+	if rules == nil {
+		return nil
+	}
+
+	// Per-rule field normalisation to match the AWS read-back form.
+	for _, rule := range rules {
+		if rule == nil {
+			continue
+		}
+		rule.IPProtocol = canonicalizeProtocol(rule.IPProtocol)
+		if rule.IPProtocol != nil {
+			proto := *rule.IPProtocol
+			if _, carriesPorts := portCarryingProtocols[proto]; !carriesPorts {
+				// AWS omits the port range for every protocol outside
+				// {tcp, udp, icmp, icmpv6}: "-1" (all traffic) and any other IP
+				// protocol number such as 50 (ESP) or 47 (GRE). Drop them so the
+				// spec form matches the read-back form.
+				rule.FromPort = nil
+				rule.ToPort = nil
+			} else if proto == icmpv6Protocol {
+				// icmpv6 overloads fromPort/toPort as ICMP type/code and, unlike
+				// icmp, allows omitting them: the spec may leave them nil while AWS
+				// returns the "all types and codes" wildcard as -1/-1 on read-back.
+				// Collapse that -1 wildcard to nil so the omitted and explicit
+				// spellings compare equal. A real type/code (0-255) is left
+				// untouched, and icmp (which requires a type/code) is unaffected.
+				if rule.FromPort != nil && *rule.FromPort == -1 {
+					rule.FromPort = nil
+				}
+				if rule.ToPort != nil && *rule.ToPort == -1 {
+					rule.ToPort = nil
+				}
+			}
+		}
+		for _, r := range rule.IPRanges {
+			if r != nil {
+				r.CIDRIP = canonicalizeCIDR(r.CIDRIP)
+			}
+		}
+		for _, r := range rule.IPv6Ranges {
+			if r != nil {
+				r.CIDRIPv6 = canonicalizeCIDR(r.CIDRIPv6)
+			}
+		}
+		for _, pair := range rule.UserIDGroupPairs {
+			canonicalizeGroupPair(pair, selfID, ownerAccountID)
+		}
+	}
+
+	// AWS merges grants sharing a (protocol, fromPort, toPort) key into one
+	// IpPermission; aggregate the same way, keeping first-seen order.
+	byKey := map[string]*svcapitypes.IPPermission{}
+	order := make([]string, 0, len(rules))
+	for _, rule := range rules {
+		if rule == nil {
+			continue
+		}
+		key := ruleAggregationKey(rule)
+		if existing, ok := byKey[key]; ok {
+			existing.IPRanges = append(existing.IPRanges, rule.IPRanges...)
+			existing.IPv6Ranges = append(existing.IPv6Ranges, rule.IPv6Ranges...)
+			existing.PrefixListIDs = append(existing.PrefixListIDs, rule.PrefixListIDs...)
+			existing.UserIDGroupPairs = append(existing.UserIDGroupPairs, rule.UserIDGroupPairs...)
+			continue
+		}
+		// Copy so aggregation never aliases the caller's backing arrays.
+		merged := &svcapitypes.IPPermission{
+			FromPort:         rule.FromPort,
+			ToPort:           rule.ToPort,
+			IPProtocol:       rule.IPProtocol,
+			IPRanges:         append([]*svcapitypes.IPRange(nil), rule.IPRanges...),
+			IPv6Ranges:       append([]*svcapitypes.IPv6Range(nil), rule.IPv6Ranges...),
+			PrefixListIDs:    append([]*svcapitypes.PrefixListID(nil), rule.PrefixListIDs...),
+			UserIDGroupPairs: append([]*svcapitypes.UserIDGroupPair(nil), rule.UserIDGroupPairs...),
+		}
+		byKey[key] = merged
+		order = append(order, key)
+	}
+
+	out := make([]*svcapitypes.IPPermission, 0, len(order))
+	for _, key := range order {
+		rule := byKey[key]
+		sortGrants(rule)
+		out = append(out, rule)
+	}
+	// Sort by aggregation key (unique after aggregation) so read-back ordering
+	// never drives a diff.
+	sort.Slice(out, func(i, j int) bool {
+		return ruleAggregationKey(out[i]) < ruleAggregationKey(out[j])
+	})
+	return out
+}
+
+// canonicalizeGroupPair normalises a single UserIDGroupPair (on a copy).
+func canonicalizeGroupPair(
+	pair *svcapitypes.UserIDGroupPair,
+	selfID string,
+	ownerAccountID string,
+) {
+	if pair == nil {
+		return
+	}
+	// GroupRef/VPCRef are spec-only wrappers ResolveReferences turns into
+	// concrete IDs before the delta and AWS never returns; drop them so they
+	// never drive a diff. GroupID is assumed resolved (referencesResolved
+	// defers sync until it is).
+	pair.GroupRef = nil
+	pair.VPCRef = nil
+
+	// VPCID, PeeringStatus and VPCPeeringConnectionID are read-only: EC2 derives
+	// them from the referenced group and ignores any spec value (verified against
+	// the live API), so clear them on the copy to keep an AWS-filled cross-VPC
+	// read-back from churning against an omitted spec value.
+	pair.VPCID = nil
+	pair.PeeringStatus = nil
+	pair.VPCPeeringConnectionID = nil
+
+	// Self-reference: AWS returns the SG's own GroupID on read-back while the
+	// spec shorthand omits the group, so strip a self GroupID to converge both
+	// sides.
+	if pair.GroupID != nil && *pair.GroupID == selfID {
+		pair.GroupID = nil
+	}
+
+	// GroupName is left untouched: AWS never returns it on read-back (it resolves
+	// names to a GroupID), and by-name references only work in a default VPC. A
+	// bare-GroupName reference therefore can't converge and will diff every
+	// reconcile -- an accepted trade-off for a rare, default-VPC-only pattern.
+
+	// AWS fills UserID with the owner account for same-account grants; clear it.
+	// Cross-account grants (UserID != owner) are kept -- the account identifies
+	// the referenced group.
+	if pair.UserID != nil && *pair.UserID == ownerAccountID {
+		pair.UserID = nil
+	}
+}
+
+// ruleAggregationKey returns the key AWS aggregates IpPermissions by:
+// protocol plus the (from, to) port range.
+func ruleAggregationKey(rule *svcapitypes.IPPermission) string {
+	proto := ""
+	if rule.IPProtocol != nil {
+		proto = *rule.IPProtocol
+	}
+	from := "nil"
+	if rule.FromPort != nil {
+		from = strconv.FormatInt(*rule.FromPort, 10)
+	}
+	to := "nil"
+	if rule.ToPort != nil {
+		to = strconv.FormatInt(*rule.ToPort, 10)
+	}
+	return proto + "/" + from + "/" + to
+}
+
+// sortGrants deterministically orders a rule's grant collections so read-back
+// ordering never drives a diff. Sort keys are nil-safe (defensive; the schema
+// and setters never emit nil elements).
+func sortGrants(rule *svcapitypes.IPPermission) {
+	if rule == nil {
+		return
+	}
+	sort.Slice(rule.IPRanges, func(i, j int) bool {
+		return ipRangeSortKey(rule.IPRanges[i]) < ipRangeSortKey(rule.IPRanges[j])
+	})
+	sort.Slice(rule.IPv6Ranges, func(i, j int) bool {
+		return ipv6RangeSortKey(rule.IPv6Ranges[i]) < ipv6RangeSortKey(rule.IPv6Ranges[j])
+	})
+	sort.Slice(rule.PrefixListIDs, func(i, j int) bool {
+		return prefixListIDSortKey(rule.PrefixListIDs[i]) < prefixListIDSortKey(rule.PrefixListIDs[j])
+	})
+	sort.Slice(rule.UserIDGroupPairs, func(i, j int) bool {
+		return userIDGroupPairSortKey(rule.UserIDGroupPairs[i]) <
+			userIDGroupPairSortKey(rule.UserIDGroupPairs[j])
+	})
+}
+
+// ipRangeSortKey builds a nil-safe stable sort key for an IPv4 CIDR grant.
+func ipRangeSortKey(r *svcapitypes.IPRange) string {
+	if r == nil {
+		return ""
+	}
+	return derefStr(r.CIDRIP)
+}
+
+// ipv6RangeSortKey builds a nil-safe stable sort key for an IPv6 CIDR grant.
+func ipv6RangeSortKey(r *svcapitypes.IPv6Range) string {
+	if r == nil {
+		return ""
+	}
+	return derefStr(r.CIDRIPv6)
+}
+
+// prefixListIDSortKey builds a nil-safe stable sort key for a prefix-list grant.
+func prefixListIDSortKey(p *svcapitypes.PrefixListID) string {
+	if p == nil {
+		return ""
+	}
+	return derefStr(p.PrefixListID)
+}
+
+// userIDGroupPairSortKey builds a stable sort key for a group pair from the
+// fields that identify it.
+func userIDGroupPairSortKey(pair *svcapitypes.UserIDGroupPair) string {
+	if pair == nil {
+		return ""
+	}
+	return derefStr(pair.GroupID) + "/" + derefStr(pair.UserID) + "/" +
+		derefStr(pair.GroupName)
+}
+
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 // syncSGRules analyzes desired and latest (if any)
 // resources and executes API calls to Create/Delete
 // rules in order to achieve desired state.
@@ -141,11 +542,18 @@ func (rm *resourceManager) syncSGRules(
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
 
+	// The sync path deliberately matches and authorises/revokes the RAW spec
+	// rules, never canonicalised copies. Canonicalisation lives only in the
+	// delta (customPostCompare): the canonical delta gates whether sync fires
+	// and converges once the state matches, so a canonicalisation defect can, at
+	// worst, mis-scope which rules churn -- it can never change the rule content
+	// sent to AWS. Keeping the raw spec here means the values submitted to
+	// Authorize/Revoke are always exactly what the user declared (or what AWS
+	// itself returned), which AWS then normalises server-side.
 	toAddIngress := []*svcapitypes.IPPermission{}
 	toAddEgress := []*svcapitypes.IPPermission{}
 	toDeleteIngress := []*svcapitypes.IPPermission{}
 	toDeleteEgress := []*svcapitypes.IPPermission{}
-
 	for _, desiredIngress := range desired.ko.Spec.IngressRules {
 		if latest == nil || !containsRule(latest.ko.Spec.IngressRules, desiredIngress) {
 			// a desired rule is not in the latest resource; therefore, create

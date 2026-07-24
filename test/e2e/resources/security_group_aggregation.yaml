@@ -1,0 +1,24 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg grant aggregation
+  vpcID: $VPC_ID
+  ingressRules:
+    # Grant aggregation: two rules sharing (tcp, 8020, 8020) with different
+    # CIDRs. AWS merges them into a single IpPermission with a two-element
+    # ipRanges array.
+    - fromPort: 8020
+      toPort: 8020
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 10.2.0.0/16
+          description: aggregation range A
+    - fromPort: 8020
+      toPort: 8020
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 10.3.0.0/16
+          description: aggregation range B

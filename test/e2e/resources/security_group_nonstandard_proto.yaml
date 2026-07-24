@@ -1,0 +1,19 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg non-standard protocol port drop
+  vpcID: $VPC_ID
+  egressRules:
+    # ESP (IP protocol 50) is outside {tcp, udp, icmp, icmpv6}, so AWS ignores
+    # the port range and returns the rule with fromPort/toPort unset. The spec
+    # carries the -1/-1 "not applicable" sentinel to exercise the port-drop
+    # canonicalization for non-standard protocols.
+    - fromPort: -1
+      toPort: -1
+      ipProtocol: "50"
+      ipRanges:
+        - cidrIP: 10.0.0.0/8
+          description: allow ESP egress

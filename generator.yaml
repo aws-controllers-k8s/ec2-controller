@@ -887,9 +887,16 @@ resources:
       IngressRules:
         custom_field:
           list_of: IpPermission
+        # Compared in the delta_post_compare hook (customPostCompare) on
+        # canonicalised copies, so server-side normalisation never drives a
+        # spurious diff; the generated field comparison is skipped.
+        compare:
+          is_ignored: true
       EgressRules:
         custom_field:
           list_of: IpPermission
+        compare:
+          is_ignored: true
       Rules:
         from:
           operation: DescribeSecurityGroupRules
@@ -940,6 +947,8 @@ resources:
             GroupIds: Ids
             GroupNames: Names
     hooks:
+      delta_post_compare:
+        code: customPostCompare(delta, a, b)
       sdk_create_post_build_request:
         template_path: hooks/security_group/sdk_create_post_build_request.go.tpl
       sdk_file_end:
