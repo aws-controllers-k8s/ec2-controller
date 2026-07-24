@@ -1,0 +1,18 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg numeric protocol notation
+  vpcID: $VPC_ID
+  ingressRules:
+    # Protocol notation: numeric "6" is the same protocol as "tcp". AWS
+    # stores/returns it as "tcp". The CIDR is already canonical so this rule
+    # isolates the protocol normalization.
+    - fromPort: 8006
+      toPort: 8006
+      ipProtocol: "6"
+      ipRanges:
+        - cidrIP: 10.1.0.0/16
+          description: numeric protocol rule

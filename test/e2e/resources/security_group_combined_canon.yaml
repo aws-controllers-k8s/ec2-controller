@@ -1,0 +1,61 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg combined canonicalizations
+  vpcID: $VPC_ID
+  ingressRules:
+    # Self-reference by omitting groupID (community#2822): AWS fills in the
+    # group's own groupID and the owner userID on read-back.
+    - fromPort: 443
+      toPort: 443
+      ipProtocol: tcp
+      userIDGroupPairs:
+        - description: self-referencing rule
+    # Numeric protocol "6" (== tcp) with a non-canonical IPv4 CIDR: exercises
+    # the protocol-notation and CIDR canonicalization paths in a single rule
+    # ("6" -> "tcp", 172.16.5.9/16 -> 172.16.0.0/16).
+    - fromPort: 8006
+      toPort: 8006
+      ipProtocol: "6"
+      ipRanges:
+        - cidrIP: 172.16.5.9/16
+          description: numeric proto + non-canonical cidr
+    # icmpv6 with no type/code: read back as the -1/-1 "all types and codes"
+    # wildcard.
+    - ipProtocol: icmpv6
+      ipv6Ranges:
+        - cidrIPv6: ::/0
+          description: icmpv6 all types and codes
+    # Grant aggregation: two rules sharing (tcp, 9090, 9090) with different
+    # CIDRs collapse into one IpPermission on read-back.
+    - fromPort: 9090
+      toPort: 9090
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 10.10.0.0/16
+          description: aggregation A
+    - fromPort: 9090
+      toPort: 9090
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 10.20.0.0/16
+          description: aggregation B
+  egressRules:
+    # All-protocol "-1": AWS ignores the port range and returns no ports.
+    - fromPort: 0
+      toPort: 0
+      ipProtocol: "-1"
+      ipRanges:
+        - cidrIP: 0.0.0.0/0
+          description: allow all egress
+    # ESP (protocol 50) with the -1/-1 sentinel: a non-standard protocol, so
+    # AWS returns it without a port range.
+    - fromPort: -1
+      toPort: -1
+      ipProtocol: "50"
+      ipRanges:
+        - cidrIP: 10.0.0.0/8
+          description: allow ESP egress

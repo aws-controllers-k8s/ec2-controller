@@ -1,0 +1,17 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg self-ref
+  vpcID: $VPC_ID
+  ingressRules:
+    # Self-reference by omitting groupID entirely (no groupRef, no groupID) --
+    # the aws-controllers-k8s/community#2822 pattern. AWS auto-fills groupID
+    # (self) and userID on read-back.
+    - fromPort: 443
+      toPort: 443
+      ipProtocol: tcp
+      userIDGroupPairs:
+        - description: self-referencing rule

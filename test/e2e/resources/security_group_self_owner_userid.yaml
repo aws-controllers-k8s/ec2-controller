@@ -1,0 +1,18 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: self-ref via omitted group carrying an explicit owner userID
+  vpcID: $VPC_ID
+  ingressRules:
+    # An omitted-group self-reference (#2822 shorthand) that also carries the
+    # redundant owner account in userID. Dropping that userID is lossless: AWS
+    # produces the identical self-ref rule either way.
+    - fromPort: 443
+      toPort: 443
+      ipProtocol: tcp
+      userIDGroupPairs:
+        - description: self-ref with explicit owner userID
+          userID: "$USER_ID"

@@ -1,0 +1,17 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg all-protocol port drop
+  vpcID: $VPC_ID
+  egressRules:
+    # All-protocols ("-1") rule with an explicit port range. AWS ignores the
+    # port range for "-1" and returns the rule with fromPort/toPort unset.
+    - fromPort: 0
+      toPort: 0
+      ipProtocol: "-1"
+      ipRanges:
+        - cidrIP: 0.0.0.0/0
+          description: allow all egress

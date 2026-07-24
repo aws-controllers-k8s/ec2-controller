@@ -1,0 +1,27 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg CIDR canonicalization
+  vpcID: $VPC_ID
+  ingressRules:
+    # IPv4 CIDR canonicalization: non-canonical 172.16.5.9/16 is stored and
+    # returned by AWS as 172.16.0.0/16. On its own port to isolate the IPv4
+    # case.
+    - fromPort: 8010
+      toPort: 8010
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 172.16.5.9/16
+          description: non-canonical IPv4 CIDR
+    # IPv6 CIDR canonicalization: non-canonical (uppercase, zero-padded, host
+    # bits set) is masked and text-normalised by AWS to
+    # 2001:db8:abcd:12::/64. On its own port to isolate the IPv6 case.
+    - fromPort: 8011
+      toPort: 8011
+      ipProtocol: tcp
+      ipv6Ranges:
+        - cidrIPv6: 2001:DB8:abcd:0012::1/64
+          description: non-canonical IPv6 CIDR
