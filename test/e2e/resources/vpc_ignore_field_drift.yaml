@@ -1,0 +1,16 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: VPC
+metadata:
+  name: $VPC_NAME
+  annotations:
+    services.k8s.aws/ignore-field-drift: "spec.tags"
+spec:
+  cidrBlocks:
+  - $CIDR_BLOCK
+  enableDNSSupport: $ENABLE_DNS_SUPPORT
+  enableDNSHostnames: $ENABLE_DNS_HOSTNAMES
+  enableNetworkAddressUsageMetrics: $ENABLE_NETWORK_ADDRESS_USAGE_METRICS
+  disallowSecurityGroupDefaultRules: $DISALLOW_DEFAULT_SECURITY_GROUP_RULE
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
