@@ -153,13 +153,30 @@ def ignore_field_drift_enabled():
 
 @pytest.fixture
 def ignore_field_drift_vpc(request):
-    """A VPC annotated with ignore-field-drift on spec.tags, carrying one
-    declared tag (team=payments) as the create-time baseline."""
+    """A VPC annotated with ignore-field-drift, carrying a declared tag
+    (team=payments) and DNS attributes as the create-time baseline.
+
+    Parametrize the ignored paths (and optionally the baseline DNS-support
+    value) via indirect fixture params, e.g.:
+
+        @pytest.mark.parametrize(
+            "ignore_field_drift_vpc",
+            [{"ignore_paths": "spec.enableDNSSupport"}],
+            indirect=True,
+        )
+
+    Defaults to ignoring spec.tags so callers that don't parametrize keep the
+    original behaviour."""
+    param = getattr(request, "param", None) or {}
+    ignore_paths = param.get("ignore_paths", "spec.tags")
+    enable_dns_support = param.get("enable_dns_support", "False")
+
     resource_name = random_suffix_name("vpc-ifd-test", 24)
     replacements = REPLACEMENT_VALUES.copy()
     replacements["VPC_NAME"] = resource_name
     replacements["CIDR_BLOCK"] = PRIMARY_CIDR_DEFAULT
-    replacements["ENABLE_DNS_SUPPORT"] = "False"
+    replacements["IGNORE_PATHS"] = ignore_paths
+    replacements["ENABLE_DNS_SUPPORT"] = enable_dns_support
     replacements["ENABLE_DNS_HOSTNAMES"] = "False"
     replacements["ENABLE_NETWORK_ADDRESS_USAGE_METRICS"] = "False"
     replacements["DISALLOW_DEFAULT_SECURITY_GROUP_RULE"] = "False"
@@ -202,11 +219,29 @@ def _user_tags(vpc: dict) -> dict:
     )
 
 
+def _dns_support_enabled(ec2_client, vpc_id: str) -> bool:
+    """Returns the live enableDnsSupport attribute value for the VPC."""
+    resp = ec2_client.describe_vpc_attribute(
+        VpcId=vpc_id, Attribute="enableDnsSupport",
+    )
+    return resp["EnableDnsSupport"]["Value"]
+
+
 @service_marker
 class TestVpcIgnoreFieldDrift:
     """Verifies the services.k8s.aws/ignore-field-drift annotation on an EC2
-    VPC's spec.tags: the controller still applies the declared tag at create,
-    but stops reconciling drift on tags -- externally-added tags survive, the
+    VPC across the field shapes the runtime treats differently:
+
+    - test_tags_drift_ignored: an ignored list-of-objects field (spec.tags) --
+      an externally-added element survives.
+    - test_scalar_field_drift_ignored: an ignored scalar leaf
+      (spec.enableDNSSupport) whose Delta path matches the ignored path exactly.
+    - test_nested_field_under_ignored_parent: drift on a nested child of an
+      ignored parent (a tag's value under the ignored spec.tags), which the
+      runtime matches by path prefix rather than exact equality.
+
+    In every case the controller still applies the declared value at create but
+    stops reconciling drift on the ignored path: external changes survive, the
     resource stays Synced, and an edit to the ignored field is retained in the
     spec but not pushed to AWS. This mirrors the iam-controller Role coverage
     for the same runtime feature (community#2367)."""
@@ -272,4 +307,99 @@ class TestVpcIgnoreFieldDrift:
         ec2_client.delete_tags(
             Resources=[vpc_id],
             Tags=[{"Key": "external"}],
+        )
+
+    @pytest.mark.parametrize(
+        "ignore_field_drift_vpc",
+        [{"ignore_paths": "spec.enableDNSSupport", "enable_dns_support": "False"}],
+        indirect=True,
+    )
+    def test_scalar_field_drift_ignored(
+        self, ec2_client, ignore_field_drift_enabled, ignore_field_drift_vpc,
+    ):
+        """Ignored scalar leaf: spec.enableDNSSupport. Its Delta path
+        (Spec.EnableDNSSupport) equals the ignored path exactly, so this
+        exercises the exact-match branch of the runtime's path filtering."""
+        (ref, cr) = ignore_field_drift_vpc
+        vpc_id = cr["status"]["vpcID"]
+        ec2_validator = EC2Validator(ec2_client)
+
+        # Baseline: created with enableDNSSupport=false, and the controller
+        # applied that at create (AWS defaults the attribute to true).
+        ec2_validator.assert_vpc(vpc_id)
+        assert _dns_support_enabled(ec2_client, vpc_id) is False
+        condition.assert_synced(ref)
+
+        # An external actor flips the attribute on AWS. Without ignore-field-drift
+        # the controller would reconcile it back to the spec value (false).
+        ec2_client.modify_vpc_attribute(
+            VpcId=vpc_id, EnableDnsSupport={"Value": True},
+        )
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # The external value must survive: ACK does not reconcile drift on the
+        # ignored scalar, so it does not call ModifyVpcAttribute to undo it.
+        assert _dns_support_enabled(ec2_client, vpc_id) is True, (
+            "controller reverted an externally-changed enableDNSSupport despite "
+            "ignore-field-drift on spec.enableDNSSupport"
+        )
+
+        # The resource stays Synced even though spec (false) differs from the
+        # live attribute (true).
+        assert k8s.wait_on_condition(
+            ref, "ACK.ResourceSynced", "True",
+            wait_periods=6, period_length=10,
+        )
+
+        # Editing the ignored scalar in the spec is retained but NOT pushed to
+        # AWS: patch to a new value and confirm the live attribute is unchanged.
+        k8s.patch_custom_resource(ref, {"spec": {"enableDNSSupport": True}})
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        assert _dns_support_enabled(ec2_client, vpc_id) is True
+        latest = k8s.get_resource(ref)
+        assert latest["spec"].get("enableDNSSupport") is True
+
+    @pytest.mark.parametrize(
+        "ignore_field_drift_vpc",
+        [{"ignore_paths": "spec.tags"}],
+        indirect=True,
+    )
+    def test_nested_field_under_ignored_parent(
+        self, ec2_client, ignore_field_drift_enabled, ignore_field_drift_vpc,
+    ):
+        """Drift on a nested child of an ignored parent: the declared tag's
+        value (Delta path Spec.Tags.N.Value) changes externally while only the
+        parent spec.tags is ignored. The runtime must match this by path prefix,
+        so the child drift is ignored too."""
+        (ref, cr) = ignore_field_drift_vpc
+        vpc_id = cr["status"]["vpcID"]
+        ec2_validator = EC2Validator(ec2_client)
+
+        # Baseline: the declared tag was applied at create.
+        ec2_validator.assert_vpc(vpc_id)
+        assert _user_tags(ec2_validator.get_vpc(vpc_id)).get("team") == "payments"
+        condition.assert_synced(ref)
+
+        # An external actor overwrites the VALUE of the declared tag key (not a
+        # new key). This is drift on a nested child (spec.tags[].value) of the
+        # ignored parent spec.tags.
+        ec2_client.create_tags(
+            Resources=[vpc_id],
+            Tags=[{"Key": "team", "Value": "external-override"}],
+        )
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+        # The externally-changed value must survive: ACK does not reconcile the
+        # child of the ignored parent back to the spec value (payments).
+        assert _user_tags(ec2_validator.get_vpc(vpc_id)).get("team") == "external-override", (
+            "controller reverted an externally-changed tag value despite "
+            "ignore-field-drift on the parent spec.tags"
+        )
+
+        # The resource stays Synced even though the spec tag value (payments)
+        # differs from the live value (external-override).
+        assert k8s.wait_on_condition(
+            ref, "ACK.ResourceSynced", "True",
+            wait_periods=6, period_length=10,
         )
