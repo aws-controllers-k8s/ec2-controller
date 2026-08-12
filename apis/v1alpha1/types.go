@@ -3792,10 +3792,12 @@ type LaunchTemplateEBSBlockDeviceRequest struct {
 	Encrypted           *bool   `json:"encrypted,omitempty"`
 	IOPS                *int64  `json:"iops,omitempty"`
 	KMSKeyID            *string `json:"kmsKeyID,omitempty"`
-	SnapshotID          *string `json:"snapshotID,omitempty"`
-	Throughput          *int64  `json:"throughput,omitempty"`
-	VolumeSize          *int64  `json:"volumeSize,omitempty"`
-	VolumeType          *string `json:"volumeType,omitempty"`
+	// Reference field for KMSKeyID
+	KMSKeyRef  *ackv1alpha1.AWSResourceReferenceWrapper `json:"kmsKeyRef,omitempty"`
+	SnapshotID *string                                  `json:"snapshotID,omitempty"`
+	Throughput *int64                                   `json:"throughput,omitempty"`
+	VolumeSize *int64                                   `json:"volumeSize,omitempty"`
+	VolumeType *string                                  `json:"volumeType,omitempty"`
 }
 
 // ENA Express uses Amazon Web Services Scalable Reliable Datagram (SRD) technology
@@ -3993,6 +3995,8 @@ type LaunchTemplateInstanceNetworkInterfaceSpecificationRequest struct {
 	PrivateIPAddresses             []*PrivateIPAddressSpecification  `json:"privateIPAddresses,omitempty"`
 	SecondaryPrivateIPAddressCount *int64                            `json:"secondaryPrivateIPAddressCount,omitempty"`
 	SubnetID                       *string                           `json:"subnetID,omitempty"`
+	// Reference field for SubnetID
+	SubnetRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"subnetRef,omitempty"`
 }
 
 // Describes a secondary interface specification in a launch template.
@@ -5286,9 +5290,11 @@ type RequestLaunchTemplateData struct {
 	PrivateDNSNameOptions *LaunchTemplatePrivateDNSNameOptionsRequest `json:"privateDNSNameOptions,omitempty"`
 	RAMDiskID             *string                                     `json:"ramDiskID,omitempty"`
 	SecurityGroupIDs      []*string                                   `json:"securityGroupIDs,omitempty"`
-	SecurityGroups        []*string                                   `json:"securityGroups,omitempty"`
-	TagSpecifications     []*LaunchTemplateTagSpecificationRequest    `json:"tagSpecifications,omitempty"`
-	UserData              *string                                     `json:"userData,omitempty"`
+	// Reference field for SecurityGroupIDs
+	SecurityGroupRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"securityGroupRefs,omitempty"`
+	SecurityGroups    []*string                                  `json:"securityGroups,omitempty"`
+	TagSpecifications []*LaunchTemplateTagSpecificationRequest   `json:"tagSpecifications,omitempty"`
+	UserData          *string                                    `json:"userData,omitempty"`
 }
 
 // Describes the launch specification for an instance.

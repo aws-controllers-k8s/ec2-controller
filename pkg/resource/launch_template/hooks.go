@@ -68,6 +68,7 @@ func (rm *resourceManager) setLatestLaunchTemplateAttributes(
 		}
 		if elem.LaunchTemplateData != nil {
 			ko.Spec.Data = rm.setRequestLaunchTemplateData(elem.LaunchTemplateData)
+			preserveDataReferenceFields(r.ko.Spec.Data, ko.Spec.Data)
 		} else {
 			ko.Spec.Data = nil
 		}
@@ -90,6 +91,58 @@ func (rm *resourceManager) setLatestLaunchTemplateAttributes(
 		}
 	}
 	return nil
+}
+
+// preserveDataReferenceFields copies the cross-resource reference (*Ref)
+// companion fields from the desired launch template data onto the data
+// reconstructed from the DescribeLaunchTemplateVersions response.
+//
+// setLatestLaunchTemplateAttributes rebuilds Spec.Data wholesale from that
+// response, which can only describe concrete, resolved values -- a launch
+// template version has no notion of a Kubernetes reference. So the *Ref
+// companions are absent from the observed resource, and because the runtime
+// computes the spec patch FROM the observed resource
+// (patchResourceMetadataAndSpec), leaving them absent deletes them from the
+// user's CR: a reference-backed manifest would silently degrade into a
+// hardcoded one after the first read.
+//
+// Only the reference companions are copied. Every concrete value stays exactly
+// as AWS reported it, so the delta comparison still runs against real observed
+// state. List elements are correlated by index, which holds because EC2 stores
+// launch template data verbatim as a version document and echoes these lists
+// back in the order they were supplied.
+func preserveDataReferenceFields(
+	desired *svcapitypes.RequestLaunchTemplateData,
+	observed *svcapitypes.RequestLaunchTemplateData,
+) {
+	if desired == nil || observed == nil {
+		return
+	}
+
+	observed.SecurityGroupRefs = desired.SecurityGroupRefs
+
+	for idx, desiredNI := range desired.NetworkInterfaces {
+		if idx >= len(observed.NetworkInterfaces) {
+			break
+		}
+		observedNI := observed.NetworkInterfaces[idx]
+		if desiredNI == nil || observedNI == nil {
+			continue
+		}
+		observedNI.SubnetRef = desiredNI.SubnetRef
+	}
+
+	for idx, desiredBDM := range desired.BlockDeviceMappings {
+		if idx >= len(observed.BlockDeviceMappings) {
+			break
+		}
+		observedBDM := observed.BlockDeviceMappings[idx]
+		if desiredBDM == nil || desiredBDM.EBS == nil ||
+			observedBDM == nil || observedBDM.EBS == nil {
+			continue
+		}
+		observedBDM.EBS.KMSKeyRef = desiredBDM.EBS.KMSKeyRef
+	}
 }
 
 func (rm *resourceManager) newListLaunchTemplateVersionRequestPayload(

@@ -20,6 +20,7 @@ import (
 	"os"
 
 	iamapitypes "github.com/aws-controllers-k8s/iam-controller/apis/v1alpha1"
+	kmsapitypes "github.com/aws-controllers-k8s/kms-controller/apis/v1alpha1"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
@@ -77,6 +78,7 @@ func init() {
 	_ = svctypes.AddToScheme(scheme)
 	_ = ackv1alpha1.AddToScheme(scheme)
 	_ = iamapitypes.AddToScheme(scheme)
+	_ = kmsapitypes.AddToScheme(scheme)
 }
 
 func main() {

@@ -15251,6 +15251,11 @@ func (in *LaunchTemplateEBSBlockDeviceRequest) DeepCopyInto(out *LaunchTemplateE
 		*out = new(string)
 		**out = **in
 	}
+	if in.KMSKeyRef != nil {
+		in, out := &in.KMSKeyRef, &out.KMSKeyRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.SnapshotID != nil {
 		in, out := &in.SnapshotID, &out.SnapshotID
 		*out = new(string)
@@ -15970,6 +15975,11 @@ func (in *LaunchTemplateInstanceNetworkInterfaceSpecificationRequest) DeepCopyIn
 		in, out := &in.SubnetID, &out.SubnetID
 		*out = new(string)
 		**out = **in
+	}
+	if in.SubnetRef != nil {
+		in, out := &in.SubnetRef, &out.SubnetRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
@@ -21822,6 +21832,17 @@ func (in *RequestLaunchTemplateData) DeepCopyInto(out *RequestLaunchTemplateData
 				in, out := &(*in)[i], &(*out)[i]
 				*out = new(string)
 				**out = **in
+			}
+		}
+	}
+	if in.SecurityGroupRefs != nil {
+		in, out := &in.SecurityGroupRefs, &out.SecurityGroupRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}

@@ -689,6 +689,36 @@ resources:
         go_tag: json:"type,omitempty"
       Data.ElasticGPUSpecifications.Type:
         go_tag: json:"type,omitempty"
+      # CreateLaunchTemplateVersion echoes the whole LaunchTemplateData struct
+      # back, and that response carries no *Ref companions -- so letting it
+      # write Spec.Data would delete every reference below on the first
+      # update. Spec.Data is the user's desired version document; the observed
+      # value is still read in sdkFind for delta comparison.
+      Data:
+        set:
+          - method: Update
+            ignore: true
+      Data.SecurityGroupIds:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+      Data.NetworkInterfaces.SubnetId:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+      # Data.NetworkInterfaces.Groups also holds ec2 SecurityGroup IDs, but it
+      # cannot be wired yet: a LIST-typed reference nested inside a list
+      # element makes the code-generator emit references.go that does not
+      # compile (the element index is dropped, yielding
+      # `ko.Spec.Data.NetworkInterfaces.Groups`). The scalar sibling SubnetId
+      # above indexes correctly, so this is specific to list-valued members.
+      # Users can keep setting Groups concretely, or use
+      # Data.SecurityGroupIds, which is reference-backed.
+      Data.BlockDeviceMappings.Ebs.KmsKeyId:
+        references:
+          service_name: kms
+          resource: Key
+          path: Status.ACKResourceMetadata.ARN
   NatGateway:
     exceptions:
       terminal_codes:
