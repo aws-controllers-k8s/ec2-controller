@@ -31,9 +31,11 @@ type VPCEndpointServiceConfigurationSpec struct {
 	// an asterisk (*).
 	AllowedPrincipals []*string `json:"allowedPrincipals,omitempty"`
 	// The Amazon Resource Names (ARNs) of the Gateway Load Balancers.
-	GatewayLoadBalancerARNs []*string `json:"gatewayLoadBalancerARNs,omitempty"`
+	GatewayLoadBalancerARNs []*string                                  `json:"gatewayLoadBalancerARNs,omitempty"`
+	GatewayLoadBalancerRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"gatewayLoadBalancerRefs,omitempty"`
 	// The Amazon Resource Names (ARNs) of the Network Load Balancers.
-	NetworkLoadBalancerARNs []*string `json:"networkLoadBalancerARNs,omitempty"`
+	NetworkLoadBalancerARNs []*string                                  `json:"networkLoadBalancerARNs,omitempty"`
+	NetworkLoadBalancerRefs []*ackv1alpha1.AWSResourceReferenceWrapper `json:"networkLoadBalancerRefs,omitempty"`
 	// (Interface endpoint configuration) The private DNS name to assign to the
 	// VPC endpoint service.
 	PrivateDNSName *string `json:"privateDNSName,omitempty"`

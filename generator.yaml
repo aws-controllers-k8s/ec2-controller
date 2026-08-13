@@ -536,6 +536,11 @@ resources:
           resource: Role
           path: Status.ACKResourceMetadata.ARN
           service_name: iam
+      LogGroupName:
+        references:
+          resource: LogGroup
+          service_name: cloudwatchlogs
+          path: Spec.Name
       Tags:
         from:
           operation: CreateTags
@@ -1220,6 +1225,10 @@ resources:
         references:
           resource: SecurityGroup
           path: Status.ID
+      ServiceName:
+        references:
+          resource: VPCEndpointServiceConfiguration
+          path: Status.ServiceName
       State:
         print:
           name: state
@@ -1259,6 +1268,16 @@ resources:
         from:
           operation: ModifyVpcEndpointServicePermissions
           path: AddAllowedPrincipals
+      GatewayLoadBalancerARNs:
+        references:
+          resource: LoadBalancer
+          service_name: elbv2
+          path: Status.ACKResourceMetadata.ARN
+      NetworkLoadBalancerARNs:
+        references:
+          resource: LoadBalancer
+          service_name: elbv2
+          path: Status.ACKResourceMetadata.ARN
       SupportedRegions:
         compare:
           is_ignored: true
