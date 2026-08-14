@@ -70,6 +70,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - cloudwatchlogs.services.k8s.aws
+  resources:
+  - loggroups
+  - loggroups/status
+  verbs:
+  - get
+  - list
+- apiGroups:
   - ec2.services.k8s.aws
   resources:
   - capacityreservations
@@ -127,6 +135,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - elbv2.services.k8s.aws
+  resources:
+  - loadbalancers
+  - loadbalancers/status
+  verbs:
+  - get
+  - list
 - apiGroups:
   - iam.services.k8s.aws
   resources:

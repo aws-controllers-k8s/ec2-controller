@@ -67,7 +67,8 @@ type FlowLogSpec struct {
 	// publishes your flow logs.
 	//
 	// This parameter is valid only if the destination type is cloud-watch-logs.
-	LogGroupName *string `json:"logGroupName,omitempty"`
+	LogGroupName *string                                  `json:"logGroupName,omitempty"`
+	LogGroupRef  *ackv1alpha1.AWSResourceReferenceWrapper `json:"logGroupRef,omitempty"`
 	// The maximum interval of time during which a flow of packets is captured and
 	// aggregated into a flow log record. The possible values are 60 seconds (1
 	// minute) or 600 seconds (10 minutes). This parameter must be 60 seconds for

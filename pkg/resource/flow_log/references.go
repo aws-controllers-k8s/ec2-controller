@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	cloudwatchlogsapitypes "github.com/aws-controllers-k8s/cloudwatchlogs-controller/apis/v1alpha1"
 	iamapitypes "github.com/aws-controllers-k8s/iam-controller/apis/v1alpha1"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
@@ -35,6 +36,9 @@ import (
 // +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles,verbs=get;list
 // +kubebuilder:rbac:groups=iam.services.k8s.aws,resources=roles/status,verbs=get;list
 
+// +kubebuilder:rbac:groups=cloudwatchlogs.services.k8s.aws,resources=loggroups,verbs=get;list
+// +kubebuilder:rbac:groups=cloudwatchlogs.services.k8s.aws,resources=loggroups/status,verbs=get;list
+
 // ClearResolvedReferences removes any reference values that were made
 // concrete in the spec. It returns a copy of the input AWSResource which
 // contains the original *Ref values, but none of their respective concrete
@@ -44,6 +48,10 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) ack
 
 	if ko.Spec.DeliverLogsPermissionRef != nil {
 		ko.Spec.DeliverLogsPermissionARN = nil
+	}
+
+	if ko.Spec.LogGroupRef != nil {
+		ko.Spec.LogGroupName = nil
 	}
 
 	return &resource{ko}
@@ -71,6 +79,12 @@ func (rm *resourceManager) ResolveReferences(
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
 
+	if fieldHasReferences, err := rm.resolveReferenceForLogGroupName(ctx, apiReader, ko); err != nil {
+		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
+	} else {
+		resourceHasReferences = resourceHasReferences || fieldHasReferences
+	}
+
 	return &resource{ko}, resourceHasReferences, err
 }
 
@@ -80,6 +94,10 @@ func validateReferenceFields(ko *svcapitypes.FlowLog) error {
 
 	if ko.Spec.DeliverLogsPermissionRef != nil && ko.Spec.DeliverLogsPermissionARN != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("DeliverLogsPermissionARN", "DeliverLogsPermissionRef")
+	}
+
+	if ko.Spec.LogGroupRef != nil && ko.Spec.LogGroupName != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("LogGroupName", "LogGroupRef")
 	}
 	return nil
 }
@@ -171,6 +189,97 @@ func getReferencedResourceState_Role(
 			"Role",
 			namespace, name,
 			"Status.ACKResourceMetadata.ARN")
+	}
+	return nil
+}
+
+// resolveReferenceForLogGroupName reads the resource referenced
+// from LogGroupRef field and sets the LogGroupName
+// from referenced resource. Returns a boolean indicating whether a reference
+// contains references, or an error
+func (rm *resourceManager) resolveReferenceForLogGroupName(
+	ctx context.Context,
+	apiReader client.Reader,
+	ko *svcapitypes.FlowLog,
+) (hasReferences bool, err error) {
+	if ko.Spec.LogGroupRef != nil && ko.Spec.LogGroupRef.From != nil {
+		hasReferences = true
+		arr := ko.Spec.LogGroupRef.From
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: LogGroupRef")
+		}
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
+			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
+			ko.ObjectMeta.GetNamespace(),
+			arr.Namespace,
+			*arr.Name,
+		)
+		if err != nil {
+			return hasReferences, err
+		}
+		obj := &cloudwatchlogsapitypes.LogGroup{}
+		if err := getReferencedResourceState_LogGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return hasReferences, err
+		}
+		ko.Spec.LogGroupName = (*string)(obj.Spec.Name)
+	}
+
+	return hasReferences, nil
+}
+
+// getReferencedResourceState_LogGroup looks up whether a referenced resource
+// exists and is in a ACK.ResourceSynced=True state. If the referenced resource does exist and is
+// in a Synced state, returns nil, otherwise returns `ackerr.ResourceReferenceTerminalFor` or
+// `ResourceReferenceNotSyncedFor` depending on if the resource is in a Terminal state.
+func getReferencedResourceState_LogGroup(
+	ctx context.Context,
+	apiReader client.Reader,
+	obj *cloudwatchlogsapitypes.LogGroup,
+	name string, // the Kubernetes name of the referenced resource
+	namespace string, // the Kubernetes namespace of the referenced resource
+) error {
+	namespacedName := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	err := apiReader.Get(ctx, namespacedName, obj)
+	if err != nil {
+		return err
+	}
+	var refResourceTerminal bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+			cond.Status == corev1.ConditionTrue {
+			return ackerr.ResourceReferenceTerminalFor(
+				"LogGroup",
+				namespace, name)
+		}
+	}
+	if refResourceTerminal {
+		return ackerr.ResourceReferenceTerminalFor(
+			"LogGroup",
+			namespace, name)
+	}
+	var refResourceSynced bool
+	for _, cond := range obj.Status.Conditions {
+		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+			cond.Status == corev1.ConditionTrue {
+			refResourceSynced = true
+		}
+	}
+	if !refResourceSynced {
+		return ackerr.ResourceReferenceNotSyncedFor(
+			"LogGroup",
+			namespace, name)
+	}
+	if obj.Spec.Name == nil {
+		return ackerr.ResourceReferenceMissingTargetFieldFor(
+			"LogGroup",
+			namespace, name,
+			"Spec.Name")
 	}
 	return nil
 }

@@ -105,6 +105,9 @@ func newResourceDelta(
 			delta.Add("Spec.LogGroupName", a.ko.Spec.LogGroupName, b.ko.Spec.LogGroupName)
 		}
 	}
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.LogGroupRef, b.ko.Spec.LogGroupRef) {
+		delta.Add("Spec.LogGroupRef", a.ko.Spec.LogGroupRef, b.ko.Spec.LogGroupRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.MaxAggregationInterval, b.ko.Spec.MaxAggregationInterval) {
 		delta.Add("Spec.MaxAggregationInterval", a.ko.Spec.MaxAggregationInterval, b.ko.Spec.MaxAggregationInterval)
 	} else if a.ko.Spec.MaxAggregationInterval != nil && b.ko.Spec.MaxAggregationInterval != nil {

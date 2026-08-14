@@ -8296,6 +8296,11 @@ func (in *FlowLogSpec) DeepCopyInto(out *FlowLogSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.LogGroupRef != nil {
+		in, out := &in.LogGroupRef, &out.LogGroupRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.MaxAggregationInterval != nil {
 		in, out := &in.MaxAggregationInterval, &out.MaxAggregationInterval
 		*out = new(int64)
@@ -30859,6 +30864,17 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 			}
 		}
 	}
+	if in.GatewayLoadBalancerRefs != nil {
+		in, out := &in.GatewayLoadBalancerRefs, &out.GatewayLoadBalancerRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	if in.NetworkLoadBalancerARNs != nil {
 		in, out := &in.NetworkLoadBalancerARNs, &out.NetworkLoadBalancerARNs
 		*out = make([]*string, len(*in))
@@ -30867,6 +30883,17 @@ func (in *VPCEndpointServiceConfigurationSpec) DeepCopyInto(out *VPCEndpointServ
 				in, out := &(*in)[i], &(*out)[i]
 				*out = new(string)
 				**out = **in
+			}
+		}
+	}
+	if in.NetworkLoadBalancerRefs != nil {
+		in, out := &in.NetworkLoadBalancerRefs, &out.NetworkLoadBalancerRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
 			}
 		}
 	}
@@ -31090,6 +31117,11 @@ func (in *VPCEndpointSpec) DeepCopyInto(out *VPCEndpointSpec) {
 		in, out := &in.ServiceNetworkARN, &out.ServiceNetworkARN
 		*out = new(string)
 		**out = **in
+	}
+	if in.ServiceRef != nil {
+		in, out := &in.ServiceRef, &out.ServiceRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceRegion != nil {
 		in, out := &in.ServiceRegion, &out.ServiceRegion

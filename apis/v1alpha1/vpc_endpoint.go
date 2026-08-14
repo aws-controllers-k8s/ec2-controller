@@ -59,7 +59,8 @@ type VPCEndpointSpec struct {
 	// The Amazon Resource Name (ARN) of a service network that will be associated
 	// with the VPC endpoint of type service-network.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
-	ServiceNetworkARN *string `json:"serviceNetworkARN,omitempty"`
+	ServiceNetworkARN *string                                  `json:"serviceNetworkARN,omitempty"`
+	ServiceRef        *ackv1alpha1.AWSResourceReferenceWrapper `json:"serviceRef,omitempty"`
 	// The Region where the service is hosted. The default is the current Region.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	ServiceRegion *string `json:"serviceRegion,omitempty"`
