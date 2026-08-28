@@ -6,7 +6,7 @@ require (
 	github.com/aws-controllers-k8s/cloudwatchlogs-controller v1.4.0
 	github.com/aws-controllers-k8s/elbv2-controller v1.6.0
 	github.com/aws-controllers-k8s/iam-controller v1.6.2
-	github.com/aws-controllers-k8s/runtime v0.62.0
+	github.com/aws-controllers-k8s/runtime v0.63.0
 	github.com/aws/aws-sdk-go v1.50.20
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.290.1
