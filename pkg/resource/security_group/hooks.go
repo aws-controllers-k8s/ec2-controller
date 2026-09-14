@@ -15,6 +15,7 @@ package security_group
 
 import (
 	"context"
+	"errors"
 	"net"
 	"sort"
 	"strconv"
@@ -23,10 +24,10 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/aws/aws-sdk-go/aws"
-	awserr "github.com/aws/aws-sdk-go/aws/awserr"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 
@@ -740,8 +741,9 @@ func (rm *resourceManager) deleteDefaultSecurityGroupRule(
 	_, err = rm.sdkapi.RevokeSecurityGroupEgress(ctx, req)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.ErrorCode() {
 			case "InvalidPermission.NotFound":
 				return
 			}

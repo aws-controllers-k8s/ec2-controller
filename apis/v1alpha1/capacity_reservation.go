@@ -31,6 +31,7 @@ type CapacityReservationSpec struct {
 	AvailabilityZone *string `json:"availabilityZone,omitempty"`
 	// The ID of the Availability Zone in which to create the Capacity Reservation.
 	AvailabilityZoneID *string `json:"availabilityZoneID,omitempty"`
+	//
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -43,6 +44,7 @@ type CapacityReservationSpec struct {
 	//
 	// For more information, see Commitment duration (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cr-concepts.html#cr-commitment-duration).
 	CommitmentDuration *int64 `json:"commitmentDuration,omitempty"`
+	//
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -77,12 +79,12 @@ type CapacityReservationSpec struct {
 	// Indicates the way in which the Capacity Reservation ends. A Capacity Reservation
 	// can have one of the following end types:
 	//
-	//   - unlimited - The Capacity Reservation remains active until you explicitly
-	//     cancel it. Do not provide an EndDate if the EndDateType is unlimited.
+	//    * unlimited - The Capacity Reservation remains active until you explicitly
+	//    cancel it. Do not provide an EndDate if the EndDateType is unlimited.
 	//
-	//   - limited - The Capacity Reservation expires automatically at a specified
-	//     date and time. You must provide an EndDate value if the EndDateType value
-	//     is limited.
+	//    * limited - The Capacity Reservation expires automatically at a specified
+	//    date and time. You must provide an EndDate value if the EndDateType value
+	//    is limited.
 	EndDateType *string `json:"endDateType,omitempty"`
 	// Deprecated.
 	EphemeralStorage *bool `json:"ephemeralStorage,omitempty"`
@@ -99,15 +101,15 @@ type CapacityReservationSpec struct {
 	// Indicates the type of instance launches that the Capacity Reservation accepts.
 	// The options include:
 	//
-	//   - open - The Capacity Reservation automatically matches all instances
-	//     that have matching attributes (instance type, platform, and Availability
-	//     Zone). Instances that have matching attributes run in the Capacity Reservation
-	//     automatically without specifying any additional parameters.
+	//    * open - The Capacity Reservation automatically matches all instances
+	//    that have matching attributes (instance type, platform, and Availability
+	//    Zone). Instances that have matching attributes run in the Capacity Reservation
+	//    automatically without specifying any additional parameters.
 	//
-	//   - targeted - The Capacity Reservation only accepts instances that have
-	//     matching attributes (instance type, platform, and Availability Zone),
-	//     and explicitly target the Capacity Reservation. This ensures that only
-	//     permitted instances can use the reserved capacity.
+	//    * targeted - The Capacity Reservation only accepts instances that have
+	//    matching attributes (instance type, platform, and Availability Zone),
+	//    and explicitly target the Capacity Reservation. This ensures that only
+	//    permitted instances can use the reserved capacity.
 	//
 	// If you are requesting a future-dated Capacity Reservation, you must specify
 	// targeted.
@@ -126,6 +128,7 @@ type CapacityReservationSpec struct {
 	// in the Amazon EC2 User Guide.
 	// +kubebuilder:validation:Required
 	InstanceType *string `json:"instanceType"`
+	//
 	// Not supported for future-dated Capacity Reservations.
 	//
 	// The Amazon Resource Name (ARN) of the Outpost on which to create the Capacity
@@ -133,6 +136,7 @@ type CapacityReservationSpec struct {
 	//
 	// Regex Pattern: `^arn:aws([a-z-]+)?:outposts:[a-z\d-]+:\d{12}:outpost/op-[a-f0-9]{17}$`
 	OutpostARN *string `json:"outpostARN,omitempty"`
+	//
 	// Not supported for future-dated Capacity Reservations.
 	//
 	// The Amazon Resource Name (ARN) of the cluster placement group in which to
@@ -142,6 +146,7 @@ type CapacityReservationSpec struct {
 	//
 	// Regex Pattern: `^arn:aws([a-z-]+)?:ec2:[a-z\d-]+:\d{12}:placement-group/^.{1,255}$`
 	PlacementGroupARN *string `json:"placementGroupARN,omitempty"`
+	//
 	// Required for future-dated Capacity Reservations only. To create a Capacity
 	// Reservation for immediate use, omit this parameter.
 	//
@@ -158,11 +163,11 @@ type CapacityReservationSpec struct {
 	// Indicates the tenancy of the Capacity Reservation. A Capacity Reservation
 	// can have one of the following tenancy settings:
 	//
-	//   - default - The Capacity Reservation is created on hardware that is shared
-	//     with other Amazon Web Services accounts.
+	//    * default - The Capacity Reservation is created on hardware that is shared
+	//    with other Amazon Web Services accounts.
 	//
-	//   - dedicated - The Capacity Reservation is created on single-tenant hardware
-	//     that is dedicated to a single Amazon Web Services account.
+	//    * dedicated - The Capacity Reservation is created on single-tenant hardware
+	//    that is dedicated to a single Amazon Web Services account.
 	Tenancy *string `json:"tenancy,omitempty"`
 }
 

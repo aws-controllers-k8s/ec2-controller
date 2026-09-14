@@ -15,6 +15,7 @@ package vpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	smithy "github.com/aws/smithy-go"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
@@ -547,8 +548,9 @@ func (rm *resourceManager) deleteSecurityGroupDefaultRules(
 	_, err = rm.sdkapi.RevokeSecurityGroupEgress(ctx, egressReq)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupEgress", err)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.ErrorCode() {
 			case "InvalidPermission.NotFound":
 				return
 			}
@@ -573,8 +575,9 @@ func (rm *resourceManager) deleteSecurityGroupDefaultRules(
 	_, err = rm.sdkapi.RevokeSecurityGroupIngress(ctx, ingressReq)
 	rm.metrics.RecordAPICall("DELETE", "RevokeSecurityGroupIngress", err)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.ErrorCode() {
 			case "InvalidPermission.NotFound":
 				return
 			}
