@@ -1,0 +1,15 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: Instance
+metadata:
+  name: $INSTANCE_NAME
+spec:
+  imageID: $INSTANCE_AMI_ID
+  instanceType: $INSTANCE_TYPE
+  # An instance-level subnetID or securityGroupIDs may not be combined with
+  # networkInterfaces on the same RunInstances request; the ENI supplies both.
+  networkInterfaces:
+    - deviceIndex: 0
+      networkInterfaceID: $INSTANCE_ENI_ID
+  tags:
+    - key: $INSTANCE_TAG_KEY
+      value: $INSTANCE_TAG_VAL
