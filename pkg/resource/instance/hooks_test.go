@@ -195,3 +195,40 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
 }
+
+func TestSetAdditionalFields_SecurityGroups(t *testing.T) {
+	// The generated setResource maps instance.SecurityGroups[].GroupName into
+	// Spec.SecurityGroups; at launch (e.g. when the groups come from an attached
+	// ENI) GroupName can be nil. setAdditionalFields must drop those nil entries,
+	// or the post-create spec patch fails CRD validation and the instance never
+	// syncs. Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+	instance := svcsdktypes.Instance{
+		SecurityGroups: []svcsdktypes.GroupIdentifier{
+			{GroupId: aws.String("sg-01234567890abcdef")},
+		},
+	}
+
+	t.Run("drops nil security group names, keeps real ones", func(t *testing.T) {
+		ko := &svcapitypes.Instance{
+			Spec: svcapitypes.InstanceSpec{
+				SecurityGroups: []*string{nil, aws.String("default")},
+			},
+		}
+
+		setAdditionalFields(instance, ko)
+
+		assert.Equal(t, []*string{aws.String("default")}, ko.Spec.SecurityGroups)
+	})
+
+	t.Run("an all-nil name list becomes empty, never null entries", func(t *testing.T) {
+		ko := &svcapitypes.Instance{
+			Spec: svcapitypes.InstanceSpec{
+				SecurityGroups: []*string{nil},
+			},
+		}
+
+		setAdditionalFields(instance, ko)
+
+		assert.Empty(t, ko.Spec.SecurityGroups)
+	})
+}

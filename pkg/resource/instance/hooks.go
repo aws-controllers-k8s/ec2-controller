@@ -161,6 +161,21 @@ func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, group.GroupId)
 	}
 
+	// RunInstances can return security groups without a GroupName at launch (for
+	// example when the groups come from an attached network interface). The
+	// generated code maps those to nil entries in Spec.SecurityGroups, which fail
+	// CRD validation on the post-create spec patch and stop the resource from ever
+	// syncing. Drop the nil entries.
+	if ko.Spec.SecurityGroups != nil {
+		names := make([]*string, 0, len(ko.Spec.SecurityGroups))
+		for _, name := range ko.Spec.SecurityGroups {
+			if name != nil {
+				names = append(names, name)
+			}
+		}
+		ko.Spec.SecurityGroups = names
+	}
+
 	if instance.SourceDestCheck != nil {
 		ko.Spec.SourceDestCheckEnabled = instance.SourceDestCheck
 	}
