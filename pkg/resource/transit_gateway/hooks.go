@@ -15,13 +15,25 @@ package transit_gateway
 
 import (
 	"context"
+	"fmt"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	"github.com/aws-controllers-k8s/ec2-controller/pkg/tags"
+)
+
+// Fixed interval: a bare Needed() is rate-limited with exponential backoff that caps at 1000s.
+var (
+	ErrResourcePending = fmt.Errorf("transit gateway is in 'pending' state")
+
+	requeueWaitWhilePending = ackrequeue.NeededAfter(
+		ErrResourcePending,
+		ackrequeue.DefaultRequeueAfterDuration,
+	)
 )
 
 func isResourceDeleted(r *resource) bool {
