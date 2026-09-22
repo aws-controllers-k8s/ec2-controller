@@ -28,11 +28,15 @@ from e2e.tests.helper import EC2Validator
 
 RESOURCE_PLURAL = "transitgateways"
 
-## The long delete wait is required to make sure the TGW can transition out of its "pending" status.
-## TGWs are unable to be deleted while in "pending"
-CREATE_WAIT_AFTER_SECONDS = 90
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
+
+## A TGW cannot be deleted or modified while it is still "pending", and
+## provisioning routinely takes several minutes. The read path requeues with
+## "resource is pending" until the TGW reports "available", so
+## ACK.ResourceSynced=True is exactly that precondition -- wait on it rather than
+## sleeping a fixed interval that may or may not be long enough.
+SYNCED_WAIT_PERIODS = 8
 
 @pytest.fixture
 def simple_transit_gateway(request):
@@ -62,11 +66,19 @@ def simple_transit_gateway(request):
     )
 
     k8s.create_custom_resource(ref, resource_data)
-    time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
     cr = k8s.wait_resource_consumed_by_controller(ref)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
+
+    # Every test using this fixture goes on to delete or modify the TGW, neither
+    # of which AWS permits while it is "pending". Gate on the controller
+    # reporting it synced, then re-read so the yielded CR carries the settled
+    # status.
+    assert k8s.wait_on_condition(
+        ref, "ACK.ResourceSynced", "True", wait_periods=SYNCED_WAIT_PERIODS,
+    )
+    cr = k8s.get_resource(ref)
 
     yield (ref, cr)
 
@@ -84,14 +96,13 @@ class TestTGW:
         (ref, cr) = simple_transit_gateway
         resource_id = cr["status"]["transitGatewayID"]
 
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
         # Check TGW exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_transit_gateway(resource_id)
 
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        # Delete k8s resource. The fixture has already waited for the TGW to
+        # leave "pending", so the delete proceeds on the first reconcile.
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -105,8 +116,6 @@ class TestTGW:
         
         resource = k8s.get_resource(ref)
         resource_id = cr["status"]["transitGatewayID"]
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check TransitGateway exists in AWS
         ec2_validator = EC2Validator(ec2_client)
