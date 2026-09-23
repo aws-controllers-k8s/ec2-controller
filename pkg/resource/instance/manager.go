@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=instances,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=instances/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"HibernationOptions", "SourceDestCheckEnabled"}
+var lateInitializeFieldNames = []string{"BlockDeviceMappings", "CapacityReservationSpecification", "CPUOptions", "EnclaveOptions", "HibernationOptions", "IAMInstanceProfile", "MaintenanceOptions", "MetadataOptions", "Monitoring", "Placement", "PrivateDNSNameOptions", "PrivateIPAddress", "SecurityGroupIDs", "SecurityGroups", "SourceDestCheckEnabled", "SubnetID"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -251,10 +251,6 @@ func (rm *resourceManager) LateInitialize(
 func (rm *resourceManager) incompleteLateInitialization(
 	res acktypes.AWSResource,
 ) bool {
-	ko := rm.concreteResource(res).ko.DeepCopy()
-	if ko.Spec.HibernationOptions == nil {
-		return true
-	}
 	return false
 }
 
@@ -266,11 +262,53 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 ) acktypes.AWSResource {
 	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.BlockDeviceMappings != nil && latestKo.Spec.BlockDeviceMappings == nil {
+		latestKo.Spec.BlockDeviceMappings = observedKo.Spec.BlockDeviceMappings
+	}
+	if observedKo.Spec.CapacityReservationSpecification != nil && latestKo.Spec.CapacityReservationSpecification == nil {
+		latestKo.Spec.CapacityReservationSpecification = observedKo.Spec.CapacityReservationSpecification
+	}
+	if observedKo.Spec.CPUOptions != nil && latestKo.Spec.CPUOptions == nil {
+		latestKo.Spec.CPUOptions = observedKo.Spec.CPUOptions
+	}
+	if observedKo.Spec.EnclaveOptions != nil && latestKo.Spec.EnclaveOptions == nil {
+		latestKo.Spec.EnclaveOptions = observedKo.Spec.EnclaveOptions
+	}
 	if observedKo.Spec.HibernationOptions != nil && latestKo.Spec.HibernationOptions == nil {
 		latestKo.Spec.HibernationOptions = observedKo.Spec.HibernationOptions
 	}
+	if observedKo.Spec.IAMInstanceProfile != nil && latestKo.Spec.IAMInstanceProfile == nil {
+		latestKo.Spec.IAMInstanceProfile = observedKo.Spec.IAMInstanceProfile
+	}
+	if observedKo.Spec.MaintenanceOptions != nil && latestKo.Spec.MaintenanceOptions == nil {
+		latestKo.Spec.MaintenanceOptions = observedKo.Spec.MaintenanceOptions
+	}
+	if observedKo.Spec.MetadataOptions != nil && latestKo.Spec.MetadataOptions == nil {
+		latestKo.Spec.MetadataOptions = observedKo.Spec.MetadataOptions
+	}
+	if observedKo.Spec.Monitoring != nil && latestKo.Spec.Monitoring == nil {
+		latestKo.Spec.Monitoring = observedKo.Spec.Monitoring
+	}
+	if observedKo.Spec.Placement != nil && latestKo.Spec.Placement == nil {
+		latestKo.Spec.Placement = observedKo.Spec.Placement
+	}
+	if observedKo.Spec.PrivateDNSNameOptions != nil && latestKo.Spec.PrivateDNSNameOptions == nil {
+		latestKo.Spec.PrivateDNSNameOptions = observedKo.Spec.PrivateDNSNameOptions
+	}
+	if observedKo.Spec.PrivateIPAddress != nil && latestKo.Spec.PrivateIPAddress == nil {
+		latestKo.Spec.PrivateIPAddress = observedKo.Spec.PrivateIPAddress
+	}
+	if observedKo.Spec.SecurityGroupIDs != nil && latestKo.Spec.SecurityGroupIDs == nil {
+		latestKo.Spec.SecurityGroupIDs = observedKo.Spec.SecurityGroupIDs
+	}
+	if observedKo.Spec.SecurityGroups != nil && latestKo.Spec.SecurityGroups == nil {
+		latestKo.Spec.SecurityGroups = observedKo.Spec.SecurityGroups
+	}
 	if observedKo.Spec.SourceDestCheckEnabled != nil && latestKo.Spec.SourceDestCheckEnabled == nil {
 		latestKo.Spec.SourceDestCheckEnabled = observedKo.Spec.SourceDestCheckEnabled
+	}
+	if observedKo.Spec.SubnetID != nil && latestKo.Spec.SubnetID == nil {
+		latestKo.Spec.SubnetID = observedKo.Spec.SubnetID
 	}
 	return &resource{latestKo}
 }

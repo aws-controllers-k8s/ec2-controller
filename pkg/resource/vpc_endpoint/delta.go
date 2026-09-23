@@ -82,7 +82,9 @@ func newResourceDelta(
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled) {
-		delta.Add("Spec.PrivateDNSEnabled", a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled)
+		if !ackcompare.IsNilEqualsZero(a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled) {
+			delta.Add("Spec.PrivateDNSEnabled", a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled)
+		}
 	} else if a.ko.Spec.PrivateDNSEnabled != nil && b.ko.Spec.PrivateDNSEnabled != nil {
 		if *a.ko.Spec.PrivateDNSEnabled != *b.ko.Spec.PrivateDNSEnabled {
 			delta.Add("Spec.PrivateDNSEnabled", a.ko.Spec.PrivateDNSEnabled, b.ko.Spec.PrivateDNSEnabled)

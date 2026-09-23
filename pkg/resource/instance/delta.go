@@ -129,7 +129,9 @@ func newResourceDelta(
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized) {
-		delta.Add("Spec.EBSOptimized", a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized)
+		if !ackcompare.IsNilEqualsZero(a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized) {
+			delta.Add("Spec.EBSOptimized", a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized)
+		}
 	} else if a.ko.Spec.EBSOptimized != nil && b.ko.Spec.EBSOptimized != nil {
 		if *a.ko.Spec.EBSOptimized != *b.ko.Spec.EBSOptimized {
 			delta.Add("Spec.EBSOptimized", a.ko.Spec.EBSOptimized, b.ko.Spec.EBSOptimized)

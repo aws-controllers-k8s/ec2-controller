@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcs/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"EnableNetworkAddressUsageMetrics"}
+var lateInitializeFieldNames = []string{"EnableNetworkAddressUsageMetrics", "InstanceTenancy"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -264,6 +264,9 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
 	if observedKo.Spec.EnableNetworkAddressUsageMetrics != nil && latestKo.Spec.EnableNetworkAddressUsageMetrics == nil {
 		latestKo.Spec.EnableNetworkAddressUsageMetrics = observedKo.Spec.EnableNetworkAddressUsageMetrics
+	}
+	if observedKo.Spec.InstanceTenancy != nil && latestKo.Spec.InstanceTenancy == nil {
+		latestKo.Spec.InstanceTenancy = observedKo.Spec.InstanceTenancy
 	}
 	return &resource{latestKo}
 }
