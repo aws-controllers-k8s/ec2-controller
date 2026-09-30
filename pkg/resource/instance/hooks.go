@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -194,18 +195,60 @@ func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 var computeTagsDelta = tags.ComputeTagsDelta
 
 // launchTagResourceTypes returns the resource types Spec.Tags is applied to at launch.
-// network-interface is included only when the launch creates an ENI, since RunInstances
-// rejects tags for a resource type it does not create. volume is always included; whether
-// one is created depends on the AMI's root device type, not the spec.
-func launchTagResourceTypes(spec *v1alpha1.InstanceSpec) []svcsdktypes.ResourceType {
-	resourceTypes := []svcsdktypes.ResourceType{
-		svcsdktypes.ResourceTypeInstance,
-		svcsdktypes.ResourceTypeVolume,
+// RunInstances rejects tags for a resource type the launch does not create, so volume
+// and network-interface are included only when the launch creates one.
+func launchTagResourceTypes(
+	spec *v1alpha1.InstanceSpec,
+	createsVolume bool,
+) []svcsdktypes.ResourceType {
+	resourceTypes := []svcsdktypes.ResourceType{svcsdktypes.ResourceTypeInstance}
+	if createsVolume {
+		resourceTypes = append(resourceTypes, svcsdktypes.ResourceTypeVolume)
 	}
 	if createsNetworkInterface(spec) {
 		resourceTypes = append(resourceTypes, svcsdktypes.ResourceTypeNetworkInterface)
 	}
 	return resourceTypes
+}
+
+// createsVolume reports whether the launch creates at least one EBS volume: an EBS block
+// device mapping always does, otherwise only an EBS-backed AMI's root volume. When the AMI
+// cannot be resolved (no ImageID because it comes from a launch template, a resolve:ssm
+// alias, or a failed DescribeImages) it reports false, so a volume tag can never reject a
+// launch.
+func (rm *resourceManager) createsVolume(
+	ctx context.Context,
+	spec *v1alpha1.InstanceSpec,
+) bool {
+	if mapsEBSVolume(spec) {
+		return true
+	}
+	if spec.ImageID == nil || !strings.HasPrefix(*spec.ImageID, "ami-") {
+		return false
+	}
+	resp, err := rm.sdkapi.DescribeImages(ctx, &svcsdk.DescribeImagesInput{
+		ImageIds: []string{*spec.ImageID},
+	})
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeImages", err)
+	if err != nil {
+		// Log rather than return: a failed lookup must not block a launch that works without volume tags.
+		ackrtlog.FromContext(ctx).Info(
+			"unable to resolve AMI root device type, not tagging volumes at launch",
+			"image_id", *spec.ImageID, "error", err.Error())
+		return false
+	}
+	return len(resp.Images) > 0 &&
+		resp.Images[0].RootDeviceType == svcsdktypes.DeviceTypeEbs
+}
+
+// mapsEBSVolume reports whether any block device mapping requests an EBS volume.
+func mapsEBSVolume(spec *v1alpha1.InstanceSpec) bool {
+	for _, mapping := range spec.BlockDeviceMappings {
+		if mapping != nil && mapping.EBS != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // createsNetworkInterface reports whether the launch creates at least one ENI: an empty
@@ -224,8 +267,11 @@ func createsNetworkInterface(spec *v1alpha1.InstanceSpec) bool {
 
 // updateTagSpecificationsInCreateRequest applies Spec.Tags to each resource created at
 // launch via TagSpecifications, so tag-based SCPs (aws:RequestTag) pass at create time.
-func updateTagSpecificationsInCreateRequest(r *resource,
-	input *svcsdk.RunInstancesInput) {
+func (rm *resourceManager) updateTagSpecificationsInCreateRequest(
+	ctx context.Context,
+	r *resource,
+	input *svcsdk.RunInstancesInput,
+) {
 	input.TagSpecifications = nil
 	desiredTags := []svcsdktypes.Tag{}
 	for _, desiredTag := range r.ko.Spec.Tags {
@@ -242,7 +288,8 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 	if len(desiredTags) == 0 {
 		return
 	}
-	for _, resourceType := range launchTagResourceTypes(&r.ko.Spec) {
+	createsVolume := rm.createsVolume(ctx, &r.ko.Spec)
+	for _, resourceType := range launchTagResourceTypes(&r.ko.Spec, createsVolume) {
 		input.TagSpecifications = append(input.TagSpecifications,
 			svcsdktypes.TagSpecification{
 				ResourceType: resourceType,

@@ -14,6 +14,7 @@
 package instance
 
 import (
+	"context"
 	"testing"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
@@ -23,11 +24,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// ebsMappings requests an EBS volume, so createsVolume is true without calling DescribeImages.
+var ebsMappings = []*svcapitypes.BlockDeviceMapping{
+	{DeviceName: aws.String("/dev/sdf"), EBS: &svcapitypes.EBSBlockDevice{}},
+}
+
 func instanceWithTags(tags []*svcapitypes.Tag) *resource {
 	return &resource{
 		ko: &svcapitypes.Instance{
 			Spec: svcapitypes.InstanceSpec{
-				Tags: tags,
+				Tags:                tags,
+				BlockDeviceMappings: ebsMappings,
 			},
 		},
 	}
@@ -40,8 +47,9 @@ func instanceWithNetworkInterfaces(
 	return &resource{
 		ko: &svcapitypes.Instance{
 			Spec: svcapitypes.InstanceSpec{
-				Tags:              tags,
-				NetworkInterfaces: networkInterfaces,
+				Tags:                tags,
+				NetworkInterfaces:   networkInterfaces,
+				BlockDeviceMappings: ebsMappings,
 			},
 		},
 	}
@@ -56,6 +64,8 @@ func resourceTypesOf(specs []svcsdktypes.TagSpecification) []svcsdktypes.Resourc
 }
 
 func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
+	rm := &resourceManager{}
+	ctx := context.TODO()
 	tag := func(k, v string) *svcapitypes.Tag {
 		return &svcapitypes.Tag{Key: aws.String(k), Value: aws.String(v)}
 	}
@@ -71,7 +81,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 
 	t.Run("nil spec tags leaves TagSpecifications empty", func(t *testing.T) {
 		input := &svcsdk.RunInstancesInput{}
-		updateTagSpecificationsInCreateRequest(instanceWithTags(nil), input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, instanceWithTags(nil), input)
 		assert.Empty(t, input.TagSpecifications)
 	})
 
@@ -82,7 +92,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			tag("team", "ack"),
 		})
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 
@@ -101,7 +111,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 				{ResourceType: svcsdktypes.ResourceTypeElasticGpu},
 			},
 		}
-		updateTagSpecificationsInCreateRequest(
+		rm.updateTagSpecificationsInCreateRequest(ctx,
 			instanceWithTags([]*svcapitypes.Tag{tag("k", "v")}), input)
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
@@ -112,7 +122,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			{Key: aws.String("novalue")},
 		})
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 		for _, ts := range input.TagSpecifications {
@@ -129,7 +139,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			tag("env", "prod"),
 		})
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		for _, ts := range input.TagSpecifications {
 			assert.Equal(t,
@@ -144,7 +154,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			{Value: aws.String("orphan")},
 		})
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		// An entry with an empty Tags list is rejected by RunInstances, so no
 		// tag specification must be emitted at all.
@@ -160,7 +170,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			},
 		)
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		assert.Equal(t, []svcsdktypes.ResourceType{
 			svcsdktypes.ResourceTypeInstance,
@@ -178,7 +188,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			},
 		)
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
@@ -190,10 +200,79 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			[]*svcapitypes.InstanceNetworkInterfaceSpecification{},
 		)
 
-		updateTagSpecificationsInCreateRequest(desired, input)
+		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
+}
+
+func TestCreatesVolume(t *testing.T) {
+	// Only the branches that resolve without DescribeImages are covered here; the
+	// EBS-backed and instance-store AMI lookups are covered by the e2e tests.
+	rm := &resourceManager{}
+	ctx := context.TODO()
+
+	t.Run("an EBS block device mapping creates a volume", func(t *testing.T) {
+		spec := &svcapitypes.InstanceSpec{
+			ImageID:             aws.String("ami-0123456789abcdef0"),
+			BlockDeviceMappings: ebsMappings,
+		}
+		assert.True(t, rm.createsVolume(ctx, spec))
+	})
+
+	t.Run("an EBS block device mapping creates a volume with a launch template", func(t *testing.T) {
+		spec := &svcapitypes.InstanceSpec{
+			LaunchTemplate: &svcapitypes.LaunchTemplateSpecification{
+				LaunchTemplateID: aws.String("lt-0123456789abcdef0"),
+			},
+			BlockDeviceMappings: ebsMappings,
+		}
+		assert.True(t, rm.createsVolume(ctx, spec))
+	})
+
+	t.Run("no ImageID (launch template) omits volume", func(t *testing.T) {
+		spec := &svcapitypes.InstanceSpec{
+			LaunchTemplate: &svcapitypes.LaunchTemplateSpecification{
+				LaunchTemplateID: aws.String("lt-0123456789abcdef0"),
+			},
+		}
+		assert.False(t, rm.createsVolume(ctx, spec))
+	})
+
+	t.Run("a resolve:ssm ImageID omits volume", func(t *testing.T) {
+		spec := &svcapitypes.InstanceSpec{
+			ImageID: aws.String("resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"),
+		}
+		assert.False(t, rm.createsVolume(ctx, spec))
+	})
+
+	t.Run("mappings without EBS do not count", func(t *testing.T) {
+		spec := &svcapitypes.InstanceSpec{
+			BlockDeviceMappings: []*svcapitypes.BlockDeviceMapping{
+				nil,
+				{DeviceName: aws.String("/dev/sdb"), VirtualName: aws.String("ephemeral0")},
+				{DeviceName: aws.String("/dev/sdc"), NoDevice: aws.String("")},
+			},
+		}
+		assert.False(t, rm.createsVolume(ctx, spec))
+	})
+}
+
+func TestLaunchTagResourceTypes_Volume(t *testing.T) {
+	spec := &svcapitypes.InstanceSpec{}
+
+	assert.Equal(t, []svcsdktypes.ResourceType{
+		svcsdktypes.ResourceTypeInstance,
+		svcsdktypes.ResourceTypeVolume,
+		svcsdktypes.ResourceTypeNetworkInterface,
+	}, launchTagResourceTypes(spec, true))
+
+	// An instance-store AMI with no EBS mappings creates no volume, and RunInstances
+	// rejects a volume tag specification for it.
+	assert.Equal(t, []svcsdktypes.ResourceType{
+		svcsdktypes.ResourceTypeInstance,
+		svcsdktypes.ResourceTypeNetworkInterface,
+	}, launchTagResourceTypes(spec, false))
 }
 
 func TestSetAdditionalFields_SecurityGroups(t *testing.T) {
