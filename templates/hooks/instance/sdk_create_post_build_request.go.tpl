@@ -1,1 +1,1 @@
-    updateTagSpecificationsInCreateRequest(desired, input)
+    rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)

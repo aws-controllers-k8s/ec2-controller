@@ -29,6 +29,8 @@ from e2e.bootstrap_resources import get_bootstrap_resources
 RESOURCE_PLURAL = "instances"
 # highly available instance type for deterministic testing
 INSTANCE_TYPE = "m4.large"
+# Instance-store-backed AMIs need an instance type with local instance storage.
+INSTANCE_STORE_INSTANCE_TYPE = "m3.medium"
 INSTANCE_AMI = "Amazon Linux 2 Kernel"
 INSTANCE_TAG_KEY = "owner"
 INSTANCE_TAG_VAL = "ack-controller"
@@ -88,6 +90,86 @@ def get_ami_id(ec2_client):
                     return image['ImageId']
     except Exception as e:
         logging.debug(e)
+
+def get_instance_store_ami_id(ec2_client):
+    """Return the newest public instance-store-backed HVM AMI, or skip the test if none."""
+    try:
+        resp = ec2_client.describe_images(
+            ExecutableUsers=['all'],
+            Filters=[
+                {"Name": "root-device-type", "Values": ['instance-store']},
+                {"Name": "architecture", "Values": ['x86_64']},
+                {"Name": "state", "Values": ['available']},
+                {"Name": "virtualization-type", "Values": ['hvm']},
+            ],
+        )
+        images = sorted(resp['Images'], key=lambda i: i['CreationDate'], reverse=True)
+        if images:
+            return images[0]['ImageId']
+    except Exception as e:
+        logging.debug(e)
+    pytest.skip("no public instance-store-backed AMI available in this region")
+
+def create_launch_template(ec2_client, ami_id, instance_type):
+    resp = ec2_client.create_launch_template(
+        LaunchTemplateName=random_suffix_name("inst-launch-tpl", 24),
+        LaunchTemplateData={"ImageId": ami_id, "InstanceType": instance_type},
+    )
+    return resp["LaunchTemplate"]["LaunchTemplateId"]
+
+def delete_launch_template(ec2_client, launch_template_id):
+    try:
+        ec2_client.delete_launch_template(LaunchTemplateId=launch_template_id)
+    except Exception as e:
+        logging.debug(e)
+
+def create_instance(name_prefix, resource_file, replacements):
+    """Create an Instance CR and return its reference."""
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name(name_prefix, 24)
+    test_resource_values["INSTANCE_NAME"] = resource_name
+    test_resource_values["INSTANCE_TAG_KEY"] = INSTANCE_TAG_KEY
+    test_resource_values["INSTANCE_TAG_VAL"] = INSTANCE_TAG_VAL
+    test_resource_values.update(replacements)
+
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    return ref
+
+def wait_for_launch(ec2_client, ref):
+    """Wait until the Instance CR is running and synced; return its instance ID."""
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    # A rejected RunInstances leaves no instanceID in status, so this read is
+    # itself the assertion that the launch was accepted.
+    cr = k8s.get_resource(ref)
+    assert 'instanceID' in cr.get('status', {}), cr.get('status', {}).get('conditions')
+    instance_id = cr["status"]["instanceID"]
+
+    wait_for_instance_or_die(ec2_client, instance_id, 'running', TIMEOUT_SECONDS)
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+    return instance_id
+
+def delete_instance(ec2_client, ref, instance_id):
+    try:
+        k8s.delete_custom_resource(ref, 3, 10)
+    except:
+        pass
+    if instance_id is not None:
+        wait_for_instance_or_die(ec2_client, instance_id, 'terminated', TIMEOUT_SECONDS)
 
 def get_volumes_for_instance(ec2_client, instance_id):
     try:
@@ -495,6 +577,83 @@ class TestInstance:
                     ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
             if eni_id is not None:
                 delete_network_interface(ec2_client, eni_id)
+
+    def test_launch_instance_store_ami_omits_volume_tags(self, ec2_client):
+        """An instance-store-backed AMI creates no volume, so the launch must not carry
+        a volume tag specification (RunInstances rejects it). The instance is still tagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        ref = create_instance("inst-store-ami", "instance", {
+            "INSTANCE_AMI_ID": get_instance_store_ami_id(ec2_client),
+            "INSTANCE_TYPE": INSTANCE_STORE_INSTANCE_TYPE,
+            "INSTANCE_SUBNET_ID": subnet_id,
+        })
+        resource_id = None
+        try:
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert instance_aws["RootDeviceType"] == "instance-store"
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            assert get_volumes_for_instance(ec2_client, resource_id) == []
+        finally:
+            delete_instance(ec2_client, ref, resource_id)
+
+    def test_launch_template_without_image_id_omits_volume_tags(self, ec2_client):
+        """With no Spec.ImageID the AMI comes from the launch template and is unknown,
+        so volumes are not tagged at launch rather than risk rejecting it. The instance
+        is still tagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        launch_template_id = create_launch_template(
+            ec2_client, get_ami_id(ec2_client), INSTANCE_TYPE)
+        ref, resource_id = None, None
+        try:
+            ref = create_instance("inst-launch-tpl", "instance_launch_template", {
+                "INSTANCE_LAUNCH_TEMPLATE_ID": launch_template_id,
+                "INSTANCE_SUBNET_ID": subnet_id,
+            })
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            volumes = get_volumes_for_instance(ec2_client, resource_id)
+            assert len(volumes) > 0
+            for volume in volumes:
+                assert not has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        finally:
+            if ref is not None:
+                delete_instance(ec2_client, ref, resource_id)
+            delete_launch_template(ec2_client, launch_template_id)
+
+    def test_launch_template_with_ebs_mapping_tags_volumes(self, ec2_client):
+        """An EBS block device mapping always creates a volume, so volumes are tagged at
+        launch even when the AMI comes from a launch template and is otherwise unknown.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        launch_template_id = create_launch_template(
+            ec2_client, get_ami_id(ec2_client), INSTANCE_TYPE)
+        ref, resource_id = None, None
+        try:
+            ref = create_instance(
+                "inst-launch-tpl-ebs", "instance_launch_template_ebs_block_device", {
+                    "INSTANCE_LAUNCH_TEMPLATE_ID": launch_template_id,
+                    "INSTANCE_SUBNET_ID": subnet_id,
+                })
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            # The launch creates the AMI's root volume and the mapped /dev/sdf volume.
+            volumes = get_volumes_for_instance(ec2_client, resource_id)
+            assert len(volumes) == 2
+            for volume in volumes:
+                assert has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        finally:
+            if ref is not None:
+                delete_instance(ec2_client, ref, resource_id)
+            delete_launch_template(ec2_client, launch_template_id)
 
     def test_source_dest_check(self, ec2_client):
         """Test that SourceDestCheck can be disabled and re-enabled on an Instance.

@@ -706,7 +706,7 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
-	updateTagSpecificationsInCreateRequest(desired, input)
+	rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
 	var resp *svcsdk.RunInstancesOutput
 	_ = resp
