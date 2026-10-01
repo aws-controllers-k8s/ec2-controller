@@ -17,9 +17,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -161,6 +163,21 @@ func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, group.GroupId)
 	}
 
+	// RunInstances can return security groups without a GroupName at launch (for
+	// example when the groups come from an attached network interface). The
+	// generated code maps those to nil entries in Spec.SecurityGroups, which fail
+	// CRD validation on the post-create spec patch and stop the resource from ever
+	// syncing. Drop the nil entries.
+	if ko.Spec.SecurityGroups != nil {
+		names := make([]*string, 0, len(ko.Spec.SecurityGroups))
+		for _, name := range ko.Spec.SecurityGroups {
+			if name != nil {
+				names = append(names, name)
+			}
+		}
+		ko.Spec.SecurityGroups = names
+	}
+
 	if instance.SourceDestCheck != nil {
 		ko.Spec.SourceDestCheckEnabled = instance.SourceDestCheck
 	}
@@ -178,26 +195,107 @@ func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 
 var computeTagsDelta = tags.ComputeTagsDelta
 
-// updateTagSpecificationsInCreateRequest adds
-// Tags defined in the Spec to RunInstancesInput.TagSpecification
-// and ensures the ResourceType is always set to 'instance'
-func updateTagSpecificationsInCreateRequest(r *resource,
-	input *svcsdk.RunInstancesInput) {
-	input.TagSpecifications = nil
-	desiredTagSpecs := svcsdktypes.TagSpecification{}
-	if r.ko.Spec.Tags != nil {
-		instanceTags := []svcsdktypes.Tag{}
-		for _, desiredTag := range r.ko.Spec.Tags {
-			// Add in tags defined in the Spec
-			tag := svcsdktypes.Tag{}
-			if desiredTag.Key != nil && desiredTag.Value != nil {
-				tag.Key = desiredTag.Key
-				tag.Value = desiredTag.Value
-			}
-			instanceTags = append(instanceTags, tag)
-		}
-		desiredTagSpecs.ResourceType = "instance"
-		desiredTagSpecs.Tags = instanceTags
-		input.TagSpecifications = []svcsdktypes.TagSpecification{desiredTagSpecs}
+// launchTagResourceTypes returns the resource types Spec.Tags is applied to at launch.
+// RunInstances rejects tags for a resource type the launch does not create, so volume
+// and network-interface are included only when the launch creates one.
+func launchTagResourceTypes(
+	spec *v1alpha1.InstanceSpec,
+	createsVolume bool,
+) []svcsdktypes.ResourceType {
+	resourceTypes := []svcsdktypes.ResourceType{svcsdktypes.ResourceTypeInstance}
+	if createsVolume {
+		resourceTypes = append(resourceTypes, svcsdktypes.ResourceTypeVolume)
 	}
+	if createsNetworkInterface(spec) {
+		resourceTypes = append(resourceTypes, svcsdktypes.ResourceTypeNetworkInterface)
+	}
+	return resourceTypes
+}
+
+// createsVolume reports whether the launch creates at least one EBS volume: an EBS block
+// device mapping always does, otherwise only an EBS-backed AMI's root volume. When the AMI
+// cannot be resolved (no ImageID because it comes from a launch template, a resolve:ssm
+// alias, or a failed DescribeImages) it reports false, so a volume tag can never reject a
+// launch.
+func (rm *resourceManager) createsVolume(
+	ctx context.Context,
+	spec *v1alpha1.InstanceSpec,
+) bool {
+	if mapsEBSVolume(spec) {
+		return true
+	}
+	if spec.ImageID == nil || !strings.HasPrefix(*spec.ImageID, "ami-") {
+		return false
+	}
+	resp, err := rm.sdkapi.DescribeImages(ctx, &svcsdk.DescribeImagesInput{
+		ImageIds: []string{*spec.ImageID},
+	})
+	rm.metrics.RecordAPICall("READ_MANY", "DescribeImages", err)
+	if err != nil {
+		// Log rather than return: a failed lookup must not block a launch that works without volume tags.
+		ackrtlog.FromContext(ctx).Info(
+			"unable to resolve AMI root device type, not tagging volumes at launch",
+			"image_id", *spec.ImageID, "error", err.Error())
+		return false
+	}
+	return len(resp.Images) > 0 &&
+		resp.Images[0].RootDeviceType == svcsdktypes.DeviceTypeEbs
+}
+
+// mapsEBSVolume reports whether any block device mapping requests an EBS volume.
+func mapsEBSVolume(spec *v1alpha1.InstanceSpec) bool {
+	for _, mapping := range spec.BlockDeviceMappings {
+		if mapping != nil && mapping.EBS != nil {
+			return true
+		}
+	}
+	return false
+}
+
+// createsNetworkInterface reports whether the launch creates at least one ENI: an empty
+// list means EC2 creates the primary, otherwise only entries with no NetworkInterfaceID.
+func createsNetworkInterface(spec *v1alpha1.InstanceSpec) bool {
+	if len(spec.NetworkInterfaces) == 0 {
+		return true
+	}
+	for _, networkInterface := range spec.NetworkInterfaces {
+		if networkInterface != nil && networkInterface.NetworkInterfaceID == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// updateTagSpecificationsInCreateRequest applies Spec.Tags to each resource created at
+// launch via TagSpecifications, so tag-based SCPs (aws:RequestTag) pass at create time.
+func (rm *resourceManager) updateTagSpecificationsInCreateRequest(
+	ctx context.Context,
+	r *resource,
+	input *svcsdk.RunInstancesInput,
+) error {
+	input.TagSpecifications = nil
+	desiredTags := []svcsdktypes.Tag{}
+	for i, desiredTag := range r.ko.Spec.Tags {
+		// EnsureTags drops keyless tags before create; fail terminally if one ever gets through.
+		if desiredTag == nil || desiredTag.Key == nil {
+			return ackerr.NewTerminalError(fmt.Errorf("spec.tags[%d]: key is required", i))
+		}
+		desiredTags = append(desiredTags, svcsdktypes.Tag{
+			Key:   desiredTag.Key,
+			Value: desiredTag.Value,
+		})
+	}
+
+	if len(desiredTags) == 0 {
+		return nil
+	}
+	createsVolume := rm.createsVolume(ctx, &r.ko.Spec)
+	for _, resourceType := range launchTagResourceTypes(&r.ko.Spec, createsVolume) {
+		input.TagSpecifications = append(input.TagSpecifications,
+			svcsdktypes.TagSpecification{
+				ResourceType: resourceType,
+				Tags:         desiredTags,
+			})
+	}
+	return nil
 }
