@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -81,7 +82,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 
 	t.Run("nil spec tags leaves TagSpecifications empty", func(t *testing.T) {
 		input := &svcsdk.RunInstancesInput{}
-		rm.updateTagSpecificationsInCreateRequest(ctx, instanceWithTags(nil), input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, instanceWithTags(nil), input))
 		assert.Empty(t, input.TagSpecifications)
 	})
 
@@ -92,7 +93,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			tag("team", "ack"),
 		})
 
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 
@@ -111,8 +112,8 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 				{ResourceType: svcsdktypes.ResourceTypeElasticGpu},
 			},
 		}
-		rm.updateTagSpecificationsInCreateRequest(ctx,
-			instanceWithTags([]*svcapitypes.Tag{tag("k", "v")}), input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx,
+			instanceWithTags([]*svcapitypes.Tag{tag("k", "v")}), input))
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
 
@@ -122,7 +123,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			{Key: aws.String("novalue")},
 		})
 
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 		for _, ts := range input.TagSpecifications {
@@ -132,32 +133,18 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 		}
 	})
 
-	t.Run("tag without a key is skipped", func(t *testing.T) {
+	t.Run("tag without a key is a terminal error", func(t *testing.T) {
 		input := &svcsdk.RunInstancesInput{}
 		desired := instanceWithTags([]*svcapitypes.Tag{
-			{Value: aws.String("orphan")},
 			tag("env", "prod"),
-		})
-
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
-
-		for _, ts := range input.TagSpecifications {
-			assert.Equal(t,
-				[]svcsdktypes.Tag{{Key: aws.String("env"), Value: aws.String("prod")}},
-				ts.Tags, "resource type %s", ts.ResourceType)
-		}
-	})
-
-	t.Run("no usable tags leaves TagSpecifications empty", func(t *testing.T) {
-		input := &svcsdk.RunInstancesInput{}
-		desired := instanceWithTags([]*svcapitypes.Tag{
 			{Value: aws.String("orphan")},
 		})
 
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
+		err := rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
 
-		// An entry with an empty Tags list is rejected by RunInstances, so no
-		// tag specification must be emitted at all.
+		var terminalErr *ackerr.TerminalError
+		assert.ErrorAs(t, err, &terminalErr)
+		assert.ErrorContains(t, err, "spec.tags[1]: key is required")
 		assert.Empty(t, input.TagSpecifications)
 	})
 
@@ -170,7 +157,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			},
 		)
 
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
 
 		assert.Equal(t, []svcsdktypes.ResourceType{
 			svcsdktypes.ResourceTypeInstance,
@@ -188,7 +175,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			},
 		)
 
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
@@ -200,7 +187,7 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 			[]*svcapitypes.InstanceNetworkInterfaceSpecification{},
 		)
 
-		rm.updateTagSpecificationsInCreateRequest(ctx, desired, input)
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
 
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})

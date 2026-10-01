@@ -21,6 +21,7 @@ import (
 	"time"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -271,13 +272,13 @@ func (rm *resourceManager) updateTagSpecificationsInCreateRequest(
 	ctx context.Context,
 	r *resource,
 	input *svcsdk.RunInstancesInput,
-) {
+) error {
 	input.TagSpecifications = nil
 	desiredTags := []svcsdktypes.Tag{}
-	for _, desiredTag := range r.ko.Spec.Tags {
-		// Skip tags with no key; a nil value passes through as empty, matching tags.Sync.
+	for i, desiredTag := range r.ko.Spec.Tags {
+		// EnsureTags drops keyless tags before create; fail terminally if one ever gets through.
 		if desiredTag == nil || desiredTag.Key == nil {
-			continue
+			return ackerr.NewTerminalError(fmt.Errorf("spec.tags[%d]: key is required", i))
 		}
 		desiredTags = append(desiredTags, svcsdktypes.Tag{
 			Key:   desiredTag.Key,
@@ -286,7 +287,7 @@ func (rm *resourceManager) updateTagSpecificationsInCreateRequest(
 	}
 
 	if len(desiredTags) == 0 {
-		return
+		return nil
 	}
 	createsVolume := rm.createsVolume(ctx, &r.ko.Spec)
 	for _, resourceType := range launchTagResourceTypes(&r.ko.Spec, createsVolume) {
@@ -296,4 +297,5 @@ func (rm *resourceManager) updateTagSpecificationsInCreateRequest(
 				Tags:         desiredTags,
 			})
 	}
+	return nil
 }
