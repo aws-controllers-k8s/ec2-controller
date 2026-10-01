@@ -42,6 +42,13 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
+		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {
+		if *a.ko.Spec.Description != *b.ko.Spec.Description {
+			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
