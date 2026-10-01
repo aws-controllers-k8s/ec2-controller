@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcendpoints,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=vpcendpoints/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"PolicyDocument"}
+var lateInitializeFieldNames = []string{"DNSOptions", "IPAddressType", "PolicyDocument", "ServiceRegion", "VPCEndpointType"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -262,8 +262,20 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 ) acktypes.AWSResource {
 	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.DNSOptions != nil && latestKo.Spec.DNSOptions == nil {
+		latestKo.Spec.DNSOptions = observedKo.Spec.DNSOptions
+	}
+	if observedKo.Spec.IPAddressType != nil && latestKo.Spec.IPAddressType == nil {
+		latestKo.Spec.IPAddressType = observedKo.Spec.IPAddressType
+	}
 	if observedKo.Spec.PolicyDocument != nil && latestKo.Spec.PolicyDocument == nil {
 		latestKo.Spec.PolicyDocument = observedKo.Spec.PolicyDocument
+	}
+	if observedKo.Spec.ServiceRegion != nil && latestKo.Spec.ServiceRegion == nil {
+		latestKo.Spec.ServiceRegion = observedKo.Spec.ServiceRegion
+	}
+	if observedKo.Spec.VPCEndpointType != nil && latestKo.Spec.VPCEndpointType == nil {
+		latestKo.Spec.VPCEndpointType = observedKo.Spec.VPCEndpointType
 	}
 	return &resource{latestKo}
 }

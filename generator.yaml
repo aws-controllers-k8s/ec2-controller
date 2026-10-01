@@ -379,6 +379,9 @@ resources:
         from:
           operation: ModifyCapacityReservation
           path: AdditionalInfo
+      AvailabilityZoneId:
+        late_initialize:
+          skip_incomplete_check: {}
       CapacityReservationID:
         print:
           name: ID
@@ -442,18 +445,60 @@ resources:
         404:
           code: InvalidInstanceID.NotFound
     fields:
+      BlockDeviceMappings:
+        late_initialize:
+          skip_incomplete_check: {}
+      CapacityReservationSpecification:
+        late_initialize:
+          skip_incomplete_check: {}
+      CpuOptions:
+        late_initialize:
+          skip_incomplete_check: {}
+      EbsOptimized:
+        compare:
+          nil_equals_zero_value: true
+      EnclaveOptions:
+        late_initialize:
+          skip_incomplete_check: {}
       HibernationOptions:
-        late_initialize: {}
+        late_initialize:
+          skip_incomplete_check: {}
+      IamInstanceProfile:
+        late_initialize:
+          skip_incomplete_check: {}
       InstanceID:
         print:
           name: ID
+      MaintenanceOptions:
+        late_initialize:
+          skip_incomplete_check: {}
       MaxCount:
         is_required: false
+      MetadataOptions:
+        late_initialize:
+          skip_incomplete_check: {}
       MinCount:
         is_required: false
+      Monitoring:
+        late_initialize:
+          skip_incomplete_check: {}
+      Placement:
+        late_initialize:
+          skip_incomplete_check: {}
+      PrivateDnsNameOptions:
+        late_initialize:
+          skip_incomplete_check: {}
+      PrivateIpAddress:
+        late_initialize:
+          skip_incomplete_check: {}
+      SecurityGroupIds:
+        late_initialize:
+          skip_incomplete_check: {}
       SecurityGroups:
         set:
           - from: GroupName
+        late_initialize:
+          skip_incomplete_check: {}
       SourceDestCheckEnabled:
         type: bool
         # Optional field, applied post-create; late-init the observed value to
@@ -468,6 +513,8 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
+        late_initialize:
+          skip_incomplete_check: {}
       Tags:
         from:
           operation: CreateTags
@@ -705,6 +752,12 @@ resources:
         references:
           resource: ElasticIPAddress
           path: Status.AllocationID
+      AvailabilityMode:
+        late_initialize:
+          skip_incomplete_check: {}
+      ConnectivityType:
+        late_initialize:
+          skip_incomplete_check: {}
       SubnetId:
         references:
           resource: Subnet
@@ -713,6 +766,8 @@ resources:
         references:
           resource: VPC
           path: Status.VPCID
+        late_initialize:
+          skip_incomplete_check: {}
       StatusVPCID:
         from:
           operation: DescribeNatGateways
@@ -1044,18 +1099,39 @@ resources:
       # relocate fields from Status to Spec.
       AssignIpv6AddressOnCreation:
         type: bool
+        compare:
+          nil_equals_zero_value: true
+      AvailabilityZone:
+        late_initialize:
+          skip_incomplete_check: {}
+      AvailabilityZoneId:
+        late_initialize:
+          skip_incomplete_check: {}
       CustomerOwnedIpv4Pool:
         type: string
       EnableDns64:
         type: bool
+        compare:
+          nil_equals_zero_value: true
       EnableResourceNameDnsARecord:
         type: bool
+        compare:
+          nil_equals_zero_value: true
       EnableResourceNameDnsAAAARecord:
         type: bool
+        compare:
+          nil_equals_zero_value: true
       HostnameType:
         type: string
+        late_initialize:
+          skip_incomplete_check: {}
+      Ipv6Native:
+        compare:
+          nil_equals_zero_value: true
       MapPublicIpOnLaunch:
         type: bool
+        compare:
+          nil_equals_zero_value: true
       RouteTables:
         custom_field:
           list_of: String
@@ -1093,6 +1169,9 @@ resources:
       custom_method_name: customUpdateSubnet
   TransitGateway:
     fields:
+      Options:
+        late_initialize:
+          skip_incomplete_check: {}
       Tags:
         from:
           operation: CreateTags
@@ -1182,10 +1261,13 @@ resources:
       EnableNetworkAddressUsageMetrics:
         late_initialize:
           skip_incomplete_check: {}
-        
+
         from:
           operation: ModifyVpcAttribute
           path: EnableNetworkAddressUsageMetrics.Value
+      InstanceTenancy:
+        late_initialize:
+          skip_incomplete_check: {}
       State:
         print:
           name: state
@@ -1215,10 +1297,22 @@ resources:
         template_path: hooks/vpc/sdk_file_end.go.tpl
   VpcEndpoint:
     fields:
+      DnsOptions:
+        late_initialize:
+          skip_incomplete_check: {}
+      IpAddressType:
+        late_initialize:
+          skip_incomplete_check: {}
       PolicyDocument:
         late_initialize:
           skip_incomplete_check: {}
         is_iam_policy: true
+      PrivateDnsEnabled:
+        compare:
+          nil_equals_zero_value: true
+      VpcEndpointType:
+        late_initialize:
+          skip_incomplete_check: {}
       Tags:
         from:
           operation: CreateTags
@@ -1252,6 +1346,8 @@ resources:
       ServiceRegion:
         # ServiceRegion is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
+        late_initialize:
+          skip_incomplete_check: {}
       ServiceNetworkARN:
         # ServiceNetworkARN is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
