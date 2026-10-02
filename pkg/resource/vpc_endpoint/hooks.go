@@ -44,7 +44,7 @@ func vpcEndpointPending(r *resource) bool {
 		return false
 	}
 	cs := *r.ko.Status.State
-	return cs == StatusPending
+	return cs == StatusPending || cs == StatusPendingAcceptance
 }
 
 // addIDToDeleteRequest adds resource's Vpc Endpoint ID to DeleteRequest.
