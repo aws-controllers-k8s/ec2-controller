@@ -85,8 +85,9 @@ func (rm *resourceManager) getRules(
 		},
 	}
 
+	var resp *svcsdk.DescribeSecurityGroupRulesOutput
 	for {
-		resp, err := rm.sdkapi.DescribeSecurityGroupRules(ctx, input)
+		resp, err = rm.sdkapi.DescribeSecurityGroupRules(ctx, input)
 		rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroupRules", err)
 		if err != nil || resp == nil {
 			break
