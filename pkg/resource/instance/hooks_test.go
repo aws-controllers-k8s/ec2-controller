@@ -180,6 +180,38 @@ func TestUpdateTagSpecificationsInCreateRequest(t *testing.T) {
 		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
 	})
 
+	t.Run("a launch template with no network interfaces omits network-interface", func(t *testing.T) {
+		input := &svcsdk.RunInstancesInput{}
+		desired := instanceWithTags([]*svcapitypes.Tag{tag("env", "prod")})
+		desired.ko.Spec.LaunchTemplate = &svcapitypes.LaunchTemplateSpecification{
+			LaunchTemplateID: aws.String("lt-0123456789abcdef0"),
+		}
+
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
+
+		assert.Equal(t, []svcsdktypes.ResourceType{
+			svcsdktypes.ResourceTypeInstance,
+			svcsdktypes.ResourceTypeVolume,
+		}, resourceTypesOf(input.TagSpecifications))
+	})
+
+	t.Run("a launch template with spec network interfaces uses the spec", func(t *testing.T) {
+		input := &svcsdk.RunInstancesInput{}
+		desired := instanceWithNetworkInterfaces(
+			[]*svcapitypes.Tag{tag("env", "prod")},
+			[]*svcapitypes.InstanceNetworkInterfaceSpecification{
+				{DeviceIndex: aws.Int64(0)},
+			},
+		)
+		desired.ko.Spec.LaunchTemplate = &svcapitypes.LaunchTemplateSpecification{
+			LaunchTemplateID: aws.String("lt-0123456789abcdef0"),
+		}
+
+		assert.NoError(t, rm.updateTagSpecificationsInCreateRequest(ctx, desired, input))
+
+		assert.Equal(t, wantResourceTypes, resourceTypesOf(input.TagSpecifications))
+	})
+
 	t.Run("an empty network interface list creates the primary ENI", func(t *testing.T) {
 		input := &svcsdk.RunInstancesInput{}
 		desired := instanceWithNetworkInterfaces(

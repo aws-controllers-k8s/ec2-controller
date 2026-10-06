@@ -110,10 +110,13 @@ def get_instance_store_ami_id(ec2_client):
         logging.debug(e)
     pytest.skip("no public instance-store-backed AMI available in this region")
 
-def create_launch_template(ec2_client, ami_id, instance_type):
+def create_launch_template(ec2_client, ami_id, instance_type, network_interfaces=None):
+    data = {"ImageId": ami_id, "InstanceType": instance_type}
+    if network_interfaces is not None:
+        data["NetworkInterfaces"] = network_interfaces
     resp = ec2_client.create_launch_template(
         LaunchTemplateName=random_suffix_name("inst-launch-tpl", 24),
-        LaunchTemplateData={"ImageId": ami_id, "InstanceType": instance_type},
+        LaunchTemplateData=data,
     )
     return resp["LaunchTemplate"]["LaunchTemplateId"]
 
@@ -602,8 +605,9 @@ class TestInstance:
 
     def test_launch_template_without_image_id_omits_volume_tags(self, ec2_client):
         """With no Spec.ImageID the AMI comes from the launch template and is unknown,
-        so volumes are not tagged at launch rather than risk rejecting it. The instance
-        is still tagged.
+        so volumes are not tagged at launch rather than risk rejecting it. Likewise the
+        template may attach an existing ENI, so network interfaces are not tagged either.
+        The instance is still tagged.
         Ref: https://github.com/aws-controllers-k8s/community/issues/2954
         """
         subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
@@ -623,10 +627,46 @@ class TestInstance:
             assert len(volumes) > 0
             for volume in volumes:
                 assert not has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            enis = get_network_interfaces_for_instance(ec2_client, resource_id)
+            assert len(enis) > 0
+            for eni in enis:
+                assert not has_tag(eni.get("TagSet", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
         finally:
             if ref is not None:
                 delete_instance(ec2_client, ref, resource_id)
             delete_launch_template(ec2_client, launch_template_id)
+
+    def test_launch_template_attaching_existing_eni(self, ec2_client):
+        """A launch template that attaches a pre-existing ENI creates no network interface,
+        so the launch must not carry a network-interface tag specification (RunInstances
+        rejects it). The instance is still tagged and the ENI is left untagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        eni_id = create_network_interface(ec2_client, subnet_id)
+        launch_template_id = None
+        ref, resource_id = None, None
+        try:
+            launch_template_id = create_launch_template(
+                ec2_client, get_ami_id(ec2_client), INSTANCE_TYPE,
+                network_interfaces=[{"DeviceIndex": 0, "NetworkInterfaceId": eni_id}])
+            ref = create_instance(
+                "inst-launch-tpl-eni", "instance_launch_template_existing_eni", {
+                    "INSTANCE_LAUNCH_TEMPLATE_ID": launch_template_id,
+                })
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            eni = get_network_interface(ec2_client, eni_id)
+            assert eni["Attachment"]["InstanceId"] == resource_id
+            assert not has_tag(eni.get("TagSet", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        finally:
+            if ref is not None:
+                delete_instance(ec2_client, ref, resource_id)
+            if launch_template_id is not None:
+                delete_launch_template(ec2_client, launch_template_id)
+            delete_network_interface(ec2_client, eni_id)
 
     def test_launch_template_with_ebs_mapping_tags_volumes(self, ec2_client):
         """An EBS block device mapping always creates a volume, so volumes are tagged at

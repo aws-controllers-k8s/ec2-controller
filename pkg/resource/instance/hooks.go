@@ -252,11 +252,13 @@ func mapsEBSVolume(spec *v1alpha1.InstanceSpec) bool {
 	return false
 }
 
-// createsNetworkInterface reports whether the launch creates at least one ENI: an empty
-// list means EC2 creates the primary, otherwise only entries with no NetworkInterfaceID.
+// createsNetworkInterface reports whether the launch creates at least one ENI: only entries
+// with no NetworkInterfaceID do. An empty list means EC2 creates the primary, unless a launch
+// template is set: it may attach an existing ENI the spec cannot see, so it reports false
+// rather than risk rejecting the launch.
 func createsNetworkInterface(spec *v1alpha1.InstanceSpec) bool {
 	if len(spec.NetworkInterfaces) == 0 {
-		return true
+		return spec.LaunchTemplate == nil
 	}
 	for _, networkInterface := range spec.NetworkInterfaces {
 		if networkInterface != nil && networkInterface.NetworkInterfaceID == nil {
