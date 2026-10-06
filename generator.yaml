@@ -961,6 +961,10 @@ resources:
           input_fields:
             GroupIds: Ids
             GroupNames: Names
+    exceptions:
+      errors:
+        404:
+          code: InvalidGroup.NotFound
     hooks:
       delta_post_compare:
         code: customPostCompare(delta, a, b)
@@ -1256,6 +1260,9 @@ resources:
         # ServiceNetworkARN is not supported in ModifyVpcEndpoint's input.
         is_immutable: true
     exceptions:
+      errors:
+        404:
+          code: InvalidVpcEndpointId.NotFound
       terminal_codes:
         - InvalidVpcId.Malformed
         - InvalidServiceName
@@ -1316,6 +1323,10 @@ resources:
     list_operation:
       match_fields:
         - ServiceId
+    exceptions:
+      errors:
+        404:
+          code: InvalidVpcEndpointServiceId.NotFound
     hooks:
       delta_pre_compare:
         code: customPreCompare(delta, a, b)
