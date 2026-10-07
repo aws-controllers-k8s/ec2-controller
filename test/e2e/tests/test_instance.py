@@ -29,6 +29,8 @@ from e2e.bootstrap_resources import get_bootstrap_resources
 RESOURCE_PLURAL = "instances"
 # highly available instance type for deterministic testing
 INSTANCE_TYPE = "m4.large"
+# Instance-store-backed AMIs need an instance type with local instance storage.
+INSTANCE_STORE_INSTANCE_TYPE = "m3.medium"
 INSTANCE_AMI = "Amazon Linux 2 Kernel"
 INSTANCE_TAG_KEY = "owner"
 INSTANCE_TAG_VAL = "ack-controller"
@@ -89,6 +91,149 @@ def get_ami_id(ec2_client):
     except Exception as e:
         logging.debug(e)
 
+def get_instance_store_ami_id(ec2_client):
+    """Return the newest public instance-store-backed HVM AMI, or skip the test if none."""
+    try:
+        resp = ec2_client.describe_images(
+            ExecutableUsers=['all'],
+            Filters=[
+                {"Name": "root-device-type", "Values": ['instance-store']},
+                {"Name": "architecture", "Values": ['x86_64']},
+                {"Name": "state", "Values": ['available']},
+                {"Name": "virtualization-type", "Values": ['hvm']},
+            ],
+        )
+        images = sorted(resp['Images'], key=lambda i: i['CreationDate'], reverse=True)
+        if images:
+            return images[0]['ImageId']
+    except Exception as e:
+        logging.debug(e)
+    pytest.skip("no public instance-store-backed AMI available in this region")
+
+def create_launch_template(ec2_client, ami_id, instance_type, network_interfaces=None):
+    data = {"ImageId": ami_id, "InstanceType": instance_type}
+    if network_interfaces is not None:
+        data["NetworkInterfaces"] = network_interfaces
+    resp = ec2_client.create_launch_template(
+        LaunchTemplateName=random_suffix_name("inst-launch-tpl", 24),
+        LaunchTemplateData=data,
+    )
+    return resp["LaunchTemplate"]["LaunchTemplateId"]
+
+def delete_launch_template(ec2_client, launch_template_id):
+    try:
+        ec2_client.delete_launch_template(LaunchTemplateId=launch_template_id)
+    except Exception as e:
+        logging.debug(e)
+
+def create_instance(name_prefix, resource_file, replacements):
+    """Create an Instance CR and return its reference."""
+    test_resource_values = REPLACEMENT_VALUES.copy()
+    resource_name = random_suffix_name(name_prefix, 24)
+    test_resource_values["INSTANCE_NAME"] = resource_name
+    test_resource_values["INSTANCE_TAG_KEY"] = INSTANCE_TAG_KEY
+    test_resource_values["INSTANCE_TAG_VAL"] = INSTANCE_TAG_VAL
+    test_resource_values.update(replacements)
+
+    resource_data = load_ec2_resource(
+        resource_file,
+        additional_replacements=test_resource_values,
+    )
+    logging.debug(resource_data)
+
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    return ref
+
+def wait_for_launch(ec2_client, ref):
+    """Wait until the Instance CR is running and synced; return its instance ID."""
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+    # A rejected RunInstances leaves no instanceID in status, so this read is
+    # itself the assertion that the launch was accepted.
+    cr = k8s.get_resource(ref)
+    assert 'instanceID' in cr.get('status', {}), cr.get('status', {}).get('conditions')
+    instance_id = cr["status"]["instanceID"]
+
+    wait_for_instance_or_die(ec2_client, instance_id, 'running', TIMEOUT_SECONDS)
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+    return instance_id
+
+def delete_instance(ec2_client, ref, instance_id):
+    try:
+        k8s.delete_custom_resource(ref, 3, 10)
+    except:
+        pass
+    if instance_id is not None:
+        wait_for_instance_or_die(ec2_client, instance_id, 'terminated', TIMEOUT_SECONDS)
+
+def get_volumes_for_instance(ec2_client, instance_id):
+    try:
+        resp = ec2_client.describe_volumes(
+            Filters=[{"Name": "attachment.instance-id", "Values": [instance_id]}],
+        )
+        return resp.get("Volumes", [])
+    except Exception as e:
+        logging.debug(e)
+        return []
+
+def get_network_interfaces_for_instance(ec2_client, instance_id):
+    try:
+        resp = ec2_client.describe_network_interfaces(
+            Filters=[{"Name": "attachment.instance-id", "Values": [instance_id]}],
+        )
+        return resp.get("NetworkInterfaces", [])
+    except Exception as e:
+        logging.debug(e)
+        return []
+
+def has_tag(tag_list, key, val):
+    return any(t.get("Key") == key and t.get("Value") == val for t in tag_list)
+
+def create_network_interface(ec2_client, subnet_id):
+    resp = ec2_client.create_network_interface(
+        SubnetId=subnet_id,
+        Description="ack-ec2-controller e2e pre-existing ENI",
+    )
+    return resp["NetworkInterface"]["NetworkInterfaceId"]
+
+
+def get_network_interface(ec2_client, eni_id):
+    try:
+        resp = ec2_client.describe_network_interfaces(
+            NetworkInterfaceIds=[eni_id],
+        )
+        return resp["NetworkInterfaces"][0]
+    except Exception as e:
+        logging.debug(e)
+        return None
+
+def delete_network_interface(ec2_client, eni_id):
+    """Delete an ENI, waiting for it to detach from a terminating instance first.
+
+    An ENI attached at launch rather than created by it keeps
+    DeleteOnTermination=false, so it outlives the instance and must be removed
+    explicitly once it returns to 'available'.
+    """
+    timeout = datetime.datetime.now() + datetime.timedelta(seconds=TIMEOUT_SECONDS)
+    while datetime.datetime.now() < timeout:
+        eni = get_network_interface(ec2_client, eni_id)
+        if eni is None:
+            return
+        if eni.get("Status") == "available":
+            break
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+    try:
+        ec2_client.delete_network_interface(NetworkInterfaceId=eni_id)
+    except Exception as e:
+        logging.debug(e)
 
 @pytest.fixture
 def instance(ec2_client):
@@ -301,6 +446,254 @@ class TestInstance:
         # State needs to be 'terminated' in order to remove the dependency on the shared subnet
         # for successful test cleanup
         wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
+
+    def test_launch_tags_create_only_for_subresources(self, ec2_client, instance):
+        """Spec.Tags are applied to volumes and network interfaces at launch (create-only):
+        a later Spec.Tags update reconciles the instance's tags but leaves the volume and
+        network interface tags at their create-time values.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        (ref, cr) = instance
+        resource_id = cr["status"]["instanceID"]
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        assert get_instance(ec2_client, resource_id) is not None
+        wait_for_instance_or_die(ec2_client, resource_id, 'running', TIMEOUT_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Create-time: the launch tag is on the instance, its volumes, and its ENIs.
+        volumes = get_volumes_for_instance(ec2_client, resource_id)
+        enis = get_network_interfaces_for_instance(ec2_client, resource_id)
+        assert len(volumes) > 0 and len(enis) > 0
+        for volume in volumes:
+            assert has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        for eni in enis:
+            assert has_tag(eni.get("TagSet", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+
+        # Add a tag via Spec.Tags.
+        added_key, added_val = "addedkey", "addedval"
+        updates = {"spec": {"tags": [
+            {"key": INSTANCE_TAG_KEY, "value": INSTANCE_TAG_VAL},
+            {"key": added_key, "value": added_val},
+        ]}}
+        k8s.patch_custom_resource(ref, updates)
+        time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+        # Instance tags ARE reconciled: the added tag lands on the instance.
+        instance_aws = get_instance(ec2_client, resource_id)
+        assert has_tag(instance_aws["Tags"], added_key, added_val)
+
+        # Volume/ENI tags are create-only: the added tag must NOT appear on them.
+        for volume in get_volumes_for_instance(ec2_client, resource_id):
+            assert not has_tag(volume.get("Tags", []), added_key, added_val)
+        for eni in get_network_interfaces_for_instance(ec2_client, resource_id):
+            assert not has_tag(eni.get("TagSet", []), added_key, added_val)
+
+        _, deleted = k8s.delete_custom_resource(ref, 2, 5)
+        assert deleted is True
+        wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
+
+    def test_launch_with_existing_network_interface(self, ec2_client):
+        """An Instance that attaches a pre-existing ENI still launches.
+
+        RunInstances rejects a network-interface tag specification when the request
+        creates no network interface, so the controller must omit that resource type
+        for this shape. The launch tag still reaches the instance and its volumes,
+        and the pre-existing ENI is left untagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        subnet_id = test_vpc.public_subnets.subnet_ids[0]
+
+        ref = None
+        resource_id = None
+        eni_id = None
+
+        try:
+            eni_id = create_network_interface(ec2_client, subnet_id)
+            assert eni_id is not None
+
+            test_resource_values = REPLACEMENT_VALUES.copy()
+            resource_name = random_suffix_name("inst-existing-eni", 24)
+            test_resource_values["INSTANCE_NAME"] = resource_name
+            test_resource_values["INSTANCE_AMI_ID"] = get_ami_id(ec2_client)
+            test_resource_values["INSTANCE_TYPE"] = INSTANCE_TYPE
+            test_resource_values["INSTANCE_ENI_ID"] = eni_id
+            test_resource_values["INSTANCE_TAG_KEY"] = INSTANCE_TAG_KEY
+            test_resource_values["INSTANCE_TAG_VAL"] = INSTANCE_TAG_VAL
+
+            resource_data = load_ec2_resource(
+                "instance_existing_eni",
+                additional_replacements=test_resource_values,
+            )
+            logging.debug(resource_data)
+
+            ref = k8s.CustomResourceReference(
+                CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+                resource_name, namespace="default",
+            )
+            k8s.create_custom_resource(ref, resource_data)
+            cr = k8s.wait_resource_consumed_by_controller(ref)
+
+            assert cr is not None
+            assert k8s.get_resource_exists(ref)
+
+            time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+            # A failed RunInstances leaves no instanceID in status, so this read is
+            # itself the assertion that the launch was accepted.
+            cr = k8s.get_resource(ref)
+            assert 'status' in cr
+            assert 'instanceID' in cr['status']
+            resource_id = cr["status"]["instanceID"]
+
+            assert get_instance(ec2_client, resource_id) is not None
+            wait_for_instance_or_die(ec2_client, resource_id, 'running', TIMEOUT_SECONDS)
+            assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+            # The instance and the volumes created by the launch are still tagged.
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+
+            volumes = get_volumes_for_instance(ec2_client, resource_id)
+            assert len(volumes) > 0
+            for volume in volumes:
+                assert has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+
+            # The ENI was not created by this launch, so it carries no launch tag.
+            eni = get_network_interface(ec2_client, eni_id)
+            assert eni is not None
+            assert not has_tag(eni.get("TagSet", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+
+        finally:
+            if ref is not None:
+                try:
+                    k8s.delete_custom_resource(ref, 3, 10)
+                except:
+                    pass
+            # Terminate before deleting the ENI: an in-use interface cannot be
+            # deleted, and the shared subnet dependency must be released.
+            if resource_id is not None:
+                wait_for_instance_or_die(
+                    ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
+            if eni_id is not None:
+                delete_network_interface(ec2_client, eni_id)
+
+    def test_launch_instance_store_ami_omits_volume_tags(self, ec2_client):
+        """An instance-store-backed AMI creates no volume, so the launch must not carry
+        a volume tag specification (RunInstances rejects it). The instance is still tagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        ref = create_instance("inst-store-ami", "instance", {
+            "INSTANCE_AMI_ID": get_instance_store_ami_id(ec2_client),
+            "INSTANCE_TYPE": INSTANCE_STORE_INSTANCE_TYPE,
+            "INSTANCE_SUBNET_ID": subnet_id,
+        })
+        resource_id = None
+        try:
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert instance_aws["RootDeviceType"] == "instance-store"
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            assert get_volumes_for_instance(ec2_client, resource_id) == []
+        finally:
+            delete_instance(ec2_client, ref, resource_id)
+
+    def test_launch_template_without_image_id_omits_volume_tags(self, ec2_client):
+        """With no Spec.ImageID the AMI comes from the launch template and is unknown,
+        so volumes are not tagged at launch rather than risk rejecting it. Likewise the
+        template may attach an existing ENI, so network interfaces are not tagged either.
+        The instance is still tagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        launch_template_id = create_launch_template(
+            ec2_client, get_ami_id(ec2_client), INSTANCE_TYPE)
+        ref, resource_id = None, None
+        try:
+            ref = create_instance("inst-launch-tpl", "instance_launch_template", {
+                "INSTANCE_LAUNCH_TEMPLATE_ID": launch_template_id,
+                "INSTANCE_SUBNET_ID": subnet_id,
+            })
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            volumes = get_volumes_for_instance(ec2_client, resource_id)
+            assert len(volumes) > 0
+            for volume in volumes:
+                assert not has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            enis = get_network_interfaces_for_instance(ec2_client, resource_id)
+            assert len(enis) > 0
+            for eni in enis:
+                assert not has_tag(eni.get("TagSet", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        finally:
+            if ref is not None:
+                delete_instance(ec2_client, ref, resource_id)
+            delete_launch_template(ec2_client, launch_template_id)
+
+    def test_launch_template_attaching_existing_eni(self, ec2_client):
+        """A launch template that attaches a pre-existing ENI creates no network interface,
+        so the launch must not carry a network-interface tag specification (RunInstances
+        rejects it). The instance is still tagged and the ENI is left untagged.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        eni_id = create_network_interface(ec2_client, subnet_id)
+        launch_template_id = None
+        ref, resource_id = None, None
+        try:
+            launch_template_id = create_launch_template(
+                ec2_client, get_ami_id(ec2_client), INSTANCE_TYPE,
+                network_interfaces=[{"DeviceIndex": 0, "NetworkInterfaceId": eni_id}])
+            ref = create_instance(
+                "inst-launch-tpl-eni", "instance_launch_template_existing_eni", {
+                    "INSTANCE_LAUNCH_TEMPLATE_ID": launch_template_id,
+                })
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            instance_aws = get_instance(ec2_client, resource_id)
+            assert has_tag(instance_aws["Tags"], INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+            eni = get_network_interface(ec2_client, eni_id)
+            assert eni["Attachment"]["InstanceId"] == resource_id
+            assert not has_tag(eni.get("TagSet", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        finally:
+            if ref is not None:
+                delete_instance(ec2_client, ref, resource_id)
+            if launch_template_id is not None:
+                delete_launch_template(ec2_client, launch_template_id)
+            delete_network_interface(ec2_client, eni_id)
+
+    def test_launch_template_with_ebs_mapping_tags_volumes(self, ec2_client):
+        """An EBS block device mapping always creates a volume, so volumes are tagged at
+        launch even when the AMI comes from a launch template and is otherwise unknown.
+        Ref: https://github.com/aws-controllers-k8s/community/issues/2954
+        """
+        subnet_id = get_bootstrap_resources().SharedTestVPC.public_subnets.subnet_ids[0]
+        launch_template_id = create_launch_template(
+            ec2_client, get_ami_id(ec2_client), INSTANCE_TYPE)
+        ref, resource_id = None, None
+        try:
+            ref = create_instance(
+                "inst-launch-tpl-ebs", "instance_launch_template_ebs_block_device", {
+                    "INSTANCE_LAUNCH_TEMPLATE_ID": launch_template_id,
+                    "INSTANCE_SUBNET_ID": subnet_id,
+                })
+            resource_id = wait_for_launch(ec2_client, ref)
+
+            # The launch creates the AMI's root volume and the mapped /dev/sdf volume.
+            volumes = get_volumes_for_instance(ec2_client, resource_id)
+            assert len(volumes) == 2
+            for volume in volumes:
+                assert has_tag(volume.get("Tags", []), INSTANCE_TAG_KEY, INSTANCE_TAG_VAL)
+        finally:
+            if ref is not None:
+                delete_instance(ec2_client, ref, resource_id)
+            delete_launch_template(ec2_client, launch_template_id)
 
     def test_source_dest_check(self, ec2_client):
         """Test that SourceDestCheck can be disabled and re-enabled on an Instance.
