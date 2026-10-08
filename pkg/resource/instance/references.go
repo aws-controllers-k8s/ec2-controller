@@ -156,11 +156,8 @@ func (rm *resourceManager) resolveReferenceForLaunchTemplate_LaunchTemplateID(
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: LaunchTemplate.LaunchTemplateRef")
 			}
-			namespace, err := ackrt.ResolveCrossNamespaceReference(
-				ctx,
+			namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 				rm.cfg.EnableCrossNamespace,
-				&ko.Status.Conditions,
-				ackrt.CrossNamespaceRefKindResource,
 				ko.ObjectMeta.GetNamespace(),
 				arr.Namespace,
 				*arr.Name,
@@ -248,11 +245,8 @@ func (rm *resourceManager) resolveReferenceForSubnetID(
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SubnetRef")
 		}
-		namespace, err := ackrt.ResolveCrossNamespaceReference(
-			ctx,
+		namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 			rm.cfg.EnableCrossNamespace,
-			&ko.Status.Conditions,
-			ackrt.CrossNamespaceRefKindResource,
 			ko.ObjectMeta.GetNamespace(),
 			arr.Namespace,
 			*arr.Name,

@@ -188,11 +188,8 @@ func (rm *resourceManager) resolveReferenceForEgressRules_UserIDGroupPairs_Group
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EgressRules.UserIDGroupPairs.GroupRef")
 				}
-				namespace, err := ackrt.ResolveCrossNamespaceReference(
-					ctx,
+				namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 					rm.cfg.EnableCrossNamespace,
-					&ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
 					ko.ObjectMeta.GetNamespace(),
 					arr.Namespace,
 					*arr.Name,
@@ -266,11 +263,8 @@ func (rm *resourceManager) resolveReferenceForEgressRules_UserIDGroupPairs_VPCID
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: EgressRules.UserIDGroupPairs.VPCRef")
 				}
-				namespace, err := ackrt.ResolveCrossNamespaceReference(
-					ctx,
+				namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 					rm.cfg.EnableCrossNamespace,
-					&ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
 					ko.ObjectMeta.GetNamespace(),
 					arr.Namespace,
 					*arr.Name,
@@ -361,11 +355,8 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_Grou
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.GroupRef")
 				}
-				namespace, err := ackrt.ResolveCrossNamespaceReference(
-					ctx,
+				namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 					rm.cfg.EnableCrossNamespace,
-					&ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
 					ko.ObjectMeta.GetNamespace(),
 					arr.Namespace,
 					*arr.Name,
@@ -402,11 +393,8 @@ func (rm *resourceManager) resolveReferenceForIngressRules_UserIDGroupPairs_VPCI
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: IngressRules.UserIDGroupPairs.VPCRef")
 				}
-				namespace, err := ackrt.ResolveCrossNamespaceReference(
-					ctx,
+				namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 					rm.cfg.EnableCrossNamespace,
-					&ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
 					ko.ObjectMeta.GetNamespace(),
 					arr.Namespace,
 					*arr.Name,
@@ -441,11 +429,8 @@ func (rm *resourceManager) resolveReferenceForVPCID(
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: VPCRef")
 		}
-		namespace, err := ackrt.ResolveCrossNamespaceReference(
-			ctx,
+		namespace, _, err := ackrt.ValidateCrossNamespaceReference(
 			rm.cfg.EnableCrossNamespace,
-			&ko.Status.Conditions,
-			ackrt.CrossNamespaceRefKindResource,
 			ko.ObjectMeta.GetNamespace(),
 			arr.Namespace,
 			*arr.Name,
