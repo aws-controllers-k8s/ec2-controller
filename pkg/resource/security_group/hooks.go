@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -875,7 +876,7 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 		}
 
 		if err := rm.syncSGRules(ctx, desired, latest); err != nil {
-			return nil, err
+			return withoutRulesToAdd(desired, latest), err
 		}
 		// A ReadOne call for SecurityGroup Rules (NOT SecurityGroups)
 		// is made to refresh Status.Rules with the recently-updated
@@ -897,6 +898,72 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	}
 
 	return updated, nil
+}
+
+// withoutRulesToAdd returns a copy of latest for a status write after
+// syncSGRules failed. Status.Rules in latest lists the rules AWS held before
+// the sync. syncSGRules revokes every rule it replaces before it adds the new
+// rules, so after a failed sync AWS may lack a rule latest lists, and a
+// reader of Status.Rules would take a closed port for an open one. So the
+// copy leaves out each rule that a desired permission missing from latest
+// opens. A rule the sync was removing stays in the list. AWS may still hold
+// it, and a reader waiting for the rule to go must not stop waiting early.
+func withoutRulesToAdd(desired, latest *resource) *resource {
+	failed := &resource{ko: latest.ko.DeepCopy()}
+	var ingressToAdd, egressToAdd []*svcapitypes.IPPermission
+	for _, p := range desired.ko.Spec.IngressRules {
+		if !containsRule(latest.ko.Spec.IngressRules, p) {
+			ingressToAdd = append(ingressToAdd, p)
+		}
+	}
+	for _, p := range desired.ko.Spec.EgressRules {
+		if !containsRule(latest.ko.Spec.EgressRules, p) {
+			egressToAdd = append(egressToAdd, p)
+		}
+	}
+	failed.ko.Status.Rules = slices.DeleteFunc(failed.ko.Status.Rules, func(rule *svcapitypes.SecurityGroupRule) bool {
+		if rule == nil {
+			return false
+		}
+		toAdd := ingressToAdd
+		if aws.ToBool(rule.IsEgress) {
+			toAdd = egressToAdd
+		}
+		return slices.ContainsFunc(toAdd, func(p *svcapitypes.IPPermission) bool {
+			return permissionOpensRule(p, rule)
+		})
+	})
+	return failed
+}
+
+// permissionOpensRule reports whether rule, as DescribeSecurityGroupRules
+// returns it, is one of the rules p opens. Ports count only for a protocol
+// AWS keeps ports for, and a permission without ports matches any. Status.Rules
+// does not say which security group a rule refers to, so a rule without a
+// CIDR or prefix list matches every p with a security group in it.
+func permissionOpensRule(p *svcapitypes.IPPermission, rule *svcapitypes.SecurityGroupRule) bool {
+	if p == nil || derefStr(canonicalizeProtocol(p.IPProtocol)) != derefStr(rule.IPProtocol) {
+		return false
+	}
+	if _, carriesPorts := portCarryingProtocols[derefStr(rule.IPProtocol)]; carriesPorts &&
+		(p.FromPort != nil && aws.ToInt64(p.FromPort) != aws.ToInt64(rule.FromPort) || p.ToPort != nil && aws.ToInt64(p.ToPort) != aws.ToInt64(rule.ToPort)) {
+		return false
+	}
+	switch {
+	case rule.CIDRIPv4 != nil:
+		return slices.ContainsFunc(p.IPRanges, func(r *svcapitypes.IPRange) bool {
+			return r != nil && derefStr(canonicalizeCIDR(r.CIDRIP)) == *rule.CIDRIPv4
+		})
+	case rule.CIDRIPv6 != nil:
+		return slices.ContainsFunc(p.IPv6Ranges, func(r *svcapitypes.IPv6Range) bool {
+			return r != nil && derefStr(canonicalizeCIDR(r.CIDRIPv6)) == *rule.CIDRIPv6
+		})
+	case rule.PrefixListID != nil:
+		return slices.ContainsFunc(p.PrefixListIDs, func(l *svcapitypes.PrefixListID) bool {
+			return l != nil && derefStr(l.PrefixListID) == *rule.PrefixListID
+		})
+	}
+	return len(p.UserIDGroupPairs) > 0
 }
 
 // containsRule returns true if security group rule

@@ -1208,3 +1208,79 @@ func TestCustomPostCompare_NilParentID_SkipsRuleDelta(t *testing.T) {
 		assert.False(t, got.egr, "rule delta must be skipped when the owner account is unknown")
 	})
 }
+
+// -----------------------------------------------------------------------------
+// withoutRulesToAdd
+// -----------------------------------------------------------------------------
+
+func TestWithoutRulesToAdd(t *testing.T) {
+	tcp := func(port int64, cidr, description string) *svcapitypes.IPPermission {
+		return &svcapitypes.IPPermission{
+			IPProtocol: aws.String("tcp"), FromPort: aws.Int64(port), ToPort: aws.Int64(port),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String(cidr), Description: aws.String(description)}},
+		}
+	}
+	rule := func(protocol string, port int64, cidr, description string, egress bool) *svcapitypes.SecurityGroupRule {
+		return &svcapitypes.SecurityGroupRule{
+			IPProtocol: aws.String(protocol), FromPort: aws.Int64(port), ToPort: aws.Int64(port),
+			CIDRIPv4: aws.String(cidr), Description: aws.String(description), IsEgress: aws.Bool(egress),
+		}
+	}
+	// The update replaces the inbound 443 rule with one with a new
+	// description, keeps 22, removes 8080 and adds an all-traffic outbound
+	// rule. The outbound 443 rule is in AWS but in neither spec.
+	latest := mkResource(
+		[]*svcapitypes.IPPermission{tcp(443, "10.0.0.0/16", "old"), tcp(22, "10.1.0.0/16", "ssh"), tcp(8080, "10.2.0.0/16", "web")},
+		nil,
+	)
+	latest.ko.Status.Rules = []*svcapitypes.SecurityGroupRule{
+		rule("tcp", 443, "10.0.0.0/16", "old", false),
+		rule("tcp", 22, "10.1.0.0/16", "ssh", false),
+		rule("tcp", 8080, "10.2.0.0/16", "web", false),
+		rule("tcp", 443, "10.0.0.0/16", "out", true),
+		rule("-1", -1, "0.0.0.0/0", "", true),
+	}
+	desired := mkResource(
+		[]*svcapitypes.IPPermission{tcp(443, "10.0.0.5/16", "new"), tcp(22, "10.1.0.0/16", "ssh")},
+		[]*svcapitypes.IPPermission{{IPProtocol: aws.String("-1"), IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}}}},
+	)
+
+	got := withoutRulesToAdd(desired, latest)
+
+	assert.Equal(t, []*svcapitypes.SecurityGroupRule{
+		rule("tcp", 22, "10.1.0.0/16", "ssh", false),
+		rule("tcp", 8080, "10.2.0.0/16", "web", false),
+		rule("tcp", 443, "10.0.0.0/16", "out", true),
+	}, got.ko.Status.Rules, "rules the update adds must leave Status.Rules, and every other rule must stay")
+	assert.Len(t, latest.ko.Status.Rules, 5, "latest must not change")
+}
+
+func TestPermissionOpensRule(t *testing.T) {
+	tcp443 := &svcapitypes.SecurityGroupRule{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), CIDRIPv4: aws.String("10.0.0.0/16")}
+	for _, tc := range []struct {
+		name string
+		p    *svcapitypes.IPPermission
+		rule *svcapitypes.SecurityGroupRule
+		want bool
+	}{
+		{"numeric protocol and CIDR with host bits", &svcapitypes.IPPermission{IPProtocol: aws.String("6"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPRanges: []*svcapitypes.IPRange{nil, {CIDRIP: aws.String("10.0.1.2/16")}}}, tcp443, true},
+		{"other port", &svcapitypes.IPPermission{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(8443), ToPort: aws.Int64(8443), IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/16")}}}, tcp443, false},
+		{"other CIDR", &svcapitypes.IPPermission{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.1.0.0/16")}}}, tcp443, false},
+		{"other protocol", &svcapitypes.IPPermission{IPProtocol: aws.String("udp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/16")}}}, tcp443, false},
+		{"icmp type and code", &svcapitypes.IPPermission{IPProtocol: aws.String("1"), FromPort: aws.Int64(8), ToPort: aws.Int64(0), IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/16")}}},
+			&svcapitypes.SecurityGroupRule{IPProtocol: aws.String("icmp"), FromPort: aws.Int64(3), ToPort: aws.Int64(0), CIDRIPv4: aws.String("10.0.0.0/16")}, false},
+		{"all traffic with ports in the spec", &svcapitypes.IPPermission{IPProtocol: aws.String("-1"), FromPort: aws.Int64(0), ToPort: aws.Int64(65535), IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/16")}}},
+			&svcapitypes.SecurityGroupRule{IPProtocol: aws.String("-1"), FromPort: aws.Int64(-1), ToPort: aws.Int64(-1), CIDRIPv4: aws.String("10.0.0.0/16")}, true},
+		{"IPv6 CIDR", &svcapitypes.IPPermission{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("2001:DB8::1/64")}}},
+			&svcapitypes.SecurityGroupRule{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), CIDRIPv6: aws.String("2001:db8::/64")}, true},
+		{"prefix list", &svcapitypes.IPPermission{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), PrefixListIDs: []*svcapitypes.PrefixListID{{PrefixListID: aws.String("pl-2")}}},
+			&svcapitypes.SecurityGroupRule{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), PrefixListID: aws.String("pl-1")}, false},
+		{"security group", &svcapitypes.IPPermission{IPProtocol: aws.String("-1"), UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{GroupID: aws.String(testOtherID)}}},
+			&svcapitypes.SecurityGroupRule{IPProtocol: aws.String("-1")}, true},
+		{"CIDR rule against a security group permission", &svcapitypes.IPPermission{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443), UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{GroupID: aws.String(testOtherID)}}}, tcp443, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, permissionOpensRule(tc.p, tc.rule))
+		})
+	}
+}
