@@ -27,15 +27,17 @@ import (
 var StatusAvailable = svcsdktypes.TransitGatewayAttachmentStateAvailable
 
 // requeueWaitUntilCanModify returns a `ackrequeue.RequeueNeededAfter` struct
-// explaining the cluster cannot be modified until it reaches an active status.
-func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeeded {
-	if r.ko.Status.State == nil {
-		return nil
+// explaining the attachment cannot be modified until it reaches an available
+// state. Never returns nil: a nil typed pointer reads as a non-nil error.
+func requeueWaitUntilCanModify(r *resource) *ackrequeue.RequeueNeededAfter {
+	state := "unknown"
+	if r.ko.Status.State != nil {
+		state = *r.ko.Status.State
 	}
-	status := *r.ko.Status.State
-	return ackrequeue.Needed(
-		fmt.Errorf("transitGatewayAttachment is in '%s' and state, cannot be modified until '%s'",
-			status, StatusAvailable),
+	return ackrequeue.NeededAfter(
+		fmt.Errorf("transitGatewayAttachment is in '%s' state, cannot be modified until '%s'",
+			state, StatusAvailable),
+		ackrequeue.DefaultRequeueAfterDuration,
 	)
 }
 
