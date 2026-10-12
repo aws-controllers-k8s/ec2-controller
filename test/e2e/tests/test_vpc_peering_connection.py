@@ -323,28 +323,41 @@ def peering_options_vpc_peering_connection(request):
     except:
         pass
 
+def get_vpc_peering_connection_status_code(k8s_resource):
+    '''
+    Returns the CR's Status.Status.Code, or None while it is not set yet
+    '''
+    status = (k8s_resource or {}).get("status", {})
+    return (status.get("status") or {}).get("code")
+
 def wait_for_vpc_peering_connection_status(ref, timeout_seconds=500):
     '''
     Loops until the VPC Peering Connection's Status Code is 'active'
     '''
+    # Status.Status is only set once the controller has created the peering
+    # connection, which it does only after both referenced VPCs are synced.
+    # Keep polling while it is missing instead of reading it once.
+    k8s_resource = None
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
-        k8s_resource = k8s.wait_resource_consumed_by_controller(ref)
-        if k8s_resource["status"]["status"]["code"] == "active":
+        k8s_resource = k8s.get_resource(ref)
+        if get_vpc_peering_connection_status_code(k8s_resource) == "active":
             logging.debug("VPC Peering Connection Status Code is 'active'", k8s_resource)
             return k8s_resource
         time.sleep(5)
 
     # Fallback to AWS API if K8s resource status is not being updated (To be removed once k8s resource's status updates normally)
-    c = boto3.client('ec2')
-    aws_resource = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[k8s_resource["status"]["vpcPeeringConnectionID"]])
-    if aws_resource["VpcPeeringConnections"][0]["Status"]["Code"] == "active":
-        logging.debug("VPC Peering Connection Status Code is 'active' (fallback to AWS API)", k8s_resource, "AWS resource", aws_resource)
-        return k8s_resource
+    peering_id = (k8s_resource or {}).get("status", {}).get("vpcPeeringConnectionID")
+    if peering_id:
+        c = boto3.client('ec2')
+        aws_resource = c.describe_vpc_peering_connections(VpcPeeringConnectionIds=[peering_id])
+        if aws_resource["VpcPeeringConnections"][0]["Status"]["Code"] == "active":
+            logging.debug("VPC Peering Connection Status Code is 'active' (fallback to AWS API)", k8s_resource, "AWS resource", aws_resource)
+            return k8s_resource
 
     # Both options timed out
     raise TimeoutError("Timed out waiting for VPC Peering Connection status to become 'active'",
-    "Current status code", k8s_resource["status"]["status"]["code"])
+    "Current status code", get_vpc_peering_connection_status_code(k8s_resource))
 
 def wait_for_vpc_peering_connection_peering_options(ec2_client, boolean, vpc_peering_connection_id, timeout_seconds=300):
     '''
