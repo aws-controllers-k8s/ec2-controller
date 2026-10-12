@@ -39,6 +39,11 @@ CREATE_WAIT_AFTER_SECONDS = 10
 DELETE_WAIT_AFTER_SECONDS = 10
 MODIFY_WAIT_AFTER_SECONDS = 5
 TIMEOUT_SECONDS = 300
+# The controller reconciles Instances on a single worker, and the tests in this
+# file create about ten of them at once. Each create takes a few seconds
+# (RunInstances, then reads until EC2 returns the instance), so a CR near the
+# back of the queue can wait well past the default 3x10s for its first status.
+CONSUMED_WAIT_PERIODS = 10
 
 def get_instance(ec2_client, instance_id: str) -> dict:
     instance = None
@@ -150,7 +155,7 @@ def create_instance(name_prefix, resource_file, replacements):
 
 def wait_for_launch(ec2_client, ref):
     """Wait until the Instance CR is running and synced; return its instance ID."""
-    cr = k8s.wait_resource_consumed_by_controller(ref)
+    cr = k8s.wait_resource_consumed_by_controller(ref, wait_periods=CONSUMED_WAIT_PERIODS)
     assert cr is not None
     assert k8s.get_resource_exists(ref)
 
@@ -263,7 +268,7 @@ def instance(ec2_client):
         resource_name, namespace="default",
     )
     k8s.create_custom_resource(ref, resource_data)
-    cr = k8s.wait_resource_consumed_by_controller(ref)
+    cr = k8s.wait_resource_consumed_by_controller(ref, wait_periods=CONSUMED_WAIT_PERIODS)
 
     assert cr is not None
     assert k8s.get_resource_exists(ref)
@@ -535,7 +540,7 @@ class TestInstance:
                 resource_name, namespace="default",
             )
             k8s.create_custom_resource(ref, resource_data)
-            cr = k8s.wait_resource_consumed_by_controller(ref)
+            cr = k8s.wait_resource_consumed_by_controller(ref, wait_periods=CONSUMED_WAIT_PERIODS)
 
             assert cr is not None
             assert k8s.get_resource_exists(ref)
@@ -732,7 +737,7 @@ class TestInstance:
             resource_name, namespace="default",
         )
         k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
+        cr = k8s.wait_resource_consumed_by_controller(ref, wait_periods=CONSUMED_WAIT_PERIODS)
 
         assert cr is not None
         assert k8s.get_resource_exists(ref)
@@ -830,7 +835,7 @@ class TestInstance:
             resource_name, namespace="default",
         )
         k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
+        cr = k8s.wait_resource_consumed_by_controller(ref, wait_periods=CONSUMED_WAIT_PERIODS)
 
         assert cr is not None
         assert k8s.get_resource_exists(ref)
