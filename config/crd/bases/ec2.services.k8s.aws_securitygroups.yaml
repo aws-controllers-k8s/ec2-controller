@@ -54,6 +54,9 @@ spec:
 
                   Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               egressRules:
                 items:
                   description: Describes the permissions for a security group rule.

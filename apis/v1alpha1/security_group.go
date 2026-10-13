@@ -30,6 +30,7 @@ type SecurityGroupSpec struct {
 	// Constraints: Up to 255 characters in length
 	//
 	// Valid characters: a-z, A-Z, 0-9, spaces, and ._-:/()#,@[]+=&;{}!$*
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	Description  *string         `json:"description"`
 	EgressRules  []*IPPermission `json:"egressRules,omitempty"`
