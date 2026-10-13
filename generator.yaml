@@ -894,6 +894,11 @@ resources:
       custom_method_name: customUpdateRouteTable
   SecurityGroup:
     fields:
+      # Description cannot be modified after creation, so a change to it can
+      # never be reconciled; skip it in the delta to avoid no-op updates.
+      Description:
+        compare:
+          is_ignored: true
       # support EC2-VPC only
       Id:
         is_primary_key: true
