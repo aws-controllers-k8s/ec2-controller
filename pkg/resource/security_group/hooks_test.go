@@ -1221,3 +1221,145 @@ func TestNewResourceDelta_GroupDescriptionChange_NoDiff(t *testing.T) {
 	assert.False(t, d.DifferentAt("Spec.Description"))
 	assert.Empty(t, d.Differences)
 }
+
+// -----------------------------------------------------------------------------
+// missingGrants
+// -----------------------------------------------------------------------------
+
+func tcpPermission(port int64, ranges ...*svcapitypes.IPRange) *svcapitypes.IPPermission {
+	return &svcapitypes.IPPermission{
+		IPProtocol: aws.String("tcp"), FromPort: aws.Int64(port), ToPort: aws.Int64(port), IPRanges: ranges,
+	}
+}
+
+func cidr(c string, description string) *svcapitypes.IPRange {
+	r := &svcapitypes.IPRange{CIDRIP: aws.String(c)}
+	if description != "" {
+		r.Description = aws.String(description)
+	}
+	return r
+}
+
+func TestMissingGrants_NewPort_LeavesSharedPortAlone(t *testing.T) {
+	// AWS returns both sources on 8443 as one permission. The spec lists them
+	// apart and adds 9443, so only 9443 is authorized and nothing is revoked.
+	desired := []*svcapitypes.IPPermission{
+		tcpPermission(8443, cidr("198.51.100.0/24", "")),
+		tcpPermission(8443, cidr("10.0.0.0/8", "venice")),
+		tcpPermission(9443, cidr("10.0.0.0/8", "venice")),
+	}
+	latest := []*svcapitypes.IPPermission{
+		tcpPermission(8443, cidr("10.0.0.0/8", "venice"), cidr("198.51.100.0/24", "")),
+	}
+
+	assert.Equal(t, []*svcapitypes.IPPermission{tcpPermission(9443, cidr("10.0.0.0/8", "venice"))},
+		missingGrants(desired, latest, testSelfID, testOwnerAcctID))
+	assert.Empty(t, missingGrants(latest, desired, testSelfID, testOwnerAcctID))
+	assert.True(t, desiredLatestDelta(mkResource(desired, nil), mkResource(latest, nil)).ing)
+}
+
+func TestMissingGrants_DroppedSource_RevokesOnlyThatSource(t *testing.T) {
+	desired := []*svcapitypes.IPPermission{tcpPermission(8443, cidr("198.51.100.0/24", ""))}
+	latest := []*svcapitypes.IPPermission{
+		tcpPermission(8443, cidr("10.0.0.0/8", "venice"), cidr("198.51.100.0/24", "")),
+	}
+
+	assert.Empty(t, missingGrants(desired, latest, testSelfID, testOwnerAcctID))
+	assert.Equal(t, []*svcapitypes.IPPermission{tcpPermission(8443, cidr("10.0.0.0/8", "venice"))},
+		missingGrants(latest, desired, testSelfID, testOwnerAcctID))
+	assert.True(t, desiredLatestDelta(mkResource(desired, nil), mkResource(latest, nil)).ing)
+}
+
+func TestMissingGrants_DescriptionChange_ReplacesOnlyThatSource(t *testing.T) {
+	desired := []*svcapitypes.IPPermission{
+		tcpPermission(443, cidr("10.0.0.0/8", "after"), cidr("198.51.100.0/24", "customer")),
+	}
+	latest := []*svcapitypes.IPPermission{
+		tcpPermission(443, cidr("10.0.0.0/8", "before"), cidr("198.51.100.0/24", "customer")),
+	}
+
+	assert.Equal(t, []*svcapitypes.IPPermission{tcpPermission(443, cidr("10.0.0.0/8", "after"))},
+		missingGrants(desired, latest, testSelfID, testOwnerAcctID))
+	assert.Equal(t, []*svcapitypes.IPPermission{tcpPermission(443, cidr("10.0.0.0/8", "before"))},
+		missingGrants(latest, desired, testSelfID, testOwnerAcctID))
+	assert.True(t, desiredLatestDelta(mkResource(desired, nil), mkResource(latest, nil)).ing)
+}
+
+func TestMissingGrants_SpecAndReadBackSpellings_Match(t *testing.T) {
+	// The spec spells each source the way a user may write it, the read-back
+	// the way AWS returns it. No source differs, and neither does the delta.
+	desired := []*svcapitypes.IPPermission{
+		{IPProtocol: aws.String("6"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.5/24")}}},
+		{IPProtocol: aws.String("-1"), FromPort: aws.Int64(0), ToPort: aws.Int64(0),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}}},
+		{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(53), ToPort: aws.Int64(53),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{Description: aws.String("self")}}},
+	}
+	latest := []*svcapitypes.IPPermission{
+		{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(443), ToPort: aws.Int64(443),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/24")}}},
+		{IPProtocol: aws.String("-1"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("0.0.0.0/0")}}},
+		{IPProtocol: aws.String("tcp"), FromPort: aws.Int64(53), ToPort: aws.Int64(53),
+			UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{{
+				Description: aws.String("self"), GroupID: aws.String(testSelfID), UserID: aws.String(testOwnerAcctID),
+			}}},
+	}
+
+	assert.Empty(t, missingGrants(desired, latest, testSelfID, testOwnerAcctID))
+	assert.Empty(t, missingGrants(latest, desired, testSelfID, testOwnerAcctID))
+	assert.False(t, desiredLatestDelta(mkResource(desired, nil), mkResource(latest, nil)).ing)
+}
+
+func TestMissingGrants_EachSourceKind(t *testing.T) {
+	// An IPv6 range, a prefix list and a cross-account group on one port all
+	// change. Each comes back as a permission of its own.
+	port443 := func(p svcapitypes.IPPermission) *svcapitypes.IPPermission {
+		p.IPProtocol, p.FromPort, p.ToPort = aws.String("tcp"), aws.Int64(443), aws.Int64(443)
+		return &p
+	}
+	ipv6 := func(c string) []*svcapitypes.IPv6Range { return []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String(c)}} }
+	list := func(id string) []*svcapitypes.PrefixListID {
+		return []*svcapitypes.PrefixListID{{PrefixListID: aws.String(id)}}
+	}
+	group := func(id string) []*svcapitypes.UserIDGroupPair {
+		return []*svcapitypes.UserIDGroupPair{{GroupID: aws.String(id), UserID: aws.String(testPeerAcctID)}}
+	}
+	sources := func(c, l, g string) []*svcapitypes.IPPermission {
+		return []*svcapitypes.IPPermission{port443(svcapitypes.IPPermission{
+			IPv6Ranges: ipv6(c), PrefixListIDs: list(l), UserIDGroupPairs: group(g),
+		})}
+	}
+	each := func(c, l, g string) []*svcapitypes.IPPermission {
+		return []*svcapitypes.IPPermission{
+			port443(svcapitypes.IPPermission{IPv6Ranges: ipv6(c)}),
+			port443(svcapitypes.IPPermission{PrefixListIDs: list(l)}),
+			port443(svcapitypes.IPPermission{UserIDGroupPairs: group(g)}),
+		}
+	}
+	desired := sources("2001:db8:1::/48", "pl-new", "sg-new")
+	latest := sources("2001:db8:2::/48", "pl-old", "sg-old")
+
+	assert.Equal(t, each("2001:db8:1::/48", "pl-new", "sg-new"),
+		missingGrants(desired, latest, testSelfID, testOwnerAcctID))
+	assert.Equal(t, each("2001:db8:2::/48", "pl-old", "sg-old"),
+		missingGrants(latest, desired, testSelfID, testOwnerAcctID))
+	assert.True(t, desiredLatestDelta(mkResource(desired, nil), mkResource(latest, nil)).ing)
+}
+
+func TestMissingGrants_SameSourceTwice_ReturnedOnce(t *testing.T) {
+	desired := []*svcapitypes.IPPermission{
+		tcpPermission(443, cidr("10.0.0.0/8", "")),
+		tcpPermission(443, cidr("10.0.0.0/8", "")),
+	}
+
+	assert.Equal(t, []*svcapitypes.IPPermission{tcpPermission(443, cidr("10.0.0.0/8", ""))},
+		missingGrants(desired, nil, testSelfID, testOwnerAcctID))
+}
+
+func TestMissingGrants_PermissionWithNoSource_ReturnedWhole(t *testing.T) {
+	desired := []*svcapitypes.IPPermission{tcpPermission(443)}
+
+	assert.Equal(t, desired, missingGrants(desired, nil, testSelfID, testOwnerAcctID))
+}
