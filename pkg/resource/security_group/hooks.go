@@ -15,6 +15,7 @@ package security_group
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net"
 	"sort"
@@ -396,6 +397,7 @@ func canonicalizeRuleList(
 	out := make([]*svcapitypes.IPPermission, 0, len(order))
 	for _, key := range order {
 		rule := byKey[key]
+		dedupeGrants(rule)
 		sortGrants(rule)
 		out = append(out, rule)
 	}
@@ -467,6 +469,30 @@ func ruleAggregationKey(rule *svcapitypes.IPPermission) string {
 		to = strconv.FormatInt(*rule.ToPort, 10)
 	}
 	return proto + "/" + from + "/" + to
+}
+
+// dedupeGrants drops each grant of rule that equals an earlier one. AWS keeps
+// one rule per source, so a source listed twice is one rule.
+func dedupeGrants(rule *svcapitypes.IPPermission) {
+	rule.IPRanges = uniqueGrants(rule.IPRanges)
+	rule.IPv6Ranges = uniqueGrants(rule.IPv6Ranges)
+	rule.PrefixListIDs = uniqueGrants(rule.PrefixListIDs)
+	rule.UserIDGroupPairs = uniqueGrants(rule.UserIDGroupPairs)
+}
+
+// uniqueGrants returns grants without each grant whose JSON form equals an
+// earlier one's.
+func uniqueGrants[T any](grants []T) []T {
+	var unique []T
+	seen := map[string]bool{}
+	for _, g := range grants {
+		key, _ := json.Marshal(g)
+		if !seen[string(key)] {
+			seen[string(key)] = true
+			unique = append(unique, g)
+		}
+	}
+	return unique
 }
 
 // sortGrants deterministically orders a rule's grant collections so read-back
