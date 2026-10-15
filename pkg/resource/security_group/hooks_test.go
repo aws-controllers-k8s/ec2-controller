@@ -1208,3 +1208,16 @@ func TestCustomPostCompare_NilParentID_SkipsRuleDelta(t *testing.T) {
 		assert.False(t, got.egr, "rule delta must be skipped when the owner account is unknown")
 	})
 }
+
+func TestNewResourceDelta_GroupDescriptionChange_NoDiff(t *testing.T) {
+	// The group Description is immutable in EC2, so a change to it must not
+	// produce a delta that triggers a no-op update.
+	desired := mkResource(nil, nil)
+	desired.ko.Spec.Description = aws.String("before")
+	latest := mkResource(nil, nil)
+	latest.ko.Spec.Description = aws.String("after")
+
+	d := newResourceDelta(desired, latest)
+	assert.False(t, d.DifferentAt("Spec.Description"))
+	assert.Empty(t, d.Differences)
+}
