@@ -983,6 +983,24 @@ func TestCustomPostCompare_NonCanonicalCIDR_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "non-canonical CIDR vs AWS-canonicalized form must not diff")
 }
 
+func TestCustomPostCompare_SameSourceTwice_NoDiff(t *testing.T) {
+	// The spec lists 10.0.0.0/24 twice, once written as 10.0.0.1/24. AWS holds
+	// it once.
+	desired := mkResource([]*svcapitypes.IPPermission{
+		{FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.1/24")}}},
+		{FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+			IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/24")}}},
+	}, nil)
+	latest := mkResource([]*svcapitypes.IPPermission{{
+		FromPort: aws.Int64(443), ToPort: aws.Int64(443), IPProtocol: aws.String("tcp"),
+		IPRanges: []*svcapitypes.IPRange{{CIDRIP: aws.String("10.0.0.0/24")}},
+	}}, nil)
+
+	got := desiredLatestDelta(desired, latest)
+	assert.False(t, got.ing, "a source listed twice must not diff from the one rule AWS holds")
+}
+
 func TestCustomPostCompare_DifferentCIDR_StillFires(t *testing.T) {
 	// A genuinely different network must still diff.
 	desired := mkResource([]*svcapitypes.IPPermission{{
