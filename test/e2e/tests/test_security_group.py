@@ -1010,11 +1010,11 @@ class TestSecurityGroup:
         # port-change test; the self-ref port change is retained as one of the
         # paths.)
         #
-        # NOTE: sync operates on the raw spec rules, so a non-canonically-spelled
-        # untouched rule may be revoked and re-authorized (its ruleID churns)
-        # during an update; it still ends up present and correct. The invariant
-        # asserted here is "not lost", not "same ruleID". Steady-state no-churn
-        # (no update pending) is covered by _assert_no_perpetual_diff.
+        # NOTE: sync matches sources by their canonical form, so an untouched
+        # rule is neither revoked nor re-authorized during an update, however
+        # it is spelled. The invariant asserted here is "not lost".
+        # Steady-state no-churn (no update pending) is covered by
+        # _assert_no_perpetual_diff.
         (ref, cr) = simple_security_group
         resource_id = cr["status"]["id"]
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
