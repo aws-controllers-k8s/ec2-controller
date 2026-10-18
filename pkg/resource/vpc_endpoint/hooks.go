@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 
@@ -26,6 +27,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	corev1 "k8s.io/api/core/v1"
+
+	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
 
 // https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/describe_vpc_endpoints.html
@@ -38,6 +42,25 @@ const (
 	StatusRejected          = "rejected"
 	StatusFailed            = "failed"
 )
+
+// mirrorSecurityGroupIDs sets Spec.SecurityGroupIDs to the IDs of the
+// security groups AWS reports on the endpoint, so a group added to or removed
+// from the spec shows up in the delta and customUpdateVPCEndpoint calls
+// ModifyVpcEndpoint for it. A resource whose spec lists no security groups
+// is left as it is: AWS gives such an endpoint the VPC's default security
+// group, and a mirrored list would make the update remove every group.
+func mirrorSecurityGroupIDs(ko *svcapitypes.VPCEndpoint) {
+	if len(ko.Spec.SecurityGroupIDs) == 0 {
+		return
+	}
+	ids := make([]*string, 0, len(ko.Status.Groups))
+	for _, group := range ko.Status.Groups {
+		if group != nil && group.GroupID != nil {
+			ids = append(ids, group.GroupID)
+		}
+	}
+	ko.Spec.SecurityGroupIDs = ids
+}
 
 func vpcEndpointPending(r *resource) bool {
 	if r.ko.Status.State == nil {
@@ -167,6 +190,13 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 	rm.metrics.RecordAPICall("UPDATE", "ModifyVpcEndpoint", err)
 	if err != nil {
 		return nil, err
+	}
+	if delta.DifferentAt("Spec.SecurityGroupIDs") {
+		// Status.Groups still lists the groups from before the change, and a
+		// synced resource is read from AWS again only after the resync period,
+		// 10 hours by default. A resource that is not synced is read again
+		// after the runtime's requeue.DefaultRequeueAfterDuration, 30 seconds.
+		ackcondition.SetSynced(updated, corev1.ConditionFalse, nil, nil)
 	}
 	return updated, nil
 }
