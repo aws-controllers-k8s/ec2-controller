@@ -441,6 +441,10 @@ type BaselinePerformanceFactorsRequest struct {
 	CPU *CPUPerformanceFactorRequest `json:"cpu,omitempty"`
 }
 
+type BlobAttributeValue struct {
+	Value []byte `json:"value,omitempty"`
+}
+
 // Describes a block device mapping, which defines the EBS volumes and instance
 // store volumes to attach to an instance at launch.
 type BlockDeviceMapping struct {
@@ -3682,6 +3686,7 @@ type KeyPairInfo struct {
 	KeyFingerprint *string      `json:"keyFingerprint,omitempty"`
 	KeyName        *string      `json:"keyName,omitempty"`
 	KeyPairID      *string      `json:"keyPairID,omitempty"`
+	KeyType        *string      `json:"keyType,omitempty"`
 	PublicKey      *string      `json:"publicKey,omitempty"`
 	Tags           []*Tag       `json:"tags,omitempty"`
 }
@@ -5298,6 +5303,7 @@ type RequestSpotLaunchSpecification struct {
 	ImageID            *string                          `json:"imageID,omitempty"`
 	InstanceType       *string                          `json:"instanceType,omitempty"`
 	KernelID           *string                          `json:"kernelID,omitempty"`
+	KeyName            *string                          `json:"keyName,omitempty"`
 	// Describes the monitoring of an instance.
 	Monitoring        *RunInstancesMonitoringEnabled           `json:"monitoring,omitempty"`
 	NetworkInterfaces []*InstanceNetworkInterfaceSpecification `json:"networkInterfaces,omitempty"`
@@ -5720,6 +5726,7 @@ type S3Storage struct {
 	AWSAccessKeyID *string `json:"awsAccessKeyID,omitempty"`
 	Bucket         *string `json:"bucket,omitempty"`
 	Prefix         *string `json:"prefix,omitempty"`
+	UploadPolicy   []byte  `json:"uploadPolicy,omitempty"`
 }
 
 // Describes a Scheduled Instance.

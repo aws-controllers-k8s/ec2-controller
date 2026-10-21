@@ -157,6 +157,7 @@ reconcile:
     - FlowLog
     - Instance
     - InternetGateway
+    - KeyPair
     - LaunchTemplate
     - ManagedPrefixList
     - NATGateway

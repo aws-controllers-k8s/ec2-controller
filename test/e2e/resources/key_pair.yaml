@@ -1,0 +1,10 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: KeyPair
+metadata:
+  name: $KEY_PAIR_NAME
+spec:
+  keyName: $KEY_PAIR_NAME
+  publicKeyMaterial: "$PUBLIC_KEY_MATERIAL"
+  tags:
+    - key: $TAG_KEY
+      value: $TAG_VALUE
