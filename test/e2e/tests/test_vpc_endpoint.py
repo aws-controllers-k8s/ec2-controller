@@ -382,3 +382,62 @@ class TestVpcEndpoint:
 
         # Check VPC Endpoint no longer exists in AWS
         ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
+
+    def test_update_security_groups(self, ec2_client, modify_vpc_endpoint):
+        (ref, cr) = modify_vpc_endpoint
+        resource_id = cr["status"]["vpcEndpointID"]
+        vpc_id = get_bootstrap_resources().SharedTestVPC.vpc_id
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Check VPC Endpoint exists in AWS
+        ec2_validator = EC2Validator(ec2_client)
+        ec2_validator.assert_vpc_endpoint(resource_id)
+
+        sg_ids = []
+        try:
+            for _ in range(2):
+                resp = ec2_client.create_security_group(
+                    GroupName=random_suffix_name("vpc-endpoint-sg", 24),
+                    Description="ack-ec2-controller e2e VPC endpoint security group",
+                    VpcId=vpc_id,
+                )
+                sg_ids.append(resp["GroupId"])
+            (first_sg_id, second_sg_id) = sg_ids
+
+            # The endpoint is created with no securityGroupIDs, so AWS gives it
+            # the VPC's default security group. The first patch checks that the
+            # controller also removes that group.
+            for security_group_ids in (
+                [first_sg_id],
+                [first_sg_id, second_sg_id],
+                [second_sg_id],
+            ):
+                updates = {
+                    "spec": {"securityGroupIDs": security_group_ids}
+                }
+
+                k8s.patch_custom_resource(ref, updates)
+                time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+
+                # Check resource synced successfully
+                assert k8s.wait_on_condition(
+                    ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+                # Verify the update in AWS
+                vpc_endpoint = ec2_validator.get_vpc_endpoint(resource_id)
+                aws_sg_ids = {group["GroupId"] for group in vpc_endpoint["Groups"]}
+                assert aws_sg_ids == set(security_group_ids)
+        finally:
+            # A security group cannot be deleted while the endpoint uses it,
+            # so delete the endpoint and wait for it to go first.
+            try:
+                k8s.delete_custom_resource(ref, 3, 10)
+            except:
+                pass
+            time.sleep(DELETE_WAIT_AFTER_SECONDS)
+            for sg_id in sg_ids:
+                try:
+                    ec2_client.delete_security_group(GroupId=sg_id)
+                except Exception as e:
+                    logging.debug(e)
