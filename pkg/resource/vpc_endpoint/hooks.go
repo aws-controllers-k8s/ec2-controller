@@ -49,6 +49,11 @@ const (
 // ModifyVpcEndpoint for it. A resource whose spec lists no security groups
 // is left as it is: AWS gives such an endpoint the VPC's default security
 // group, and a mirrored list would make the update remove every group.
+// So removing the list, or setting it to [], on an existing endpoint changes
+// nothing in AWS, and the resource still reads synced. AWS would refuse that
+// change anyway: ModifyVpcEndpoint rejects removing the last security group
+// of an Interface endpoint with "InvalidParameter: An Interface type Vpc
+// Endpoint must always have at least one Security Group."
 func mirrorSecurityGroupIDs(ko *svcapitypes.VPCEndpoint) {
 	if len(ko.Spec.SecurityGroupIDs) == 0 {
 		return
