@@ -22,6 +22,7 @@ import logging
 from acktest import tags
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
+from acktest.k8s import condition
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ec2_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
 from e2e.bootstrap_resources import get_bootstrap_resources
@@ -424,12 +425,18 @@ class TestVpcEndpoint:
                     "spec": {"securityGroupIDs": security_group_ids}
                 }
 
+                # Until the controller handles the patch, ACK.ResourceSynced
+                # still reads True from before it. The controller sets a new
+                # lastTransitionTime each time it reconciles the resource, so
+                # waiting for a newer one skips that old True.
+                last_synced = condition.get_synced_last_transition_time(ref)
                 k8s.patch_custom_resource(ref, updates)
                 time.sleep(MODIFY_WAIT_AFTER_SECONDS)
 
                 # Check resource synced successfully
-                assert k8s.wait_on_condition(
-                    ref, "ACK.ResourceSynced", "True", wait_periods=10)
+                assert k8s.wait_on_condition_after(
+                    ref, "ACK.ResourceSynced", "True",
+                    last_transition_after=last_synced, wait_periods=10)
 
                 # Verify the update in AWS
                 vpc_endpoint = ec2_validator.get_vpc_endpoint(resource_id)
