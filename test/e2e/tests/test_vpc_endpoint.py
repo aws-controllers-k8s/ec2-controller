@@ -394,6 +394,13 @@ class TestVpcEndpoint:
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_vpc_endpoint(resource_id)
 
+        # An S3 interface endpoint in us-west-2 stays pending for about 5.5
+        # minutes after creation, and the controller keeps ACK.ResourceSynced
+        # False until the endpoint is available. Without this wait, the wait
+        # after the first patch also has to cover the creation time.
+        assert k8s.wait_on_condition(
+            ref, "ACK.ResourceSynced", "True", wait_periods=10)
+
         sg_ids = []
         try:
             for _ in range(2):
@@ -422,7 +429,7 @@ class TestVpcEndpoint:
 
                 # Check resource synced successfully
                 assert k8s.wait_on_condition(
-                    ref, "ACK.ResourceSynced", "True", wait_periods=5)
+                    ref, "ACK.ResourceSynced", "True", wait_periods=10)
 
                 # Verify the update in AWS
                 vpc_endpoint = ec2_validator.get_vpc_endpoint(resource_id)
