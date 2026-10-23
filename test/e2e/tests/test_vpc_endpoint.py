@@ -452,6 +452,6 @@ class TestVpcEndpoint:
                 try:
                     ec2_client.delete_security_group(GroupId=sg_id)
                 except Exception as e:
-                    logging.debug(e)
+                    logging.warning(e)
             assert deleted is True
             ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
