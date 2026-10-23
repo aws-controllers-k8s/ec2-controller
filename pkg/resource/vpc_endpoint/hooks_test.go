@@ -149,6 +149,7 @@ func TestCustomUpdateVPCEndpoint(t *testing.T) {
 			require.NotNil(t, synced)
 			assert.Equal(t, corev1.ConditionFalse, synced.Status)
 			assert.Equal(t, ackv1alpha1.ConditionTypeResourceSynced, synced.Type)
+			assert.NotNil(t, synced.Message)
 		})
 	}
 }

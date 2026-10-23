@@ -201,7 +201,8 @@ func (rm *resourceManager) customUpdateVPCEndpoint(
 		// synced resource is read from AWS again only after the resync period,
 		// 10 hours by default. A resource that is not synced is read again
 		// after the runtime's requeue.DefaultRequeueAfterDuration, 30 seconds.
-		ackcondition.SetSynced(updated, corev1.ConditionFalse, nil, nil)
+		ackcondition.SetSynced(updated, corev1.ConditionFalse,
+			aws.String("security groups changed; waiting to read them back from AWS"), nil)
 	}
 	return updated, nil
 }
