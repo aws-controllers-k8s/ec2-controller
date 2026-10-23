@@ -444,14 +444,14 @@ class TestVpcEndpoint:
                 assert aws_sg_ids == set(security_group_ids)
         finally:
             # A security group cannot be deleted while the endpoint uses it,
-            # so delete the endpoint and wait for it to go first.
-            try:
-                k8s.delete_custom_resource(ref, 3, 10)
-            except:
-                pass
+            # so delete the endpoint and wait for it to go first. The asserts
+            # run last, so a failed one does not skip deleting the groups.
+            _, deleted = k8s.delete_custom_resource(ref, 3, 10)
             time.sleep(DELETE_WAIT_AFTER_SECONDS)
             for sg_id in sg_ids:
                 try:
                     ec2_client.delete_security_group(GroupId=sg_id)
                 except Exception as e:
                     logging.debug(e)
+            assert deleted is True
+            ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
