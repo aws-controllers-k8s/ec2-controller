@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=subnets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=subnets/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{}
+var lateInitializeFieldNames = []string{"AssignIPv6AddressOnCreation"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -260,7 +260,12 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	observed acktypes.AWSResource,
 	latest acktypes.AWSResource,
 ) acktypes.AWSResource {
-	return latest
+	observedKo := rm.concreteResource(observed).ko.DeepCopy()
+	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.AssignIPv6AddressOnCreation != nil && latestKo.Spec.AssignIPv6AddressOnCreation == nil {
+		latestKo.Spec.AssignIPv6AddressOnCreation = observedKo.Spec.AssignIPv6AddressOnCreation
+	}
+	return &resource{latestKo}
 }
 
 // IsSynced returns true if the resource is synced.

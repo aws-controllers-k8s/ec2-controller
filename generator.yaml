@@ -1050,6 +1050,8 @@ resources:
       # relocate fields from Status to Spec.
       AssignIpv6AddressOnCreation:
         type: bool
+        late_initialize:
+          skip_incomplete_check: {}
       CustomerOwnedIpv4Pool:
         type: string
       EnableDns64:
