@@ -6,6 +6,8 @@ ignore:
   operations:
     - ModifyTransitGateway
     - ModifyVpcEndpoint
+    # KeyPair is created with ImportKeyPair; the private key stays outside AWS.
+    - CreateKeyPair
   field_paths:
     - AllocateAddressInput.DryRun
     - AllocateAddressInput.TagSpecifications
@@ -31,6 +33,10 @@ ignore:
     - DeleteEgressOnlyInternetGatewayInput.DryRun
     - CreateInternetGatewayInput.DryRun
     - CreateInternetGatewayInput.TagSpecifications
+    - ImportKeyPairInput.DryRun
+    - ImportKeyPairInput.TagSpecifications
+    - DeleteKeyPairInput.DryRun
+    - DeleteKeyPairInput.KeyPairId
     - CreateNatGatewayInput.ClientToken
     - CreateNatGatewayInput.PrivateIpAddress
     - CreateNatGatewayInput.SecondaryAllocationIds
@@ -201,7 +207,6 @@ ignore:
     - IpamPrefixListResolverTarget
     - IpamPrefixListResolver
     - IpamPolicy
-    - KeyPair
     - LaunchTemplateVersion
     # - LaunchTemplate
     - LocalGatewayRouteTable
@@ -278,6 +283,12 @@ operations:
     operation_type:
     - Create
     resource_name: ElasticIPAddress
+  ImportKeyPair:
+    operation_type:
+    - Create
+    resource_name: KeyPair
+  DescribeKeyPairs:
+    custom_check_required_fields_missing_method: checkForMissingRequiredFields
   CancelCapacityReservation:
     operation_type:
     - Delete
@@ -634,6 +645,49 @@ resources:
         template_path: hooks/internet_gateway/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateInternetGateway
+  KeyPair:
+    exceptions:
+      errors:
+        404:
+          code: InvalidKeyPair.NotFound
+      terminal_codes:
+      - InvalidKeyPair.Duplicate
+      - InvalidKey.Format
+      - InvalidParameterCombination
+      - InvalidParameterValue
+    fields:
+      KeyName:
+        is_primary_key: true
+        is_immutable: true
+      # ImportKeyPair takes the public key as a blob; the spec carries the
+      # public key text and the create hook converts it.
+      PublicKeyMaterial:
+        is_required: true
+        is_immutable: true
+        type: string
+        set:
+          - ignore: "all"
+      KeyPairId:
+        print:
+          name: ID
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    list_operation:
+      match_fields:
+      - KeyName
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/key_pair/sdk_create_post_build_request.go.tpl
+      sdk_read_many_pre_build_request:
+        template_path: hooks/key_pair/sdk_read_many_pre_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/key_pair/sdk_read_many_post_build_request.go.tpl
+      sdk_file_end:
+        template_path: hooks/key_pair/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateKeyPair
   LaunchTemplate:
     hooks:
       sdk_create_post_build_request:
