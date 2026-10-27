@@ -54,6 +54,10 @@ const (
 // change anyway: ModifyVpcEndpoint rejects removing the last security group
 // of an Interface endpoint with "InvalidParameter: An Interface type Vpc
 // Endpoint must always have at least one Security Group."
+//
+// A Gateway endpoint has no security groups. A Gateway spec that lists one
+// always differs from the empty list AWS reports, so every reconcile calls
+// ModifyVpcEndpoint again and the resource never reads synced.
 func mirrorSecurityGroupIDs(ko *svcapitypes.VPCEndpoint) {
 	if len(ko.Spec.SecurityGroupIDs) == 0 {
 		return

@@ -983,6 +983,100 @@ func TestCustomPostCompare_NonCanonicalCIDR_NoDiff(t *testing.T) {
 	assert.False(t, got.ing, "non-canonical CIDR vs AWS-canonicalized form must not diff")
 }
 
+func TestCustomPostCompare_SameSourceTwice(t *testing.T) {
+	// The spec lists one source twice on a port range. AWS holds it once. Each
+	// case runs as both ingress and egress.
+	tcp443 := func(p svcapitypes.IPPermission) *svcapitypes.IPPermission {
+		p.FromPort, p.ToPort, p.IPProtocol = aws.Int64(443), aws.Int64(443), aws.String("tcp")
+		return &p
+	}
+	cidr := func(c string) *svcapitypes.IPRange { return &svcapitypes.IPRange{CIDRIP: aws.String(c)} }
+	cases := []struct {
+		name     string
+		desired  []*svcapitypes.IPPermission
+		latest   []*svcapitypes.IPPermission
+		wantDiff bool
+	}{
+		{
+			name: "two permissions, one written as 10.0.0.1/24",
+			desired: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{cidr("10.0.0.1/24")}}),
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{cidr("10.0.0.0/24")}}),
+			},
+			latest: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{cidr("10.0.0.0/24")}}),
+			},
+		},
+		{
+			name: "twice in one permission",
+			desired: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{cidr("10.0.0.0/24"), cidr("10.0.0.0/24")}}),
+			},
+			latest: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{cidr("10.0.0.0/24")}}),
+			},
+		},
+		{
+			name: "IPv6, one written non-canonically",
+			desired: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPv6Ranges: []*svcapitypes.IPv6Range{
+					{CIDRIPv6: aws.String("2001:DB8::1/64")}, {CIDRIPv6: aws.String("2001:db8::/64")},
+				}}),
+			},
+			latest: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPv6Ranges: []*svcapitypes.IPv6Range{{CIDRIPv6: aws.String("2001:db8::/64")}}}),
+			},
+		},
+		{
+			name: "prefix list in two permissions",
+			desired: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{PrefixListIDs: []*svcapitypes.PrefixListID{{PrefixListID: aws.String("pl-1")}}}),
+				tcp443(svcapitypes.IPPermission{PrefixListIDs: []*svcapitypes.PrefixListID{{PrefixListID: aws.String("pl-1")}}}),
+			},
+			latest: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{PrefixListIDs: []*svcapitypes.PrefixListID{{PrefixListID: aws.String("pl-1")}}}),
+			},
+		},
+		{
+			name: "self group pair, once omitted and once by GroupID",
+			desired: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{
+					{}, {GroupID: aws.String(testSelfID)},
+				}}),
+			},
+			latest: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{
+					{GroupID: aws.String(testSelfID), UserID: aws.String(testOwnerAcctID)},
+				}}),
+			},
+		},
+		{
+			// AWS keeps one description per source, and the spec does not say
+			// which one, so this must still diff.
+			name: "two descriptions still diff",
+			desired: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{
+					{CIDRIP: aws.String("10.0.0.0/24"), Description: aws.String("a")},
+					{CIDRIP: aws.String("10.0.0.0/24"), Description: aws.String("b")},
+				}}),
+			},
+			latest: []*svcapitypes.IPPermission{
+				tcp443(svcapitypes.IPPermission{IPRanges: []*svcapitypes.IPRange{
+					{CIDRIP: aws.String("10.0.0.0/24"), Description: aws.String("a")},
+				}}),
+			},
+			wantDiff: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := desiredLatestDelta(mkResource(tc.desired, tc.desired), mkResource(tc.latest, tc.latest))
+			assert.Equal(t, tc.wantDiff, got.ing, "ingress")
+			assert.Equal(t, tc.wantDiff, got.egr, "egress")
+		})
+	}
+}
+
 func TestCustomPostCompare_DifferentCIDR_StillFires(t *testing.T) {
 	// A genuinely different network must still diff.
 	desired := mkResource([]*svcapitypes.IPPermission{{
