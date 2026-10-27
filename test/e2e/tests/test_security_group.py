@@ -969,6 +969,49 @@ class TestSecurityGroup:
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
 
+    @pytest.mark.resource_data({"resource_file": "security_group_duplicate_source"})
+    def test_duplicate_source_no_perpetual_diff(self, ec2_client, simple_security_group):
+        # The spec lists the tcp/8030 source twice after AWS holds it once.
+        # EC2 keeps one rule per source, rejects an authorize request that lists
+        # a source twice (InvalidParameterValue), and rejects authorizing a
+        # source it already holds (InvalidPermission.Duplicate). So the delta
+        # must count the source once. Otherwise the update revokes the rule and
+        # then fails to authorize it, or fails on every reconcile.
+        (ref, cr) = simple_security_group
+        resource_id = cr["status"]["id"]
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=8)
+
+        ec2_validator = EC2Validator(ec2_client)
+        rule_ids = _sg_status_rule_ids(ref)
+
+        port = {"fromPort": 8030, "toPort": 8030, "ipProtocol": "tcp"}
+        source = {"cidrIP": "10.4.0.0/16", "description": "duplicate source"}
+        non_canonical = {"cidrIP": "10.4.5.6/16", "description": "duplicate source"}
+        specs = {
+            "twice in one permission": [{**port, "ipRanges": [source, source]}],
+            "two permissions, one written as 10.4.5.6/16": [
+                {**port, "ipRanges": [source]},
+                {**port, "ipRanges": [non_canonical]},
+            ],
+        }
+        for name, ingress in specs.items():
+            k8s.patch_custom_resource(ref, {"spec": {"ingressRules": ingress}})
+            time.sleep(MODIFY_WAIT_AFTER_SECONDS)
+            assert k8s.wait_on_condition(
+                ref, "ACK.ResourceSynced", "True", wait_periods=5
+            ), f"{name}: not synced"
+
+            sg = ec2_validator.get_security_group(resource_id)
+            rule = [p for p in sg["IpPermissions"] if p.get("FromPort") == 8030]
+            assert len(rule) == 1, f"{name}: expected one tcp/8030 rule, got {sg['IpPermissions']}"
+            assert [r["CidrIp"] for r in rule[0]["IpRanges"]] == ["10.4.0.0/16"], name
+            assert _sg_status_rule_ids(ref) == rule_ids, f"{name}: the rule was revoked and authorized again"
+
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+        ec2_validator.assert_security_group(resource_id, exists=False)
+
     @pytest.mark.resource_data({"resource_file": "security_group_multi_grant"})
     def test_multiple_grants_sorted_no_perpetual_diff(self, ec2_client, simple_security_group):
         # A single rule carrying several CIDRs must be ordered deterministically
