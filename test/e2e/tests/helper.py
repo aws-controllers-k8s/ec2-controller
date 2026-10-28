@@ -465,3 +465,15 @@ class EC2Validator:
 
     def assert_egress_only_internet_gateway(self, eigw_id: str, exists=True):
         assert (self.get_egress_only_internet_gateway(eigw_id) is not None) == exists
+
+    def get_key_pair(self, key_name: str) -> Union[None, Dict]:
+        try:
+            aws_res = self.ec2_client.describe_key_pairs(KeyNames=[key_name])
+            if len(aws_res["KeyPairs"]) > 0:
+                return aws_res["KeyPairs"][0]
+            return None
+        except self.ec2_client.exceptions.ClientError:
+            return None
+
+    def assert_key_pair(self, key_name: str, exists=True):
+        assert (self.get_key_pair(key_name) is not None) == exists
