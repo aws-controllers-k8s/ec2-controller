@@ -82,8 +82,11 @@ func TestSdkCreate_ImportsPublicKeyWithTags(t *testing.T) {
 	}
 }
 
-func TestSdkFind_ListsByNameAndIncludesPublicKey(t *testing.T) {
-	rm, form := stubEC2(t, `<DescribeKeyPairsResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/"><requestId>req</requestId><keySet><item><keyName>test-key</keyName><keyPairId>key-0123456789abcdef0</keyPairId><keyFingerprint>SHA256:abc</keyFingerprint><keyType>ed25519</keyType><publicKey>`+testPublicKey+`</publicKey></item></keySet></DescribeKeyPairsResponse>`)
+const describeKeyPairsResponse = `<DescribeKeyPairsResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/"><requestId>req</requestId><keySet><item><keyName>test-key</keyName><keyPairId>key-0123456789abcdef0</keyPairId><keyFingerprint>SHA256:abc</keyFingerprint><keyType>ed25519</keyType></item></keySet></DescribeKeyPairsResponse>`
+
+// Before the ID is known the read goes by name.
+func TestSdkFind_ListsByNameBeforeTheIDIsKnown(t *testing.T) {
+	rm, form := stubEC2(t, describeKeyPairsResponse)
 	desired := &resource{ko: &svcapitypes.KeyPair{}}
 	desired.ko.Spec.KeyName = aws.String("test-key")
 	desired.ko.Spec.PublicKeyMaterial = aws.String(testPublicKey)
@@ -95,14 +98,38 @@ func TestSdkFind_ListsByNameAndIncludesPublicKey(t *testing.T) {
 	if got := form.Get("KeyName.1"); got != "test-key" {
 		t.Errorf("KeyName.1 = %q, want test-key", got)
 	}
-	if got := form.Get("IncludePublicKey"); got != "true" {
-		t.Errorf("IncludePublicKey = %q, want true", got)
+	if got := form.Get("KeyPairId.1"); got != "" {
+		t.Errorf("KeyPairId.1 = %q, want it absent before the ID is known", got)
 	}
 	if got := aws.ToString(latest.ko.Status.KeyPairID); got != "key-0123456789abcdef0" {
 		t.Errorf("Status.KeyPairID = %q", got)
 	}
 	if newResourceDelta(desired, latest).DifferentAt("Spec") {
 		t.Errorf("a key pair read back by name must not differ from its spec: %v", newResourceDelta(desired, latest).Differences)
+	}
+}
+
+// Every read after the create carries Status.KeyPairID; EC2 rejects KeyNames
+// and KeyPairIds in one call, so the read goes by ID alone.
+func TestSdkFind_ListsByIDOnceKnown(t *testing.T) {
+	rm, form := stubEC2(t, describeKeyPairsResponse)
+	desired := &resource{ko: &svcapitypes.KeyPair{}}
+	desired.ko.Spec.KeyName = aws.String("test-key")
+	desired.ko.Spec.PublicKeyMaterial = aws.String(testPublicKey)
+	desired.ko.Status.KeyPairID = aws.String("key-0123456789abcdef0")
+
+	latest, err := rm.sdkFind(context.Background(), desired)
+	if err != nil {
+		t.Fatalf("sdkFind: %v", err)
+	}
+	if got := form.Get("KeyPairId.1"); got != "key-0123456789abcdef0" {
+		t.Errorf("KeyPairId.1 = %q, want the known ID", got)
+	}
+	if got := form.Get("KeyName.1"); got != "" {
+		t.Errorf("KeyName.1 = %q, want it absent once the ID is known", got)
+	}
+	if newResourceDelta(desired, latest).DifferentAt("Spec") {
+		t.Errorf("a key pair read back by ID must not differ from its spec: %v", newResourceDelta(desired, latest).Differences)
 	}
 }
 

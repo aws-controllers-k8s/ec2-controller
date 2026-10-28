@@ -680,12 +680,8 @@ resources:
     hooks:
       sdk_create_post_build_request:
         template_path: hooks/key_pair/sdk_create_post_build_request.go.tpl
-      sdk_read_many_pre_build_request:
-        template_path: hooks/key_pair/sdk_read_many_pre_build_request.go.tpl
       sdk_read_many_post_build_request:
         template_path: hooks/key_pair/sdk_read_many_post_build_request.go.tpl
-      sdk_file_end:
-        template_path: hooks/key_pair/sdk_file_end.go.tpl
     update_operation:
       custom_method_name: customUpdateKeyPair
   LaunchTemplate:
