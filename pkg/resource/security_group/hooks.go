@@ -570,45 +570,27 @@ func (rm *resourceManager) syncSGRules(
 	exit := rlog.Trace("rm.syncSGRules")
 	defer func() { exit(err) }()
 
-	// The sync path deliberately matches and authorises/revokes the RAW spec
-	// rules, never canonicalised copies. Canonicalisation lives only in the
-	// delta (customPostCompare): the canonical delta gates whether sync fires
-	// and converges once the state matches, so a canonicalisation defect can, at
-	// worst, mis-scope which rules churn -- it can never change the rule content
-	// sent to AWS. Keeping the raw spec here means the values submitted to
-	// Authorize/Revoke are always exactly what the user declared (or what AWS
-	// itself returned), which AWS then normalises server-side.
-	toAddIngress := []*svcapitypes.IPPermission{}
-	toAddEgress := []*svcapitypes.IPPermission{}
-	toDeleteIngress := []*svcapitypes.IPPermission{}
-	toDeleteEgress := []*svcapitypes.IPPermission{}
-	for _, desiredIngress := range desired.ko.Spec.IngressRules {
-		if latest == nil || !containsRule(latest.ko.Spec.IngressRules, desiredIngress) {
-			// a desired rule is not in the latest resource; therefore, create
-			toAddIngress = append(toAddIngress, desiredIngress)
-		}
-	}
-	for _, desiredEgress := range desired.ko.Spec.EgressRules {
-		if latest == nil || !containsRule(latest.ko.Spec.EgressRules, desiredEgress) {
-			toAddEgress = append(toAddEgress, desiredEgress)
-		}
-	}
+	// AWS keeps one rule per source (an IPv4 or IPv6 CIDR, a prefix list or a
+	// security group) on a protocol and port range, and returns every source on
+	// that port range as one permission. So the sync splits both sides into one
+	// permission per source, matches the sources by the canonical form
+	// customPostCompare compares, and revokes or authorizes only the sources
+	// that differ. Revoking a whole permission would also drop, until the
+	// authorize that follows, every source on its port range that both sides
+	// still allow. The values sent to AWS are the raw ones the user declared or
+	// AWS returned, which AWS then normalises server-side.
+	var latestIngress, latestEgress []*svcapitypes.IPPermission
 	if latest != nil {
-		for _, latestIngress := range latest.ko.Spec.IngressRules {
-			if !containsRule(desired.ko.Spec.IngressRules, latestIngress) {
-				// a rule is in latest resource, but not in desired resource; therefore, delete
-				toDeleteIngress = append(toDeleteIngress, latestIngress)
-			}
-		}
-		for _, latestEgress := range latest.ko.Spec.EgressRules {
-			if !containsRule(desired.ko.Spec.EgressRules, latestEgress) {
-				toDeleteEgress = append(toDeleteEgress, latestEgress)
-			}
-		}
+		latestIngress, latestEgress = latest.ko.Spec.IngressRules, latest.ko.Spec.EgressRules
 	}
+	selfID, ownerAccountID := ruleIdentity(desired, latest)
+	toAddIngress := missingGrants(desired.ko.Spec.IngressRules, latestIngress, selfID, ownerAccountID)
+	toAddEgress := missingGrants(desired.ko.Spec.EgressRules, latestEgress, selfID, ownerAccountID)
+	toDeleteIngress := missingGrants(latestIngress, desired.ko.Spec.IngressRules, selfID, ownerAccountID)
+	toDeleteEgress := missingGrants(latestEgress, desired.ko.Spec.EgressRules, selfID, ownerAccountID)
 
 	// Delete before create for the following reasons:
-	// - Updating a rule requires that it be removed before the updated version be added.
+	// - Updating a rule's description requires that it be removed before the updated version be added.
 	// - If there is an error with adding new rules, it occurs after deletion of old ones;
 	//   This is safer and closer to achieving desired resource state.
 	if err = rm.deleteSecurityGroupRules(ctx, latest, toDeleteIngress, toDeleteEgress); err != nil {
@@ -619,6 +601,91 @@ func (rm *resourceManager) syncSGRules(
 	}
 
 	return nil
+}
+
+// ruleIdentity returns the security group ID and owner account that rule keys
+// are built with, read from latest when there is one. Each is empty when not
+// known yet.
+func ruleIdentity(desired, latest *resource) (selfID string, ownerAccountID string) {
+	r := desired
+	if latest != nil {
+		r = latest
+	}
+	if r.ko.Status.ACKResourceMetadata != nil && r.ko.Status.ACKResourceMetadata.OwnerAccountID != nil {
+		ownerAccountID = string(*r.ko.Status.ACKResourceMetadata.OwnerAccountID)
+	}
+	return derefStr(r.ko.Status.ID), ownerAccountID
+}
+
+// missingGrants returns one permission per source in from that to does not
+// allow on the same protocol and port range with the same description. Each
+// returned permission keeps from's raw values. A permission with no source
+// counts as one source and is returned whole.
+func missingGrants(
+	from []*svcapitypes.IPPermission,
+	to []*svcapitypes.IPPermission,
+	selfID string,
+	ownerAccountID string,
+) []*svcapitypes.IPPermission {
+	seen := map[string]bool{}
+	for _, grant := range splitGrants(to) {
+		seen[grantKey(grant, selfID, ownerAccountID)] = true
+	}
+	missing := []*svcapitypes.IPPermission{}
+	for _, grant := range splitGrants(from) {
+		key := grantKey(grant, selfID, ownerAccountID)
+		if !seen[key] {
+			seen[key] = true
+			missing = append(missing, grant)
+		}
+	}
+	return missing
+}
+
+// splitGrants returns one permission per source in rules, with the protocol and
+// port range of the permission it came from, and each permission that has no
+// source as it is.
+func splitGrants(rules []*svcapitypes.IPPermission) []*svcapitypes.IPPermission {
+	grants := []*svcapitypes.IPPermission{}
+	for _, p := range rules {
+		if p == nil {
+			continue
+		}
+		n := len(grants)
+		for _, r := range p.IPRanges {
+			grants = append(grants, &svcapitypes.IPPermission{
+				IPProtocol: p.IPProtocol, FromPort: p.FromPort, ToPort: p.ToPort, IPRanges: []*svcapitypes.IPRange{r},
+			})
+		}
+		for _, r := range p.IPv6Ranges {
+			grants = append(grants, &svcapitypes.IPPermission{
+				IPProtocol: p.IPProtocol, FromPort: p.FromPort, ToPort: p.ToPort, IPv6Ranges: []*svcapitypes.IPv6Range{r},
+			})
+		}
+		for _, l := range p.PrefixListIDs {
+			grants = append(grants, &svcapitypes.IPPermission{
+				IPProtocol: p.IPProtocol, FromPort: p.FromPort, ToPort: p.ToPort, PrefixListIDs: []*svcapitypes.PrefixListID{l},
+			})
+		}
+		for _, pair := range p.UserIDGroupPairs {
+			grants = append(grants, &svcapitypes.IPPermission{
+				IPProtocol: p.IPProtocol, FromPort: p.FromPort, ToPort: p.ToPort, UserIDGroupPairs: []*svcapitypes.UserIDGroupPair{pair},
+			})
+		}
+		if len(grants) == n {
+			grants = append(grants, p)
+		}
+	}
+	return grants
+}
+
+// grantKey returns a permission from splitGrants in the canonical form
+// customPostCompare compares, so two of them share a key when they allow the
+// same source on the same protocol and port range with the same description.
+func grantKey(grant *svcapitypes.IPPermission, selfID string, ownerAccountID string) string {
+	canonical := canonicalizeRuleList([]*svcapitypes.IPPermission{grant.DeepCopy()}, selfID, ownerAccountID)
+	key, _ := json.Marshal(canonical)
+	return string(key)
 }
 
 // updateTagSpecificationsInCreateRequest adds
@@ -923,26 +990,6 @@ func (rm *resourceManager) customUpdateSecurityGroup(
 	}
 
 	return updated, nil
-}
-
-// containsRule returns true if security group rule
-// is found in the rule collection (all fields must match);
-// otherwise, return false.
-func containsRule(
-	ruleCollection []*svcapitypes.IPPermission,
-	rule *svcapitypes.IPPermission,
-) bool {
-	if ruleCollection == nil || rule == nil {
-		return false
-	}
-
-	for _, r := range ruleCollection {
-		delta := compareIPPermission(r, rule)
-		if len(delta.Differences) == 0 {
-			return true
-		}
-	}
-	return false
 }
 
 func toStrPtr(str string) *string {
