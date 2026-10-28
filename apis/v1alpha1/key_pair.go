@@ -27,6 +27,10 @@ type KeyPairSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	KeyName *string `json:"keyName"`
+	// The public key to import, as OpenSSH public key text (for example the
+	// contents of an id_ed25519.pub file). Paste it as is: the controller
+	// sends the bytes to ImportKeyPair, so unlike the AWS CLI the value must
+	// not be base64-encoded here.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	PublicKeyMaterial *string `json:"publicKeyMaterial"`

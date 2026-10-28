@@ -50,6 +50,11 @@ spec:
                 - message: Value is immutable once set
                   rule: self == oldSelf
               publicKeyMaterial:
+                description: |-
+                  The public key to import, as OpenSSH public key text (for example the
+                  contents of an id_ed25519.pub file). Paste it as is: the controller
+                  sends the bytes to ImportKeyPair, so unlike the AWS CLI the value must
+                  not be base64-encoded here.
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set

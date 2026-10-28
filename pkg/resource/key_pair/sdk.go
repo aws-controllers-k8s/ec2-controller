@@ -63,10 +63,6 @@ func (rm *resourceManager) sdkFind(
 	defer func() {
 		exit(err)
 	}()
-	if r.ko.Spec.KeyName == nil {
-		return nil, ackerr.NotFound
-	}
-
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. Return NotFound here to indicate to callers that the
 	// resource isn't yet created.
@@ -78,8 +74,12 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	input.KeyNames = []string{*r.ko.Spec.KeyName}
-	input.IncludePublicKey = aws.Bool(true)
+	// DescribeKeyPairs rejects KeyNames and KeyPairIds in the same call. The
+	// generated payload reads by ID once Status.KeyPairID is set; read by name
+	// only before that.
+	if r.ko.Status.KeyPairID == nil {
+		input.KeyNames = []string{*r.ko.Spec.KeyName}
+	}
 
 	var resp *svcsdk.DescribeKeyPairsOutput
 	resp, err = rm.sdkapi.DescribeKeyPairs(ctx, input)
@@ -431,18 +431,4 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	default:
 		return false
 	}
-}
-
-func (rm *resourceManager) newTag(
-	c svcapitypes.Tag,
-) *svcsdktypes.Tag {
-	res := &svcsdktypes.Tag{}
-	if c.Key != nil {
-		res.Key = c.Key
-	}
-	if c.Value != nil {
-		res.Value = c.Value
-	}
-
-	return res
 }
