@@ -166,7 +166,7 @@ func TestSdkDelete(t *testing.T) {
 		{
 			name:         "EC2 does not delete the endpoint",
 			unsuccessful: `<item><error><code>OperationNotPermitted</code><message>The endpoint cannot be deleted.</message></error><resourceId>vpce-0123</resourceId></item>`,
-			wantErr:      "failed to delete VPC Endpoint: The endpoint cannot be deleted.",
+			wantErr:      "api error OperationNotPermitted: The endpoint cannot be deleted.",
 		},
 		{
 			name:         "EC2 no longer has the endpoint",
