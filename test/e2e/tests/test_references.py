@@ -15,7 +15,6 @@
 """
 
 from os import environ
-import datetime
 import pytest
 import time
 
@@ -29,17 +28,6 @@ from e2e.tests.helper import EC2Validator
 CREATE_WAIT_AFTER_SECONDS = 20
 MODIFY_WAIT_AFTER_SECONDS = 30
 DELETE_WAIT_AFTER_SECONDS = 10
-DELETE_TIMEOUT_SECONDS = 300
-
-def wait_for_delete_or_die(ec2_client, vpc_endpoint_id, timeout):
-    while True:
-        if datetime.datetime.now() >= timeout:
-            pytest.fail("Timed out waiting for VPC Endpoint to be deleted from EC2")
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-        try:
-            ec2_client.describe_vpc_endpoints(VpcEndpointIds=[vpc_endpoint_id])
-        except ec2_client.exceptions.ClientError:
-            break
 
 @service_marker
 @pytest.mark.canary
@@ -148,9 +136,7 @@ class TestEC2References:
         
         # If VPC Endpoint is not completely removed server-side, then remaining
         # resources will NOT delete successfully due to dependency exceptions
-        now = datetime.datetime.now()
-        timeout = now + datetime.timedelta(seconds=DELETE_TIMEOUT_SECONDS)
-        wait_for_delete_or_die(ec2_client, vpc_endpoint_id, timeout)
+        assert ec2_validator.wait_vpc_endpoint_deleted(vpc_endpoint_id)
 
         _, deleted = k8s.delete_custom_resource(subnet_ref, 6, 5)
         assert deleted is True
