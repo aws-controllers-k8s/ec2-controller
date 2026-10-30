@@ -1,0 +1,16 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: SecurityGroup
+metadata:
+  name: $SECURITY_GROUP_NAME
+spec:
+  name: $SECURITY_GROUP_NAME
+  description: test sg duplicate source
+  vpcID: $VPC_ID
+  ingressRules:
+    # One source on tcp/8030. The test then lists it twice.
+    - fromPort: 8030
+      toPort: 8030
+      ipProtocol: tcp
+      ipRanges:
+        - cidrIP: 10.4.0.0/16
+          description: duplicate source
