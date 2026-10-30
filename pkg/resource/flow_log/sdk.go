@@ -222,6 +222,15 @@ func (rm *resourceManager) sdkCreate(
 	var resp *svcsdk.CreateFlowLogsOutput
 	_ = resp
 	resp, err = rm.sdkapi.CreateFlowLogs(ctx, input)
+	// CreateFlowLogs reports a failed create in Unsuccessful, not as an error.
+	if err == nil && resp != nil && len(resp.Unsuccessful) > 0 {
+		failure := resp.Unsuccessful[0].Error
+		if failure == nil {
+			failure = &svcsdktypes.UnsuccessfulItemError{}
+		}
+		err = &smithy.GenericAPIError{Code: aws.ToString(failure.Code), Message: aws.ToString(failure.Message)}
+	}
+
 	rm.metrics.RecordAPICall("CREATE", "CreateFlowLogs", err)
 	if err != nil {
 		return nil, err
@@ -366,6 +375,18 @@ func (rm *resourceManager) sdkDelete(
 	_ = resp
 	resp, err = rm.sdkapi.DeleteFlowLogs(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteFlowLogs", err)
+	// DeleteFlowLogs reports a refused delete in Unsuccessful, not as an error.
+	// InvalidFlowLogId.NotFound means the flow log is already gone.
+	if err == nil && resp != nil && len(resp.Unsuccessful) > 0 {
+		failure := resp.Unsuccessful[0].Error
+		if failure == nil {
+			failure = &svcsdktypes.UnsuccessfulItemError{}
+		}
+		if aws.ToString(failure.Code) != "InvalidFlowLogId.NotFound" {
+			err = &smithy.GenericAPIError{Code: aws.ToString(failure.Code), Message: aws.ToString(failure.Message)}
+		}
+	}
+
 	return nil, err
 }
 
