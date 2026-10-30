@@ -1050,18 +1050,30 @@ resources:
       # relocate fields from Status to Spec.
       AssignIpv6AddressOnCreation:
         type: bool
+        late_initialize:
+          skip_incomplete_check: {}
       CustomerOwnedIpv4Pool:
         type: string
       EnableDns64:
         type: bool
+        late_initialize:
+          skip_incomplete_check: {}
       EnableResourceNameDnsARecord:
         type: bool
+        late_initialize:
+          skip_incomplete_check: {}
       EnableResourceNameDnsAAAARecord:
         type: bool
+        late_initialize:
+          skip_incomplete_check: {}
       HostnameType:
         type: string
+        late_initialize:
+          skip_incomplete_check: {}
       MapPublicIpOnLaunch:
         type: bool
+        late_initialize:
+          skip_incomplete_check: {}
       RouteTables:
         custom_field:
           list_of: String
