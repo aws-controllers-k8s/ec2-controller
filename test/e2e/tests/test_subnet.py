@@ -137,6 +137,16 @@ class TestSubnet:
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
+        # The fixture leaves the attribute fields unset; once synced the spec
+        # carries the AWS defaults, so later resyncs have nothing to modify
+        resource = k8s.get_resource(ref)
+        assert resource["spec"]["assignIPv6AddressOnCreation"] is False
+        assert resource["spec"]["enableDNS64"] is False
+        assert resource["spec"]["enableResourceNameDNSARecord"] is False
+        assert resource["spec"]["enableResourceNameDNSAAAARecord"] is False
+        assert resource["spec"]["hostnameType"] == "ip-name"
+        assert resource["spec"]["mapPublicIPOnLaunch"] is False
+
         # Check Subnet exists in AWS
         ec2_validator = EC2Validator(ec2_client)
         ec2_validator.assert_subnet(resource_id)
