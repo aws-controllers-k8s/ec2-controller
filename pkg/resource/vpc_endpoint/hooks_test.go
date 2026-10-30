@@ -153,3 +153,37 @@ func TestCustomUpdateVPCEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestSdkDelete(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		unsuccessful string
+		wantErr      string
+	}{
+		{
+			name: "EC2 deletes the endpoint",
+		},
+		{
+			name:         "EC2 does not delete the endpoint",
+			unsuccessful: `<item><error><code>OperationNotPermitted</code><message>The endpoint cannot be deleted.</message></error><resourceId>vpce-0123</resourceId></item>`,
+			wantErr:      "api error OperationNotPermitted: The endpoint cannot be deleted.",
+		},
+		{
+			name:         "EC2 no longer has the endpoint",
+			unsuccessful: `<item><error><code>InvalidVpcEndpoint.NotFound</code><message>The VPC endpoint does not exist.</message></error><resourceId>vpce-0123</resourceId></item>`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rm, form := stubEC2(t, `<DeleteVpcEndpointsResponse><unsuccessful>`+tc.unsuccessful+`</unsuccessful></DeleteVpcEndpointsResponse>`)
+
+			_, err := rm.sdkDelete(context.Background(), endpoint(nil))
+
+			assert.Equal(t, "vpce-0123", form.Get("VpcEndpointId.1"))
+			if tc.wantErr == "" {
+				assert.NoError(t, err)
+				return
+			}
+			assert.EqualError(t, err, tc.wantErr)
+		})
+	}
+}
