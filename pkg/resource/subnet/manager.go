@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=subnets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ec2.services.k8s.aws,resources=subnets/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"AssignIPv6AddressOnCreation"}
+var lateInitializeFieldNames = []string{"AssignIPv6AddressOnCreation", "EnableDNS64", "EnableResourceNameDNSAAAARecord", "EnableResourceNameDNSARecord", "HostnameType", "MapPublicIPOnLaunch"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -264,6 +264,21 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
 	if observedKo.Spec.AssignIPv6AddressOnCreation != nil && latestKo.Spec.AssignIPv6AddressOnCreation == nil {
 		latestKo.Spec.AssignIPv6AddressOnCreation = observedKo.Spec.AssignIPv6AddressOnCreation
+	}
+	if observedKo.Spec.EnableDNS64 != nil && latestKo.Spec.EnableDNS64 == nil {
+		latestKo.Spec.EnableDNS64 = observedKo.Spec.EnableDNS64
+	}
+	if observedKo.Spec.EnableResourceNameDNSAAAARecord != nil && latestKo.Spec.EnableResourceNameDNSAAAARecord == nil {
+		latestKo.Spec.EnableResourceNameDNSAAAARecord = observedKo.Spec.EnableResourceNameDNSAAAARecord
+	}
+	if observedKo.Spec.EnableResourceNameDNSARecord != nil && latestKo.Spec.EnableResourceNameDNSARecord == nil {
+		latestKo.Spec.EnableResourceNameDNSARecord = observedKo.Spec.EnableResourceNameDNSARecord
+	}
+	if observedKo.Spec.HostnameType != nil && latestKo.Spec.HostnameType == nil {
+		latestKo.Spec.HostnameType = observedKo.Spec.HostnameType
+	}
+	if observedKo.Spec.MapPublicIPOnLaunch != nil && latestKo.Spec.MapPublicIPOnLaunch == nil {
+		latestKo.Spec.MapPublicIPOnLaunch = observedKo.Spec.MapPublicIPOnLaunch
 	}
 	return &resource{latestKo}
 }
