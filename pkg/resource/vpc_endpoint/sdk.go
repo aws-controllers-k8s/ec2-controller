@@ -79,7 +79,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeVpcEndpoints", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidVpcEndpointId.NotFound" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err

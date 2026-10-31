@@ -90,7 +90,7 @@ func (rm *resourceManager) sdkFind(
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeSecurityGroups", err)
 	if err != nil {
 		var awsErr smithy.APIError
-		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "InvalidGroup.NotFound" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
