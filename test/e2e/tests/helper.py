@@ -182,6 +182,25 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             return None
 
+    def delete_security_group(self, sg_id: str, max_wait_seconds: int = 300):
+        """Delete a security group, and retry while something still uses it.
+
+        AWS frees an endpoint's network interfaces some time after the
+        endpoint is gone, and until then refuses to delete a security group
+        on them with DependencyViolation. The last try raises the error AWS
+        returns.
+        """
+        interval = 10
+        for _ in range(max_wait_seconds // interval - 1):
+            try:
+                self.ec2_client.delete_security_group(GroupId=sg_id)
+                return
+            except self.ec2_client.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] != "DependencyViolation":
+                    raise
+            time.sleep(interval)
+        self.ec2_client.delete_security_group(GroupId=sg_id)
+
     def get_subnet(self, subnet_id: str) -> Union[None, Dict]:
         try:
             aws_res = self.ec2_client.describe_subnets(SubnetIds=[subnet_id])
@@ -286,6 +305,31 @@ class EC2Validator:
         except self.ec2_client.exceptions.ClientError:
             pass
         assert res_found is exists
+
+    def wait_vpc_endpoint_deleted(self, vpc_endpoint_id: str, max_wait_seconds: int = 600) -> bool:
+        """Wait for the endpoint to reach state deleted or leave AWS.
+
+        An Interface endpoint deleted while still pending can stay in AWS for
+        more than 180 seconds, as seen in ec2-kind-e2e runs of
+        test_update_subnets. EC2 lists a deleted endpoint in state deleted
+        for a while, and then describe_vpc_endpoints fails with
+        InvalidVpcEndpointId.NotFound. Any other error, such as a throttle,
+        does not show that the endpoint is gone, so the wait goes on.
+
+        Returns:
+            True if the endpoint is gone within max_wait_seconds, False otherwise
+        """
+        interval = 10
+        for _ in range(max_wait_seconds // interval):
+            try:
+                endpoints = self.ec2_client.describe_vpc_endpoints(VpcEndpointIds=[vpc_endpoint_id])["VpcEndpoints"]
+                if not endpoints or endpoints[0]["State"] == "deleted":
+                    return True
+            except self.ec2_client.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] == "InvalidVpcEndpointId.NotFound":
+                    return True
+            time.sleep(interval)
+        return False
 
     def get_vpc_endpoint_service_configuration(self, vpc_endpoint_service_configuration_id: str) -> Union[None, Dict]:
         try:

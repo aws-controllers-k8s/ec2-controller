@@ -34,7 +34,6 @@ RESOURCE_PLURAL = "vpcendpoints"
 ENDPOINT_SERVICE_NAME = "com.amazonaws.%s.s3" % REGION
 
 CREATE_WAIT_AFTER_SECONDS = 10
-DELETE_WAIT_AFTER_SECONDS = 180
 MODIFY_WAIT_AFTER_SECONDS = 5
 
 @pytest.fixture
@@ -163,10 +162,8 @@ class TestVpcEndpoint:
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
         # Check VPC Endpoint no longer exists in AWS
-        ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
+        assert ec2_validator.wait_vpc_endpoint_deleted(resource_id)
     
     @pytest.mark.resource_data({'tag_key': 'initialtagkey', 'tag_value': 'initialtagvalue'})
     def test_crud_tags(self, ec2_client, simple_vpc_endpoint):
@@ -266,10 +263,8 @@ class TestVpcEndpoint:
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
         # Check vpcEndpoint no longer exists in AWS
-        ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
+        assert ec2_validator.wait_vpc_endpoint_deleted(resource_id)
 
     def test_terminal_condition_malformed_vpc(self):
         test_resource_values = REPLACEMENT_VALUES.copy()
@@ -379,10 +374,8 @@ class TestVpcEndpoint:
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted is True
 
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
         # Check VPC Endpoint no longer exists in AWS
-        ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
+        assert ec2_validator.wait_vpc_endpoint_deleted(resource_id)
 
     def test_update_security_groups(self, ec2_client, modify_vpc_endpoint):
         (ref, cr) = modify_vpc_endpoint
@@ -447,11 +440,11 @@ class TestVpcEndpoint:
             # so delete the endpoint and wait for it to go first. The asserts
             # run last, so a failed one does not skip deleting the groups.
             _, deleted = k8s.delete_custom_resource(ref, 3, 10)
-            time.sleep(DELETE_WAIT_AFTER_SECONDS)
+            endpoint_deleted = ec2_validator.wait_vpc_endpoint_deleted(resource_id)
             for sg_id in sg_ids:
                 try:
-                    ec2_client.delete_security_group(GroupId=sg_id)
+                    ec2_validator.delete_security_group(sg_id)
                 except Exception as e:
                     logging.warning(e)
             assert deleted is True
-            ec2_validator.assert_vpc_endpoint(resource_id, exists=False)
+            assert endpoint_deleted
