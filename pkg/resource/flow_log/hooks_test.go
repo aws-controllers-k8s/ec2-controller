@@ -49,6 +49,8 @@ func stubEC2(t *testing.T, response string) (*resourceManager, *url.Values) {
 	}, form
 }
 
+// TestSdkDelete covers the defensive Unsuccessful handling. EC2 currently
+// reports delete failures as top-level errors.
 func TestSdkDelete(t *testing.T) {
 	for _, tc := range []struct {
 		name         string

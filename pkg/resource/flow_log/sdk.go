@@ -375,7 +375,8 @@ func (rm *resourceManager) sdkDelete(
 	_ = resp
 	resp, err = rm.sdkapi.DeleteFlowLogs(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteFlowLogs", err)
-	// DeleteFlowLogs reports a refused delete in Unsuccessful, not as an error.
+	// Defensive: DeleteFlowLogsOutput can report failures in Unsuccessful with
+	// a nil error. EC2 currently returns these as top-level errors instead.
 	// InvalidFlowLogId.NotFound means the flow log is already gone.
 	if err == nil && resp != nil && len(resp.Unsuccessful) > 0 {
 		failure := resp.Unsuccessful[0].Error
