@@ -15,8 +15,12 @@ package tags
 
 import (
 	"context"
+	"maps"
+	"slices"
 
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ec2"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
@@ -36,30 +40,48 @@ type tagsClient interface {
 	DeleteTags(context.Context, *svcsdk.DeleteTagsInput, ...func(*svcsdk.Options)) (*svcsdk.DeleteTagsOutput, error)
 }
 
-// Sync is responsible of taking two arrays of tags (desired and latest), comparing
-// them, then making the appropriate APIs calls to up change the latest state into
-// the desired state.
+// Sync compares two arrays of tags, then makes the appropriate API calls to
+// update the latest state into the desired state.
+//
+// desiredTags is the target state (typically taken from the resource spec).
+// latestTags is the current observed state (typically read from AWS).
+//
+// Argument order matters: because both parameters share the same type,
+// swapping them compiles cleanly but silently reverses the sync direction
+// (desired tags get deleted and stale tags get re-created).
+//
+// latestTags is passed as from and desiredTags as to to GetTagsDifference;
+// swapping them would reverse added and removed.
 func Sync(
 	ctx context.Context,
 	client tagsClient,
 	mr metricsRecorder,
 	resourceID string,
-	latestTags []*svcapitypes.Tag,
 	desiredTags []*svcapitypes.Tag,
+	latestTags []*svcapitypes.Tag,
 ) error {
 	var err error
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("common.Sync")
 	defer func() { exit(err) }()
 
-	addedOrUpdated, removed := ComputeTagsDelta(latestTags, desiredTags)
+	from := toACKTags(latestTags)
+	to := toACKTags(desiredTags)
+	// from=latest, to=desired. Per ackcompare.GetTagsDifference
+	// (github.com/aws-controllers-k8s/runtime/pkg/compare): keys only in from
+	// are returned in removed; keys only in to, and keys whose value differs,
+	// are returned in added only, never in removed (upsert semantics, added
+	// in runtime v0.58.0 via aws-controllers-k8s/runtime#227; go.mod pins v0.67.0).
+	// The middle unchanged result is not needed. CreateTags overwrites existing
+	// values, so a changed value never needs a DeleteTags call.
+	added, _, removed := ackcompare.GetTagsDifference(from, to)
 
 	if len(removed) > 0 {
 		_, err = client.DeleteTags(
 			ctx,
 			&svcsdk.DeleteTagsInput{
 				Resources: []string{resourceID},
-				Tags:      sdkTagsFromResourceTags(removed),
+				Tags:      sdkTagsKeysFromACKTags(removed),
 			},
 		)
 		mr.RecordAPICall("UPDATE", "DeleteTags", err)
@@ -68,12 +90,12 @@ func Sync(
 		}
 	}
 
-	if len(addedOrUpdated) > 0 {
+	if len(added) > 0 {
 		_, err = client.CreateTags(
 			ctx,
 			&svcsdk.CreateTagsInput{
 				Resources: []string{resourceID},
-				Tags:      sdkTagsFromResourceTags(addedOrUpdated),
+				Tags:      sdkTagsFromACKTags(added),
 			},
 		)
 		mr.RecordAPICall("UPDATE", "CreateTags", err)
@@ -84,69 +106,50 @@ func Sync(
 	return nil
 }
 
-// computeTagsDelta compares two Tag arrays and return two different list
-// containing the addedOrupdated and removed tags. The removed tags array
-// only contains the tags Keys.
-func ComputeTagsDelta(
-	desired []*svcapitypes.Tag,
-	latest []*svcapitypes.Tag,
-) (toAdd []*svcapitypes.Tag, toDelete []*svcapitypes.Tag) {
-	desiredTags := map[string]string{}
-	for _, tag := range desired {
-		desiredTags[safeString(tag.Key)] = safeString(tag.Value)
-	}
-
-	latestTags := map[string]string{}
-	for _, tag := range latest {
-		latestTags[safeString(tag.Key)] = safeString(tag.Value)
-	}
-
-	for _, tag := range desired {
-		val, ok := latestTags[safeString(tag.Key)]
-		if !ok || val != safeString(tag.Value) {
-			toAdd = append(toAdd, tag)
-		}
-	}
-
-	for _, tag := range latest {
-		_, ok := desiredTags[safeString(tag.Key)]
-		if !ok {
-			toDelete = append(toDelete, tag)
-		}
-	}
-
-	return toAdd, toDelete
+// Equal reports whether a and b contain the same tag keys and values.
+// Slice order is ignored. Nil entries and entries with a nil Key are skipped,
+// and a nil Value is treated as "" (see toACKTags). The comparison uses
+// ackcompare.GetTagsDifference; with its upsert semantics (runtime >= v0.58.0,
+// aws-controllers-k8s/runtime#227) a value change for an existing key shows up
+// in added, so checking added and removed is enough.
+func Equal(a, b []*svcapitypes.Tag) bool {
+	added, _, removed := ackcompare.GetTagsDifference(toACKTags(a), toACKTags(b))
+	return len(added) == 0 && len(removed) == 0
 }
 
-// svcTagsFromResourceTags transforms a *svcapitypes.Tag array to a *svcsdk.Tag array.
-func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []svcsdktypes.Tag {
-	tags := make([]svcsdktypes.Tag, len(rTags))
-	for i := range rTags {
-		if rTags[i] != nil {
-			tags[i] = svcsdktypes.Tag{
-				Key:   rTags[i].Key,
-				Value: rTags[i].Value,
-			}
+// toACKTags transforms a *svcapitypes.Tag array into an acktags.Tags map.
+// Tags with a nil key are skipped.
+func toACKTags(tags []*svcapitypes.Tag) acktags.Tags {
+	m := make(acktags.Tags)
+	for _, t := range tags {
+		if t == nil || t.Key == nil {
+			continue
 		}
+		v := ""
+		if t.Value != nil {
+			v = *t.Value
+		}
+		m[*t.Key] = v
 	}
-	return tags
+	return m
 }
 
-func equalStrings(a, b *string) bool {
-	if a == nil {
-		return b == nil || *b == ""
+// sdkTagsFromACKTags transforms an acktags.Tags map into a sorted *svcsdk.Tag array.
+func sdkTagsFromACKTags(tags acktags.Tags) []svcsdktypes.Tag {
+	result := make([]svcsdktypes.Tag, 0, len(tags))
+	for _, k := range slices.Sorted(maps.Keys(tags)) {
+		v := tags[k]
+		result = append(result, svcsdktypes.Tag{Key: &k, Value: &v})
 	}
-
-	if a != nil && b == nil {
-		return false
-	}
-
-	return (*a == "" && b == nil) || *a == *b
+	return result
 }
 
-func safeString(s *string) string {
-	if s == nil {
-		return ""
+// sdkTagsKeysFromACKTags transforms the keys of an acktags.Tags map into a sorted
+// *svcsdk.Tag array. Only the keys are set, as DeleteTags does not need values.
+func sdkTagsKeysFromACKTags(tags acktags.Tags) []svcsdktypes.Tag {
+	result := make([]svcsdktypes.Tag, 0, len(tags))
+	for _, k := range slices.Sorted(maps.Keys(tags)) {
+		result = append(result, svcsdktypes.Tag{Key: &k})
 	}
-	return *s
+	return result
 }
