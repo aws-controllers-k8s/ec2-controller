@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/ec2-controller/apis/v1alpha1"
 )
@@ -191,4 +192,43 @@ func TestSdkDelete(t *testing.T) {
 			assert.EqualError(t, err, tc.wantErr)
 		})
 	}
+}
+
+func TestCreateClientToken(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		uid  string
+		id   *string
+		want *string
+	}{
+		{name: "no UID sends no token"},
+		{name: "a new CR uses its UID", uid: "0b1d2f6e-7c3a-4d5e-8f90-123456789abc", want: aws.String("0b1d2f6e-7c3a-4d5e-8f90-123456789abc")},
+		{name: "a CR that held an endpoint gets a token of its own", uid: "0b1d2f6e-7c3a-4d5e-8f90-123456789abc", id: aws.String("vpce-0123456789abcdef0"), want: aws.String("0b1d2f6e-7c3a-4d5e-8f90-123456789abc-vpce-0123456789abcdef0")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ko := &svcapitypes.VPCEndpoint{}
+			ko.UID = types.UID(tc.uid)
+			ko.Status.VPCEndpointID = tc.id
+			got := createClientToken(&resource{ko})
+			assert.Equal(t, tc.want, got)
+			if got != nil {
+				assert.LessOrEqual(t, len(*got), 64, "EC2 caps ClientToken at 64 characters")
+			}
+		})
+	}
+}
+
+func TestSdkCreate_SendsAStableClientToken(t *testing.T) {
+	rm, form := stubEC2(t, `<CreateVpcEndpointResponse><requestId>req</requestId><vpcEndpoint><vpcEndpointId>vpce-0123</vpcEndpointId><state>pending</state></vpcEndpoint></CreateVpcEndpointResponse>`)
+	ko := &svcapitypes.VPCEndpoint{}
+	ko.UID = types.UID("0b1d2f6e-7c3a-4d5e-8f90-123456789abc")
+	ko.Spec.VPCID = aws.String("vpc-0123")
+	ko.Spec.ServiceName = aws.String("com.amazonaws.us-west-2.s3")
+
+	created, err := rm.sdkCreate(context.Background(), &resource{ko})
+	require.NoError(t, err)
+
+	assert.Equal(t, "CreateVpcEndpoint", form.Get("Action"))
+	assert.Equal(t, "0b1d2f6e-7c3a-4d5e-8f90-123456789abc", form.Get("ClientToken"), "the create must carry the CR's UID as its idempotency token")
+	assert.Equal(t, "vpce-0123", aws.ToString(created.ko.Status.VPCEndpointID))
 }
