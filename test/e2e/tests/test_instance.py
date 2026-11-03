@@ -68,9 +68,8 @@ def get_instance_state(ec2_client, instance_id):
         return instance_state
 
 def wait_for_instance_or_die(ec2_client, instance_id, desired_state, timeout_sec):
+    timeout = datetime.datetime.now() + datetime.timedelta(seconds=timeout_sec)
     while True:
-        now = datetime.datetime.now()
-        timeout = now + datetime.timedelta(seconds=timeout_sec)
         if datetime.datetime.now() >= timeout:
             pytest.fail(f"Timed out waiting for Instance to enter {desired_state} state")
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
