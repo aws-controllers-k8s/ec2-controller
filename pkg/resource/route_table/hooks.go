@@ -195,7 +195,9 @@ func (rm *resourceManager) addRoutesToStatus(
 	}
 }
 
-var computeTagsDelta = tags.ComputeTagsDelta
+// tagsEqual aliases tags.Equal so the generated sdk.go hooks can call it
+// without importing pkg/tags directly.
+var tagsEqual = tags.Equal
 
 // customPreCompare ensures that default values of types are initialised and
 // server side defaults are excluded from the delta.
