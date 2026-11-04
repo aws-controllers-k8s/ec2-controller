@@ -10,8 +10,7 @@
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, aws.String("waiting for resource to be running"))
 	}
 	
-	toAdd, toDelete := computeTagsDelta(r.ko.Spec.Tags, ko.Spec.Tags)
-	if len(toAdd) == 0 && len(toDelete) == 0 {
+	if tagsEqual(r.ko.Spec.Tags, ko.Spec.Tags) {
 		// if resource's initial tags and response tags are equal,
 		// then assign resource's tags to maintain tag order
 		ko.Spec.Tags = r.ko.Spec.Tags

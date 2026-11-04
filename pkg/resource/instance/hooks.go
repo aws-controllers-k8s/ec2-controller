@@ -193,7 +193,9 @@ func setAdditionalFields(instance svcsdktypes.Instance, ko *v1alpha1.Instance) {
 	}
 }
 
-var computeTagsDelta = tags.ComputeTagsDelta
+// tagsEqual aliases tags.Equal so the generated sdk.go hooks can call it
+// without importing pkg/tags directly.
+var tagsEqual = tags.Equal
 
 // launchTagResourceTypes returns the resource types Spec.Tags is applied to at launch.
 // RunInstances rejects tags for a resource type the launch does not create, so volume

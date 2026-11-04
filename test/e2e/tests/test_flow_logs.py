@@ -78,6 +78,8 @@ def simple_flow_log(request):
             resource_file = data['resource_file']
         if 'resource_type' in data:
             replacements["RESOURCE_TYPE"] = data['resource_type']
+        if data.get('missing_log_destination'):
+            replacements["LOG_DESTINATION"] = "arn:aws:s3:::" + random_suffix_name("ack-flowlog-missing", 40)
 
     # Load FlowLog CR
     resource_data = load_ec2_resource(
@@ -148,3 +150,29 @@ class TestFlowLogs:
         # Example condition message:
         # InvalidParameter: LogDestination can't be empty if LogGroupName is not provided.
         assert expected_msg in terminal_condition['message']
+
+    # A missing S3 bucket is reported in CreateFlowLogs Unsuccessful, not as an API error.
+    @pytest.mark.resource_data({'missing_log_destination': True})
+    def test_unsuccessful_create_surfaces_error(self, ec2_client, simple_flow_log):
+        (ref, cr) = simple_flow_log
+        log_destination = cr['spec']['logDestination']
+
+        assert k8s.wait_on_condition(
+            ref, "ACK.Recoverable", "True", wait_periods=6, period_length=5,
+        )
+        recoverable = k8s.get_resource_condition(ref, "ACK.Recoverable")
+        # Example condition message:
+        # api error 400: LogDestination: ack-flowlog-missing-<suffix> does not exist
+        assert "api error 400: " in recoverable['message']
+        assert "LogDestination: " in recoverable['message']
+        assert "does not exist" in recoverable['message']
+
+        cr = k8s.get_resource(ref)
+        assert not cr.get("status", {}).get("flowLogID")
+
+        resources = get_bootstrap_resources()
+        resp = ec2_client.describe_flow_logs(
+            Filters=[{'Name': 'resource-id', 'Values': [resources.SharedTestVPC.vpc_id]}]
+        )
+        destinations = [fl.get('LogDestination') for fl in resp['FlowLogs']]
+        assert log_destination not in destinations

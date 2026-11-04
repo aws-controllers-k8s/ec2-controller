@@ -654,8 +654,7 @@ func (rm *resourceManager) sdkFind(
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, nil, aws.String("waiting for resource to be running"))
 	}
 
-	toAdd, toDelete := computeTagsDelta(r.ko.Spec.Tags, ko.Spec.Tags)
-	if len(toAdd) == 0 && len(toDelete) == 0 {
+	if tagsEqual(r.ko.Spec.Tags, ko.Spec.Tags) {
 		// if resource's initial tags and response tags are equal,
 		// then assign resource's tags to maintain tag order
 		ko.Spec.Tags = r.ko.Spec.Tags
@@ -1286,8 +1285,7 @@ func (rm *resourceManager) sdkCreate(
 
 	setAdditionalFields(resp.Instances[0], ko)
 
-	toAdd, toDelete := computeTagsDelta(desired.ko.Spec.Tags, ko.Spec.Tags)
-	if len(toAdd) == 0 && len(toDelete) == 0 {
+	if tagsEqual(desired.ko.Spec.Tags, ko.Spec.Tags) {
 		// if desired tags and response tags are equal,
 		// then assign desired tags to maintain tag order
 		ko.Spec.Tags = desired.ko.Spec.Tags
