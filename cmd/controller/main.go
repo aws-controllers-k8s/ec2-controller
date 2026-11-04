@@ -51,6 +51,7 @@ import (
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/flow_log"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/instance"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/internet_gateway"
+	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/key_pair"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/launch_template"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/managed_prefix_list"
 	_ "github.com/aws-controllers-k8s/ec2-controller/pkg/resource/nat_gateway"
