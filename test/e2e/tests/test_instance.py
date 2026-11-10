@@ -870,3 +870,41 @@ class TestInstance:
             # Wait for termination to release subnet dependency
             if 'resource_id' in locals():
                 wait_for_instance_or_die(ec2_client, resource_id, 'terminated', TIMEOUT_SECONDS)
+
+    def test_security_group_ref(self, ec2_client):
+        # A SecurityGroup managed as a CR, referenced by name from the Instance
+        test_vpc = get_bootstrap_resources().SharedTestVPC
+        sg_name = random_suffix_name("instance-sg-ref", 24)
+        sg_values = REPLACEMENT_VALUES.copy()
+        sg_values["SECURITY_GROUP_NAME"] = sg_name
+        sg_values["VPC_ID"] = test_vpc.vpc_id
+        sg_values["SECURITY_GROUP_DESCRIPTION"] = "ack instance securityGroupRefs e2e"
+        sg_values["TAG_KEY"] = INSTANCE_TAG_KEY
+        sg_values["TAG_VALUE"] = INSTANCE_TAG_VAL
+        sg_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, "securitygroups",
+            sg_name, namespace="default",
+        )
+        k8s.create_custom_resource(sg_ref, load_ec2_resource("security_group", additional_replacements=sg_values))
+        assert k8s.wait_on_condition(sg_ref, "ACK.ResourceSynced", "True", wait_periods=5)
+        sg_id = k8s.get_resource(sg_ref)["status"]["id"]
+
+        instance_id = None
+        ref = create_instance("instance-sg-ref", "instance_security_group_ref", {
+            "INSTANCE_AMI_ID": get_ami_id(ec2_client),
+            "INSTANCE_TYPE": INSTANCE_TYPE,
+            "INSTANCE_SUBNET_ID": test_vpc.public_subnets.subnet_ids[0],
+            "SECURITY_GROUP_REF_NAME": sg_name,
+        })
+        try:
+            instance_id = wait_for_launch(ec2_client, ref)
+            assert k8s.wait_on_condition(ref, "ACK.ReferencesResolved", "True", wait_periods=5)
+
+            cr = k8s.get_resource(ref)
+            assert cr["spec"]["securityGroupIDs"] == [sg_id]
+            instance = get_instance(ec2_client, instance_id)
+            assert [g["GroupId"] for g in instance["SecurityGroups"]] == [sg_id]
+        finally:
+            delete_instance(ec2_client, ref, instance_id)
+            k8s.delete_custom_resource(sg_ref, 3, 10)
+
