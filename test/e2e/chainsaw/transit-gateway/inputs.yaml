@@ -1,0 +1,32 @@
+# Values for the generated TransitGateway test that its model can't supply. A
+# transit gateway is billed per attachment, so one with none is free, but
+# creating and deleting one takes minutes.
+create:
+  description: Created by a generated ACK Chainsaw test
+  options:
+    amazonSideASN: 64513
+    autoAcceptSharedAttachments: disable
+    defaultRouteTableAssociation: enable
+    defaultRouteTablePropagation: enable
+    dnsSupport: enable
+    vpnECMPSupport: enable
+    multicastSupport: disable
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# Only tags can change: customUpdateTransitGateway syncs nothing else
+updates:
+- tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- tags: []
+variants:
+- name: defaults
+  description: Created with no description or options, so AWS's defaults apply
+  create:
+    tags:
+    - key: initialtagkey
+      value: initialtagvalue
+# No invalid spec: generator.yaml declares no terminal codes for TransitGateway.
+# No notFoundCode: a deleted transit gateway stays in DescribeTransitGateways,
+# in the deleted state, for a while after deletion.

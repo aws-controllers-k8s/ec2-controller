@@ -1,0 +1,80 @@
+# Values for the generated TransitGatewayVPCAttachment test that its model
+# can't supply. An attachment is billed by the hour.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: tgwa-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+# An attachment takes at most one subnet per availability zone
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: tgwa-subnet-a
+  spec:
+    vpcRef:
+      from:
+        name: tgwa-vpc
+    cidrBlock: 10.0.0.0/24
+    availabilityZone: us-west-2a
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: tgwa-subnet-b
+  spec:
+    vpcRef:
+      from:
+        name: tgwa-vpc
+    cidrBlock: 10.0.1.0/24
+    availabilityZone: us-west-2b
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: TransitGateway
+  metadata:
+    name: tgwa-tgw
+  spec:
+    description: Created by a generated ACK Chainsaw test
+create:
+  vpcRef:
+    from:
+      name: tgwa-vpc
+  transitGatewayRef:
+    from:
+      name: tgwa-tgw
+  subnetRefs:
+  - from:
+      name: tgwa-subnet-a
+  options:
+    applianceModeSupport: disable
+    dnsSupport: enable
+    ipv6Support: disable
+    securityGroupReferencingSupport: disable
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# ModifyTransitGatewayVpcAttachment changes subnets and options once the
+# attachment is available
+updates:
+- subnetRefs:
+  - from:
+      name: tgwa-subnet-a
+  - from:
+      name: tgwa-subnet-b
+  options:
+    applianceModeSupport: enable
+    dnsSupport: disable
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- subnetRefs:
+  - from:
+      name: tgwa-subnet-b
+  options:
+    applianceModeSupport: disable
+    dnsSupport: enable
+    securityGroupReferencingSupport: enable
+  tags: []
+# No invalid spec: generator.yaml declares no terminal codes for
+# TransitGatewayVPCAttachment.
+# No notFoundCode: a deleted attachment stays in
+# DescribeTransitGatewayVpcAttachments, in the deleted state, for a while.

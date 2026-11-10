@@ -1,0 +1,70 @@
+# Values for the generated VPCEndpoint test that its model can't supply. A
+# Gateway endpoint for S3 is free, and needs only route tables.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: vpce-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: RouteTable
+  metadata:
+    name: vpce-rt-a
+  spec:
+    vpcRef:
+      from:
+        name: vpce-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: RouteTable
+  metadata:
+    name: vpce-rt-b
+  spec:
+    vpcRef:
+      from:
+        name: vpce-vpc
+# The S3 service name has the region in it
+values:
+- name: REGION
+  command: echo "$AWS_REGION"
+create:
+  serviceName: com.amazonaws.$REGION.s3
+  vpcEndpointType: Gateway
+  vpcRef:
+    from:
+      name: vpce-vpc
+  routeTableRefs:
+  - from:
+      name: vpce-rt-a
+  # Keys sorted and compact, as the policyDocument check prints it
+  policyDocument: '{"Statement":[{"Action":"*","Effect":"Allow","Principal":"*","Resource":"*"}],"Version":"2012-10-17"}'
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- routeTableRefs:
+  - from:
+      name: vpce-rt-a
+  - from:
+      name: vpce-rt-b
+  policyDocument: '{"Statement":[{"Action":"s3:GetObject","Effect":"Allow","Principal":"*","Resource":"*"}],"Version":"2012-10-17"}'
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- routeTableRefs:
+  - from:
+      name: vpce-rt-b
+  policyDocument: '{"Statement":[{"Action":"*","Effect":"Allow","Principal":"*","Resource":"*"}],"Version":"2012-10-17"}'
+  tags: []
+invalid:
+  spec:
+    serviceName: com.amazonaws.$REGION.s3
+    vpcEndpointType: Gateway
+    vpcID: MalformedVpcId
+  message: "InvalidVpcId.Malformed: Invalid Id: 'MalformedVpcId'"
+# Not declared in generator.yaml
+notFoundCode: InvalidVpcEndpointId.NotFound
+checks:
+  # A JSON document: compared by content, since AWS may reorder its keys
+  policyDocument:
+    path: PolicyDocument

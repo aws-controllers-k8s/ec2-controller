@@ -1,0 +1,102 @@
+# Values for the generated Subnet test that its model can't supply. IPv6,
+# DNS64, AAAA records and customer-owned IPs aren't covered: they need an IPv6
+# CIDR carved out of the VPC's Amazon-assigned block, or an Outpost.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: subnet-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+# Route tables to associate the subnet with
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: RouteTable
+  metadata:
+    name: subnet-rt-a
+  spec:
+    vpcRef:
+      from:
+        name: subnet-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: RouteTable
+  metadata:
+    name: subnet-rt-b
+  spec:
+    vpcRef:
+      from:
+        name: subnet-vpc
+# routeTableRefs is only set by updates and a variant: an adopted Subnet's spec
+# holds route table IDs, not references, so the adoption test can't assert it
+create:
+  cidrBlock: 10.0.1.0/24
+  vpcRef:
+    from:
+      name: subnet-vpc
+  mapPublicIPOnLaunch: false
+  hostnameType: ip-name
+  enableResourceNameDNSARecord: false
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- mapPublicIPOnLaunch: true
+  hostnameType: resource-name
+  enableResourceNameDNSARecord: true
+  routeTableRefs:
+  - from:
+      name: subnet-rt-a
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Move to the other route table: a subnet has one explicit association
+- mapPublicIPOnLaunch: false
+  routeTableRefs:
+  - from:
+      name: subnet-rt-b
+# Back to the main route table, and every attribute back to its default
+- hostnameType: ip-name
+  enableResourceNameDNSARecord: false
+  routeTableRefs: []
+  tags: []
+variants:
+- name: minimal
+  description: Only the required fields at create, then an attribute set by update
+  create:
+    cidrBlock: 10.0.1.0/24
+    vpcRef:
+      from:
+        name: subnet-vpc
+  updates:
+  - mapPublicIPOnLaunch: true
+- name: with-route-table
+  description: Associated with a route table at create
+  create:
+    cidrBlock: 10.0.1.0/24
+    vpcRef:
+      from:
+        name: subnet-vpc
+    routeTableRefs:
+    - from:
+        name: subnet-rt-a
+invalid:
+  spec:
+    cidrBlock: InvalidCidrBlock
+    vpcRef:
+      from:
+        name: subnet-vpc
+  message: "InvalidParameterValue: Value (InvalidCidrBlock) for parameter cidrBlock is invalid. This is not a valid CIDR block."
+# Not declared in generator.yaml
+notFoundCode: InvalidSubnetID.NotFound
+checks:
+  # Under PrivateDnsNameOptionsOnLaunch in AWS, so not matched by name
+  hostnameType:
+    path: PrivateDnsNameOptionsOnLaunch.HostnameType
+  enableResourceNameDNSARecord:
+    path: PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord
+  # The IDs of the route tables explicitly associated with the subnet, sorted:
+  # DescribeSubnets doesn't return them
+  routeTableRefs:
+    command: >-
+      aws ec2 describe-route-tables
+      --filters Name=association.subnet-id,Values=$AWS_ID
+      --query 'sort(RouteTables[].RouteTableId)'

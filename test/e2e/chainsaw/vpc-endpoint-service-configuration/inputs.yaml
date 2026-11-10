@@ -1,0 +1,73 @@
+# Values for the generated VPCEndpointServiceConfiguration test that its model
+# can't supply.
+#
+# - The service needs a Network Load Balancer, which isn't an ec2 resource, so
+#   a value creates one in the dependency subnet, named with $SUFFIX and
+#   tagged with the test's namespace, and its cleanup deletes it. Cleanups run
+#   before the dependencies are deleted, so its ENIs don't block the subnet's
+#   deletion.
+#
+# Cost per run: an internal NLB for about 10 minutes, including the wait for
+# it to become active: about $0.005. The endpoint service itself is free.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: vpces-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: vpces-subnet
+  spec:
+    cidrBlock: 10.0.1.0/24
+    vpcRef:
+      from:
+        name: vpces-vpc
+values:
+- name: ACCOUNT_ID
+  command: aws sts get-caller-identity --query Account --output text
+- name: SUBNET_ID
+  command: kubectl get subnet vpces-subnet -n $NAMESPACE -o jsonpath='{.status.subnetID}'
+- name: NLB_ARN
+  command: >-
+    arn=$(aws elbv2 create-load-balancer --name ack-chainsaw-$SUFFIX
+    --type network --scheme internal --subnets $SUBNET_ID
+    --tags Key=services.k8s.aws/namespace,Value=$NAMESPACE
+    --query 'LoadBalancers[0].LoadBalancerArn' --output text) &&
+    aws elbv2 wait load-balancer-available --load-balancer-arns "$arn" &&
+    echo "$arn"
+  cleanup: >-
+    aws elbv2 delete-load-balancer --load-balancer-arn $NLB_ARN &&
+    aws elbv2 wait load-balancers-deleted --load-balancer-arns $NLB_ARN
+create:
+  networkLoadBalancerARNs:
+  - $NLB_ARN
+  acceptanceRequired: false
+  supportedIPAddressTypes: [ipv4]
+  allowedPrincipals:
+  - arn:aws:iam::$ACCOUNT_ID:root
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- acceptanceRequired: true
+  allowedPrincipals:
+  - arn:aws:iam::$ACCOUNT_ID:root
+  # A principal must exist; * is every principal
+  - '*'
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- allowedPrincipals: []
+  tags: []
+notFoundCode: InvalidVpcEndpointServiceId.NotFound
+checks:
+  # Set through ModifyVpcEndpointServicePermissions, whose read returns
+  # AllowedPrincipals[].Principal
+  allowedPrincipals:
+    command: >-
+      aws ec2 describe-vpc-endpoint-service-permissions --service-id $AWS_ID
+      --query 'sort(AllowedPrincipals[].Principal)'
+    unordered: true

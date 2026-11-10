@@ -1,0 +1,89 @@
+# Values for the generated FlowLog test that its model can't supply.
+#
+# - resourceID is a plain string, not a reference, so the VPC's ID is read
+#   from the dependency once it's Synced.
+# - The S3 destination bucket isn't an ec2 resource, so a value creates it,
+#   named with $SUFFIX and tagged with the test's namespace for the leak
+#   report, and its cleanup deletes it. Its policy lets the log delivery
+#   service write to it, so the controller's role needs no S3 permissions.
+# - describe-flow-logs returns an empty list for a deleted flow log, hence
+#   deleted.
+#
+# Cost per run: an empty S3 bucket for a few minutes, and the flow log of a
+# VPC with no traffic: effectively $0.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: fl-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+values:
+- name: VPC_ID
+  command: kubectl get vpc fl-vpc -n $NAMESPACE -o jsonpath='{.status.vpcID}'
+- name: ACCOUNT_ID
+  command: aws sts get-caller-identity --query Account --output text
+- name: BUCKET
+  command: |
+    bucket=ack-chainsaw-fl-$SUFFIX
+    # us-east-1 takes no location constraint
+    if [ "$AWS_REGION" = us-east-1 ]; then
+      aws s3api create-bucket --bucket $bucket >/dev/null
+    else
+      aws s3api create-bucket --bucket $bucket --create-bucket-configuration LocationConstraint=$AWS_REGION >/dev/null
+    fi
+    aws s3api put-bucket-tagging --bucket $bucket --tagging "TagSet=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    # The log delivery service's access, which AWS would otherwise add itself,
+    # with s3:PutBucketPolicy permission the controller's role doesn't have
+    aws s3api put-bucket-policy --bucket $bucket --policy "$(jq -nc --arg b $bucket --arg a $ACCOUNT_ID '{
+      Version: "2012-10-17",
+      Statement: [
+        {Effect: "Allow", Principal: {Service: "delivery.logs.amazonaws.com"},
+         Action: "s3:PutObject", Resource: "arn:aws:s3:::\($b)/AWSLogs/\($a)/*",
+         Condition: {StringEquals: {"aws:SourceAccount": $a, "s3:x-amz-acl": "bucket-owner-full-control"}}},
+        {Effect: "Allow", Principal: {Service: "delivery.logs.amazonaws.com"},
+         Action: ["s3:GetBucketAcl", "s3:ListBucket"], Resource: "arn:aws:s3:::\($b)",
+         Condition: {StringEquals: {"aws:SourceAccount": $a}}}
+      ]}')"
+    echo $bucket
+  cleanup: aws s3 rb s3://$BUCKET --force
+create:
+  resourceID: $VPC_ID
+  resourceType: VPC
+  trafficType: ALL
+  logDestinationType: s3
+  logDestination: arn:aws:s3:::$BUCKET
+  maxAggregationInterval: 600
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+# customUpdateFlowLog only syncs tags (pkg/resource/flow_log/hooks.go)
+- tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- tags: []
+invalid:
+  spec:
+    resourceID: $VPC_ID
+    resourceType: VPC
+    trafficType: ALL
+    logDestinationType: s3
+    logDestination: arn:aws:s3:::$BUCKET
+    # Valid values are 60 and 600, which the CRD doesn't enforce
+    maxAggregationInterval: 30
+  # generator.yaml makes InvalidParameter and InvalidParameterValue Terminal.
+  # The exact message isn't confirmed yet.
+  message: InvalidParameter
+# Describe returns an empty list, not an error, once it's gone
+deleted: "length(FlowLogs) == `0`"
+# FlowLog's adoption hook (templates/hooks/flow_log/
+# post_populate_resource_from_annotation.go.tpl) requires these in
+# adoption-fields, besides flowLogID
+adoptionFields: [resourceID, resourceType]
+checks:
+  # A type in generator.yaml, set by hooks
+  resourceID:
+    path: ResourceId
+  # resourceType can't be checked: AWS doesn't return it, though the ID's
+  # prefix (vpc-, subnet-, eni-, tgw-) implies it
