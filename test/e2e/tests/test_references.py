@@ -264,9 +264,9 @@ class TestEC2References:
         assert route_table_cr['spec']['routes'][0]['gatewayRef']['from']['name'] == gateway_name
 
         # Delete All
-        _, deleted = k8s.delete_custom_resource(route_table_ref)
+        _, deleted = k8s.delete_custom_resource(route_table_ref, 3, 10)
         assert deleted
-        _, deleted = k8s.delete_custom_resource(gateway_ref)
+        _, deleted = k8s.delete_custom_resource(gateway_ref, 3, 10)
         assert deleted    
-        _, deleted = k8s.delete_custom_resource(vpc_ref)
+        _, deleted = k8s.delete_custom_resource(vpc_ref, 3, 10)
         assert deleted

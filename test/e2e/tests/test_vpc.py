@@ -236,7 +236,7 @@ class TestVpc:
 
         k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
