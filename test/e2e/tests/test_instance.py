@@ -900,8 +900,11 @@ class TestInstance:
             instance_id = wait_for_launch(ec2_client, ref)
             assert k8s.wait_on_condition(ref, "ACK.ReferencesResolved", "True", wait_periods=5)
 
+            # The runtime clears the resolved IDs before it patches the spec,
+            # so only the reference is persisted
             cr = k8s.get_resource(ref)
-            assert cr["spec"]["securityGroupIDs"] == [sg_id]
+            assert "securityGroupIDs" not in cr["spec"]
+            assert cr["spec"]["securityGroupRefs"][0]["from"]["name"] == sg_name
             instance = get_instance(ec2_client, instance_id)
             assert [g["GroupId"] for g in instance["SecurityGroups"]] == [sg_id]
         finally:
