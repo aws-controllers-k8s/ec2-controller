@@ -462,6 +462,10 @@ resources:
         is_required: false
       MinCount:
         is_required: false
+      SecurityGroupIds:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
       SecurityGroups:
         set:
           - from: GroupName

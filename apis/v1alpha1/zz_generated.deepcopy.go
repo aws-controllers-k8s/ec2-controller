@@ -13564,6 +13564,17 @@ func (in *InstanceSpec) DeepCopyInto(out *InstanceSpec) {
 			}
 		}
 	}
+	if in.SecurityGroupRefs != nil {
+		in, out := &in.SecurityGroupRefs, &out.SecurityGroupRefs
+		*out = make([]*corev1alpha1.AWSResourceReferenceWrapper, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	if in.SecurityGroups != nil {
 		in, out := &in.SecurityGroups, &out.SecurityGroups
 		*out = make([]*string, len(*in))
