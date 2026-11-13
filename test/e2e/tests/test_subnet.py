@@ -171,7 +171,7 @@ class TestSubnet:
         assert subnet['MapPublicIpOnLaunch'] == True
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -304,7 +304,7 @@ class TestSubnet:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -373,7 +373,7 @@ class TestSubnet:
         assert ec2_validator.get_route_table_association(default_route_tables[1][1]["status"]["routeTableID"], resource_id) is not None
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)

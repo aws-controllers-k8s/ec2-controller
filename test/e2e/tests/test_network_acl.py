@@ -252,7 +252,7 @@ class TestNetworkACLs:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Delete Network ACL 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -275,7 +275,7 @@ class TestNetworkACLs:
         ec2_validator.assert_association(network_acl_id, subnet_id)
 
         # Delete Network ACL
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -366,7 +366,7 @@ class TestNetworkACLs:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -409,7 +409,7 @@ class TestNetworkACLs:
         ec2_validator.assert_entry(network_acl_id, 100, "True")
 
         # Clean up
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -453,7 +453,7 @@ class TestNetworkACLs:
         ec2_validator.assert_entry(network_acl_id, 100, "True")
 
         # Clean up
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)

@@ -209,7 +209,7 @@ class TestVpcEndpointServiceConfiguration:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)

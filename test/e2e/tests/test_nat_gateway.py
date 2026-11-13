@@ -195,7 +195,7 @@ class TestNATGateway:
         ec2_validator.assert_nat_gateway(resource_id)
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -295,7 +295,7 @@ class TestNATGateway:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -358,7 +358,7 @@ class TestNATGateway:
         )
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)

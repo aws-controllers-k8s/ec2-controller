@@ -304,7 +304,7 @@ class TestSecurityGroup:
         ec2_validator.assert_security_group(resource_id)
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -358,7 +358,7 @@ class TestSecurityGroup:
         assert ip_range["Description"] == "Allow traffic from all IPs - test"
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -472,7 +472,7 @@ class TestSecurityGroup:
         assert len(sg_group["IpPermissionsEgress"]) == 2
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -574,7 +574,7 @@ class TestSecurityGroup:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
@@ -696,7 +696,7 @@ class TestSecurityGroup:
         _assert_no_perpetual_diff(ref)
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -817,7 +817,7 @@ class TestSecurityGroup:
         assert spec_pairs[0]["peeringStatus"] == "made-up-nonsense"
         assert spec_pairs[0]["vpcPeeringConnectionID"] == "pcx-00000000000bogus0"
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -838,7 +838,7 @@ class TestSecurityGroup:
 
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -867,7 +867,7 @@ class TestSecurityGroup:
 
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -896,7 +896,7 @@ class TestSecurityGroup:
 
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -916,7 +916,7 @@ class TestSecurityGroup:
 
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -942,7 +942,7 @@ class TestSecurityGroup:
 
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -964,7 +964,7 @@ class TestSecurityGroup:
 
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -1007,7 +1007,7 @@ class TestSecurityGroup:
             assert [r["CidrIp"] for r in rule[0]["IpRanges"]] == ["10.4.0.0/16"], name
             assert _sg_status_rule_ids(ref) == rule_ids, f"{name}: the rule was revoked and authorized again"
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -1035,7 +1035,7 @@ class TestSecurityGroup:
         # A forced reconcile must not churn despite the many grants in the rule.
         _assert_no_perpetual_diff(ref)
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
@@ -1176,7 +1176,7 @@ class TestSecurityGroup:
             "combined security group rules churned after the update settled"
         )
 
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
         ec2_validator.assert_security_group(resource_id, exists=False)
