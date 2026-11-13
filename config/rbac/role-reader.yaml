@@ -16,6 +16,7 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+  - keypairs
   - launchtemplates
   - managedprefixlists
   - natgateways

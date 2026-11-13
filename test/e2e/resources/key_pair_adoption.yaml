@@ -1,0 +1,7 @@
+apiVersion: ec2.services.k8s.aws/v1alpha1
+kind: KeyPair
+metadata:
+  name: $KEY_PAIR_ADOPTION_NAME
+  annotations:
+    services.k8s.aws/adoption-policy: $ADOPTION_POLICY
+    services.k8s.aws/adoption-fields: "$ADOPTION_FIELDS"

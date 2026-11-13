@@ -1,0 +1,9 @@
+resources:
+  KeyPair:
+    fields:
+      PublicKeyMaterial:
+        prepend: |
+          The public key to import, as OpenSSH public key text (for example the
+          contents of an id_ed25519.pub file). Paste it as is: the controller
+          sends the bytes to ImportKeyPair, so unlike the AWS CLI the value must
+          not be base64-encoded here.
