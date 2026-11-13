@@ -1,0 +1,6 @@
+# Generated Chainsaw e2e tests: collapsed in GitHub diffs. Regenerate them
+# with `ack-generate chainsaw` instead of editing them. The hand-written
+# inputs and suite configuration stay visible.
+test/e2e/chainsaw/**/*.yaml linguist-generated=true
+test/e2e/chainsaw/*/inputs.yaml linguist-generated=false
+test/e2e/chainsaw/.chainsaw.yaml linguist-generated=false

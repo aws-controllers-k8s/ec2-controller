@@ -1,0 +1,43 @@
+# Values for the generated CapacityReservation test that its model can't
+# supply.
+#
+# - availabilityZone is region-specific, so it's looked up: the first AZ
+#   offering the instance type.
+# - A cancelled reservation stays in describe-capacity-reservations, hence
+#   deleted.
+#
+# Cost per run: a reservation bills like a running instance while it's
+# active: one t3.nano, two after update-1, for a few minutes. Well under $0.01.
+values:
+- name: AZ
+  command: >-
+    aws ec2 describe-instance-type-offerings --location-type availability-zone
+    --filters Name=instance-type,Values=t3.nano
+    --query 'sort(InstanceTypeOfferings[].Location)[0]' --output text
+create:
+  instanceType: t3.nano
+  instancePlatform: Linux/UNIX
+  instanceCount: 1
+  availabilityZone: $AZ
+  endDateType: unlimited
+  instanceMatchCriteria: targeted
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- instanceCount: 2
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Not additionalInfo: the API documents it as reserved for future use, and
+# rejects anything but an internal JSON shape ("Key 'action' not found in the
+# AdditionalInfo")
+- tags: []
+# No invalid spec: generator.yaml declares no terminal codes for
+# CapacityReservation, so an AWS 400 is retried instead of making it Terminal
+# It stays in describe's output after it's gone
+deleted: "CapacityReservations[0].State == 'cancelled'"
+checks:
+  # AWS returns it as TotalInstanceCount
+  instanceCount:
+    path: TotalInstanceCount

@@ -1,0 +1,79 @@
+# Values for the generated NATGateway test that its model can't supply. The
+# main spec is a private NAT gateway, the cheapest kind: it needs no Elastic IP
+# or internet gateway. The public variant covers those.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: nat-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: nat-subnet
+  spec:
+    vpcRef:
+      from:
+        name: nat-vpc
+    cidrBlock: 10.0.0.0/24
+    availabilityZone: us-west-2a
+# For the public variant: a public NAT gateway needs an internet gateway in its
+# VPC, and an Elastic IP
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: InternetGateway
+  metadata:
+    name: nat-igw
+  spec:
+    vpcRef:
+      from:
+        name: nat-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: ElasticIPAddress
+  metadata:
+    name: nat-eip
+  spec:
+    tags:
+    - key: purpose
+      value: ack-chainsaw-nat-gateway
+create:
+  connectivityType: private
+  subnetRef:
+    from:
+      name: nat-subnet
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# Only tags can change: customUpdateNATGateway syncs nothing else
+updates:
+- tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- tags: []
+variants:
+- name: public
+  description: A public NAT gateway with an Elastic IP
+  create:
+    connectivityType: public
+    subnetRef:
+      from:
+        name: nat-subnet
+    allocationRef:
+      from:
+        name: nat-eip
+    tags:
+    - key: initialtagkey
+      value: initialtagvalue
+invalid:
+  spec:
+    connectivityType: private
+    subnetID: InvalidSubnet
+  message: "InvalidSubnet: The subnet ID 'InvalidSubnet' is malformed"
+# No notFoundCode: a deleted NAT gateway stays in DescribeNatGateways, in the
+# deleted state, for about an hour, so the read never fails with a not-found
+# code and deletion can't be checked in AWS that way
+# DescribeNatGateways returns the Elastic IP's allocation in
+# NatGatewayAddresses, not as a field of its own
+checks:
+  allocationRef:
+    path: NatGatewayAddresses[0].AllocationId

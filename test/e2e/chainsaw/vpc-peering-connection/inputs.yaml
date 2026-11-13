@@ -1,0 +1,79 @@
+# Values for the generated VPCPeeringConnection test that its model can't
+# supply: a peering between two VPCs in the same account and region.
+dependencies:
+# Resolving DNS across the peering needs DNS support and hostnames in both
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: pcx-requester
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+    enableDNSSupport: true
+    enableDNSHostnames: true
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: pcx-accepter
+  spec:
+    cidrBlocks: [10.1.0.0/16]
+    enableDNSSupport: true
+    enableDNSHostnames: true
+create:
+  vpcRef:
+    from:
+      name: pcx-requester
+  peerVPCRef:
+    from:
+      name: pcx-accepter
+  acceptRequest: true
+  # Applied with ModifyVpcPeeringConnectionOptions once the peering is active
+  requesterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: true
+  accepterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: true
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- requesterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: false
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- accepterPeeringConnectionOptions:
+    allowDNSResolutionFromRemoteVPC: false
+  tags: []
+variants:
+- name: accept-later
+  description: Created pending acceptance, then accepted by an update
+  create:
+    vpcRef:
+      from:
+        name: pcx-requester
+    peerVPCRef:
+      from:
+        name: pcx-accepter
+    acceptRequest: false
+  updates:
+  - acceptRequest: true
+# No invalid spec: generator.yaml declares no terminal codes for
+# VPCPeeringConnection, so a spec AWS rejects is retried, never Terminal.
+# No notFoundCode: a deleted peering stays in DescribeVpcPeeringConnections,
+# with status deleted, for up to 2 hours.
+checks:
+  # Not in the API: true accepts the request, so the peering becomes active
+  acceptRequest:
+    command: >-
+      aws ec2 describe-vpc-peering-connections --vpc-peering-connection-ids $AWS_ID
+      --query 'VpcPeeringConnections[0].Status.Code == `"active"`'
+  # Set by ModifyVpcPeeringConnectionOptions, read back in the peering's VPC info
+  requesterPeeringConnectionOptions:
+    path: RequesterVpcInfo.PeeringOptions
+  accepterPeeringConnectionOptions:
+    path: AccepterVpcInfo.PeeringOptions
+  # The requester and accepter VPCs are under RequesterVpcInfo and
+  # AccepterVpcInfo, not fields of their own
+  vpcRef:
+    path: RequesterVpcInfo.VpcId
+  peerVPCRef:
+    path: AccepterVpcInfo.VpcId

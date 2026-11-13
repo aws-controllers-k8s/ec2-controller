@@ -1,0 +1,69 @@
+# Values for the generated Instance test that its model can't supply.
+#
+# - imageID is region-specific, so it's looked up from the public SSM
+#   parameter for the latest Amazon Linux 2023 AMI.
+# - A terminated instance stays in describe-instances for about an hour, hence
+#   deleted.
+#
+# Cost per run: one t3.micro for a few minutes, plus its 8 GiB gp3 root
+# volume: well under $0.01.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: instance-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: instance-subnet
+  spec:
+    cidrBlock: 10.0.1.0/24
+    vpcRef:
+      from:
+        name: instance-vpc
+values:
+- name: AMI_ID
+  command: >-
+    aws ssm get-parameter
+    --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    --query Parameter.Value --output text
+create:
+  imageID: $AMI_ID
+  instanceType: t3.micro
+  subnetRef:
+    from:
+      name: instance-subnet
+  instanceInitiatedShutdownBehavior: stop
+  tags:
+  - key: Name
+    value: ack-chainsaw-$SUFFIX
+updates:
+# ModifyInstanceAttribute takes one attribute per call, so the controller
+# applies these one at a time
+- instanceInitiatedShutdownBehavior: terminate
+  sourceDestCheckEnabled: false
+  # Not disableAPITermination: if the test failed while it was true, cleanup
+  # couldn't terminate the instance
+  disableAPIStop: true
+  tags:
+  - key: Name
+    value: ack-chainsaw-$SUFFIX
+  - key: updatedtagkey
+    value: updatedtagvalue
+# No invalid spec: generator.yaml declares no terminal codes for Instance, so
+# an AWS 400 is retried instead of making it Terminal
+# It stays in describe's output after it's gone
+deleted: "Reservations[0].Instances[0].State.Name == 'terminated'"
+checks:
+  instanceInitiatedShutdownBehavior:
+    command: >-
+      aws ec2 describe-instance-attribute --instance-id $AWS_ID
+      --attribute instanceInitiatedShutdownBehavior --query 'InstanceInitiatedShutdownBehavior.Value'
+  sourceDestCheckEnabled:
+    path: SourceDestCheck
+  disableAPIStop:
+    command: >-
+      aws ec2 describe-instance-attribute --instance-id $AWS_ID
+      --attribute disableApiStop --query 'DisableApiStop.Value'

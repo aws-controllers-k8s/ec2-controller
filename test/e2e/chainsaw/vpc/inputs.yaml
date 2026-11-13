@@ -1,0 +1,52 @@
+# Values for the generated VPC test that the VPC's model can't supply.
+create:
+  cidrBlocks: [10.0.0.0/16, 10.2.0.0/16]
+  instanceTenancy: default
+  enableDNSSupport: true
+  enableDNSHostnames: true
+  enableNetworkAddressUsageMetrics: true
+  disallowSecurityGroupDefaultRules: false
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- cidrBlocks: [10.0.0.0/16]
+  enableDNSSupport: false
+  enableNetworkAddressUsageMetrics: false
+  disallowSecurityGroupDefaultRules: true
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# A new secondary block: 10.2.0.0/16 may still be disassociating
+- cidrBlocks: [10.0.0.0/16, 10.3.0.0/16]
+  enableDNSHostnames: false
+  disallowSecurityGroupDefaultRules: false
+  tags: []
+variants:
+# Only matters at create, and with the other attributes left unset: a fully
+# specified spec can hide how the controller handles unset ones.
+- name: disallowed
+  description: Default security group rules removed at create, with no other attributes set
+  create:
+    cidrBlocks: [10.0.0.0/16]
+    disallowSecurityGroupDefaultRules: true
+invalid:
+  spec:
+    cidrBlocks: [InvalidValue]
+  message: "InvalidParameterValue: Value (InvalidValue) for parameter cidrBlock is invalid. This is not a valid CIDR block."
+# Fields the generator can't read back by itself
+checks:
+  # A custom field: the VPC's associated blocks, of all those it's had
+  cidrBlocks:
+    path: CidrBlockAssociationSet
+    where: {CidrBlockState.State: associated}
+    select: CidrBlock
+    unordered: true
+  # Handled by hooks: true removes the default security group's rules. False
+  # doesn't put them back, so only true can be checked.
+  disallowSecurityGroupDefaultRules:
+    command: >-
+      aws ec2 describe-security-groups
+      --filters Name=vpc-id,Values=$AWS_ID Name=group-name,Values=default
+      --query 'length(SecurityGroups[0].IpPermissions) == `0` && length(SecurityGroups[0].IpPermissionsEgress) == `0`'
+    when: true

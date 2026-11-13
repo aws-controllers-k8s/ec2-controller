@@ -1,0 +1,30 @@
+# Values for the generated InternetGateway test that its model can't supply
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: igw-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+create:
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+# Attach to the VPC
+- vpcRef:
+    from:
+      name: igw-vpc
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Detach (null removes the field, as in a merge patch)
+- vpcRef: null
+  tags: []
+# Not declared in generator.yaml
+notFoundCode: InvalidInternetGatewayID.NotFound
+# The VPC the gateway is attached to: DescribeInternetGateways returns it in
+# Attachments, not as a field of its own
+checks:
+  vpcRef:
+    path: Attachments[0].VpcId
