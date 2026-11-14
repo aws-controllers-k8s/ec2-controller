@@ -133,8 +133,10 @@ def modify_vpc_endpoint(request):
     # The status can appear before the endpoint exists in AWS, for example
     # with only a Recoverable condition while EC2 returns
     # VpcEndpointLimitExceeded. Wait for the sync so the tests can read
-    # status.vpcEndpointID.
-    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10, period_length=10)
+    # status.vpcEndpointID. This is an interface endpoint, which stays
+    # pending for about 5.5 minutes, so wait as long as
+    # test_update_security_groups does.
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
     cr = k8s.get_resource(ref)
 
     yield (ref, cr)
