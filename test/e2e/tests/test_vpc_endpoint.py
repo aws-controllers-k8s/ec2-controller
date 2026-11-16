@@ -74,6 +74,13 @@ def simple_vpc_endpoint(request):
     assert cr is not None
     assert k8s.get_resource_exists(ref)
 
+    # The status can appear before the endpoint exists in AWS, for example
+    # with only a Recoverable condition while EC2 returns
+    # VpcEndpointLimitExceeded. Wait for the sync so the tests can read
+    # status.vpcEndpointID.
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10, period_length=10)
+    cr = k8s.get_resource(ref)
+
     yield (ref, cr)
 
     # Try to delete, if doesn't already exist
@@ -123,6 +130,15 @@ def modify_vpc_endpoint(request):
     assert cr is not None
     assert k8s.get_resource_exists(ref)
 
+    # The status can appear before the endpoint exists in AWS, for example
+    # with only a Recoverable condition while EC2 returns
+    # VpcEndpointLimitExceeded. Wait for the sync so the tests can read
+    # status.vpcEndpointID. This is an interface endpoint, which stays
+    # pending for about 5.5 minutes, so wait as long as
+    # test_update_security_groups does.
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=10)
+    cr = k8s.get_resource(ref)
+
     yield (ref, cr)
 
     # Try to delete, if doesn't already exist
@@ -159,7 +175,7 @@ class TestVpcEndpoint:
         assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         # Check VPC Endpoint no longer exists in AWS
@@ -260,7 +276,7 @@ class TestVpcEndpoint:
         assert len(resource["spec"]["tags"]) == 0
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         # Check vpcEndpoint no longer exists in AWS
@@ -371,7 +387,7 @@ class TestVpcEndpoint:
         assert set(vpc_endpoint["SubnetIds"]) == set(updated_subnets)
 
         # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
+        _, deleted = k8s.delete_custom_resource(ref, 3, 10)
         assert deleted is True
 
         # Check VPC Endpoint no longer exists in AWS
