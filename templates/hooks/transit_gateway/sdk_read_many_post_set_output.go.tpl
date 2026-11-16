@@ -1,9 +1,7 @@
 	if isResourceDeleted(&resource{ko}) {
 		return nil, ackerr.NotFound
 	}
+	// Return the observed resource so the runtime patches status while pending.
 	if isResourcePending(&resource{ko}) {
-		return nil, ackrequeue.NeededAfter(
-			fmt.Errorf("resource is pending"),
-			ackrequeue.DefaultRequeueAfterDuration,
-		)
+		return &resource{ko}, requeueWaitWhilePending
 	}
