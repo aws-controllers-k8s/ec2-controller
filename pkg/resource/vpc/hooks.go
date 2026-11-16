@@ -442,6 +442,9 @@ func (rm *resourceManager) hasSecurityGroupDefaultRules(
 	if err != nil {
 		return false, err
 	}
+	if sgID == nil {
+		return false, nil
+	}
 
 	groupIDFilter := "group-id"
 	input := &svcsdk.DescribeSecurityGroupRulesInput{
@@ -530,6 +533,9 @@ func (rm *resourceManager) deleteSecurityGroupDefaultRules(
 	sgID, err := rm.getDefaultSGId(ctx, r)
 	if err != nil {
 		return err
+	}
+	if sgID == nil {
+		return nil
 	}
 
 	ipRange := svcsdktypes.IpRange{
@@ -621,7 +627,7 @@ func (rm *resourceManager) getDefaultSGId(
 	}
 
 	if len(resp.SecurityGroups) == 0 {
-		return nil, fmt.Errorf("default security group not found")
+		return nil, nil
 	}
 
 	return resp.SecurityGroups[0].GroupId, nil
