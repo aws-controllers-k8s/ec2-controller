@@ -87,6 +87,7 @@ rules:
   - flowlogs
   - instances
   - internetgateways
+  - keypairs
   - launchtemplates
   - managedprefixlists
   - natgateways
@@ -118,6 +119,7 @@ rules:
   - flowlogs/status
   - instances/status
   - internetgateways/status
+  - keypairs/status
   - launchtemplates/status
   - managedprefixlists/status
   - natgateways/status
