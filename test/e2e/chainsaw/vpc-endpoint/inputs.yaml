@@ -1,5 +1,16 @@
 # Values for the generated VPCEndpoint test that its model can't supply. A
 # Gateway endpoint for S3 is free, and needs only route tables.
+#
+# The interface variant is the one that changes subnets, security groups,
+# private DNS and DNS options, which only an interface endpoint has. It costs
+# about $0.01 an hour for each subnet, for the few minutes it runs. Its two
+# subnets are in two zones, which the dependencies can't look up, so they name
+# us-west-2a and us-west-2b like other tests'.
+#
+# The dualstack variant changes ipAddressType, which needs dual-stack subnets.
+# Their IPv6 /64s come from the VPC's Amazon-assigned /56, which only exists
+# once the VPC does, and dependencies can't use values, so values make them
+# with the AWS CLI, in the region's first two zones, and clean them up.
 dependencies:
 - apiVersion: ec2.services.k8s.aws/v1alpha1
   kind: VPC
@@ -7,6 +18,51 @@ dependencies:
     name: vpce-vpc
   spec:
     cidrBlocks: [10.0.0.0/16]
+    # For the dualstack variant's subnets, made by values below
+    amazonProvidedIPv6CIDRBlock: true
+    # Private DNS needs both
+    enableDNSSupport: true
+    enableDNSHostnames: true
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: vpce-subnet-a
+  spec:
+    cidrBlock: 10.0.1.0/24
+    availabilityZone: us-west-2a
+    vpcRef:
+      from:
+        name: vpce-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: vpce-subnet-b
+  spec:
+    cidrBlock: 10.0.2.0/24
+    availabilityZone: us-west-2b
+    vpcRef:
+      from:
+        name: vpce-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: SecurityGroup
+  metadata:
+    name: vpce-sg-a
+  spec:
+    name: vpce-sg-a
+    description: Created by a generated ACK Chainsaw test
+    vpcRef:
+      from:
+        name: vpce-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: SecurityGroup
+  metadata:
+    name: vpce-sg-b
+  spec:
+    name: vpce-sg-b
+    description: Created by a generated ACK Chainsaw test
+    vpcRef:
+      from:
+        name: vpce-vpc
 - apiVersion: ec2.services.k8s.aws/v1alpha1
   kind: RouteTable
   metadata:
@@ -27,6 +83,49 @@ dependencies:
 values:
 - name: REGION
   command: echo "$AWS_REGION"
+- name: VPC_ID
+  command: kubectl get vpc vpce-vpc -n $NAMESPACE -o jsonpath='{.status.vpcID}'
+# The VPC's IPv6 block is assigned a moment after the VPC is Synced
+- name: VPC_IPV6_CIDR
+  command: >-
+    for i in $(seq 1 30); do
+    cidr=$(kubectl get vpc vpce-vpc -n $NAMESPACE
+    -o jsonpath='{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}');
+    [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1
+- name: AZ_A
+  command: >-
+    aws ec2 describe-availability-zones
+    --filters Name=state,Values=available Name=zone-type,Values=availability-zone
+    --query 'sort(AvailabilityZones[].ZoneName)[0]' --output text
+- name: AZ_B
+  command: >-
+    aws ec2 describe-availability-zones
+    --filters Name=state,Values=available Name=zone-type,Values=availability-zone
+    --query 'sort(AvailabilityZones[].ZoneName)[1]' --output text
+- name: DS_SUBNET_A
+  command: >-
+    aws ec2 create-subnet --vpc-id $VPC_ID --availability-zone $AZ_A
+    --cidr-block 10.0.3.0/24
+    --ipv6-cidr-block "$(echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|03::/64|')"
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    --query Subnet.SubnetId --output text
+  cleanup: >-
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-subnet --subnet-id $DS_SUBNET_A 2>&1) && exit 0;
+    case "$out" in *DependencyViolation*) sleep 10 ;; *InvalidSubnetID.NotFound*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
+- name: DS_SUBNET_B
+  command: >-
+    aws ec2 create-subnet --vpc-id $VPC_ID --availability-zone $AZ_B
+    --cidr-block 10.0.4.0/24
+    --ipv6-cidr-block "$(echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|04::/64|')"
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    --query Subnet.SubnetId --output text
+  cleanup: >-
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-subnet --subnet-id $DS_SUBNET_B 2>&1) && exit 0;
+    case "$out" in *DependencyViolation*) sleep 10 ;; *InvalidSubnetID.NotFound*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
 create:
   serviceName: com.amazonaws.$REGION.s3
   vpcEndpointType: Gateway
@@ -56,6 +155,64 @@ updates:
       name: vpce-rt-b
   policyDocument: '{"Statement":[{"Action":"*","Effect":"Allow","Principal":"*","Resource":"*"}],"Version":"2012-10-17"}'
   tags: []
+variants:
+- name: interface
+  description: An interface endpoint, whose subnets, security groups, private DNS and DNS options can change
+  create:
+    serviceName: com.amazonaws.$REGION.sqs
+    vpcEndpointType: Interface
+    vpcRef:
+      from:
+        name: vpce-vpc
+    subnetRefs:
+    - from:
+        name: vpce-subnet-a
+    securityGroupRefs:
+    - from:
+        name: vpce-sg-a
+    privateDNSEnabled: false
+  updates:
+  - subnetRefs:
+    - from:
+        name: vpce-subnet-a
+    - from:
+        name: vpce-subnet-b
+    securityGroupRefs:
+    - from:
+        name: vpce-sg-b
+    privateDNSEnabled: true
+    dnsOptions:
+      dnsRecordIPType: ipv4
+  # Back to the first security group and no private DNS. The subnet stays at
+  # both: removing one isn't synced (BUGS.md #19), so a shrink would hang.
+  - subnetRefs:
+    - from:
+        name: vpce-subnet-a
+    - from:
+        name: vpce-subnet-b
+    securityGroupRefs:
+    - from:
+        name: vpce-sg-a
+    privateDNSEnabled: false
+- name: dualstack
+  description: An interface endpoint in dual-stack subnets, whose IP address type changes
+  create:
+    serviceName: com.amazonaws.$REGION.sqs
+    vpcEndpointType: Interface
+    vpcRef:
+      from:
+        name: vpce-vpc
+    subnetIDs:
+    - $DS_SUBNET_A
+    - $DS_SUBNET_B
+    securityGroupRefs:
+    - from:
+        name: vpce-sg-a
+    privateDNSEnabled: false
+    ipAddressType: ipv4
+  updates:
+  - ipAddressType: dualstack
+  - ipAddressType: ipv4
 invalid:
   spec:
     serviceName: com.amazonaws.$REGION.s3
@@ -65,6 +222,13 @@ invalid:
 # Not declared in generator.yaml
 notFoundCode: InvalidVpcEndpointId.NotFound
 checks:
+  # DescribeVpcEndpoints returns each security group as a structure. Keyed by
+  # the reference the interface variant sets; the test compares the IDs it
+  # resolves to
+  securityGroupRefs:
+    path: Groups
+    select: GroupId
+    unordered: true
   # A JSON document: compared by content, since AWS may reorder its keys
   policyDocument:
     path: PolicyDocument

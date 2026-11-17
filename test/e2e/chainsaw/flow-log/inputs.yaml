@@ -85,5 +85,12 @@ checks:
   # A type in generator.yaml, set by hooks
   resourceID:
     path: ResourceId
-  # resourceType can't be checked: AWS doesn't return it, though the ID's
-  # prefix (vpc-, subnet-, eni-, tgw-) implies it
+  # AWS doesn't return resourceType, but the resource ID's prefix implies it
+  resourceType:
+    command: >-
+      id=$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID
+      --query 'FlowLogs[0].ResourceId' --output text) &&
+      case "$id" in
+      vpc-*) echo '"VPC"' ;; subnet-*) echo '"Subnet"' ;; eni-*) echo '"NetworkInterface"' ;;
+      tgw-attach-*) echo '"TransitGatewayAttachment"' ;; tgw-*) echo '"TransitGateway"' ;;
+      *) echo "\"$id\"" ;; esac

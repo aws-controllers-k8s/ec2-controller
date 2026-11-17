@@ -14,6 +14,10 @@ values:
     aws ec2 describe-instance-type-offerings --location-type availability-zone
     --filters Name=instance-type,Values=t3.nano
     --query 'sort(InstanceTypeOfferings[].Location)[0]' --output text
+# A limited reservation ends at a time in the future. A day on is far enough
+# that it doesn't end during the test, and it's cancelled at the end of it.
+- name: END_DATE
+  command: date -u -d '+1 day' +%Y-%m-%dT%H:%M:%SZ
 create:
   instanceType: t3.nano
   instancePlatform: Linux/UNIX
@@ -24,8 +28,14 @@ create:
   tags:
   - key: initialtagkey
     value: initialtagvalue
+# ModifyCapacityReservation also changes startDate, which only a future-dated
+# reservation accepts, and those have a large minimum size. It also changes
+# additionalInfo, left out below.
 updates:
 - instanceCount: 2
+  endDateType: limited
+  endDate: $END_DATE
+  instanceMatchCriteria: open
   tags:
   - key: updatedtagkey
     value: updatedtagvalue
@@ -41,3 +51,10 @@ checks:
   # AWS returns it as TotalInstanceCount
   instanceCount:
     path: TotalInstanceCount
+  # AWS returns the end date with a +00:00 offset; the CR normalizes it to a Z,
+  # so reformat AWS's to match before comparing
+  endDate:
+    command: >-
+      d=$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID
+      --query 'CapacityReservations[0].EndDate' --output text) &&
+      date -u -d "$d" +'"%Y-%m-%dT%H:%M:%SZ"'

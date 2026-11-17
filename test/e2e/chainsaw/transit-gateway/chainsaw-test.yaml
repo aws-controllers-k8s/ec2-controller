@@ -7,9 +7,6 @@
 #   - description
 #   - options
 #   - tags
-# Not immutable, but no update changes them (mark them is_immutable if the controller can't update them):
-#   - description
-#   - options
 # Notes:
 #   - neither the generator config, the API model's waiters nor the inputs give a not-found error code, a deleted waiter or a deleted query, so deletion isn't checked in AWS
 #   - inputs give no invalid spec, so there's no ACK.Terminal check
@@ -79,7 +76,7 @@ spec:
             kind: TransitGateway
             name: ($name)
     - name: update-1
-      description: Change tags
+      description: Change description, options, tags
       use:
         template: ../_templates/apply-and-wait-reconciled.yaml
         with:
@@ -105,15 +102,15 @@ spec:
               ($error): null
               (json_parse($stdout)):
                 describeTransitGateways:
-                  description: Created by a generated ACK Chainsaw test
+                  description: Changed by a generated ACK Chainsaw test
                   options:
                     AmazonSideAsn: 64513
-                    AutoAcceptSharedAttachments: disable
-                    DefaultRouteTableAssociation: enable
-                    DefaultRouteTablePropagation: enable
-                    DnsSupport: enable
+                    AutoAcceptSharedAttachments: enable
+                    DefaultRouteTableAssociation: disable
+                    DefaultRouteTablePropagation: disable
+                    DnsSupport: disable
                     MulticastSupport: disable
-                    VpnEcmpSupport: enable
+                    VpnEcmpSupport: disable
                   systemTags:
                     - services.k8s.aws/controller-version
                     - services.k8s.aws/namespace
@@ -152,15 +149,15 @@ spec:
               ($error): null
               (json_parse($stdout)):
                 describeTransitGateways:
-                  description: Created by a generated ACK Chainsaw test
+                  description: Changed by a generated ACK Chainsaw test
                   options:
                     AmazonSideAsn: 64513
-                    AutoAcceptSharedAttachments: disable
-                    DefaultRouteTableAssociation: enable
-                    DefaultRouteTablePropagation: enable
-                    DnsSupport: enable
+                    AutoAcceptSharedAttachments: enable
+                    DefaultRouteTableAssociation: disable
+                    DefaultRouteTablePropagation: disable
+                    DnsSupport: disable
                     MulticastSupport: disable
-                    VpnEcmpSupport: enable
+                    VpnEcmpSupport: disable
                   systemTags:
                     - services.k8s.aws/controller-version
                     - services.k8s.aws/namespace

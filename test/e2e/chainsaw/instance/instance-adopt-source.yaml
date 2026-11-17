@@ -9,6 +9,8 @@ spec:
   imageID: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AMI_ID]))
   instanceInitiatedShutdownBehavior: stop
   instanceType: t3.micro
+  securityGroupIDs:
+    - (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SG_A_ID]))
   subnetRef:
     from:
       name: instance-subnet

@@ -5,9 +5,17 @@ metadata:
   name: vpc-endpoint-service-configuration
 spec:
   acceptanceRequired: true
-  allowedPrincipals: []
+  allowedPrincipals:
+    - (join('', ['arn:aws:iam::', x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.ACCOUNT_ID, ':root']))
+    - '*'
   networkLoadBalancerARNs:
     - (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.NLB_ARN]))
+  privateDNSName: (join('', ['ack-chainsaw-', $suffix, '.example.com']))
   supportedIPAddressTypes:
     - ipv4
-  tags: []
+  supportedRegions:
+    - (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.HOME_REGION]))
+    - (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.OTHER_REGION]))
+  tags:
+    - key: updatedtagkey
+      value: updatedtagvalue

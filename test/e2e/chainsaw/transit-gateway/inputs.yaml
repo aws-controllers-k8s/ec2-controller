@@ -14,9 +14,17 @@ create:
   tags:
   - key: initialtagkey
     value: initialtagvalue
-# Only tags can change: customUpdateTransitGateway syncs nothing else
+# ModifyTransitGateway changes the description and the options below. It can't
+# change multicastSupport, so that's left as it is.
 updates:
-- tags:
+- description: Changed by a generated ACK Chainsaw test
+  options:
+    autoAcceptSharedAttachments: enable
+    defaultRouteTableAssociation: disable
+    defaultRouteTablePropagation: disable
+    dnsSupport: disable
+    vpnECMPSupport: disable
+  tags:
   - key: updatedtagkey
     value: updatedtagvalue
 - tags: []

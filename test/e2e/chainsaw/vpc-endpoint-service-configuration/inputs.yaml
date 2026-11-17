@@ -1,14 +1,23 @@
 # Values for the generated VPCEndpointServiceConfiguration test that its model
 # can't supply.
 #
-# - The service needs a Network Load Balancer, which isn't an ec2 resource, so
-#   a value creates one in the dependency subnet, named with $SUFFIX and
-#   tagged with the test's namespace, and its cleanup deletes it. Cleanups run
-#   before the dependencies are deleted, so its ENIs don't block the subnet's
-#   deletion.
+# - The service needs load balancers, which aren't ec2 resources, so values
+#   make them with the AWS CLI, named with $SUFFIX and tagged with the test's
+#   namespace, and clean them up.
+# - Cross-region support needs the service to span two availability zones, and
+#   IPv6 support needs dual-stack load balancers. So two dual-stack subnets, one
+#   in each of the region's first two zones, are made in values too: their IPv6
+#   /64s come from the VPC's Amazon-assigned /56, which only exists once the VPC
+#   does, and dependencies can't use values.
+# - All four load balancers are created at once and waited on together, which
+#   takes about 3 minutes instead of 3 minutes each. Values run for every test
+#   of the resource, so each test makes all four.
+# - Cleanups run in the reverse order of the values: the load balancers go
+#   before the subnets, and the subnets before the VPC dependency.
 #
-# Cost per run: an internal NLB for about 10 minutes, including the wait for
-# it to become active: about $0.005. The endpoint service itself is free.
+# Cost per run: two internal network load balancers and two gateway load
+# balancers for each of the 3 tests, about 15 minutes each: about $0.05. The
+# endpoint service itself is free.
 dependencies:
 - apiVersion: ec2.services.k8s.aws/v1alpha1
   kind: VPC
@@ -16,31 +25,93 @@ dependencies:
     name: vpces-vpc
   spec:
     cidrBlocks: [10.0.0.0/16]
-- apiVersion: ec2.services.k8s.aws/v1alpha1
-  kind: Subnet
-  metadata:
-    name: vpces-subnet
-  spec:
-    cidrBlock: 10.0.1.0/24
-    vpcRef:
-      from:
-        name: vpces-vpc
+    amazonProvidedIPv6CIDRBlock: true
 values:
 - name: ACCOUNT_ID
   command: aws sts get-caller-identity --query Account --output text
-- name: SUBNET_ID
-  command: kubectl get subnet vpces-subnet -n $NAMESPACE -o jsonpath='{.status.subnetID}'
-- name: NLB_ARN
+- name: VPC_ID
+  command: kubectl get vpc vpces-vpc -n $NAMESPACE -o jsonpath='{.status.vpcID}'
+# The VPC's IPv6 block is assigned a moment after the VPC is Synced
+- name: VPC_IPV6_CIDR
   command: >-
-    arn=$(aws elbv2 create-load-balancer --name ack-chainsaw-$SUFFIX
-    --type network --scheme internal --subnets $SUBNET_ID
-    --tags Key=services.k8s.aws/namespace,Value=$NAMESPACE
-    --query 'LoadBalancers[0].LoadBalancerArn' --output text) &&
-    aws elbv2 wait load-balancer-available --load-balancer-arns "$arn" &&
-    echo "$arn"
+    for i in $(seq 1 30); do
+    cidr=$(kubectl get vpc vpces-vpc -n $NAMESPACE
+    -o jsonpath='{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}');
+    [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1
+# The region's first two availability zones
+- name: AZ_A
+  command: >-
+    aws ec2 describe-availability-zones
+    --filters Name=state,Values=available Name=zone-type,Values=availability-zone
+    --query 'sort(AvailabilityZones[].ZoneName)[0]' --output text
+- name: AZ_B
+  command: >-
+    aws ec2 describe-availability-zones
+    --filters Name=state,Values=available Name=zone-type,Values=availability-zone
+    --query 'sort(AvailabilityZones[].ZoneName)[1]' --output text
+- name: SUBNET_A
+  command: >-
+    aws ec2 create-subnet --vpc-id $VPC_ID --availability-zone $AZ_A
+    --cidr-block 10.0.1.0/24
+    --ipv6-cidr-block "$(echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|01::/64|')"
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    --query Subnet.SubnetId --output text
   cleanup: >-
-    aws elbv2 delete-load-balancer --load-balancer-arn $NLB_ARN &&
-    aws elbv2 wait load-balancers-deleted --load-balancer-arns $NLB_ARN
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-subnet --subnet-id $SUBNET_A 2>&1) && exit 0;
+    case "$out" in *DependencyViolation*) sleep 10 ;; *InvalidSubnetID.NotFound*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
+- name: SUBNET_B
+  command: >-
+    aws ec2 create-subnet --vpc-id $VPC_ID --availability-zone $AZ_B
+    --cidr-block 10.0.2.0/24
+    --ipv6-cidr-block "$(echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|02::/64|')"
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    --query Subnet.SubnetId --output text
+  cleanup: >-
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-subnet --subnet-id $SUBNET_B 2>&1) && exit 0;
+    case "$out" in *DependencyViolation*) sleep 10 ;; *InvalidSubnetID.NotFound*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
+# All four load balancers, created at once and waited on together. Prints
+# their ARNs, space separated: two dual-stack network load balancers, then two
+# gateway load balancers, each in both zones. Three tests make theirs at the
+# same time, so the CLI retries throttled calls adaptively. If a create still
+# fails, the ones already made are deleted before the value fails: a value
+# that fails never registers its cleanup.
+- name: LOAD_BALANCERS
+  command: >-
+    export AWS_RETRY_MODE=adaptive AWS_MAX_ATTEMPTS=10;
+    tags="Key=services.k8s.aws/namespace,Value=$NAMESPACE"; arns="";
+    undo() { for a in $arns; do aws elbv2 delete-load-balancer --load-balancer-arn "$a" || true; done; exit 1; };
+    make() { a=$(aws elbv2 create-load-balancer --tags $tags --subnets $SUBNET_A $SUBNET_B "$@"
+    --query 'LoadBalancers[0].LoadBalancerArn' --output text) || undo; arns="$arns $a"; };
+    make --name ack-chainsaw-n1-$SUFFIX --type network --scheme internal --ip-address-type dualstack;
+    make --name ack-chainsaw-n2-$SUFFIX --type network --scheme internal --ip-address-type dualstack;
+    make --name ack-chainsaw-g1-$SUFFIX --type gateway;
+    make --name ack-chainsaw-g2-$SUFFIX --type gateway;
+    aws elbv2 wait load-balancer-available --load-balancer-arns $arns || undo;
+    echo $arns
+  cleanup: >-
+    export AWS_RETRY_MODE=adaptive AWS_MAX_ATTEMPTS=10;
+    for arn in $LOAD_BALANCERS; do aws elbv2 delete-load-balancer --load-balancer-arn "$arn"; done;
+    aws elbv2 wait load-balancers-deleted --load-balancer-arns $LOAD_BALANCERS
+- name: NLB_ARN
+  command: echo "$LOAD_BALANCERS" | cut -d' ' -f1
+- name: NLB_ARN_2
+  command: echo "$LOAD_BALANCERS" | cut -d' ' -f2
+- name: GWLB_ARN
+  command: echo "$LOAD_BALANCERS" | cut -d' ' -f3
+- name: GWLB_ARN_2
+  command: echo "$LOAD_BALANCERS" | cut -d' ' -f4
+# AWS always lists the service's own region in SupportedRegions, so the spec
+# names it too
+- name: HOME_REGION
+  command: echo "$AWS_REGION"
+# A region the service can also be offered in: any other one. Needs the
+# vpce:AllowMultiRegion permission on the test role
+- name: OTHER_REGION
+  command: '[ "$AWS_REGION" = us-east-1 ] && echo us-east-2 || echo us-east-1'
 create:
   networkLoadBalancerARNs:
   - $NLB_ARN
@@ -51,8 +122,15 @@ create:
   tags:
   - key: initialtagkey
     value: initialtagvalue
+# ModifyVpcEndpointServiceConfiguration changes the acceptance setting, the
+# private DNS name, the IP address types, the supported regions and the load
+# balancers. A failed step ends the test, so the changes expected to work come
+# first, and each one known or expected not to work comes last, in its own
+# update: removing the private DNS name, then adding an IP address type and a
+# load balancer (BUGS.md #18).
 updates:
 - acceptanceRequired: true
+  privateDNSName: ack-chainsaw-$SUFFIX.example.com
   allowedPrincipals:
   - arn:aws:iam::$ACCOUNT_ID:root
   # A principal must exist; * is every principal
@@ -60,10 +138,44 @@ updates:
   tags:
   - key: updatedtagkey
     value: updatedtagvalue
-- allowedPrincipals: []
+- supportedRegions:
+  - $HOME_REGION
+  - $OTHER_REGION
+- supportedRegions:
+  - $HOME_REGION
+  allowedPrincipals: []
   tags: []
+- privateDNSName: null
+# Both load balancers are dual-stack, so the service can offer IPv6
+- supportedIPAddressTypes: [ipv4, ipv6]
+- networkLoadBalancerARNs:
+  - $NLB_ARN
+  - $NLB_ARN_2
+variants:
+- name: gateway
+  description: Gateway load balancers instead of network ones; a service has one kind or the other
+  create:
+    gatewayLoadBalancerARNs:
+    - $GWLB_ARN
+    acceptanceRequired: false
+  updates:
+  - gatewayLoadBalancerARNs:
+    - $GWLB_ARN
+    - $GWLB_ARN_2
+  - gatewayLoadBalancerARNs:
+    - $GWLB_ARN
 notFoundCode: InvalidVpcEndpointServiceId.NotFound
 checks:
+  # Each region comes back as a structure with its state. A region being
+  # removed stays listed as Deleting for a while, so only Pending and Available
+  # count. The spec lists the home region first, then the others, and the
+  # expected order is fixed when the test runs, so the home region is put
+  # first and the rest sorted.
+  supportedRegions:
+    command: >-
+      aws ec2 describe-vpc-endpoint-service-configurations --service-ids $AWS_ID
+      --query "ServiceConfigurations[0].SupportedRegions[?ServiceState=='Available' || ServiceState=='Pending'].Region"
+      | jq -c --arg h "$HOME_REGION" '[.[] | select(. == $h)] + ([.[] | select(. != $h)] | sort)'
   # Set through ModifyVpcEndpointServicePermissions, whose read returns
   # AllowedPrincipals[].Principal
   allowedPrincipals:

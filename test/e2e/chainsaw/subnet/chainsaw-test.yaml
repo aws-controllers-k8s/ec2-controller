@@ -2,25 +2,26 @@
 # Edit inputs.yaml and regenerate instead.
 #
 # Create variants, each with its own test:
+#   - subnet-dualstack
 #   - subnet-minimal
 #   - subnet-with-route-table
 # Checked in AWS:
+#   - assignIPv6AddressOnCreation
 #   - cidrBlock
+#   - enableDNS64
+#   - enableResourceNameDNSAAAARecord
 #   - enableResourceNameDNSARecord
 #   - hostnameType
+#   - ipv6CIDRBlock
 #   - mapPublicIPOnLaunch
 #   - routeTableRefs
 #   - tags
 #   - vpcRef
 # Not immutable, but no update changes them (mark them is_immutable if the controller can't update them):
-#   - assignIPv6AddressOnCreation
 #   - availabilityZone
 #   - availabilityZoneID
 #   - cidrBlock
 #   - customerOwnedIPv4Pool
-#   - enableDNS64
-#   - enableResourceNameDNSAAAARecord
-#   - ipv6CIDRBlock
 #   - ipv6Native
 #   - outpostARN
 #   - vpcID
@@ -42,10 +43,7 @@ spec:
     - name: idPath
       value: '{.status.subnetID}'
   steps:
-    - name: create
-      bindings:
-        - name: terminalMessage
-          value: 'InvalidParameterValue: Value (InvalidCidrBlock) for parameter cidrBlock is invalid. This is not a valid CIDR block.'
+    - name: dependencies
       try:
         - description: Create the VPC subnet-vpc it depends on
           apply:
@@ -56,6 +54,62 @@ spec:
         - description: Create the RouteTable subnet-rt-b it depends on
           apply:
             file: dependency-subnet-rt-b.yaml
+        - description: Wait for VPC subnet-vpc to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: VPC
+              metadata:
+                name: subnet-vpc
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-a to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-a
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-b to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-b
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+    - name: values
+      try:
+        - description: Work out the values the specs use
+          script:
+            env:
+              - name: SUFFIX
+                value: ($suffix)
+            content: |
+              set -eu
+              export SUFFIX NAMESPACE AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+              kubectl create configmap ack-test-values -n "$NAMESPACE" >/dev/null
+
+              VPC_IPV6_CIDR=$(sh -euc 'for i in $(seq 1 30); do cidr=$(kubectl get vpc subnet-vpc -n $NAMESPACE -o jsonpath='\''{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}'\''); [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1') || { echo "value VPC_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$VPC_IPV6_CIDR" ] || { echo "value VPC_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export VPC_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$VPC_IPV6_CIDR" '{data: {VPC_IPV6_CIDR: $v}}')" >/dev/null
+
+              SUBNET_IPV6_CIDR=$(sh -euc 'echo "$VPC_IPV6_CIDR" | sed '\''s|00::/56$|01::/64|'\''') || { echo "value SUBNET_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$SUBNET_IPV6_CIDR" ] || { echo "value SUBNET_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export SUBNET_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$SUBNET_IPV6_CIDR" '{data: {SUBNET_IPV6_CIDR: $v}}')" >/dev/null
+    - name: create
+      bindings:
+        - name: terminalMessage
+          value: 'InvalidParameterValue: Value (InvalidCidrBlock) for parameter cidrBlock is invalid. This is not a valid CIDR block.'
+      try:
         - description: Create the Subnet
           apply:
             file: subnet.yaml
@@ -85,6 +139,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -130,6 +188,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -177,6 +239,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -224,6 +290,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -265,6 +335,271 @@ spec:
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
+  name: subnet-dualstack
+spec:
+  description: 'Subnet lifecycle, variant dualstack: An IPv6 block at create, then the IPv6 attributes set by update.'
+  bindings:
+    - name: suffix
+      value: (random('[a-z0-9]{8}'))
+    - name: apiVersion
+      value: ec2.services.k8s.aws/v1alpha1
+    - name: kind
+      value: Subnet
+    - name: name
+      value: subnet-dualstack
+    - name: idPath
+      value: '{.status.subnetID}'
+  steps:
+    - name: dependencies
+      try:
+        - description: Create the VPC subnet-vpc it depends on
+          apply:
+            file: dependency-subnet-vpc.yaml
+        - description: Create the RouteTable subnet-rt-a it depends on
+          apply:
+            file: dependency-subnet-rt-a.yaml
+        - description: Create the RouteTable subnet-rt-b it depends on
+          apply:
+            file: dependency-subnet-rt-b.yaml
+        - description: Wait for VPC subnet-vpc to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: VPC
+              metadata:
+                name: subnet-vpc
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-a to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-a
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-b to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-b
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+    - name: values
+      try:
+        - description: Work out the values the specs use
+          script:
+            env:
+              - name: SUFFIX
+                value: ($suffix)
+            content: |
+              set -eu
+              export SUFFIX NAMESPACE AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+              kubectl create configmap ack-test-values -n "$NAMESPACE" >/dev/null
+
+              VPC_IPV6_CIDR=$(sh -euc 'for i in $(seq 1 30); do cidr=$(kubectl get vpc subnet-vpc -n $NAMESPACE -o jsonpath='\''{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}'\''); [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1') || { echo "value VPC_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$VPC_IPV6_CIDR" ] || { echo "value VPC_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export VPC_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$VPC_IPV6_CIDR" '{data: {VPC_IPV6_CIDR: $v}}')" >/dev/null
+
+              SUBNET_IPV6_CIDR=$(sh -euc 'echo "$VPC_IPV6_CIDR" | sed '\''s|00::/56$|01::/64|'\''') || { echo "value SUBNET_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$SUBNET_IPV6_CIDR" ] || { echo "value SUBNET_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export SUBNET_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$SUBNET_IPV6_CIDR" '{data: {SUBNET_IPV6_CIDR: $v}}')" >/dev/null
+    - name: create
+      try:
+        - description: Create the Subnet
+          apply:
+            file: subnet-dualstack.yaml
+    - name: wait-synced
+      use:
+        template: ../_templates/assert-synced.yaml
+    - name: check-created
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
+              - name: SUFFIX
+                value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeSubnets "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].{cidrBlock: CidrBlock, vpcRef: VpcId}')" \
+                --argjson ipv6CIDRBlock "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].Ipv6CidrBlockAssociationSet[?Ipv6CidrBlockState.State==`associated`].Ipv6CidrBlock | [0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeSubnets:
+                  cidrBlock: 10.0.2.0/24
+                  vpcRef: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'subnet-vpc').status.vpcID)
+                ipv6CIDRBlock: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR]))
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: Subnet
+            name: ($name)
+    - name: update-1
+      description: Change assignIPv6AddressOnCreation, enableDNS64, enableResourceNameDNSAAAARecord
+      use:
+        template: ../_templates/apply-and-wait-reconciled.yaml
+        with:
+          bindings:
+            - name: file
+              value: subnet-dualstack-update-1.yaml
+    - name: check-update-1
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
+              - name: SUFFIX
+                value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeSubnets "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].{assignIPv6AddressOnCreation: AssignIpv6AddressOnCreation, cidrBlock: CidrBlock, enableDNS64: EnableDns64, vpcRef: VpcId}')" \
+                --argjson ipv6CIDRBlock "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].Ipv6CidrBlockAssociationSet[?Ipv6CidrBlockState.State==`associated`].Ipv6CidrBlock | [0]')" \
+                --argjson resource "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeSubnets:
+                  assignIPv6AddressOnCreation: true
+                  cidrBlock: 10.0.2.0/24
+                  enableDNS64: true
+                  vpcRef: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'subnet-vpc').status.vpcID)
+                ipv6CIDRBlock: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR]))
+                resource:
+                  (PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord): true
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: Subnet
+            name: ($name)
+    - name: update-2
+      description: Change assignIPv6AddressOnCreation, enableDNS64, enableResourceNameDNSAAAARecord
+      use:
+        template: ../_templates/apply-and-wait-reconciled.yaml
+        with:
+          bindings:
+            - name: file
+              value: subnet-dualstack-update-2.yaml
+    - name: check-update-2
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
+              - name: SUFFIX
+                value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeSubnets "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].{assignIPv6AddressOnCreation: AssignIpv6AddressOnCreation, cidrBlock: CidrBlock, enableDNS64: EnableDns64, vpcRef: VpcId}')" \
+                --argjson ipv6CIDRBlock "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].Ipv6CidrBlockAssociationSet[?Ipv6CidrBlockState.State==`associated`].Ipv6CidrBlock | [0]')" \
+                --argjson resource "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeSubnets:
+                  assignIPv6AddressOnCreation: false
+                  cidrBlock: 10.0.2.0/24
+                  enableDNS64: false
+                  vpcRef: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'subnet-vpc').status.vpcID)
+                ipv6CIDRBlock: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR]))
+                resource:
+                  (PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord): false
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: Subnet
+            name: ($name)
+    - name: update-3
+      description: Change ipv6CIDRBlock
+      use:
+        template: ../_templates/apply-and-wait-reconciled.yaml
+        with:
+          bindings:
+            - name: file
+              value: subnet-dualstack-update-3.yaml
+    - name: check-update-3
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
+              - name: SUFFIX
+                value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeSubnets "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].{assignIPv6AddressOnCreation: AssignIpv6AddressOnCreation, cidrBlock: CidrBlock, enableDNS64: EnableDns64, vpcRef: VpcId}')" \
+                --argjson ipv6CIDRBlock "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0].Ipv6CidrBlockAssociationSet[?Ipv6CidrBlockState.State==`associated`].Ipv6CidrBlock | [0]')" \
+                --argjson resource "$(aws ec2 describe-subnets --subnet-ids $AWS_ID --query 'Subnets[0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeSubnets:
+                  assignIPv6AddressOnCreation: false
+                  cidrBlock: 10.0.2.0/24
+                  enableDNS64: false
+                  vpcRef: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'subnet-vpc').status.vpcID)
+                ipv6CIDRBlock: null
+                resource:
+                  (PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord): false
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: Subnet
+            name: ($name)
+    - name: delete
+      use:
+        template: ../_templates/delete.yaml
+        with:
+          bindings:
+            - name: describeCommand
+              value: aws ec2 describe-subnets --subnet-ids $AWS_ID
+            - name: notFoundCode
+              value: InvalidSubnetID.NotFound
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
   name: subnet-minimal
 spec:
   description: 'Subnet lifecycle, variant minimal: Only the required fields at create, then an attribute set by update.'
@@ -280,7 +615,7 @@ spec:
     - name: idPath
       value: '{.status.subnetID}'
   steps:
-    - name: create
+    - name: dependencies
       try:
         - description: Create the VPC subnet-vpc it depends on
           apply:
@@ -291,6 +626,59 @@ spec:
         - description: Create the RouteTable subnet-rt-b it depends on
           apply:
             file: dependency-subnet-rt-b.yaml
+        - description: Wait for VPC subnet-vpc to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: VPC
+              metadata:
+                name: subnet-vpc
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-a to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-a
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-b to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-b
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+    - name: values
+      try:
+        - description: Work out the values the specs use
+          script:
+            env:
+              - name: SUFFIX
+                value: ($suffix)
+            content: |
+              set -eu
+              export SUFFIX NAMESPACE AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+              kubectl create configmap ack-test-values -n "$NAMESPACE" >/dev/null
+
+              VPC_IPV6_CIDR=$(sh -euc 'for i in $(seq 1 30); do cidr=$(kubectl get vpc subnet-vpc -n $NAMESPACE -o jsonpath='\''{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}'\''); [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1') || { echo "value VPC_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$VPC_IPV6_CIDR" ] || { echo "value VPC_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export VPC_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$VPC_IPV6_CIDR" '{data: {VPC_IPV6_CIDR: $v}}')" >/dev/null
+
+              SUBNET_IPV6_CIDR=$(sh -euc 'echo "$VPC_IPV6_CIDR" | sed '\''s|00::/56$|01::/64|'\''') || { echo "value SUBNET_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$SUBNET_IPV6_CIDR" ] || { echo "value SUBNET_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export SUBNET_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$SUBNET_IPV6_CIDR" '{data: {SUBNET_IPV6_CIDR: $v}}')" >/dev/null
+    - name: create
+      try:
         - description: Create the Subnet
           apply:
             file: subnet-minimal.yaml
@@ -306,6 +694,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -340,6 +732,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -386,7 +782,7 @@ spec:
     - name: idPath
       value: '{.status.subnetID}'
   steps:
-    - name: create
+    - name: dependencies
       try:
         - description: Create the VPC subnet-vpc it depends on
           apply:
@@ -397,6 +793,59 @@ spec:
         - description: Create the RouteTable subnet-rt-b it depends on
           apply:
             file: dependency-subnet-rt-b.yaml
+        - description: Wait for VPC subnet-vpc to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: VPC
+              metadata:
+                name: subnet-vpc
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-a to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-a
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-b to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-b
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+    - name: values
+      try:
+        - description: Work out the values the specs use
+          script:
+            env:
+              - name: SUFFIX
+                value: ($suffix)
+            content: |
+              set -eu
+              export SUFFIX NAMESPACE AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+              kubectl create configmap ack-test-values -n "$NAMESPACE" >/dev/null
+
+              VPC_IPV6_CIDR=$(sh -euc 'for i in $(seq 1 30); do cidr=$(kubectl get vpc subnet-vpc -n $NAMESPACE -o jsonpath='\''{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}'\''); [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1') || { echo "value VPC_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$VPC_IPV6_CIDR" ] || { echo "value VPC_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export VPC_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$VPC_IPV6_CIDR" '{data: {VPC_IPV6_CIDR: $v}}')" >/dev/null
+
+              SUBNET_IPV6_CIDR=$(sh -euc 'echo "$VPC_IPV6_CIDR" | sed '\''s|00::/56$|01::/64|'\''') || { echo "value SUBNET_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$SUBNET_IPV6_CIDR" ] || { echo "value SUBNET_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export SUBNET_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$SUBNET_IPV6_CIDR" '{data: {SUBNET_IPV6_CIDR: $v}}')" >/dev/null
+    - name: create
+      try:
         - description: Create the Subnet
           apply:
             file: subnet-with-route-table.yaml
@@ -412,6 +861,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -459,7 +912,7 @@ spec:
     - name: idPath
       value: '{.status.subnetID}'
   steps:
-    - name: create-source
+    - name: dependencies
       try:
         - description: Create the VPC subnet-vpc it depends on
           apply:
@@ -470,6 +923,59 @@ spec:
         - description: Create the RouteTable subnet-rt-b it depends on
           apply:
             file: dependency-subnet-rt-b.yaml
+        - description: Wait for VPC subnet-vpc to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: VPC
+              metadata:
+                name: subnet-vpc
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-a to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-a
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+        - description: Wait for RouteTable subnet-rt-b to be Synced
+          assert:
+            resource:
+              apiVersion: ec2.services.k8s.aws/v1alpha1
+              kind: RouteTable
+              metadata:
+                name: subnet-rt-b
+              status:
+                (conditions[?type == 'ACK.ResourceSynced']):
+                  - status: "True"
+    - name: values
+      try:
+        - description: Work out the values the specs use
+          script:
+            env:
+              - name: SUFFIX
+                value: ($suffix)
+            content: |
+              set -eu
+              export SUFFIX NAMESPACE AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-}}"
+              kubectl create configmap ack-test-values -n "$NAMESPACE" >/dev/null
+
+              VPC_IPV6_CIDR=$(sh -euc 'for i in $(seq 1 30); do cidr=$(kubectl get vpc subnet-vpc -n $NAMESPACE -o jsonpath='\''{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}'\''); [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1') || { echo "value VPC_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$VPC_IPV6_CIDR" ] || { echo "value VPC_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export VPC_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$VPC_IPV6_CIDR" '{data: {VPC_IPV6_CIDR: $v}}')" >/dev/null
+
+              SUBNET_IPV6_CIDR=$(sh -euc 'echo "$VPC_IPV6_CIDR" | sed '\''s|00::/56$|01::/64|'\''') || { echo "value SUBNET_IPV6_CIDR: command failed" >&2; exit 1; }
+              [ -n "$SUBNET_IPV6_CIDR" ] || { echo "value SUBNET_IPV6_CIDR: command printed nothing" >&2; exit 1; }
+              export SUBNET_IPV6_CIDR
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$SUBNET_IPV6_CIDR" '{data: {SUBNET_IPV6_CIDR: $v}}')" >/dev/null
+    - name: create-source
+      try:
         - description: Create a Subnet to adopt, through a CR with deletion-policy retain
           apply:
             file: subnet-adopt-source.yaml
@@ -518,6 +1024,10 @@ spec:
                 value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'Subnet', $namespace, $name).status.subnetID)
               - name: SUFFIX
                 value: ($suffix)
+              - name: VPC_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_IPV6_CIDR)
+              - name: SUBNET_IPV6_CIDR
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.SUBNET_IPV6_CIDR)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read

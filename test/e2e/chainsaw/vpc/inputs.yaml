@@ -30,6 +30,13 @@ variants:
   create:
     cidrBlocks: [10.0.0.0/16]
     disallowSecurityGroupDefaultRules: true
+- name: dedicated
+  description: Created with dedicated tenancy, which ModifyVpcTenancy can only change to default
+  create:
+    cidrBlocks: [10.0.0.0/16]
+    instanceTenancy: dedicated
+  updates:
+  - instanceTenancy: default
 invalid:
   spec:
     cidrBlocks: [InvalidValue]

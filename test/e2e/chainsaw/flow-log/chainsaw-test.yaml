@@ -6,10 +6,9 @@
 #   - logDestinationType
 #   - maxAggregationInterval
 #   - resourceID
+#   - resourceType
 #   - tags
 #   - trafficType
-# Not checked in AWS (declare a check in inputs.yaml):
-#   - resourceType: DescribeFlowLogs doesn't return it
 # Not immutable, but no update changes them (mark them is_immutable if the controller can't update them):
 #   - deliverLogsPermissionARN
 #   - destinationOptions
@@ -159,6 +158,7 @@ spec:
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeFlowLogs "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].{logDestination: LogDestination, logDestinationType: LogDestinationType, maxAggregationInterval: MaxAggregationInterval, tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key), trafficType: TrafficType}')" \
+                --argjson resourceType "$(id=$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].ResourceId' --output text) && case "$id" in vpc-*) echo '"VPC"' ;; subnet-*) echo '"Subnet"' ;; eni-*) echo '"NetworkInterface"' ;; tgw-attach-*) echo '"TransitGatewayAttachment"' ;; tgw-*) echo '"TransitGateway"' ;; *) echo "\"$id\"" ;; esac)" \
                 --argjson resource "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0]')" \
                 '$ARGS.named'
             check:
@@ -177,6 +177,7 @@ spec:
                   trafficType: ALL
                 resource:
                   (ResourceId): (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_ID]))
+                resourceType: VPC
       catch:
         - describe:
             apiVersion: ec2.services.k8s.aws/v1alpha1
@@ -210,6 +211,7 @@ spec:
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeFlowLogs "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].{logDestination: LogDestination, logDestinationType: LogDestinationType, maxAggregationInterval: MaxAggregationInterval, tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key), trafficType: TrafficType}')" \
+                --argjson resourceType "$(id=$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].ResourceId' --output text) && case "$id" in vpc-*) echo '"VPC"' ;; subnet-*) echo '"Subnet"' ;; eni-*) echo '"NetworkInterface"' ;; tgw-attach-*) echo '"TransitGatewayAttachment"' ;; tgw-*) echo '"TransitGateway"' ;; *) echo "\"$id\"" ;; esac)" \
                 --argjson resource "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0]')" \
                 '$ARGS.named'
             check:
@@ -228,6 +230,7 @@ spec:
                   trafficType: ALL
                 resource:
                   (ResourceId): (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_ID]))
+                resourceType: VPC
       catch:
         - describe:
             apiVersion: ec2.services.k8s.aws/v1alpha1
@@ -261,6 +264,7 @@ spec:
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeFlowLogs "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].{logDestination: LogDestination, logDestinationType: LogDestinationType, maxAggregationInterval: MaxAggregationInterval, tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key), trafficType: TrafficType}')" \
+                --argjson resourceType "$(id=$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].ResourceId' --output text) && case "$id" in vpc-*) echo '"VPC"' ;; subnet-*) echo '"Subnet"' ;; eni-*) echo '"NetworkInterface"' ;; tgw-attach-*) echo '"TransitGatewayAttachment"' ;; tgw-*) echo '"TransitGateway"' ;; *) echo "\"$id\"" ;; esac)" \
                 --argjson resource "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0]')" \
                 '$ARGS.named'
             check:
@@ -277,6 +281,7 @@ spec:
                   trafficType: ALL
                 resource:
                   (ResourceId): (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_ID]))
+                resourceType: VPC
       catch:
         - describe:
             apiVersion: ec2.services.k8s.aws/v1alpha1
@@ -457,6 +462,7 @@ spec:
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeFlowLogs "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].{logDestination: LogDestination, logDestinationType: LogDestinationType, maxAggregationInterval: MaxAggregationInterval, tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key), trafficType: TrafficType}')" \
+                --argjson resourceType "$(id=$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0].ResourceId' --output text) && case "$id" in vpc-*) echo '"VPC"' ;; subnet-*) echo '"Subnet"' ;; eni-*) echo '"NetworkInterface"' ;; tgw-attach-*) echo '"TransitGatewayAttachment"' ;; tgw-*) echo '"TransitGateway"' ;; *) echo "\"$id\"" ;; esac)" \
                 --argjson resource "$(aws ec2 describe-flow-logs --flow-log-ids $AWS_ID --query 'FlowLogs[0]')" \
                 '$ARGS.named'
             check:
@@ -475,6 +481,7 @@ spec:
                   trafficType: ALL
                 resource:
                   (ResourceId): (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_ID]))
+                resourceType: VPC
       catch:
         - describe:
             apiVersion: ec2.services.k8s.aws/v1alpha1
@@ -497,6 +504,7 @@ spec:
                   logDestinationType: s3
                   maxAggregationInterval: 600
                   resourceID: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.VPC_ID]))
+                  resourceType: VPC
                   tags:
                     - key: initialtagkey
                       value: initialtagvalue

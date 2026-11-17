@@ -14,6 +14,8 @@ dependencies:
     name: instance-vpc
   spec:
     cidrBlocks: [10.0.0.0/16]
+    # For the ipv6 variants' subnet, made by a value below
+    amazonProvidedIPv6CIDRBlock: true
 - apiVersion: ec2.services.k8s.aws/v1alpha1
   kind: Subnet
   metadata:
@@ -23,35 +25,387 @@ dependencies:
     vpcRef:
       from:
         name: instance-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: SecurityGroup
+  metadata:
+    name: instance-sg-a
+  spec:
+    name: instance-sg-a
+    description: Created by a generated ACK Chainsaw test
+    vpcRef:
+      from:
+        name: instance-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: SecurityGroup
+  metadata:
+    name: instance-sg-b
+  spec:
+    name: instance-sg-b
+    description: Created by a generated ACK Chainsaw test
+    vpcRef:
+      from:
+        name: instance-vpc
 values:
+- name: SG_A_ID
+  command: kubectl get securitygroup instance-sg-a -n $NAMESPACE -o jsonpath='{.status.id}'
+- name: SG_B_ID
+  command: kubectl get securitygroup instance-sg-b -n $NAMESPACE -o jsonpath='{.status.id}'
 - name: AMI_ID
   command: >-
     aws ssm get-parameter
     --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
     --query Parameter.Value --output text
+# The ipv6 variants need a dual-stack subnet. Its /64 comes from the VPC's
+# Amazon-assigned /56, which only exists once the VPC does, and dependencies
+# can't use values, so the subnet is made here with the AWS CLI rather than
+# being a dependency. It's tagged with the test's namespace, and its cleanup
+# deletes it, retrying while a terminating instance still holds an interface
+# in it.
+- name: VPC_ID
+  command: kubectl get vpc instance-vpc -n $NAMESPACE -o jsonpath='{.status.vpcID}'
+- name: VPC_IPV6_CIDR
+  command: >-
+    for i in $(seq 1 30); do
+    cidr=$(kubectl get vpc instance-vpc -n $NAMESPACE
+    -o jsonpath='{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}');
+    [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1
+- name: IPV6_SUBNET_ID
+  command: >-
+    aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.2.0/24
+    --ipv6-cidr-block "$(echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|01::/64|')"
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    --query Subnet.SubnetId --output text
+  cleanup: >-
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-subnet --subnet-id $IPV6_SUBNET_ID 2>&1) && exit 0;
+    case "$out" in *DependencyViolation*) sleep 10 ;; *InvalidSubnetID.NotFound*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
+# Two addresses in that subnet, for ipv6Addresses
+- name: IPV6_ADDR_1
+  command: echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|01::10|'
+- name: IPV6_ADDR_2
+  command: echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|01::11|'
+# Two instance profiles for the iam-instance-profile variant, each holding a
+# role EC2 can assume. IAM takes a few seconds to make a new profile usable.
+# Launching with one needs iam:PassRole, which ec2's recommended policy
+# (AmazonEC2FullAccess) doesn't grant.
+- name: PROFILE_A
+  command: >-
+    aws iam create-role --role-name ack-chainsaw-a-$SUFFIX
+    --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    --tags Key=services.k8s.aws/namespace,Value=$NAMESPACE >/dev/null &&
+    aws iam create-instance-profile --instance-profile-name ack-chainsaw-a-$SUFFIX
+    --tags Key=services.k8s.aws/namespace,Value=$NAMESPACE >/dev/null &&
+    aws iam add-role-to-instance-profile --instance-profile-name ack-chainsaw-a-$SUFFIX --role-name ack-chainsaw-a-$SUFFIX &&
+    sleep 15 && echo ack-chainsaw-a-$SUFFIX
+  cleanup: >-
+    aws iam remove-role-from-instance-profile --instance-profile-name $PROFILE_A --role-name $PROFILE_A 2>/dev/null || true;
+    for i in $(seq 1 30); do
+    out=$(aws iam delete-instance-profile --instance-profile-name $PROFILE_A 2>&1) && break;
+    case "$out" in *DeleteConflict*) sleep 10 ;; *NoSuchEntity*) break ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done;
+    aws iam delete-role --role-name $PROFILE_A 2>&1 | grep -v NoSuchEntity >&2 || true
+- name: PROFILE_B
+  command: >-
+    aws iam create-role --role-name ack-chainsaw-b-$SUFFIX
+    --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+    --tags Key=services.k8s.aws/namespace,Value=$NAMESPACE >/dev/null &&
+    aws iam create-instance-profile --instance-profile-name ack-chainsaw-b-$SUFFIX
+    --tags Key=services.k8s.aws/namespace,Value=$NAMESPACE >/dev/null &&
+    aws iam add-role-to-instance-profile --instance-profile-name ack-chainsaw-b-$SUFFIX --role-name ack-chainsaw-b-$SUFFIX &&
+    sleep 15 && echo ack-chainsaw-b-$SUFFIX
+  cleanup: >-
+    aws iam remove-role-from-instance-profile --instance-profile-name $PROFILE_B --role-name $PROFILE_B 2>/dev/null || true;
+    for i in $(seq 1 30); do
+    out=$(aws iam delete-instance-profile --instance-profile-name $PROFILE_B 2>&1) && break;
+    case "$out" in *DeleteConflict*) sleep 10 ;; *NoSuchEntity*) break ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done;
+    aws iam delete-role --role-name $PROFILE_B 2>&1 | grep -v NoSuchEntity >&2 || true
+# Two spread placement groups for the placement variant. They're free
+- name: PLACEMENT_GROUP_A
+  command: >-
+    aws ec2 create-placement-group --group-name ack-chainsaw-a-$SUFFIX --strategy spread
+    --tag-specifications "ResourceType=placement-group,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    >/dev/null && echo ack-chainsaw-a-$SUFFIX
+  cleanup: >-
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-placement-group --group-name $PLACEMENT_GROUP_A 2>&1) && exit 0;
+    case "$out" in *InUse*) sleep 10 ;; *InvalidPlacementGroup.Unknown*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
+- name: PLACEMENT_GROUP_B
+  command: >-
+    aws ec2 create-placement-group --group-name ack-chainsaw-b-$SUFFIX --strategy spread
+    --tag-specifications "ResourceType=placement-group,Tags=[{Key=services.k8s.aws/namespace,Value=$NAMESPACE}]"
+    >/dev/null && echo ack-chainsaw-b-$SUFFIX
+  cleanup: >-
+    for i in $(seq 1 30); do
+    out=$(aws ec2 delete-placement-group --group-name $PLACEMENT_GROUP_B 2>&1) && exit 0;
+    case "$out" in *InUse*) sleep 10 ;; *InvalidPlacementGroup.Unknown*) exit 0 ;; *) echo "$out" >&2; exit 1 ;; esac;
+    done; echo "$out" >&2; exit 1
+# For the disable-api-termination variant: if termination protection is still
+# on when the test ends, the CR's delete can't terminate the instance. This
+# cleanup runs first among the values' (it's defined last), and removes the
+# protection from any of this test's instances still running, then terminates
+# them. Normally there are none.
+- name: TERMINATION_GUARD
+  command: echo none
+  cleanup: >-
+    for i in $(aws ec2 describe-instances
+    --filters Name=tag:services.k8s.aws/namespace,Values=$NAMESPACE
+    Name=instance-state-name,Values=pending,running,stopping,stopped
+    --query 'Reservations[].Instances[].InstanceId' --output text); do
+    aws ec2 modify-instance-attribute --instance-id $i --no-disable-api-termination;
+    aws ec2 terminate-instances --instance-ids $i >/dev/null; done
 create:
   imageID: $AMI_ID
   instanceType: t3.micro
   subnetRef:
     from:
       name: instance-subnet
+  securityGroupIDs:
+  - $SG_A_ID
   instanceInitiatedShutdownBehavior: stop
   tags:
   - key: Name
     value: ack-chainsaw-$SUFFIX
-updates:
 # ModifyInstanceAttribute takes one attribute per call, so the controller
-# applies these one at a time
-- instanceInitiatedShutdownBehavior: terminate
-  sourceDestCheckEnabled: false
-  # Not disableAPITermination: if the test failed while it was true, cleanup
-  # couldn't terminate the instance
-  disableAPIStop: true
+# applies these one at a time. sourceDestCheckEnabled and the security group
+# are read back from DescribeInstances and change while the instance runs. Not
+# disableAPIStop or instanceInitiatedShutdownBehavior: the controller sets them
+# but can't read them back (BUGS.md #3), so an update to them never reconciles.
+updates:
+- sourceDestCheckEnabled: false
+  securityGroupIDs:
+  - $SG_B_ID
   tags:
   - key: Name
     value: ack-chainsaw-$SUFFIX
   - key: updatedtagkey
     value: updatedtagvalue
+# Category-C fields: modifiable in the EC2 API, so each gets a variant that
+# changes it, to see whether the controller actually applies it. Base create is
+# minimal; the update changes one field.
+variants:
+- name: type
+  description: Change instanceType (EC2 allows it only on a stopped instance)
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+  updates:
+  - instanceType: t3.small
+- name: user-data
+  description: Change userData (EC2 allows it only on a stopped instance)
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+  updates:
+  - userData: ZWNobyBoZWxsbwo=
+- name: ebs-optimized
+  description: Change ebsOptimized (EC2 allows it only on a stopped instance)
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+  updates:
+  - ebsOptimized: true
+- name: capacity-reservation
+  description: Change capacityReservationSpecification (no controller update path)
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    capacityReservationSpecification:
+      capacityReservationPreference: open
+  updates:
+  - capacityReservationSpecification:
+      capacityReservationPreference: none
+- name: ipv6-count
+  description: An IPv6 address count at create in a dual-stack subnet, then a change to it
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetID: $IPV6_SUBNET_ID
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    ipv6AddressCount: 1
+  updates:
+  - ipv6AddressCount: 2
+- name: ipv6-addresses
+  description: An IPv6 address at create in a dual-stack subnet, then a second one added
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetID: $IPV6_SUBNET_ID
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    ipv6Addresses:
+    - ipv6Address: $IPV6_ADDR_1
+  updates:
+  - ipv6Addresses:
+    - ipv6Address: $IPV6_ADDR_1
+    - ipv6Address: $IPV6_ADDR_2
+- name: iam-instance-profile
+  description: An instance profile at create, then a change to another
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    iamInstanceProfile:
+      name: $PROFILE_A
+  updates:
+  - iamInstanceProfile:
+      name: $PROFILE_B
+- name: metadata-options
+  description: Instance metadata options at create, then a higher hop limit and instance tags in metadata
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    # IMDSv2 only: an account can enforce it (httpTokensEnforced), and then
+    # RunInstances rejects httpTokens: optional
+    metadataOptions:
+      httpEndpoint: enabled
+      httpTokens: required
+      httpPutResponseHopLimit: 1
+      instanceMetadataTags: disabled
+  updates:
+  - metadataOptions:
+      httpEndpoint: enabled
+      httpTokens: required
+      httpPutResponseHopLimit: 2
+      instanceMetadataTags: enabled
+- name: monitoring
+  description: Basic monitoring at create, then detailed monitoring
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    monitoring:
+      enabled: false
+  updates:
+  - monitoring:
+      enabled: true
+- name: credit-specification
+  description: Standard CPU credits at create, then unlimited
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    creditSpecification:
+      cpuCredits: standard
+  updates:
+  - creditSpecification:
+      cpuCredits: unlimited
+- name: maintenance-options
+  description: Default auto-recovery at create, then disabled
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    maintenanceOptions:
+      autoRecovery: default
+  updates:
+  - maintenanceOptions:
+      autoRecovery: disabled
+- name: cpu-options
+  description: CPU options at create, then one thread per core (EC2 allows it only on a stopped instance)
+  create:
+    imageID: $AMI_ID
+    instanceType: c5.large
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    cpuOptions:
+      coreCount: 1
+      threadsPerCore: 2
+  updates:
+  - cpuOptions:
+      coreCount: 1
+      threadsPerCore: 1
+- name: placement
+  description: A spread placement group at create, then another (EC2 allows it only on a stopped instance)
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    placement:
+      groupName: $PLACEMENT_GROUP_A
+  updates:
+  - placement:
+      groupName: $PLACEMENT_GROUP_B
+- name: private-dns-name-options
+  description: IP-name hostnames at create, then resource-name hostnames with A records (EC2 allows it only on a stopped instance)
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    privateDNSNameOptions:
+      hostnameType: ip-name
+      enableResourceNameDNSARecord: false
+  updates:
+  - privateDNSNameOptions:
+      hostnameType: resource-name
+      enableResourceNameDNSARecord: true
+- name: block-device-mappings
+  description: The root volume deleted on termination at create, then kept, then deleted again
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        deleteOnTermination: true
+  updates:
+  - blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        deleteOnTermination: false
+  # Back on, so the volume goes with the instance
+  - blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        deleteOnTermination: true
+- name: disable-api-termination
+  description: No termination protection at create, then protected, then not again
+  create:
+    imageID: $AMI_ID
+    instanceType: t3.micro
+    subnetRef: {from: {name: instance-subnet}}
+    securityGroupIDs: [$SG_A_ID]
+    instanceInitiatedShutdownBehavior: stop
+    disableAPITermination: false
+  updates:
+  - disableAPITermination: true
+  # Off again before the test deletes the instance. If this doesn't take, the
+  # TERMINATION_GUARD value's cleanup removes the protection
+  - disableAPITermination: false
 # No invalid spec: generator.yaml declares no terminal codes for Instance, so
 # an AWS 400 is retried instead of making it Terminal
 # It stays in describe's output after it's gone
@@ -63,7 +417,46 @@ checks:
       --attribute instanceInitiatedShutdownBehavior --query 'InstanceInitiatedShutdownBehavior.Value'
   sourceDestCheckEnabled:
     path: SourceDestCheck
-  disableAPIStop:
+  # DescribeInstances doesn't return it. The attribute read returns it base64
+  # encoded, the form the CR holds it in
+  userData:
     command: >-
       aws ec2 describe-instance-attribute --instance-id $AWS_ID
-      --attribute disableApiStop --query 'DisableApiStop.Value'
+      --attribute userData --query 'UserData.Value'
+  # AWS reports a state, not a flag. Pending means it's being enabled
+  monitoring:
+    command: >-
+      st=$(aws ec2 describe-instances --instance-ids $AWS_ID
+      --query 'Reservations[0].Instances[0].Monitoring.State' --output text) &&
+      case "$st" in enabled|pending) echo '{"enabled":true}' ;; *) echo '{"enabled":false}' ;; esac
+  # Not in DescribeInstances; its own call returns it
+  creditSpecification:
+    command: >-
+      aws ec2 describe-instance-credit-specifications --instance-ids $AWS_ID
+      --query 'InstanceCreditSpecifications[0].{cpuCredits: CpuCredits}'
+  # Only DescribeInstanceAttribute returns it
+  disableAPITermination:
+    command: >-
+      aws ec2 describe-instance-attribute --instance-id $AWS_ID
+      --attribute disableApiTermination --query 'DisableApiTermination.Value'
+  # DescribeInstances returns the profile's ARN and ID, not its name, so the
+  # name is taken from the ARN
+  iamInstanceProfile:
+    command: >-
+      arn=$(aws ec2 describe-instances --instance-ids $AWS_ID
+      --query 'Reservations[0].Instances[0].IamInstanceProfile.Arn' --output text) &&
+      printf '{"name":"%s"}' "${arn##*/}"
+  # The primary interface's IPv6 addresses. DescribeInstances has no count
+  ipv6AddressCount:
+    command: >-
+      aws ec2 describe-instances --instance-ids $AWS_ID
+      --query 'length(Reservations[0].Instances[0].NetworkInterfaces[0].Ipv6Addresses)'
+  ipv6Addresses:
+    command: >-
+      aws ec2 describe-instances --instance-ids $AWS_ID
+      --query 'sort_by(Reservations[0].Instances[0].NetworkInterfaces[0].Ipv6Addresses[].{ipv6Address: Ipv6Address}, &ipv6Address)'
+  # DescribeInstances returns the groups as structures
+  securityGroupIDs:
+    path: SecurityGroups
+    select: GroupId
+    unordered: true

@@ -4,5 +4,8 @@ kind: VPC
 metadata:
   name: vpce-vpc
 spec:
+  amazonProvidedIPv6CIDRBlock: true
   cidrBlocks:
     - 10.0.0.0/16
+  enableDNSHostnames: true
+  enableDNSSupport: true

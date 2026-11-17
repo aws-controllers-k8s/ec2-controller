@@ -4,5 +4,12 @@ kind: InternetGateway
 metadata:
   name: internet-gateway
 spec:
-  tags: []
-  vpcRef: null
+  routeTableRefs:
+    - from:
+        name: igw-rt-a
+  tags:
+    - key: updatedtagkey
+      value: updatedtagvalue
+  vpcRef:
+    from:
+      name: igw-vpc

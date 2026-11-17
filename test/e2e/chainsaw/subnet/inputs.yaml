@@ -1,6 +1,8 @@
-# Values for the generated Subnet test that its model can't supply. IPv6,
-# DNS64, AAAA records and customer-owned IPs aren't covered: they need an IPv6
-# CIDR carved out of the VPC's Amazon-assigned block, or an Outpost.
+# Values for the generated Subnet test that its model can't supply. Customer-
+# owned IPs aren't covered: they need an Outpost.
+#
+# - The VPC has an Amazon-assigned IPv6 block, and a value carves the subnet's
+#   /64 out of it: IPv6 on the subnet, DNS64 and AAAA records all need one.
 dependencies:
 - apiVersion: ec2.services.k8s.aws/v1alpha1
   kind: VPC
@@ -8,6 +10,7 @@ dependencies:
     name: subnet-vpc
   spec:
     cidrBlocks: [10.0.0.0/16]
+    amazonProvidedIPv6CIDRBlock: true
 # Route tables to associate the subnet with
 - apiVersion: ec2.services.k8s.aws/v1alpha1
   kind: RouteTable
@@ -25,6 +28,17 @@ dependencies:
     vpcRef:
       from:
         name: subnet-vpc
+values:
+# The VPC's IPv6 block is assigned a moment after the VPC is Synced
+- name: VPC_IPV6_CIDR
+  command: >-
+    for i in $(seq 1 30); do
+    cidr=$(kubectl get vpc subnet-vpc -n $NAMESPACE
+    -o jsonpath='{.status.ipv6CIDRBlockAssociationSet[0].ipv6CIDRBlock}');
+    [ -n "$cidr" ] && echo "$cidr" && exit 0; sleep 2; done; exit 1
+# The first /64 after the VPC's first, as a /56 ends in 00::/56
+- name: SUBNET_IPV6_CIDR
+  command: echo "$VPC_IPV6_CIDR" | sed 's|00::/56$|01::/64|'
 # routeTableRefs is only set by updates and a variant: an adopted Subnet's spec
 # holds route table IDs, not references, so the adoption test can't assert it
 create:
@@ -59,6 +73,27 @@ updates:
   routeTableRefs: []
   tags: []
 variants:
+# IPv6 is a variant, not in the main create, so the main adoption test stays
+# IPv4 (the controller doesn't read ipv6CIDRBlock back into an adopted spec).
+# The variant creates with an IPv6 block, then flips the attributes that need
+# one.
+- name: dualstack
+  description: An IPv6 block at create, then the IPv6 attributes set by update
+  create:
+    cidrBlock: 10.0.2.0/24
+    ipv6CIDRBlock: $SUBNET_IPV6_CIDR
+    vpcRef:
+      from:
+        name: subnet-vpc
+  updates:
+  - assignIPv6AddressOnCreation: true
+    enableDNS64: true
+    enableResourceNameDNSAAAARecord: true
+  - assignIPv6AddressOnCreation: false
+    enableDNS64: false
+    enableResourceNameDNSAAAARecord: false
+  # Then remove the IPv6 block, which the attributes above no longer need
+  - ipv6CIDRBlock: null
 - name: minimal
   description: Only the required fields at create, then an attribute set by update
   create:
@@ -93,6 +128,13 @@ checks:
     path: PrivateDnsNameOptionsOnLaunch.HostnameType
   enableResourceNameDNSARecord:
     path: PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsARecord
+  enableResourceNameDNSAAAARecord:
+    path: PrivateDnsNameOptionsOnLaunch.EnableResourceNameDnsAAAARecord
+  # The subnet's own IPv6 block, if it has one that's associated
+  ipv6CIDRBlock:
+    command: >-
+      aws ec2 describe-subnets --subnet-ids $AWS_ID
+      --query 'Subnets[0].Ipv6CidrBlockAssociationSet[?Ipv6CidrBlockState.State==`associated`].Ipv6CidrBlock | [0]'
   # The IDs of the route tables explicitly associated with the subnet, sorted:
   # DescribeSubnets doesn't return them
   routeTableRefs:

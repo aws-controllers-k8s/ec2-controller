@@ -10,6 +10,7 @@ spec:
     - '*'
   networkLoadBalancerARNs:
     - (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.NLB_ARN]))
+  privateDNSName: (join('', ['ack-chainsaw-', $suffix, '.example.com']))
   supportedIPAddressTypes:
     - ipv4
   tags:

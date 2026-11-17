@@ -2,10 +2,9 @@
 # Edit inputs.yaml and regenerate instead.
 #
 # Checked in AWS:
+#   - routeTableRefs
 #   - tags
 #   - vpcRef
-# Not immutable, but no update changes them (mark them is_immutable if the controller can't update them):
-#   - routeTables
 # Notes:
 #   - inputs give no invalid spec, so there's no ACK.Terminal check
 apiVersion: chainsaw.kyverno.io/v1alpha1
@@ -31,6 +30,12 @@ spec:
         - description: Create the VPC igw-vpc it depends on
           apply:
             file: dependency-igw-vpc.yaml
+        - description: Create the RouteTable igw-rt-a it depends on
+          apply:
+            file: dependency-igw-rt-a.yaml
+        - description: Create the RouteTable igw-rt-b it depends on
+          apply:
+            file: dependency-igw-rt-b.yaml
         - description: Create the InternetGateway
           apply:
             file: internet-gateway.yaml
@@ -109,7 +114,7 @@ spec:
             kind: InternetGateway
             name: ($name)
     - name: update-2
-      description: Change tags, vpcRef
+      description: Change routeTableRefs
       use:
         template: ../_templates/apply-and-wait-reconciled.yaml
         with:
@@ -130,6 +135,136 @@ spec:
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeInternetGateways "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0].{tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key)}')" \
+                --argjson routeTableRefs "$(aws ec2 describe-route-tables --filters Name=association.gateway-id,Values=$AWS_ID --query "sort(RouteTables[?Associations[?GatewayId=='$AWS_ID' && AssociationState.State=='associated']].RouteTableId)")" \
+                --argjson resource "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeInternetGateways:
+                  systemTags:
+                    - services.k8s.aws/controller-version
+                    - services.k8s.aws/namespace
+                  tags:
+                    - Key: updatedtagkey
+                      Value: updatedtagvalue
+                resource:
+                  (Attachments[0].VpcId): (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'igw-vpc').status.vpcID)
+                routeTableRefs: (sort([x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'RouteTable', $namespace, 'igw-rt-a').status.routeTableID]))
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: InternetGateway
+            name: ($name)
+    - name: update-3
+      description: Change routeTableRefs
+      use:
+        template: ../_templates/apply-and-wait-reconciled.yaml
+        with:
+          bindings:
+            - name: file
+              value: internet-gateway-update-3.yaml
+    - name: check-update-3
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'InternetGateway', $namespace, $name).status.internetGatewayID)
+              - name: SUFFIX
+                value: ($suffix)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeInternetGateways "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0].{tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key)}')" \
+                --argjson routeTableRefs "$(aws ec2 describe-route-tables --filters Name=association.gateway-id,Values=$AWS_ID --query "sort(RouteTables[?Associations[?GatewayId=='$AWS_ID' && AssociationState.State=='associated']].RouteTableId)")" \
+                --argjson resource "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeInternetGateways:
+                  systemTags:
+                    - services.k8s.aws/controller-version
+                    - services.k8s.aws/namespace
+                  tags:
+                    - Key: updatedtagkey
+                      Value: updatedtagvalue
+                resource:
+                  (Attachments[0].VpcId): (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'igw-vpc').status.vpcID)
+                routeTableRefs: (sort([x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'RouteTable', $namespace, 'igw-rt-b').status.routeTableID]))
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: InternetGateway
+            name: ($name)
+    - name: update-4
+      description: Change routeTableRefs
+      use:
+        template: ../_templates/apply-and-wait-reconciled.yaml
+        with:
+          bindings:
+            - name: file
+              value: internet-gateway-update-4.yaml
+    - name: check-update-4
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'InternetGateway', $namespace, $name).status.internetGatewayID)
+              - name: SUFFIX
+                value: ($suffix)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeInternetGateways "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0].{tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key)}')" \
+                --argjson routeTableRefs "$(aws ec2 describe-route-tables --filters Name=association.gateway-id,Values=$AWS_ID --query "sort(RouteTables[?Associations[?GatewayId=='$AWS_ID' && AssociationState.State=='associated']].RouteTableId)")" \
+                --argjson resource "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0]')" \
+                '$ARGS.named'
+            check:
+              ($error): null
+              (json_parse($stdout)):
+                describeInternetGateways:
+                  systemTags:
+                    - services.k8s.aws/controller-version
+                    - services.k8s.aws/namespace
+                  tags:
+                    - Key: updatedtagkey
+                      Value: updatedtagvalue
+                resource:
+                  (Attachments[0].VpcId): (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'VPC', $namespace, 'igw-vpc').status.vpcID)
+                routeTableRefs: []
+      catch:
+        - describe:
+            apiVersion: ec2.services.k8s.aws/v1alpha1
+            kind: InternetGateway
+            name: ($name)
+    - name: update-5
+      description: Change tags, vpcRef
+      use:
+        template: ../_templates/apply-and-wait-reconciled.yaml
+        with:
+          bindings:
+            - name: file
+              value: internet-gateway-update-5.yaml
+    - name: check-update-5
+      try:
+        - description: Read back from AWS
+          script:
+            env:
+              - name: AWS_ID
+                value: (x_k8s_get($client, 'ec2.services.k8s.aws/v1alpha1', 'InternetGateway', $namespace, $name).status.internetGatewayID)
+              - name: SUFFIX
+                value: ($suffix)
+            content: |-
+              export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
+              # A call that fails prints its error, and leaves jq no JSON to read
+              jq -n \
+                --argjson describeInternetGateways "$(aws ec2 describe-internet-gateways --internet-gateway-ids $AWS_ID --query 'InternetGateways[0].{tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key)}')" \
+                --argjson routeTableRefs "$(aws ec2 describe-route-tables --filters Name=association.gateway-id,Values=$AWS_ID --query "sort(RouteTables[?Associations[?GatewayId=='$AWS_ID' && AssociationState.State=='associated']].RouteTableId)")" \
                 '$ARGS.named'
             check:
               ($error): null
@@ -139,6 +274,7 @@ spec:
                     - services.k8s.aws/controller-version
                     - services.k8s.aws/namespace
                   tags: []
+                routeTableRefs: []
       catch:
         - describe:
             apiVersion: ec2.services.k8s.aws/v1alpha1
@@ -177,6 +313,12 @@ spec:
         - description: Create the VPC igw-vpc it depends on
           apply:
             file: dependency-igw-vpc.yaml
+        - description: Create the RouteTable igw-rt-a it depends on
+          apply:
+            file: dependency-igw-rt-a.yaml
+        - description: Create the RouteTable igw-rt-b it depends on
+          apply:
+            file: dependency-igw-rt-b.yaml
         - description: Create a InternetGateway to adopt, through a CR with deletion-policy retain
           apply:
             file: internet-gateway-adopt-source.yaml

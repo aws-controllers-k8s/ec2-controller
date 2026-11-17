@@ -5,9 +5,10 @@ metadata:
   name: capacity-reservation
 spec:
   availabilityZone: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ]))
-  endDateType: unlimited
+  endDate: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE]))
+  endDateType: limited
   instanceCount: 2
-  instanceMatchCriteria: targeted
+  instanceMatchCriteria: open
   instancePlatform: Linux/UNIX
   instanceType: t3.nano
   tags:

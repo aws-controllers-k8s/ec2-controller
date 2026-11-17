@@ -4,13 +4,13 @@ kind: TransitGateway
 metadata:
   name: transit-gateway
 spec:
-  description: Created by a generated ACK Chainsaw test
+  description: Changed by a generated ACK Chainsaw test
   options:
     amazonSideASN: 64513
-    autoAcceptSharedAttachments: disable
-    defaultRouteTableAssociation: enable
-    defaultRouteTablePropagation: enable
-    dnsSupport: enable
+    autoAcceptSharedAttachments: enable
+    defaultRouteTableAssociation: disable
+    defaultRouteTablePropagation: disable
+    dnsSupport: disable
     multicastSupport: disable
-    vpnECMPSupport: enable
+    vpnECMPSupport: disable
   tags: []

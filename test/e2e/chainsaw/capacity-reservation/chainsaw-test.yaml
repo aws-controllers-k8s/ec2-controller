@@ -3,6 +3,7 @@
 #
 # Checked in AWS:
 #   - availabilityZone
+#   - endDate
 #   - endDateType
 #   - instanceCount
 #   - instanceMatchCriteria
@@ -16,10 +17,7 @@
 #   - commitmentDuration
 #   - deliveryPreference
 #   - ebsOptimized
-#   - endDate
-#   - endDateType
 #   - ephemeralStorage
-#   - instanceMatchCriteria
 #   - instancePlatform
 #   - instanceType
 #   - outpostARN
@@ -62,6 +60,11 @@ spec:
               [ -n "$AZ" ] || { echo "value AZ: command printed nothing" >&2; exit 1; }
               export AZ
               kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$AZ" '{data: {AZ: $v}}')" >/dev/null
+
+              END_DATE=$(sh -euc 'date -u -d '\''+1 day'\'' +%Y-%m-%dT%H:%M:%SZ') || { echo "value END_DATE: command failed" >&2; exit 1; }
+              [ -n "$END_DATE" ] || { echo "value END_DATE: command printed nothing" >&2; exit 1; }
+              export END_DATE
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$END_DATE" '{data: {END_DATE: $v}}')" >/dev/null
     - name: create
       try:
         - description: Create the CapacityReservation
@@ -81,6 +84,8 @@ spec:
                 value: ($suffix)
               - name: AZ
                 value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ)
+              - name: END_DATE
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
@@ -111,7 +116,7 @@ spec:
             kind: CapacityReservation
             name: ($name)
     - name: update-1
-      description: Change instanceCount, tags
+      description: Change endDate, endDateType, instanceCount, instanceMatchCriteria, tags
       use:
         template: ../_templates/apply-and-wait-reconciled.yaml
         with:
@@ -129,11 +134,14 @@ spec:
                 value: ($suffix)
               - name: AZ
                 value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ)
+              - name: END_DATE
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeCapacityReservations "$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID --query 'CapacityReservations[0].{availabilityZone: AvailabilityZone, endDateType: EndDateType, instanceMatchCriteria: InstanceMatchCriteria, instancePlatform: InstancePlatform, instanceType: InstanceType, tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key)}')" \
+                --argjson endDate "$(d=$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID --query 'CapacityReservations[0].EndDate' --output text) && date -u -d "$d" +'"%Y-%m-%dT%H:%M:%SZ"')" \
                 --argjson resource "$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID --query 'CapacityReservations[0]')" \
                 '$ARGS.named'
             check:
@@ -141,8 +149,8 @@ spec:
               (json_parse($stdout)):
                 describeCapacityReservations:
                   availabilityZone: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ]))
-                  endDateType: unlimited
-                  instanceMatchCriteria: targeted
+                  endDateType: limited
+                  instanceMatchCriteria: open
                   instancePlatform: Linux/UNIX
                   instanceType: t3.nano
                   systemTags:
@@ -151,6 +159,7 @@ spec:
                   tags:
                     - Key: updatedtagkey
                       Value: updatedtagvalue
+                endDate: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE]))
                 resource:
                   (TotalInstanceCount): 2
       catch:
@@ -177,11 +186,14 @@ spec:
                 value: ($suffix)
               - name: AZ
                 value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ)
+              - name: END_DATE
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
               jq -n \
                 --argjson describeCapacityReservations "$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID --query 'CapacityReservations[0].{availabilityZone: AvailabilityZone, endDateType: EndDateType, instanceMatchCriteria: InstanceMatchCriteria, instancePlatform: InstancePlatform, instanceType: InstanceType, tags: sort_by(Tags[?!starts_with(Key, `"services.k8s.aws/"`)], &Key), systemTags: sort(Tags[?starts_with(Key, `"services.k8s.aws/"`)].Key)}')" \
+                --argjson endDate "$(d=$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID --query 'CapacityReservations[0].EndDate' --output text) && date -u -d "$d" +'"%Y-%m-%dT%H:%M:%SZ"')" \
                 --argjson resource "$(aws ec2 describe-capacity-reservations --capacity-reservation-ids $AWS_ID --query 'CapacityReservations[0]')" \
                 '$ARGS.named'
             check:
@@ -189,14 +201,15 @@ spec:
               (json_parse($stdout)):
                 describeCapacityReservations:
                   availabilityZone: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ]))
-                  endDateType: unlimited
-                  instanceMatchCriteria: targeted
+                  endDateType: limited
+                  instanceMatchCriteria: open
                   instancePlatform: Linux/UNIX
                   instanceType: t3.nano
                   systemTags:
                     - services.k8s.aws/controller-version
                     - services.k8s.aws/namespace
                   tags: []
+                endDate: (join('', [x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE]))
                 resource:
                   (TotalInstanceCount): 2
       catch:
@@ -250,6 +263,11 @@ spec:
               [ -n "$AZ" ] || { echo "value AZ: command printed nothing" >&2; exit 1; }
               export AZ
               kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$AZ" '{data: {AZ: $v}}')" >/dev/null
+
+              END_DATE=$(sh -euc 'date -u -d '\''+1 day'\'' +%Y-%m-%dT%H:%M:%SZ') || { echo "value END_DATE: command failed" >&2; exit 1; }
+              [ -n "$END_DATE" ] || { echo "value END_DATE: command printed nothing" >&2; exit 1; }
+              export END_DATE
+              kubectl patch configmap ack-test-values -n "$NAMESPACE" --type merge -p "$(jq -n --arg v "$END_DATE" '{data: {END_DATE: $v}}')" >/dev/null
     - name: create-source
       try:
         - description: Create a CapacityReservation to adopt, through a CR with deletion-policy retain
@@ -302,6 +320,8 @@ spec:
                 value: ($suffix)
               - name: AZ
                 value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.AZ)
+              - name: END_DATE
+                value: (x_k8s_get($client, 'v1', 'ConfigMap', $namespace, 'ack-test-values').data.END_DATE)
             content: |-
               export AWS_DEFAULT_OUTPUT=json AWS_RETRY_MODE=adaptive
               # A call that fails prints its error, and leaves jq no JSON to read
