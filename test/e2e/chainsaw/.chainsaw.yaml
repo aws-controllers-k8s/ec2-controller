@@ -24,7 +24,11 @@ spec:
     # after delete polls, bounded by this
     exec: 10m
   execution:
-    parallel: 4
+    # 65 tests. None needs more than 2 VPCs or 2 Elastic IPs, so 8 at once
+    # needs at most 16 of each. The controller still reconciles one resource
+    # of a kind at a time, and each test polls AWS every few seconds, so more
+    # than this risks EC2 API throttling rather than finishing sooner.
+    parallel: 8
   # Manifests can use bindings, e.g. ($namespace)
   templating:
     enabled: true
