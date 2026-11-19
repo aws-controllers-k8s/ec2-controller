@@ -9,7 +9,7 @@
 	// We want to update the defaultVersion after we create the new
 	// version if needed.
 	// Wondering how this works? find out in https://go.dev/play/p/10QSDg2xbTB
-	if delta.DifferentAt("Spec.DefaultVersion") {
+	if delta.DifferentAt("Spec.DefaultVersion") && desired.ko.Spec.DefaultVersion != nil {
 		defer func() {
 			err = rm.updateDefaultVersion(ctx, desired)
 		}()
