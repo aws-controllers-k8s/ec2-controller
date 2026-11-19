@@ -1,0 +1,89 @@
+# Values for the generated ManagedPrefixList test that its model can't supply.
+# As in test/e2e/tests/test_managed_prefix_list.py. Entries are sorted by CIDR,
+# as the entries check prints them, and all have a description.
+create:
+  name: ack-chainsaw
+  addressFamily: IPv4
+  maxEntries: 5
+  entries:
+  - cidr: 10.0.0.0/24
+    description: Internal network A
+  - cidr: 10.0.1.0/24
+    description: Internal network B
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+# Add one entry and remove another, and rename
+- name: ack-chainsaw-renamed
+  entries:
+  - cidr: 10.0.0.0/24
+    description: Internal network A
+  - cidr: 192.168.1.0/24
+    description: Office network
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Resize on its own: AWS doesn't take a new size and entry changes in one
+# request
+- maxEntries: 10
+# Remove every entry
+- entries: []
+  tags: []
+variants:
+- name: ipv6
+  description: An IPv6 prefix list
+  create:
+    name: ack-chainsaw-ipv6
+    addressFamily: IPv6
+    maxEntries: 5
+    entries:
+    - cidr: 2001:db8:1234::/48
+      description: IPv6 network 1
+- name: describe-entry
+  description: Only an entry's description changes
+  create:
+    name: ack-chainsaw-describe
+    addressFamily: IPv4
+    maxEntries: 5
+    entries:
+    - cidr: 10.0.0.0/24
+      description: Internal network A
+  updates:
+  - entries:
+    - cidr: 10.0.0.0/24
+      description: Internal network A, renamed
+- name: resize-with-entries
+  description: The size and the entries change in one update, which AWS doesn't take in one request
+  create:
+    name: ack-chainsaw-resize
+    addressFamily: IPv4
+    maxEntries: 5
+    entries:
+    - cidr: 10.0.0.0/24
+      description: Internal network A
+  updates:
+  - maxEntries: 10
+    entries:
+    - cidr: 10.0.0.0/24
+      description: Internal network A
+    - cidr: 10.0.1.0/24
+      description: Internal network B
+# Not verified against AWS: the message is only the error code, which
+# generator.yaml makes Terminal
+invalid:
+  spec:
+    name: ack-chainsaw-invalid
+    addressFamily: IPv4
+    maxEntries: 5
+    entries:
+    - cidr: InvalidValue
+  message: InvalidParameterValue
+# Not declared in generator.yaml
+notFoundCode: InvalidPrefixListID.NotFound
+checks:
+  # Entries aren't in DescribeManagedPrefixLists's output
+  entries:
+    command: >-
+      aws ec2 get-managed-prefix-list-entries --prefix-list-id $AWS_ID
+      --query 'sort_by(Entries, &Cidr)[].{cidr: Cidr, description: Description}'

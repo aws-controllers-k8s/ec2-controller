@@ -1,0 +1,29 @@
+# Pending: rename to inputs.yaml once ack-generate chainsaw honors
+# is_primary_key for list reads (AllocationId, for DescribeAddresses
+# --allocation-ids). Until then, generation fails on this resource and stops.
+# Values for the generated ElasticIPAddress test that its model can't supply.
+# As in test/e2e/tests/test_elastic_ip_address.py. Only tags can be updated;
+# the controller's update changes nothing else.
+create:
+  publicIPv4Pool: amazon
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- tags: []
+variants:
+- name: default-pool
+  description: Allocated with no pool given, and tagged at create only
+  create:
+    tags:
+    - key: initialtagkey
+      value: initialtagvalue
+invalid:
+  spec:
+    publicIPv4Pool: InvalidIpV4Address
+  message: "InvalidParameterValue: invalid value for parameter pool: InvalidIpV4Address"
+# Not declared in generator.yaml
+notFoundCode: InvalidAllocationID.NotFound

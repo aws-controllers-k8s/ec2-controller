@@ -1,0 +1,64 @@
+# Values for the generated DHCPOptions test that its model can't supply. As in
+# test/e2e/tests/test_dhcp_options.py, plus VPC association.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: dhcp-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+# Keys and values sorted, as the dhcpConfigurations check prints them.
+# Associating with a VPC is left to the updates, so the adoption test's spec
+# check only covers what adoption reads back
+create:
+  dhcpConfigurations:
+  - key: domain-name
+    values: [ack-example.com]
+  - key: domain-name-servers
+    values: [10.2.5.1, 10.2.5.2]
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# AWS can't change a DHCP option set's configurations, so no update changes
+# dhcpConfigurations
+updates:
+# Associate with the VPC
+- vpcRefs:
+  - from:
+      name: dhcp-vpc
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Disassociate
+- vpcRefs: []
+  tags: []
+variants:
+- name: attached
+  description: Associated with a VPC at create
+  create:
+    dhcpConfigurations:
+    - key: domain-name-servers
+      values: [AmazonProvidedDNS]
+    vpcRefs:
+    - from:
+        name: dhcp-vpc
+invalid:
+  spec:
+    dhcpConfigurations:
+    - key: InvalidValue
+      values: [x]
+  message: "InvalidParameterValue: Value (InvalidValue) for parameter name is invalid. Unknown DHCP option"
+# Not declared in generator.yaml
+notFoundCode: InvalidDhcpOptionID.NotFound
+checks:
+  # AWS holds each value as {Value: ...}
+  dhcpConfigurations:
+    command: >-
+      aws ec2 describe-dhcp-options --dhcp-options-ids $AWS_ID
+      --query 'sort_by(DhcpOptions[0].DhcpConfigurations, &Key)[].{key: Key, values: sort(Values[].Value)}'
+  # The IDs of the VPCs the option set is associated with, sorted:
+  # DescribeDhcpOptions doesn't return them
+  vpcRefs:
+    command: >-
+      aws ec2 describe-vpcs --filters Name=dhcp-options-id,Values=$AWS_ID
+      --query 'sort(Vpcs[].VpcId)'

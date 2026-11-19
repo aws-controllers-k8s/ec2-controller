@@ -1,0 +1,64 @@
+# Values for the generated InternetGateway test that its model can't supply
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: igw-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+# Route tables for edge associations: a route table associated with the gateway
+# itself, which must be attached to the route table's VPC
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: RouteTable
+  metadata:
+    name: igw-rt-a
+  spec:
+    vpcRef:
+      from:
+        name: igw-vpc
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: RouteTable
+  metadata:
+    name: igw-rt-b
+  spec:
+    vpcRef:
+      from:
+        name: igw-vpc
+create:
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+# Attach to the VPC
+- vpcRef:
+    from:
+      name: igw-vpc
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Associate a route table with the gateway (an edge association), swap it, and
+# clear it before detaching
+- routeTableRefs:
+  - from:
+      name: igw-rt-a
+- routeTableRefs:
+  - from:
+      name: igw-rt-b
+- routeTableRefs: []
+# Detach (null removes the field, as in a merge patch)
+- vpcRef: null
+  tags: []
+# Not declared in generator.yaml
+notFoundCode: InvalidInternetGatewayID.NotFound
+# The VPC the gateway is attached to: DescribeInternetGateways returns it in
+# Attachments, not as a field of its own
+checks:
+  vpcRef:
+    path: Attachments[0].VpcId
+  # DescribeInternetGateways doesn't return edge associations; the route
+  # tables do. Keyed by the reference the updates set. A cleared association
+  # is listed as disassociating for a moment, so only associated ones count
+  routeTableRefs:
+    command: >-
+      aws ec2 describe-route-tables --filters Name=association.gateway-id,Values=$AWS_ID
+      --query "sort(RouteTables[?Associations[?GatewayId=='$AWS_ID' && AssociationState.State=='associated']].RouteTableId)"

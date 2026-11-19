@@ -1,0 +1,101 @@
+# Values for the generated NetworkACL test that its model can't supply. ICMP
+# and IPv6 entries aren't covered.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: acl-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: Subnet
+  metadata:
+    name: acl-subnet
+  spec:
+    cidrBlock: 10.0.1.0/24
+    vpcRef:
+      from:
+        name: acl-vpc
+# entries and associations are only set by updates and a variant, so the
+# adoption test doesn't check them: an adopted NetworkACL's spec holds AWS's
+# default deny-all entries too.
+create:
+  vpcRef:
+    from:
+      name: acl-vpc
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# Entries are listed in the order the entries check prints them: ingress
+# first, then by rule number
+updates:
+- entries:
+  - cidrBlock: 10.0.0.0/16
+    egress: true
+    portRange:
+      from: 80
+      to: 443
+    protocol: "6"
+    ruleAction: allow
+    ruleNumber: 100
+  associations:
+  - subnetRef:
+      from:
+        name: acl-subnet
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Change an entry's ports, and add an ingress entry
+- entries:
+  - cidrBlock: 10.1.0.0/16
+    egress: false
+    portRange:
+      from: 22
+      to: 22
+    protocol: "6"
+    ruleAction: deny
+    ruleNumber: 200
+  - cidrBlock: 10.0.0.0/16
+    egress: true
+    portRange:
+      from: 443
+      to: 443
+    protocol: "6"
+    ruleAction: allow
+    ruleNumber: 100
+# Remove the entries, and move the subnet back to the VPC's default ACL
+- entries: []
+  associations: []
+  tags: []
+variants:
+- name: with-entries
+  description: Entries and a subnet association at create
+  create:
+    vpcRef:
+      from:
+        name: acl-vpc
+    entries:
+    - cidrBlock: 10.0.0.0/16
+      egress: true
+      portRange:
+        from: 80
+        to: 443
+      protocol: "6"
+      ruleAction: allow
+      ruleNumber: 100
+    associations:
+    - subnetRef:
+        from:
+          name: acl-subnet
+# Not declared in generator.yaml
+notFoundCode: InvalidNetworkAclID.NotFound
+checks:
+  # AWS also returns the default deny-all entries, rule 32767, which the
+  # controller leaves out of the spec
+  entries:
+    path: Entries
+    exclude: {RuleNumber: 32767}
+    sortBy: [Egress, RuleNumber]
+  # Each association's subnetRef is checked as the SubnetId it fills
+  associations:
+    path: Associations

@@ -1,0 +1,47 @@
+# Values for the generated SecurityGroup test that its model can't supply
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: sg-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+create:
+  name: ack-chainsaw
+  description: Created by a generated ACK Chainsaw test
+  vpcRef:
+    from:
+      name: sg-vpc
+  ingressRules:
+  - ipProtocol: tcp
+    fromPort: 443
+    toPort: 443
+    ipRanges:
+    - cidrIP: 10.0.0.0/16
+      description: https
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- ingressRules:
+  - ipProtocol: tcp
+    fromPort: 22
+    toPort: 22
+    ipRanges:
+    - cidrIP: 10.0.0.0/16
+      description: ssh
+  egressRules:
+  - ipProtocol: tcp
+    fromPort: 443
+    toPort: 443
+    ipRanges:
+    - cidrIP: 0.0.0.0/0
+      description: https out
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- ingressRules: []
+  egressRules: []
+  tags: []
+# Not declared in generator.yaml
+notFoundCode: InvalidGroup.NotFound

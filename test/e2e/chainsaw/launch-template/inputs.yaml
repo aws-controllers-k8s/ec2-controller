@@ -1,0 +1,64 @@
+# Values for the generated LaunchTemplate test that its model can't supply.
+# As in test/e2e/tests/test_launch_template.py. No AMI, so it works in any
+# account and region. A change to data or versionDescription creates a new
+# version; defaultVersion picks one.
+create:
+  name: ack-chainsaw
+  versionDescription: version one
+  # Keep the data check's query in step with the fields set here
+  data:
+    instanceType: t3.micro
+    metadataOptions:
+      httpPutResponseHopLimit: 2
+      httpTokens: required
+    monitoring:
+      enabled: false
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# AWS can't rename a launch template, so no update changes name
+updates:
+# Version 2
+- versionDescription: version two
+  data:
+    monitoring:
+      enabled: true
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+- defaultVersion: 2
+# Version 3, made the default in the same update
+- versionDescription: version three
+  defaultVersion: 3
+  data:
+    metadataOptions:
+      httpTokens: optional
+  tags: []
+variants:
+- name: minimal
+  description: Only the required fields
+  create:
+    name: ack-chainsaw-minimal
+    data:
+      instanceType: t3.micro
+# No invalid spec: generator.yaml gives LaunchTemplate no terminal error
+# codes, so a spec AWS rejects is retried rather than made Terminal
+checks:
+  # The latest version's data. Versions are only in
+  # DescribeLaunchTemplateVersions's output. jq drops the fields a spec, e.g.
+  # the minimal variant's, doesn't set
+  data:
+    command: >-
+      aws ec2 describe-launch-template-versions --launch-template-id $AWS_ID --versions '$Latest'
+      --query 'LaunchTemplateVersions[0].LaunchTemplateData.{instanceType: InstanceType, metadataOptions: MetadataOptions.{httpPutResponseHopLimit: HttpPutResponseHopLimit, httpTokens: HttpTokens}, monitoring: Monitoring.{enabled: Enabled}}'
+      | jq -c 'del(.. | nulls)'
+  versionDescription:
+    command: >-
+      aws ec2 describe-launch-template-versions --launch-template-id $AWS_ID --versions '$Latest'
+      --query 'LaunchTemplateVersions[0].VersionDescription'
+  # The default version, if it's also the latest. Otherwise -1: a version
+  # beyond the one the update made means the controller keeps making versions
+  defaultVersion:
+    command: >-
+      aws ec2 describe-launch-templates --launch-template-ids $AWS_ID
+      --query 'LaunchTemplates[0].LatestVersionNumber == LaunchTemplates[0].DefaultVersionNumber && LaunchTemplates[0].DefaultVersionNumber || `-1`'

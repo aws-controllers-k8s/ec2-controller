@@ -1,0 +1,43 @@
+# Values for the generated EgressOnlyInternetGateway test that its model can't
+# supply. Only tags can change: vpcID is immutable.
+#
+# No notFoundCode: DescribeEgressOnlyInternetGateways returns an empty list
+# for an unknown ID instead of an error, so the delete template can't confirm
+# the deletion in AWS.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: eigw-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+create:
+  vpcRef:
+    from:
+      name: eigw-vpc
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+updates:
+- tags:
+  - key: initialtagkey
+    value: changedtagvalue
+  - key: addedtagkey
+    value: addedtagvalue
+- tags: []
+variants:
+- name: untagged
+  description: No tags at create, then tags added by update
+  create:
+    vpcRef:
+      from:
+        name: eigw-vpc
+  updates:
+  - tags:
+    - key: addedtagkey
+      value: addedtagvalue
+# DescribeEgressOnlyInternetGateways returns the VPC in Attachments, not as a
+# field of its own
+checks:
+  vpcRef:
+    path: Attachments[0].VpcId

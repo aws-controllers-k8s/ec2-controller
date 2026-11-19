@@ -1,0 +1,71 @@
+# Values for the generated RouteTable test that its model can't supply. Routes
+# through NAT gateways, transit gateways, VPC endpoints and peering connections
+# aren't covered: each needs more, and costlier, dependencies.
+dependencies:
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: VPC
+  metadata:
+    name: rt-vpc
+  spec:
+    cidrBlocks: [10.0.0.0/16]
+- apiVersion: ec2.services.k8s.aws/v1alpha1
+  kind: InternetGateway
+  metadata:
+    name: rt-igw
+  spec:
+    vpcRef:
+      from:
+        name: rt-vpc
+# routes is only set by updates and a variant, so the adoption test doesn't
+# check it: an adopted spec may also hold the local route
+create:
+  vpcRef:
+    from:
+      name: rt-vpc
+  tags:
+  - key: initialtagkey
+    value: initialtagvalue
+# Routes are listed in the order the routes check prints them: by destination
+updates:
+- routes:
+  - destinationCIDRBlock: 192.168.0.0/24
+    gatewayRef:
+      from:
+        name: rt-igw
+  tags:
+  - key: updatedtagkey
+    value: updatedtagvalue
+# Replace the route, and add a default route
+- routes:
+  - destinationCIDRBlock: 0.0.0.0/0
+    gatewayRef:
+      from:
+        name: rt-igw
+  - destinationCIDRBlock: 192.168.1.0/24
+    gatewayRef:
+      from:
+        name: rt-igw
+- routes: []
+  tags: []
+variants:
+- name: with-routes
+  description: Routes at create
+  create:
+    vpcRef:
+      from:
+        name: rt-vpc
+    routes:
+    - destinationCIDRBlock: 0.0.0.0/0
+      gatewayRef:
+        from:
+          name: rt-igw
+# Not declared in generator.yaml
+notFoundCode: InvalidRouteTableID.NotFound
+checks:
+  # A custom field: CreateRouteInput isn't the shape DescribeRouteTables
+  # returns. AWS adds the local route. Each route's gatewayRef is checked as
+  # the GatewayId it fills.
+  routes:
+    path: Routes
+    exclude: {GatewayId: local}
+    sortBy: DestinationCidrBlock
