@@ -310,6 +310,7 @@ func (rm *resourceManager) sdkCreate(
 		return nil, err
 	}
 	updateTagSpecificationsInCreateRequest(desired, input)
+	input.ClientToken = createClientToken(desired)
 
 	var resp *svcsdk.CreateVpcEndpointOutput
 	_ = resp

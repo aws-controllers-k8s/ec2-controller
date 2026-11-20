@@ -1,1 +1,2 @@
-    updateTagSpecificationsInCreateRequest(desired, input)
+	updateTagSpecificationsInCreateRequest(desired, input)
+	input.ClientToken = createClientToken(desired)

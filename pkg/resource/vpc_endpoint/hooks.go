@@ -235,6 +235,23 @@ func updateTagSpecificationsInCreateRequest(r *resource,
 	}
 }
 
+// createClientToken returns the idempotency token for CreateVpcEndpoint, or
+// nil when the CR has no UID yet. The token is the CR's UID, so an SDK retry
+// or a second controller pod creating the same CR gets the endpoint of the
+// first call instead of a second one. Once the CR has held an endpoint the
+// token carries that ID as well, so a recreate after an out-of-band delete
+// is not answered from EC2's idempotency window with the deleted endpoint.
+func createClientToken(r *resource) *string {
+	uid := string(r.ko.UID)
+	if uid == "" {
+		return nil
+	}
+	if r.ko.Status.VPCEndpointID != nil {
+		uid += "-" + *r.ko.Status.VPCEndpointID
+	}
+	return aws.String(uid)
+}
+
 // calculateSubnetDifferences returns two slices:
 // 1. Elements in desired that are not in latest (to add)
 // 2. Elements in latest that are not in desired (to remove)
